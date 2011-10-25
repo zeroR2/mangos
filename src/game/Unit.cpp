@@ -4543,7 +4543,8 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
     if (!holdersToRemove.empty())
     {
         for(std::set<SpellAuraHolderPtr>::const_iterator i = holdersToRemove.begin(); i != holdersToRemove.end(); ++i)
-            RemoveSpellAuraHolder((*i),AURA_REMOVE_BY_STACK);
+            if ((*i) && !(*i)->IsDeleted())
+                RemoveSpellAuraHolder((*i),AURA_REMOVE_BY_STACK);
     }
     else if (holderToStackAdd)
     {
