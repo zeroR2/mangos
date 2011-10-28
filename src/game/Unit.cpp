@@ -580,9 +580,8 @@ bool Unit::CanReachWithMeleeAttack(Unit* pVictim, float flat_mod /*= 0.0f*/) con
         return false;
 
     // The measured values show BASE_MELEE_OFFSET in (1.3224, 1.342)
-    //float reach = GetFloatValue(UNIT_FIELD_COMBATREACH) + pVictim->GetFloatValue(UNIT_FIELD_COMBATREACH) +
-    //    BASE_MELEERANGE_OFFSET + flat_mod;
-    float reach = GetObjectBoundingRadius() + pVictim->GetObjectBoundingRadius() + BASE_MELEERANGE_OFFSET + flat_mod;
+    float reach = GetFloatValue(UNIT_FIELD_COMBATREACH) + pVictim->GetFloatValue(UNIT_FIELD_COMBATREACH) +
+        BASE_MELEERANGE_OFFSET + flat_mod;
 
     if (reach < ATTACK_DISTANCE)
         reach = ATTACK_DISTANCE;
