@@ -162,11 +162,11 @@ void BattleGroundIC::Update(uint32 diff)
         if (closeFortressDoorsTimer <= diff)
         {
             // correct visual of closed gates is at "damaged" flag
-            GetBGObject(BG_IC_GO_T_ALLIANCE_GATE_3)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
-            GetBGObject(BG_IC_GO_T_HORDE_GATE_3)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
+            for (int i = BG_IC_GO_T_ALLIANCE_GATE_1; i <= BG_IC_GO_T_HORDE_GATE_3; ++i)
+                GetBGObject(i)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
 
-            DelObject(BG_IC_GO_T_ALLIANCE_FRONT);
-            DelObject(BG_IC_GO_T_HORDE_FRONT);
+            for (int i = BG_IC_GO_T_ALLIANCE_WEST; i <= BG_IC_GO_T_HORDE_FRONT; ++i)
+                DelObject(i);
 
             doorsClosed = true;
         } else closeFortressDoorsTimer -= diff;
@@ -240,18 +240,13 @@ void BattleGroundIC::Update(uint32 diff)
 
 void BattleGroundIC::StartingEventCloseDoors()
 {
-    // Show Full Gate Displays
-    GetBGObject(BG_IC_GO_T_ALLIANCE_GATE_1)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
-    GetBGObject(BG_IC_GO_T_ALLIANCE_GATE_2)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
-    GetBGObject(BG_IC_GO_T_HORDE_GATE_1)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
-    GetBGObject(BG_IC_GO_T_HORDE_GATE_2)->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
 }
 
 void BattleGroundIC::StartingEventOpenDoors()
 {
     OpenDoorEvent(BG_EVENT_DOOR);                        // used for activating teleport effects + opening tower gates
-    DoorOpen(m_BgObjects[BG_IC_GO_T_ALLIANCE_FRONT]);
-    DoorOpen(m_BgObjects[BG_IC_GO_T_HORDE_FRONT]);
+    for (int i = BG_IC_GO_T_ALLIANCE_WEST; i <= BG_IC_GO_T_HORDE_FRONT; ++i)
+        DoorOpen(m_BgObjects[i]);
     SpawnEvent(IC_EVENT_ADD_VEH, 0, true);
 
     // make teleporters clickable
@@ -293,11 +288,29 @@ void BattleGroundIC::RemovePlayer(Player* plr)
     }
 }
 
-void BattleGroundIC::HandleAreaTrigger(Player * /*Source*/, uint32 /*Trigger*/)
+void BattleGroundIC::HandleAreaTrigger(Player * Source, uint32 Trigger)
 {
     // this is wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
+
+    switch (Trigger)
+    {
+        case 5535:
+            if (Source->GetTeam() == ALLIANCE && hOpen == false)
+                Source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, 68502);
+            break;
+        case 5555:
+            if (Source->GetTeam() == HORDE && aOpen == false)
+                Source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, 68502);
+            break;
+        case 5536:
+            break;
+        default:
+            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", Trigger);
+            Source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", Trigger);
+            break;
+    }
 }
 
 /*  type: 0-neutral, 1-contested, 3-occupied
@@ -409,17 +422,16 @@ void BattleGroundIC::SpawnGates()
     AddObject(BG_IC_GO_T_HORDE_GATE_1, BG_IC_GO_HORDE_GATE_1, BG_IC_GATELOCS[3][0], BG_IC_GATELOCS[3][1], BG_IC_GATELOCS[3][2], BG_IC_GATELOCS[3][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
     AddObject(BG_IC_GO_T_HORDE_GATE_2, BG_IC_GO_HORDE_GATE_2, BG_IC_GATELOCS[4][0], BG_IC_GATELOCS[4][1], BG_IC_GATELOCS[4][2], BG_IC_GATELOCS[4][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
     AddObject(BG_IC_GO_T_HORDE_GATE_3, BG_IC_GO_HORDE_GATE_3, BG_IC_GATELOCS[5][0], BG_IC_GATELOCS[5][1], BG_IC_GATELOCS[5][2], BG_IC_GATELOCS[5][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
-    AddObject(BG_IC_GO_T_ALLIANCE_FRONT, BG_IC_GO_ALLIANCE_FRONT, BG_IC_GATELOCS[6][0], BG_IC_GATELOCS[6][1], BG_IC_GATELOCS[6][2], BG_IC_GATELOCS[6][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
-    AddObject(BG_IC_GO_T_HORDE_FRONT, BG_IC_GO_HORDE_FRONT, BG_IC_GATELOCS[7][0], BG_IC_GATELOCS[7][1], BG_IC_GATELOCS[7][2], BG_IC_GATELOCS[7][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
 
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_ALLIANCE_GATE_1], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_ALLIANCE_GATE_2], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_ALLIANCE_GATE_3], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_HORDE_GATE_1], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_HORDE_GATE_2], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_HORDE_GATE_3], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_ALLIANCE_FRONT], RESPAWN_IMMEDIATELY);
-    SpawnBGObject(m_BgObjects[BG_IC_GO_T_HORDE_FRONT], RESPAWN_IMMEDIATELY);
+    AddObject(BG_IC_GO_T_ALLIANCE_WEST, BG_IC_GO_ALLIANCE_PORT, BG_IC_GATELOCS[0][0], BG_IC_GATELOCS[0][1], BG_IC_GATELOCS[0][2], BG_IC_GATELOCS[0][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
+    AddObject(BG_IC_GO_T_ALLIANCE_EAST, BG_IC_GO_ALLIANCE_PORT, BG_IC_GATELOCS[1][0], BG_IC_GATELOCS[1][1], BG_IC_GATELOCS[1][2], BG_IC_GATELOCS[1][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
+    AddObject(BG_IC_GO_T_ALLIANCE_FRONT, BG_IC_GO_ALLIANCE_PORT, BG_IC_GATELOCS[2][0], BG_IC_GATELOCS[2][1], BG_IC_GATELOCS[2][2], BG_IC_GATELOCS[2][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
+    AddObject(BG_IC_GO_T_HORDE_WEST, BG_IC_GO_HORDE_PORT, BG_IC_GATELOCS[3][0], BG_IC_GATELOCS[3][1], BG_IC_GATELOCS[3][2], BG_IC_GATELOCS[3][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
+    AddObject(BG_IC_GO_T_HORDE_EAST, BG_IC_GO_HORDE_PORT, BG_IC_GATELOCS[4][0], BG_IC_GATELOCS[4][1], BG_IC_GATELOCS[4][2], BG_IC_GATELOCS[4][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
+    AddObject(BG_IC_GO_T_HORDE_FRONT, BG_IC_GO_HORDE_PORT, BG_IC_GATELOCS[5][0], BG_IC_GATELOCS[5][1], BG_IC_GATELOCS[5][2], BG_IC_GATELOCS[5][3], 0.0f, 0.0f, 0.0f, 0.0f, RESPAWN_IMMEDIATELY);
+
+    for (int i = 0; i < BG_IC_MAXOBJ; ++i)
+        SpawnBGObject(m_BgObjects[i], RESPAWN_IMMEDIATELY);
 }
 
 void BattleGroundIC::HandleKillUnit(Creature *creature, Player *killer)
@@ -442,6 +454,10 @@ void BattleGroundIC::HandleKillUnit(Creature *creature, Player *killer)
             EndBattleGround(ALLIANCE);
             break;
     }
+
+    if (creature->IsVehicle())
+        // must be killing blow
+        killer->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, 68357);
 }
 
 void BattleGroundIC::HandleKillPlayer(Player* player, Player* killer)
@@ -513,6 +529,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
     if (m_Nodes[node] == BG_IC_NODE_TYPE_NEUTRAL)
     {
         UpdatePlayerScore(source, SCORE_BASES_ASSAULTED, 1);
+        source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE,1,245);
         m_prevNodes[node] = m_Nodes[node];
         m_Nodes[node] = teamIndex + 1;
         // create new contested banner
@@ -550,6 +567,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
         else
         {
             UpdatePlayerScore(source, SCORE_BASES_DEFENDED, 1);
+            source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE,1,246);
             m_prevNodes[node] = m_Nodes[node];
             m_Nodes[node] = teamIndex + BG_IC_NODE_TYPE_OCCUPIED;
             // create new occupied banner
@@ -569,6 +587,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
     else
     {
         UpdatePlayerScore(source, SCORE_BASES_ASSAULTED, 1);
+        source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE,1,245);
         m_prevNodes[node] = m_Nodes[node];
         m_Nodes[node] = teamIndex + BG_IC_NODE_TYPE_CONTESTED;
         // create new contested banner
@@ -592,6 +611,14 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
 void BattleGroundIC::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy)
 {
     BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+
+    // Seaforium Charge Explosion (A-bomb-inable)
+    if (doneBy == 66676)
+        player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CAST_SPELL, 68366);
+
+    // Huge Seaforium Charge Explosion (A-bomb-ination)
+    if (doneBy == 66672)
+        player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CAST_SPELL, 68367);
 
     uint32 type = NULL;
     switch (target_obj->GetEntry())
@@ -870,4 +897,22 @@ uint32 BattleGroundIC::GetCorrectFactionIC(uint8 vehicleType) const
         }
     }
     return VEHICLE_FACTION_NEUTRAL;
+}
+
+bool BattleGroundIC::hasAllNodes(int8 team)
+{
+    for (int i = BG_IC_NODE_DOCKS; i <= BG_IC_NODE_REFINERY; ++i)
+        if (m_Nodes[i] != BG_IC_NODE_TYPE_OCCUPIED + team)
+            return false;
+
+    return true;
+}
+
+bool BattleGroundIC::hasAllResNodes(int8 team)
+{
+    for (int i = BG_IC_NODE_QUARRY; i <= BG_IC_NODE_REFINERY; ++i)
+        if (m_Nodes[i] != BG_IC_NODE_TYPE_OCCUPIED + team)
+            return false;
+
+    return true;
 }

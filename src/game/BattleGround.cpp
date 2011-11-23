@@ -1786,6 +1786,10 @@ void BattleGround::SpawnBGCreature(ObjectGuid guid, uint32 respawntime)
         obj->SetRespawnDelay(respawntime);
         obj->SetDeathState(JUST_DIED);
         obj->RemoveCorpse();
+
+        float x, y, z, o;
+        obj->GetRespawnCoord(x,y,z,&o);
+        obj->NearTeleportTo(x,y,z,o);
     }
 }
 
@@ -1805,6 +1809,28 @@ bool BattleGround::DelObject(uint32 type)
     obj->Delete();
     m_BgObjects[type].Clear();
     return true;
+}
+
+void BattleGround::MakeInteractive(uint8 event1, uint8 event2, bool interactive)
+{
+    // make the gameobject clickable
+    uint32 objEvent = MAKE_PAIR32(event1, event2);
+    for (std::vector<ObjectGuid>::iterator itr = m_EventObjects[objEvent].gameobjects.begin(); itr != m_EventObjects[objEvent].gameobjects.end(); ++itr)
+    {
+        if (GameObject * pEventGameObject = GetBgMap()->GetGameObject((*itr)))
+        {
+            if (interactive)
+            {
+                if (pEventGameObject->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT))
+                    pEventGameObject->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+            }
+            else
+            {
+                if (!pEventGameObject->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT))
+                    pEventGameObject->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+            }
+        }
+    }
 }
 
 void BattleGround::SendMessageToAll(int32 entry, ChatMsg type, Player const* source)

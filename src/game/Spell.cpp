@@ -1695,7 +1695,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 68950:                                 // Fear (ICC: Forge of Souls)
                 case 68912:                                 // Wailing Souls (FoS)
                 case 69048:                                 // Mirrored Soul (FoS)
-                case 69057:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10N)
                 case 69140:                                 // Coldflame (Icecrown Citadel, Lord Marrowgar encounter)
                 case 69674:                                 // Mutated Infection
                 case 71224:
@@ -1703,7 +1702,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 72378:                                 // Blood Nova
                 case 73022:                                 // Mutated Infection (heroic)
                 case 73023:                                 // Mutated Infection (heroic)
-                case 72088:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10H)
                 case 73058:                                 // Blood Nova
                 case 73142:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10N)
                 case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
@@ -1733,8 +1731,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 62477:                                 // Icicle (Hodir 25man)
                 case 69055:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, normal)
                 case 70814:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, heroic)
-                case 70826:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25N)
-                case 72089:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25H)
                 case 73143:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25N)
                 case 73145:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25H)
                 case 72095:                                 // Frozen Orb (Vault of Archavon, Toravon encounter, heroic)
@@ -1827,10 +1823,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             switch(m_spellInfo->Id)
             {
-                case 69057:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10N)
-                case 70826:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25N)
-                case 72088:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10H)
-                case 72089:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25H)
                 case 73142:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10N)
                 case 73143:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25N)
                 case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
@@ -1932,6 +1924,64 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             if (m_spellInfo->Effect[effIndex] == SPELL_EFFECT_SUMMON || m_spellInfo->Effect[effIndex] == SPELL_EFFECT_SUMMON_OBJECT_WILD)
                 unMaxTargets = m_spellInfo->CalculateSimpleValue(effIndex);
 
+            break;
+        }
+        case TARGET_LEAP_FORWARD:
+        {
+            Unit* target = m_targets.getUnitTarget();
+            if (!target)
+                target = m_caster;
+
+            float ox, oy, oz;
+            target->GetPosition(ox, oy, oz);
+            float direction = target->GetOrientation();
+            float distance = radius;
+
+            //Glyph of blink or etc this type
+            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)m_caster)->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RADIUS, distance, this);
+
+            float fx = target->GetPositionX() + distance * cos(direction);
+            float fy = target->GetPositionY() + distance * sin(direction);
+            float fz = oz + 5.0f;
+
+            MaNGOS::NormalizeMapCoord(fx);
+            MaNGOS::NormalizeMapCoord(fy);
+            target->UpdateAllowedPositionZ(fx, fy, fz);
+
+            TerrainInfo const* terrain = target->GetTerrain();
+            if (terrain)
+            {
+                if (terrain->CheckPathAccurate(ox,oy,oz,fx,fy,fz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? target : NULL ))
+                    DEBUG_LOG("Spell::EffectLeap/Teleport unit %u forwarded on %f", target->GetObjectGuid().GetCounter(), target->GetDistance(fx,fy,fz));
+                else
+                    DEBUG_LOG("Spell::EffectLeap/Teleport unit %u NOT forwarded on %f, real distance is %f", target->GetObjectGuid().GetCounter(), distance, target->GetDistance(fx,fy,fz));
+            }
+            m_targets.setDestination(fx,fy,fz);
+
+            break;
+        }
+        case TARGET_RANDOM_POINT_NEAR_TARGET:
+        case TARGET_RANDOM_POINT_NEAR_TARGET_2:
+        {
+            // First effect already may set TARGET_FLAG_DEST_LOCATION - use his for source (and set source point)
+            if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
+            {
+                m_targets.setSource(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
+                m_caster->GetRandomPoint(m_targets.m_srcX, m_targets.m_srcY, m_targets.m_srcZ, radius, m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
+                targetUnitMap.push_back(m_caster);
+            }
+            else
+            {
+                Unit* target = m_targets.getUnitTarget();
+                if (!target)
+                    target = m_caster;
+                float angle = 2.0f * M_PI_F * rand_norm_f();
+                float dest_x, dest_y, dest_z;
+                target->GetClosePoint(dest_x, dest_y, dest_z, 0.0f, radius, angle);
+                m_targets.setDestination(dest_x, dest_y, dest_z);
+                targetUnitMap.push_back(target);
+            }
             break;
         }
         case TARGET_TOTEM_EARTH:
@@ -3095,6 +3145,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                                 targetUnitMap.push_back(owner);
                     }
                     break;
+                case SPELL_EFFECT_TELEPORT_UNITS:
                 case SPELL_EFFECT_SUMMON:
                 case SPELL_EFFECT_SUMMON_CHANGE_ITEM:
                 case SPELL_EFFECT_TRANS_DOOR:
@@ -4104,12 +4155,12 @@ void Spell::SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 ca
     switch (result)
     {
         case SPELL_FAILED_NOT_READY:
-            data << uint32(0);                              // unknown, value 1 seen for 14177
+            data << uint32(0);                              // unknown, value 1 seen for 14177 (update cooldowns on client flag)
             break;
         case SPELL_FAILED_REQUIRES_SPELL_FOCUS:
-            data << uint32(spellInfo->RequiresSpellFocus);
+            data << uint32(spellInfo->RequiresSpellFocus);  // SpellFocusObject.dbc id
             break;
-        case SPELL_FAILED_REQUIRES_AREA:
+        case SPELL_FAILED_REQUIRES_AREA:                    // AreaTable.dbc id
             // hardcode areas limitation case
             switch(spellInfo->Id)
             {
@@ -4129,34 +4180,51 @@ void Spell::SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 ca
                     break;
             }
             break;
+        case SPELL_FAILED_TOTEMS:
+            for(int i = 0; i < MAX_SPELL_TOTEMS; ++i)
+                if(spellInfo->Totem[i])
+                    data << uint32(spellInfo->Totem[i]);    // client needs only one id, not 2...
+            break;
+        case SPELL_FAILED_TOTEM_CATEGORY:
+            for(int i = 0; i < MAX_SPELL_TOTEM_CATEGORIES; ++i)
+                if(spellInfo->TotemCategory[i])
+                    data << uint32(spellInfo->TotemCategory[i]);// client needs only one id, not 2...
+            break;
+        case SPELL_FAILED_EQUIPPED_ITEM_CLASS:
+        case SPELL_FAILED_EQUIPPED_ITEM_CLASS_MAINHAND:
+        case SPELL_FAILED_EQUIPPED_ITEM_CLASS_OFFHAND:
+            data << uint32(spellInfo->EquippedItemClass);
+            data << uint32(spellInfo->EquippedItemSubClassMask);
+            break;
+        case SPELL_FAILED_PREVENTED_BY_MECHANIC:
+            data << uint32(0);                              // SpellMechanic.dbc id
+            break;
+        case SPELL_FAILED_CUSTOM_ERROR:
+            data << uint32(0);                              // custom error id (see enum SpellCastResultCustom)
+            break;
+        case SPELL_FAILED_NEED_EXOTIC_AMMO:
+            data << uint32(spellInfo->EquippedItemSubClassMask);// seems correct...
+            break;
         case SPELL_FAILED_REAGENTS:
             // normally client checks reagents, just some script effects here
             if (spellInfo->Id == 46584)                      // Raise Dead
                 data << uint32(37201);                      // Corpse Dust
+            else
+                data << uint32(0);                              // item id
             break;
-        case SPELL_FAILED_TOTEMS:
-            for(int i = 0; i < MAX_SPELL_TOTEMS; ++i)
-                if (spellInfo->Totem[i])
-                    data << uint32(spellInfo->Totem[i]);
+        case SPELL_FAILED_NEED_MORE_ITEMS:
+            data << uint32(0);                              // item id
+            data << uint32(0);                              // item count?
             break;
-        case SPELL_FAILED_TOTEM_CATEGORY:
-            for(int i = 0; i < MAX_SPELL_TOTEM_CATEGORIES; ++i)
-                if (spellInfo->TotemCategory[i])
-                    data << uint32(spellInfo->TotemCategory[i]);
+        case SPELL_FAILED_MIN_SKILL:
+            data << uint32(0);                              // SkillLine.dbc id
+            data << uint32(0);                              // required skill value
             break;
-        case SPELL_FAILED_EQUIPPED_ITEM_CLASS:
-            data << uint32(spellInfo->EquippedItemClass);
-            data << uint32(spellInfo->EquippedItemSubClassMask);
-            //data << uint32(spellInfo->EquippedItemInventoryTypeMask);
+        case SPELL_FAILED_TOO_MANY_OF_ITEM:
+            data << uint32(0);                              // ItemLimitCategory.dbc id
             break;
-        case SPELL_FAILED_EQUIPPED_ITEM_CLASS_MAINHAND:
-        case SPELL_FAILED_EQUIPPED_ITEM_CLASS_OFFHAND:
-            // same data as SPELL_FAILED_EQUIPPED_ITEM_CLASS ?
-            data << uint32(0);
-            data << uint32(0);
-            break;
-        case SPELL_FAILED_PREVENTED_BY_MECHANIC:
-            data << uint32(0);                              // unknown, mechanic mask?
+        case SPELL_FAILED_FISHING_TOO_LOW:
+            data << uint32(0);                              // required fishing skill
             break;
         default:
             break;
@@ -5660,6 +5728,11 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (m_targets.getUnitTarget() && !m_caster->IsFriendlyTo(m_targets.getUnitTarget()) && !m_caster->HasInArc(M_PI_F, m_targets.getUnitTarget()))
                         return SPELL_FAILED_UNIT_NOT_INFRONT;
                 }
+                else if(m_spellInfo->Id == 49576)           // Death Grip
+                {
+                    if(m_caster->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
+                        return SPELL_FAILED_MOVING;
+                }
                 else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_SHAMAN && m_spellInfo->SpellIconID == 33) // Fire Nova
                 {
                     // fire totems slot
@@ -6028,6 +6101,21 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 break;
             }
+            case SPELL_EFFECT_LEAP:
+            {
+                // Check destination point (if setted it SetTargetMap())
+                if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
+                {
+                    // spell failed, if distance less then 1.0f
+                    if (m_caster->GetDistance2d(m_targets.m_destX,m_targets.m_destY) < 1.0f)
+                        return SPELL_FAILED_TRY_AGAIN;
+
+                    if (fabs(m_caster->GetPositionZ() - m_targets.m_destZ) > 8.0f)
+                        return SPELL_FAILED_TRY_AGAIN;
+                }
+                // Target point setted after first time check
+            }
+            // no break here!
             case SPELL_EFFECT_LEAP_BACK:
             {
                 if (m_spellInfo->Id == 781)
@@ -6035,19 +6123,10 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
             }
             // no break here!
-            case SPELL_EFFECT_LEAP:
             case SPELL_EFFECT_TELEPORT_UNITS_FACE_CASTER:
             {
                 if (m_caster->hasUnitState(UNIT_STAT_ROOT))
                     return SPELL_FAILED_ROOTED;
-
-                float direction = (m_spellInfo->Effect[i] == SPELL_EFFECT_LEAP_BACK ? M_PI + m_caster->GetOrientation() : m_caster->GetOrientation());
-                float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[i]));
-                float fx = m_caster->GetPositionX() + dis * cos(direction);
-                float fy = m_caster->GetPositionY() + dis * sin(direction);
-                // simple check for avoid falling under map
-                if (!m_caster->GetTerrain()->IsNextZcoordOK(fx, fy, m_caster->GetPositionZ(),8.0f))
-                    return SPELL_FAILED_TRY_AGAIN;
 
                 // not allow use this effect at battleground until battleground start
                 if (m_caster->GetTypeId() == TYPEID_PLAYER)
@@ -8249,7 +8328,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 54148: //Svala Choose Only Player
+        case 54148: // Svala Choose Only Player
         {
             UnitList tmpUnitMap;
             FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
@@ -8470,6 +8549,45 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                         targetUnitMap.push_back(*itr);
                 }
             }
+            break;
+        }
+        case 69057: // Lord Marrowgar's Bone Spike Graveyard must affect only players. Tank is excluded too. 10N
+        case 70826: // ----- // ----- 25N
+        case 72088: // ----- // ----- 10H
+        case 72089: // ----- // ----- 25H
+        {
+            UnitList tmpUnitMap, playersUnitMap;
+            FillAreaTargets(tmpUnitMap, DEFAULT_VISIBILITY_INSTANCE, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+
+            if (tmpUnitMap.empty())
+                break;
+
+            for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
+            {
+                if (*itr && (*itr)->GetTypeId() == TYPEID_PLAYER)
+                    playersUnitMap.push_back(*itr);
+            }
+
+            if (!playersUnitMap.empty() && m_caster->getVictim())
+                playersUnitMap.remove(m_caster->getVictim());
+
+            uint8 maxTargets = 1;                           // In normal Bone Spike Graveyard affects one player, in heroic - 3 players.
+            if (m_spellInfo->Id == 70826 || m_spellInfo->Id == 72089)
+                maxTargets = 3;
+
+            for (uint8 i = 0; i < maxTargets; ++i)
+            {
+                if (playersUnitMap.empty())
+                    break;
+
+                UnitList::iterator iter = playersUnitMap.begin();
+                std::advance(iter, urand(0, playersUnitMap.size()-1));
+                if (*iter)
+                    targetUnitMap.push_back(*iter);
+
+                playersUnitMap.remove(*iter);
+            }
+
             break;
         }
         case 70728: // Exploit Weakness triggered
