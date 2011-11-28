@@ -1749,7 +1749,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     std::vector<Unit*> possibleTargets;
                     possibleTargets.reserve(m_UniqueTargetInfo.size());
-                    for (std::list<TargetInfo>::const_iterator itr = m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); itr++)
+                    for (TargetList::const_iterator itr = m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); ++itr)
                     {
                         // Skip Non-Players
                         if (!itr->targetGUID.IsPlayer())
@@ -1837,6 +1837,8 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     }
                     //Spawn
                     m_caster->CastSpell(m_caster, spellId, true);
+                    
+                    if (!unitTarget) return;
                     //Arcane Prisoner Kill Credit
                     unitTarget->CastSpell(m_caster, 45456, true);
                     break;
@@ -1928,6 +1930,9 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 45989:                                 // Summon Void Sentinel Summoner Visual
                 {
+                    if (!unitTarget)
+                        return;
+
                     // summon void sentinel
                     unitTarget->CastSpell(unitTarget, 45988, true);
 
@@ -4010,6 +4015,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
             }
             break;
         }
+    }
+
+    // Linked spells (DUMMYEFFECT chain)
+    SpellLinkedSet linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->Id, SPELL_LINKED_TYPE_DUMMYEFFECT);
+    if (linkedSet.size() > 0)
+    {
+        for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
+            m_caster->CastSpell(unitTarget ? unitTarget : m_caster, *itr, true, NULL, NULL, m_caster->GetObjectGuid(), m_spellInfo);
     }
 
     // pet auras
@@ -9953,6 +9966,14 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
     // normal DB scripted effect
     if (!unitTarget)
         return;
+
+    // Linked spells (SCRIPTEFFECT chain)
+    SpellLinkedSet linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->Id, SPELL_LINKED_TYPE_SCRIPTEFFECT);
+    if (linkedSet.size() > 0)
+    {
+        for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
+            m_caster->CastSpell(unitTarget, *itr, true, NULL, NULL, m_caster->GetObjectGuid(), m_spellInfo);
+    }
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart spellid %u in EffectScriptEffect ", m_spellInfo->Id);
     if (m_caster->IsInWorld())

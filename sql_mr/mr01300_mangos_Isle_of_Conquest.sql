@@ -40,7 +40,7 @@ UPDATE creature_template SET vehicle_id = 160, iconName = 'vehichleCursor', fact
 UPDATE creature_template SET unit_flags = unit_flags | 4 WHERE entry = 35429;
 -- Catapult
 UPDATE creature_template SET powertype = 3, vehicle_id = 438, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, speed_walk = 2.4, speed_run = 2.8, ScriptName = 'npc_ic_vehicle' WHERE entry = 34793;
-UPDATE creature_template SET speed_walk = 2.4, speed_run = 2.8 WHERE entry = 35413;
+UPDATE creature_template SET powertype = 3, speed_walk = 2.4, speed_run = 2.8 WHERE entry = 35413;
 -- Demolisher
 UPDATE creature_template SET vehicle_id = 509, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, ScriptName = 'npc_ic_vehicle' WHERE entry = 34775;
 -- Alli Siege Engine
@@ -141,10 +141,10 @@ UPDATE gameobject_template SET faction = 1997, flags = 0, data5 = 0 WHERE entry 
 UPDATE gameobject_template SET faction = 1995, flags = 0, data5 = 0 WHERE entry IN (195332, 195237);
 
 -- horde teleporters
-UPDATE gameobject_template SET faction = 1995, flags = 16 WHERE entry IN (195313, 195314);
+UPDATE gameobject_template SET faction = 1995, flags = 0 WHERE entry IN (195313, 195314);
 UPDATE gameobject_template SET faction = 1995 WHERE entry = 195326;
 -- alliance teleporters
-UPDATE gameobject_template SET faction = 1997, flags = 16 WHERE entry IN (195315, 195316);
+UPDATE gameobject_template SET faction = 1997, flags = 0 WHERE entry IN (195315, 195316);
 UPDATE gameobject_template SET faction = 1997 WHERE entry = 195320;
 
 -- scriptnames
