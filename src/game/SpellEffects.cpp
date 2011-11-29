@@ -2926,6 +2926,15 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     unitTarget->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
                     return;
                 }
+                case 62301:                                 // Cosmic Smash (Ulduar - Algalon)
+                case 64598:
+                {
+                  if (!unitTarget)
+                    return;
+
+                  unitTarget->CastSpell(unitTarget, 62295, true);
+                  return;
+                }
                 case 63984:                                 // Hate to Zero (Ulduar - Yogg Saron)
                 {
                     if (!unitTarget)
@@ -3418,7 +3427,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
 
                 //Any effect which causes you to lose control of your character will supress the starfall effect.
-                if (m_caster->hasUnitState(UNIT_STAT_NO_FREE_MOVE))
+                if (m_caster->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
                     return;
 
                 switch(m_spellInfo->Id)
@@ -4726,8 +4735,8 @@ void Spell::EffectPowerBurn(SpellEffectIndex eff_idx)
     if (damage < 0)
         return;
 
-    // burn x% of target's mana, up to maximum of 2x% of caster's mana (Mana Burn)
-    if (m_spellInfo->ManaCostPercentage)
+    // burn x% of target's mana, up to maximum of 2x% of caster's mana (Priest's Mana Burn)
+    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST)
     {
         int32 maxdamage = m_caster->GetMaxPower(powertype) * damage * 2 / 100;
         damage = unitTarget->GetMaxPower(powertype) * damage / 100;
