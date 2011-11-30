@@ -12211,7 +12211,7 @@ void Unit::ChangeSeat(int8 seatId, bool next)
 
 void Unit::EnterVehicle(VehicleKit *vehicle, int8 seatId)
 {
-    if (!isAlive() || GetVehicleKit() == vehicle)
+    if (!isAlive() || !vehicle || GetVehicleKit() == vehicle)
         return;
 
     if (m_pVehicle)
@@ -12225,6 +12225,14 @@ void Unit::EnterVehicle(VehicleKit *vehicle, int8 seatId)
         }
         else
             ExitVehicle();
+    }
+
+    if (seatId == -1)
+    {
+        if (vehicle->HasEmptySeat(-1))
+            seatId = vehicle->GetNextEmptySeat(0,true);
+        else
+            return;
     }
 
     InterruptNonMeleeSpells(false);
