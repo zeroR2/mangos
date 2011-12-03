@@ -313,7 +313,7 @@ Unit::~Unit()
         }
     }
 
-    CleanupDeletedHolders(true);
+    CleanupDeletedAuras();
 
     delete m_charmInfo;
     delete m_vehicleInfo;
@@ -345,7 +345,7 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
 
     {
         MAPLOCK_WRITE(this,MAP_LOCK_TYPE_AURAS);
-        CleanupDeletedHolders();
+        CleanupDeletedAuras();
     }
 
     if (m_lastManaUseTimer)
@@ -5030,7 +5030,11 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGuid, U
         {
             foundHolder->SetAuraDuration(new_max_dur);
             foundHolder->SetAuraCharges(foundHolder->GetAuraCharges()+1, true);
-            AddSpellAuraHolderToRemoveList(new_holder);
+            if (new_holder->IsInUse())
+            {
+                new_holder->SetDeleted();
+                m_deletedHolders.push_back(new_holder);
+            }
             return;
         }
         else
@@ -5292,7 +5296,10 @@ void Unit::RemoveSpellAuraHolder(SpellAuraHolderPtr holder, AuraRemoveMode mode)
     // If holder in use (removed from code that plan access to it data after return)
     // store it in holder list with delayed deletion
     if (holder && !holder->IsDeleted())
-        AddSpellAuraHolderToRemoveList(holder);
+    {
+        holder->SetDeleted();
+        m_deletedHolders.push_back(holder);
+    }
 
     if (mode != AURA_REMOVE_BY_EXPIRE && IsChanneledSpell(AurSpellInfo) && !IsAreaOfEffectSpell(AurSpellInfo) &&
         caster && caster->GetObjectGuid() != GetObjectGuid())
@@ -10548,7 +10555,7 @@ void Unit::RemoveFromWorld()
         UnsummonAllTotems();
         RemoveAllGameObjects();
         RemoveAllDynObjects();
-        CleanupDeletedHolders(false);
+//        CleanupDeletedAuras();
         GetViewPoint().Event_RemovedFromWorld();
     }
 
@@ -12508,39 +12515,18 @@ bool Unit::IsIgnoreUnitState(SpellEntry const *spell, IgnoreUnitState ignoreStat
     return false;
 }
 
-void Unit::CleanupDeletedHolders(bool force)
+void Unit::CleanupDeletedAuras()
 {
-    for (SpellAuraHolderSet::const_iterator iter = m_deletedHolders.begin(); iter != m_deletedHolders.end(); ++iter)
+    for (SpellAuraHolderList::const_iterator iter = m_deletedHolders.begin(); iter != m_deletedHolders.end(); ++iter)
     {
         SpellAuraHolderPtr holder = *iter;
         if (holder)
-            holder->CleanupsBeforeDelete();
-    }
-
-    if (force)
-        m_deletedHolders.clear();
-    else
-    {
-        for (SpellAuraHolderSet::const_iterator iter = m_deletedHolders.begin(); iter != m_deletedHolders.end(); ++iter)
         {
-            SpellAuraHolderPtr holder = *iter;
-            if (holder && !holder->IsInUse())
-            {
-                m_deletedHolders.erase(holder);
-            }
+            holder->CleanupsBeforeDelete();
         }
     }
+    m_deletedHolders.clear();
 }
-
-void Unit::AddSpellAuraHolderToRemoveList(SpellAuraHolderPtr holder)
-{
-    if (!holder || holder->IsDeleted())
-        return;
-
-    MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
-    holder->SetDeleted();
-    m_deletedHolders.insert(holder);
-};
 
 bool Unit::CheckAndIncreaseCastCounter()
 {
