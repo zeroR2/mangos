@@ -4374,7 +4374,7 @@ float Unit::GetTotalAuraMultiplierByMiscValueForMask(AuraType auratype, uint32 m
 float Unit::CheckAuraStackingAndApply(Aura* aura, UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply, int32 miscMask, int32 miscValue)
 {
     // not apply values below 1% (rounding errors?)
-    if (!aura || fabs(amount) <= 0.01f)
+    if (!aura || fabs(amount) < 0.009f)
         return 0.0f;
 
     SpellEntry const *spellProto = aura->GetSpellProto();
@@ -4433,7 +4433,7 @@ float Unit::CheckAuraStackingAndApply(Aura* aura, UnitMods unitMod, UnitModifier
             }
         }
         // not apply values below 1% (rounding errors?)
-        if (fabs(amount) < 0.01f)
+        if (fabs(amount) < 0.009f)
             amount = 0.0f;
 
         HandleStatModifier(unitMod, modifierType, amount, apply);
