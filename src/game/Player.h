@@ -820,6 +820,7 @@ enum TeleportToOptions
     TELE_TO_NOT_LEAVE_COMBAT    = 0x04,
     TELE_TO_NOT_UNSUMMON_PET    = 0x08,
     TELE_TO_SPELL               = 0x10,
+    TELE_TO_CHECKED             = 0x1000,
 };
 
 /// Type of environmental damages
@@ -2344,6 +2345,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         AreaLockStatus GetAreaTriggerLockStatus(AreaTrigger const* at, Difficulty difficulty);
         bool CanEnterToArea(uint32 mapId, Difficulty difficulty) { return GetAreaLockStatus(mapId, difficulty) == AREA_LOCKSTATUS_OK; };
         bool CanUseAreaTrigger(AreaTrigger const* at, Difficulty difficulty) { return GetAreaTriggerLockStatus(at, difficulty) == AREA_LOCKSTATUS_OK; };
+        bool CheckTransferPossibility(uint32 mapId);
+        bool CheckTransferPossibility(AreaTrigger const*& at);
 
         // LFG
         LFGPlayerState* GetLFGState() { return m_LFGState;};
