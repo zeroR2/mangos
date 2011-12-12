@@ -55,7 +55,7 @@ void MotionMaster::Initialize()
         top()->Initialize(*m_owner);
     }
     else
-        push(&si_idleMovement);
+        MoveIdle();
 }
 
 MotionMaster::~MotionMaster()
@@ -63,6 +63,7 @@ MotionMaster::~MotionMaster()
     // just deallocate movement generator, but do not Finalize since it may access to already deallocated owner's memory
     while(!empty())
     {
+        MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
         MovementGenerator * m = top();
         pop();
         if (!isStatic(m))
@@ -116,6 +117,7 @@ void MotionMaster::DirectClean(bool reset, bool all)
 {
     while( all ? !empty() : size() > 1 )
     {
+        MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
         MovementGenerator *curr = top();
         pop();
 
@@ -151,6 +153,7 @@ void MotionMaster::DelayedClean(bool reset, bool all)
 
     while( all ? !empty() : size() > 1 )
     {
+        MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
         MovementGenerator *curr = top();
         pop();
 
@@ -167,6 +170,7 @@ void MotionMaster::DirectExpire(bool reset)
     if (empty() || size() == 1)
         return;
 
+    MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
     MovementGenerator *curr = top();
     pop();
 
@@ -205,6 +209,7 @@ void MotionMaster::DelayedExpire(bool reset)
     if (empty() || size() == 1)
         return;
 
+    MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
     MovementGenerator *curr = top();
     pop();
 
@@ -228,6 +233,7 @@ void MotionMaster::DelayedExpire(bool reset)
 
 void MotionMaster::MoveIdle()
 {
+    MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
     if (empty() || !isStatic(top()))
         push(&si_idleMovement);
 }
@@ -450,11 +456,13 @@ void MotionMaster::Mutate(MovementGenerator *m)
     }
 
     m->Initialize(*m_owner);
+    MAPLOCK_WRITE(m_owner,MAP_LOCK_TYPE_DEFAULT);
     push(m);
 }
 
 void MotionMaster::propagateSpeedChange()
 {
+    MAPLOCK_READ(m_owner,MAP_LOCK_TYPE_DEFAULT);
     Impl::container_type::iterator it = Impl::c.begin();
     for ( ;it != end(); ++it)
     {
@@ -464,8 +472,8 @@ void MotionMaster::propagateSpeedChange()
 
 MovementGeneratorType MotionMaster::GetCurrentMovementGeneratorType() const
 {
+    MAPLOCK_READ(m_owner,MAP_LOCK_TYPE_DEFAULT);
     MovementGenerator* curr = empty() ? NULL : top();
-
     if (curr)
         return curr->GetMovementGeneratorType();
     else
@@ -486,6 +494,7 @@ bool MotionMaster::GetDestination(float &x, float &y, float &z)
 
 void MotionMaster::UpdateFinalDistanceToTarget(float fDistance)
 {
+    MAPLOCK_READ(m_owner,MAP_LOCK_TYPE_DEFAULT);
     if (!empty())
         top()->UpdateFinalDistance(fDistance);
 }
