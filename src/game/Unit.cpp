@@ -595,11 +595,10 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType)
         if (!aura)
             continue;
 
-        SpellAuraHolderPtr holder = aura->GetHolder();
-        if (!holder || holder->IsDeleted())
+        if (!aura->GetHolder() || aura->GetHolder()->IsDeleted())
             continue;
 
-        toRemoveSpellList.insert(holder->GetId());
+        toRemoveSpellList.insert(aura->GetId());
     }
 
     for (std::set<uint32>::iterator i = toRemoveSpellList.begin(); i != toRemoveSpellList.end(); ++i)
@@ -615,15 +614,14 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolderPtr except)
         if (!aura)
             continue;
 
-        SpellAuraHolderPtr holder = aura->GetHolder();
-        if (!holder || holder->IsDeleted())
+        if (!aura->GetHolder() || aura->GetHolder()->IsDeleted())
             continue;
 
         // skip `except` holder
-        if (holder == except)
+        if (aura->GetHolder() == except)
             continue;
 
-        toRemoveSpellList.insert(holder->GetId());
+        toRemoveSpellList.insert(aura->GetId());
     }
 
     for (std::set<uint32>::iterator i = toRemoveSpellList.begin(); i != toRemoveSpellList.end(); ++i)
@@ -2505,10 +2503,9 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
         std::set<uint32> toRemoveSpellList;
         for(AuraList::const_iterator i = vSchoolAbsorb.begin(); i != vSchoolAbsorb.end(); ++i)
         {
-            SpellAuraHolderPtr _holder = (*i)->GetHolder();
-            if (_holder && !_holder->IsDeleted() && (*i)->GetModifier()->m_amount <= 0)
+            if ((*i)->GetHolder() && !(*i)->GetHolder()->IsDeleted() && (*i)->GetModifier()->m_amount <= 0)
             {
-                toRemoveSpellList.insert(_holder->GetId());
+                toRemoveSpellList.insert((*i)->GetId());
             }
         }
         for (std::set<uint32>::iterator _i = toRemoveSpellList.begin(); _i != toRemoveSpellList.end(); ++_i)
@@ -4863,11 +4860,9 @@ void Unit::RemoveAllGroupBuffsFromCaster(ObjectGuid guidCaster)
     SpellAuraHolderMap &holdersMap = GetSpellAuraHolderMap();
     for (SpellAuraHolderMap::iterator itr = holdersMap.begin(); itr != holdersMap.end();)
     {
-        SpellAuraHolderPtr pHolder = (*itr).second;
-
-        if (pHolder && pHolder->GetCasterGuid() == guidCaster && SpellMgr::IsGroupBuff(pHolder->GetSpellProto()))
+        if (itr->second && !itr->second->IsDeleted() && itr->second->GetCasterGuid() == guidCaster && SpellMgr::IsGroupBuff(itr->second->GetSpellProto()))
         {
-            RemoveSpellAuraHolder(pHolder);
+            RemoveSpellAuraHolder(itr->second);
             itr = holdersMap.begin();
         }
         else
@@ -5445,7 +5440,7 @@ void Unit::RemoveAllAurasOnDeath()
     // and disable the mods for the passive ones
     for(SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
     {
-        if (!iter->second->IsPassive() && !iter->second->IsDeathPersistent())
+        if (!iter->second->IsPassive() && !iter->second->IsDeathPersistent() && !iter->second->IsDeleted())
         {
             RemoveSpellAuraHolder(iter->second, AURA_REMOVE_BY_DEATH);
             iter = m_spellAuraHolders.begin();
@@ -5555,12 +5550,11 @@ Aura* Unit::GetTriggeredByClientAura(uint32 spellId)
         {
             for (AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
             {
-                SpellAuraHolderPtr holder = (*itr)->GetHolder();
-                if (!holder || holder->IsDeleted())
+                if (!(*itr)->GetHolder() || (*itr)->GetHolder()->IsDeleted())
                     continue;
 
-                if (holder->GetCasterGuid() == GetObjectGuid() &&
-                    holder->GetSpellProto()->EffectTriggerSpell[(*itr)->GetEffIndex()] == spellId)
+                if ((*itr)->GetHolder()->GetCasterGuid() == GetObjectGuid() &&
+                    (*itr)->GetHolder()->GetSpellProto()->EffectTriggerSpell[(*itr)->GetEffIndex()] == spellId)
                     return *itr;
             }
         }
