@@ -1747,7 +1747,9 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         float m_modSpellSpeedPctPos;
 
         // Event handler
-        EventProcessor m_Events;
+        EventProcessor* GetEvents();
+        void KillAllEvents(bool force);
+        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
 
         // stat system
         bool HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply);
@@ -2201,6 +2203,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         uint32 m_originalFaction;
 
         GroupPetList m_groupPets;
+
+        EventProcessor m_Events;
 
         GuardianPetList m_guardianPets;
         uint32 m_ThreatRedirectionPercent;
