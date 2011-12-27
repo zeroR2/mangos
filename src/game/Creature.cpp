@@ -1593,7 +1593,7 @@ void Creature::ForcedDespawn(uint32 timeMSToDespawn)
     {
         ForcedDespawnDelayEvent *pEvent = new ForcedDespawnDelayEvent(*this);
 
-        AddEvent(pEvent, timeMSToDespawn);
+        m_Events.AddEvent(pEvent, m_Events.CalculateTime(timeMSToDespawn));
         return;
     }
 
@@ -1813,8 +1813,8 @@ void Creature::CallAssistance()
 
             if (!assistList.empty())
             {
-                AssistDelayEvent* event = new AssistDelayEvent(getVictim()->GetObjectGuid(), *this, assistList);
-                AddEvent(event, sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY));
+                AssistDelayEvent *e = new AssistDelayEvent(getVictim()->GetObjectGuid(), *this, assistList);
+                m_Events.AddEvent(e, m_Events.CalculateTime(sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY)));
             }
         }
     }
