@@ -3077,7 +3077,7 @@ uint32 Unit::CalculateDamage (WeaponAttackType attType, bool normalized)
         std::swap(min_damage,max_damage);
     }
 
-    if (max_damage == 0.0f)
+    if (fabs(max_damage) < M_NULL_F)
         max_damage = 5.0f;
 
     return urand((uint32)min_damage, (uint32)max_damage);
@@ -4374,7 +4374,7 @@ float Unit::GetTotalAuraMultiplierByMiscValueForMask(AuraType auratype, uint32 m
 float Unit::CheckAuraStackingAndApply(Aura* aura, UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply, int32 miscMask, int32 miscValue)
 {
     // not apply values below 1% (rounding errors?)
-    if (!aura || fabs(amount) < 0.009f)
+    if (!aura || fabs(amount) < M_NULL_F)
         return 0.0f;
 
     SpellEntry const *spellProto = aura->GetSpellProto();
@@ -4433,7 +4433,7 @@ float Unit::CheckAuraStackingAndApply(Aura* aura, UnitMods unitMod, UnitModifier
             }
         }
         // not apply values below 1% (rounding errors?)
-        if (fabs(amount) < 0.009f)
+        if (fabs(amount) < M_NULL_F)
             amount = 0.0f;
 
         HandleStatModifier(unitMod, modifierType, amount, apply);
@@ -10259,7 +10259,7 @@ float Unit::GetModifierValue(UnitMods unitMod, UnitModifierType modifierType) co
     }
     else if (modifierType == TOTAL_PCT)
     {
-        if (m_auraModifiersGroup[unitMod][modifierType] > 0.009f)
+        if (m_auraModifiersGroup[unitMod][modifierType] > M_NULL_F)
             retvalue = m_auraModifiersGroup[unitMod][TOTAL_PCT] * ((m_auraModifiersGroup[unitMod][NONSTACKING_PCT] + m_auraModifiersGroup[unitMod][NONSTACKING_PCT_MINOR] + 100.0f) / 100.0f);
     }
     else if(modifierType == TOTAL_VALUE)
