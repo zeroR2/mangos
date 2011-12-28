@@ -23,7 +23,7 @@
 
 #include <sstream>
 
-ObjectGuid const ObjectGuid::Null = ObjectGuid();
+MANGOS_DLL_SPEC ObjectGuid const ObjectGuid::Null = ObjectGuid();
 
 char const* ObjectGuid::GetTypeName(HighGuid high)
 {
