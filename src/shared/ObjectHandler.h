@@ -31,6 +31,6 @@
 #endif
 
 class SpellAuraHolder;
-OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
 
 #endif
