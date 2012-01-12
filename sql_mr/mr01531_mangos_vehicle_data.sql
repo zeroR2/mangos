@@ -23,7 +23,6 @@ UPDATE creature_template SET vehicle_id = 44 WHERE entry = 27258;
 UPDATE creature_template SET vehicle_id = 50 WHERE entry = 27261;
 UPDATE creature_template SET vehicle_id = 46 WHERE entry = 27270;
 UPDATE creature_template SET vehicle_id = 50 WHERE entry = 27292;
-UPDATE creature_template SET vehicle_id = 49 WHERE entry = 27354;
 UPDATE creature_template SET vehicle_id = 55 WHERE entry = 27496;
 UPDATE creature_template SET vehicle_id = 56 WHERE entry = 27587;
 UPDATE creature_template SET vehicle_id = 57 WHERE entry = 27593;
@@ -504,10 +503,13 @@ UPDATE creature_template SET
     vehicle_id = 49
 WHERE entry IN (27354);
 
-DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27354);
-INSERT INTO npc_spellclick_spells VALUES
-(27354, 67373, 0, 0, 0, 1);
-INSERT IGNORE INTO spell_script_target VALUES (48610, 1, 27396);
+DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (27354);
+INSERT INTO `npc_spellclick_spells` VALUES
+(27354, 48533, 12244, 1, 12244, 1),
+(27354, 48533, 12270, 1, 12270, 1);
+
+DELETE FROM `spell_script_target` WHERE `entry` IN (48610);
+INSERT INTO `spell_script_target` VALUES (48610, 1, 27423), (48610, 1, 27371);
 
 /* Forsaken Blight Spreader */
 UPDATE creature_template SET
