@@ -3042,6 +3042,7 @@ enum AreaLockStatus
 #define DEFAULT_VISIBILITY_INSTANCE 120.0f      // default visible distance in instances, 120 yards
 #define DEFAULT_VISIBILITY_BGARENAS 180.0f      // default visible distance in BG/Arenas, 180 yards
 
+#define BG_TEAMS_COUNT  2
 
 // we need to stick to 1 version or half of the stuff will work for someone
 // others will not and opposite
