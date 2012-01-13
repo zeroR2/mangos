@@ -779,7 +779,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32      m_captureTime;
         float       m_captureTicks;
         CapturePointState m_captureState;
-        uint32      m_progressFaction;                      // faction which has the most players in range of a capture point
         uint32      m_ownerFaction;                         // faction which has conquered the capture point
         uint32      m_spellId;
         time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),
