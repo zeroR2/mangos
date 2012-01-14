@@ -85,10 +85,10 @@ insert into gossip_menu_option (menu_id, id, option_icon, option_text, option_id
 (7723,1,1,'I have marks to redeem!',3,128,0),
 (7723,0,0,'[PH] Zangarmarsh PvP Banner',1,1,@CREATURE+2);
 -- Alliance & horde - stores the gossip script
-delete from gossip_scripts where id in (@CREATURE+01,@CREATURE+02);
+delete from gossip_scripts where id in (@CREATURE*10+1,@CREATURE*10+2);
 insert into gossip_scripts(id, delay, command, datalong, datalong2, comments) values
-(@CREATURE+01,0,15,32430,0,'Cast Battle Standard - Alliance'),
-(@CREATURE+02,0,15,32431,0,'Cast Battle Standard - Horde');
+(@CREATURE*10+1,0,15,32430,0,'Cast Battle Standard - Alliance'),
+(@CREATURE*10+2,0,15,32431,0,'Cast Battle Standard - Horde');
 /* ################################# */
 
 
