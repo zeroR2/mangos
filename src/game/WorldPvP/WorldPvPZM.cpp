@@ -56,26 +56,26 @@ bool WorldPvPZM::InitWorldPvPArea()
 void WorldPvPZM::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
     FillInitialWorldState(data, count, m_uiAllianceScoutWorldState, 1);
-    FillInitialWorldState(data, count, m_uiHordeScoutWorldState,    1);
-    FillInitialWorldState(data, count, m_uiGraveyardWorldState,     1);
+    FillInitialWorldState(data, count, m_uiHordeScoutWorldState, 1);
+    FillInitialWorldState(data, count, m_uiGraveyardWorldState, 1);
 
     for (uint8 i = 0; i < MAX_ZM_TOWERS; ++i)
     {
         FillInitialWorldState(data, count, m_uiBeaconWorldState[i], 1);
-        FillInitialWorldState(data, count, m_uiBeaconMapState[i],   1);
+        FillInitialWorldState(data, count, m_uiBeaconMapState[i], 1);
     }
 }
 
 void WorldPvPZM::SendRemoveWorldStates(Player* pPlayer)
 {
-    pPlayer->SendUpdateWorldState(m_uiAllianceScoutWorldState,      0);
-    pPlayer->SendUpdateWorldState(m_uiHordeScoutWorldState,         0);
-    pPlayer->SendUpdateWorldState(m_uiGraveyardWorldState,          0);
+    pPlayer->SendUpdateWorldState(m_uiAllianceScoutWorldState, 0);
+    pPlayer->SendUpdateWorldState(m_uiHordeScoutWorldState, 0);
+    pPlayer->SendUpdateWorldState(m_uiGraveyardWorldState, 0);
 
     for (uint8 i = 0; i < MAX_ZM_TOWERS; ++i)
     {
-        pPlayer->SendUpdateWorldState(m_uiBeaconWorldState[i],  0);
-        pPlayer->SendUpdateWorldState(m_uiBeaconMapState[i],    0);
+        pPlayer->SendUpdateWorldState(m_uiBeaconWorldState[i], 0);
+        pPlayer->SendUpdateWorldState(m_uiBeaconMapState[i], 0);
     }
 }
 
@@ -472,9 +472,9 @@ bool WorldPvPZM::HandleObjectUse(Player* pPlayer, GameObject* pGo)
 void WorldPvPZM::DoSetGraveyard(uint32 uiFaction, bool bRemove)
 {
     if (bRemove)
-        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_TWIN_SPIRE, GRAVEYARD_ZONE_TWIN_SPIRE,  (Team)uiFaction,      false);
+        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_TWIN_SPIRE, GRAVEYARD_ZONE_TWIN_SPIRE, (Team)uiFaction, false);
     else
-        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_TWIN_SPIRE,    GRAVEYARD_ZONE_TWIN_SPIRE,  (Team)uiFaction, false);
+        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_TWIN_SPIRE, GRAVEYARD_ZONE_TWIN_SPIRE, (Team)uiFaction, false);
 }
 
 void WorldPvPZM::DoHandleBanners(ObjectGuid BannerGuid, bool bRespawn)

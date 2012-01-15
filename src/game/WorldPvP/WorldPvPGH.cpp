@@ -75,7 +75,7 @@ void WorldPvPGH::OnCreatureCreate(Creature* pCreature)
     }
 
     // Despawn creatures on create - will be spawned later in script
-    pCreature->SetRespawnDelay(7*DAY);
+    pCreature->SetRespawnDelay(7 * DAY);
     pCreature->ForcedDespawn();
 }
 

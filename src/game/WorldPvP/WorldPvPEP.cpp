@@ -47,26 +47,26 @@ bool WorldPvPEP::InitWorldPvPArea()
 
 void WorldPvPEP::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
-    FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_ALY,   m_uiTowersAlly);
+    FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_ALY, m_uiTowersAlly);
     FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_HORDE, m_uiTowersHorde);
 
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
-        FillInitialWorldState(data, count, m_uiTowerWorldState[i],    1);
+        FillInitialWorldState(data, count, m_uiTowerWorldState[i], 1);
 }
 
 void WorldPvPEP::SendRemoveWorldStates(Player* pPlayer)
 {
-    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_ALY,      0);
-    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HORDE,    0);
+    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_ALY, 0);
+    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HORDE, 0);
 
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
-        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i],         0);
+        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 }
 
 void WorldPvPEP::UpdateWorldState()
 {
     // update only tower count; tower states is updated in the process event
-    SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_ALY,   m_uiTowersAlly);
+    SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_ALY, m_uiTowersAlly);
     SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HORDE, m_uiTowersHorde);
 }
 
@@ -80,7 +80,7 @@ void WorldPvPEP::HandlePlayerEnterZone(Player* pPlayer)
     }
 
     // cast buff the the player which enters the zone
-    switch(pPlayer->GetTeam())
+    switch (pPlayer->GetTeam())
     {
         case ALLIANCE:
             for (uint8 i = 0; i < MAX_EP_TOWERS; i++)
@@ -169,7 +169,7 @@ void WorldPvPEP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEvent
 {
     uint32 uiCredit = 0;
 
-    switch(uiEventId)
+    switch (uiEventId)
     {
         case EVENT_CROWNGUARD_PROGRESS_ALLIANCE:
         case EVENT_CROWNGUARD_PROGRESS_HORDE:
@@ -192,7 +192,7 @@ void WorldPvPEP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEvent
     if (!uiCredit)
         return;
 
-    for(PlayerSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+    for (PlayerSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
     {
         if (!(*itr))
             continue;

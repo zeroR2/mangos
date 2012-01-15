@@ -192,10 +192,6 @@ class WorldPvPTF : public WorldPvP
         uint32 m_uiZoneLockTimer;
         uint32 m_uiZoneUpdateTimer;
 
-        uint32 uiHoursLeft;
-        uint32 uiSecondDigit;
-        uint32 uiFirstDigit;
-
         uint8 m_uiTowersAlly;
         uint8 m_uiTowersHorde;
 

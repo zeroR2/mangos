@@ -50,31 +50,31 @@ bool WorldPvPTF::InitWorldPvPArea()
 
 void WorldPvPTF::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
-    FillInitialWorldState(data, count, m_uiControllerWorldState,    1);
+    FillInitialWorldState(data, count, m_uiControllerWorldState, 1);
     if (m_uiControllerWorldState == WORLD_STATE_TF_TOWERS_CONTROLLED)
     {
-        FillInitialWorldState(data, count, WORLD_STATE_TF_TOWER_COUNT_H,    m_uiTowersHorde);
-        FillInitialWorldState(data, count, WORLD_STATE_TF_TOWER_COUNT_A,    m_uiTowersAlly);
+        FillInitialWorldState(data, count, WORLD_STATE_TF_TOWER_COUNT_H, m_uiTowersHorde);
+        FillInitialWorldState(data, count, WORLD_STATE_TF_TOWER_COUNT_A, m_uiTowersAlly);
     }
     else
         UpdateTimerWorldState();
 
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
-        FillInitialWorldState(data, count, m_uiTowerWorldState[i],  1);
+        FillInitialWorldState(data, count, m_uiTowerWorldState[i], 1);
 }
 
 void WorldPvPTF::SendRemoveWorldStates(Player* pPlayer)
 {
-    pPlayer->SendUpdateWorldState(m_uiControllerWorldState,     0);
+    pPlayer->SendUpdateWorldState(m_uiControllerWorldState, 0);
 
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
-        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i],   0);
+        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 }
 
 void WorldPvPTF::UpdateWorldState(uint8 uiValue)
 {
     // update only tower count; tower states is updated in the process event
-    SendUpdateWorldState(m_uiControllerWorldState,   uiValue);
+    SendUpdateWorldState(m_uiControllerWorldState, uiValue);
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
         SendUpdateWorldState(m_uiTowerWorldState[i], uiValue);
 }
@@ -87,9 +87,7 @@ void WorldPvPTF::HandlePlayerEnterZone(Player* pPlayer)
     pPlayer->RemoveAurasDueToSpell(SPELL_AUCHINDOUN_BLESSING);
 
     // Handle the buffs
-    if (m_uiZoneController == NEUTRAL)
-        return;
-    else if (pPlayer->GetTeam() == m_uiZoneController)
+    if (m_uiZoneController == pPlayer->GetTeam() && m_uiZoneController != NEUTRAL)
         pPlayer->CastSpell(pPlayer, SPELL_AUCHINDOUN_BLESSING, true);
 }
 
@@ -107,25 +105,24 @@ void WorldPvPTF::OnGameObjectCreate(GameObject* pGo)
     {
         case GO_TEROKKAR_BANNER_1:
             m_TowerBannerGUID[0] = pGo->GetObjectGuid();
-            pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
             break;
         case GO_TEROKKAR_BANNER_2:
             m_TowerBannerGUID[1] = pGo->GetObjectGuid();
-            pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
             break;
         case GO_TEROKKAR_BANNER_3:
             m_TowerBannerGUID[2] = pGo->GetObjectGuid();
-            pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
             break;
         case GO_TEROKKAR_BANNER_4:
             m_TowerBannerGUID[3] = pGo->GetObjectGuid();
-            pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
             break;
         case GO_TEROKKAR_BANNER_5:
             m_TowerBannerGUID[4] = pGo->GetObjectGuid();
-            pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
             break;
+        default:
+            return;
     }
+
+    pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
 }
 
 void WorldPvPTF::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEventId)
@@ -214,11 +211,10 @@ void WorldPvPTF::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
         SendUpdateWorldState(m_uiControllerWorldState, 0);
         m_uiControllerWorldState = WORLD_STATE_TF_LOCKED_ALLIANCE;
         SendUpdateWorldState(m_uiControllerWorldState, 1);
+
         m_uiZoneLockTimer = TIMER_TF_LOCK_TIME;
-        uiHoursLeft = 6;
-        uiSecondDigit = 0;
-        uiFirstDigit = 0;
         UpdateTimerWorldState();
+
         m_uiZoneController = ALLIANCE;
         DoProcessTeamBuff(ALLIANCE, SPELL_AUCHINDOUN_BLESSING);
 
@@ -231,11 +227,10 @@ void WorldPvPTF::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
         SendUpdateWorldState(m_uiControllerWorldState, 0);
         m_uiControllerWorldState = WORLD_STATE_TF_LOCKED_HORDE;
         SendUpdateWorldState(m_uiControllerWorldState, 1);
+
         m_uiZoneLockTimer = TIMER_TF_LOCK_TIME;
-        uiHoursLeft = 6;
-        uiSecondDigit = 0;
-        uiFirstDigit = 0;
         UpdateTimerWorldState();
+
         m_uiZoneController = HORDE;
         DoProcessTeamBuff(HORDE, SPELL_AUCHINDOUN_BLESSING);
 
@@ -267,6 +262,7 @@ void WorldPvPTF::Update(uint32 diff)
             m_uiTowerWorldState[3] = WORLD_STATE_TOWER_4_NEUTRAL;
             m_uiTowerWorldState[4] = WORLD_STATE_TOWER_5_NEUTRAL;
             UpdateWorldState(1);
+
             // update towers count
             SendUpdateWorldState(WORLD_STATE_TF_TOWER_COUNT_A, m_uiTowersAlly);
             SendUpdateWorldState(WORLD_STATE_TF_TOWER_COUNT_H, m_uiTowersHorde);
@@ -287,16 +283,10 @@ void WorldPvPTF::Update(uint32 diff)
         {
             if (m_uiZoneUpdateTimer < diff)
             {
-                // Calculate time
-                uint32 uiMinutesLeft = m_uiZoneLockTimer / 60000;
-                uiHoursLeft = uiMinutesLeft / 60;
-                uiMinutesLeft -= uiHoursLeft * 60;
-                uiSecondDigit = uiMinutesLeft % 10;
-                uiFirstDigit = uiMinutesLeft / 10;
-                m_uiZoneUpdateTimer = TIMER_TF_UPDATE_TIME;
-
                 // update timer
                 UpdateTimerWorldState();
+
+                m_uiZoneUpdateTimer = TIMER_TF_UPDATE_TIME;
             }
             else
                 m_uiZoneUpdateTimer -= diff;
@@ -308,9 +298,15 @@ void WorldPvPTF::Update(uint32 diff)
 
 void WorldPvPTF::UpdateTimerWorldState()
 {
-    SendUpdateWorldState(WORLD_STATE_TF_TIME_MIN_FIRST_DIGIT,   uiFirstDigit);
-    SendUpdateWorldState(WORLD_STATE_TF_TIME_MIN_SECOND_DIGIT,  uiSecondDigit);
-    SendUpdateWorldState(WORLD_STATE_TF_TIME_HOURS,             uiHoursLeft);
+    // Calculate time
+    uint32 minutesLeft = m_uiZoneLockTimer / 60000;
+    uint32 hoursLeft = minutesLeft / 60;
+    minutesLeft -= hoursLeft * 60;
+    uint32 firstDigit = minutesLeft / 10;
+
+    SendUpdateWorldState(WORLD_STATE_TF_TIME_MIN_FIRST_DIGIT, firstDigit);
+    SendUpdateWorldState(WORLD_STATE_TF_TIME_MIN_SECOND_DIGIT, minutesLeft - firstDigit * 10);
+    SendUpdateWorldState(WORLD_STATE_TF_TIME_HOURS, hoursLeft);
 }
 
 void WorldPvPTF::SetBannerArtKit(ObjectGuid BannerGuid, uint32 uiArtkit)

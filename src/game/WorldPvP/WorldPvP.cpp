@@ -36,7 +36,7 @@ void WorldPvP::HandlePlayerEnterZone(Player* pPlayer)
 void WorldPvP::HandlePlayerLeaveZone(Player* pPlayer)
 {
     // remove the world state information from the player
-    if(!pPlayer->GetSession()->PlayerLogout())
+    if (!pPlayer->GetSession()->PlayerLogout())
         SendRemoveWorldStates(pPlayer);
 
     m_sZonePlayers.erase(pPlayer);

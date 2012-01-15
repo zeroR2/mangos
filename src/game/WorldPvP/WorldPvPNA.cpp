@@ -41,25 +41,25 @@ void WorldPvPNA::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
     if (m_uiZoneController != NEUTRAL)
     {
-        FillInitialWorldState(data, count, m_uiControllerWorldState,    1);
-        FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_LEFT,  m_uiGuardsLeft);
-        FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_MAX,   MAX_NA_GUARDS);
+        FillInitialWorldState(data, count, m_uiControllerWorldState, 1);
+        FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_LEFT, m_uiGuardsLeft);
+        FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_MAX, MAX_NA_GUARDS);
 
         // map states
         for (uint8 i = 0; i < MAX_NA_ROOSTS; ++i)
-            FillInitialWorldState(data, count, m_uiRoostWorldState[i],   1);
+            FillInitialWorldState(data, count, m_uiRoostWorldState[i], 1);
     }
 
-    FillInitialWorldState(data, count, m_uiControllerMapState,      1);
+    FillInitialWorldState(data, count, m_uiControllerMapState, 1);
 }
 
 void WorldPvPNA::SendRemoveWorldStates(Player* pPlayer)
 {
-    pPlayer->SendUpdateWorldState(m_uiControllerWorldState,     0);
-    pPlayer->SendUpdateWorldState(m_uiControllerMapState,       0);
+    pPlayer->SendUpdateWorldState(m_uiControllerWorldState, 0);
+    pPlayer->SendUpdateWorldState(m_uiControllerMapState, 0);
 
     for (uint8 i = 0; i < MAX_NA_ROOSTS; ++i)
-        pPlayer->SendUpdateWorldState(m_uiRoostWorldState[i],    0);
+        pPlayer->SendUpdateWorldState(m_uiRoostWorldState[i], 0);
 }
 
 void WorldPvPNA::HandlePlayerEnterZone(Player* pPlayer)
@@ -70,9 +70,7 @@ void WorldPvPNA::HandlePlayerEnterZone(Player* pPlayer)
     pPlayer->RemoveAurasDueToSpell(SPELL_STRENGTH_HALAANI);
 
     // Handle the buffs
-    if (m_uiZoneController == NEUTRAL)
-        return;
-    else if (pPlayer->GetTeam() == m_uiZoneController)
+    if (pPlayer->GetTeam() == m_uiZoneController && m_uiZoneController != NEUTRAL)
         pPlayer->CastSpell(pPlayer, SPELL_STRENGTH_HALAANI, true);
 }
 
@@ -148,7 +146,7 @@ void WorldPvPNA::OnCreatureCreate(Creature* pCreature)
     }
 
     // Despawn creatures on create - will be spawned later in script
-    pCreature->SetRespawnDelay(7*DAY);
+    pCreature->SetRespawnDelay(7 * DAY);
     pCreature->ForcedDespawn();
 }
 
@@ -280,14 +278,14 @@ void WorldPvPNA::OnGameObjectCreate(GameObject* pGo)
 
 void WorldPvPNA::UpdateWorldState(uint8 uiValue)
 {
-    SendUpdateWorldState(m_uiControllerWorldState,  uiValue);
-    SendUpdateWorldState(m_uiControllerMapState,    uiValue);
+    SendUpdateWorldState(m_uiControllerWorldState, uiValue);
+    SendUpdateWorldState(m_uiControllerMapState, uiValue);
 
     // Update guards only for positive states
     if (uiValue)
     {
-        SendUpdateWorldState(WORLD_STATE_NA_GUARDS_MAX,   MAX_NA_GUARDS);
-        SendUpdateWorldState(WORLD_STATE_NA_GUARDS_LEFT,  m_uiGuardsLeft);
+        SendUpdateWorldState(WORLD_STATE_NA_GUARDS_MAX, MAX_NA_GUARDS);
+        SendUpdateWorldState(WORLD_STATE_NA_GUARDS_LEFT, m_uiGuardsLeft);
     }
 
     UpdateWyvernsWorldState(uiValue);
@@ -296,7 +294,7 @@ void WorldPvPNA::UpdateWorldState(uint8 uiValue)
 void WorldPvPNA::UpdateWyvernsWorldState(uint8 uiValue)
 {
     for (uint8 i = 0; i < MAX_NA_ROOSTS; ++i)
-        SendUpdateWorldState(m_uiRoostWorldState[i],   uiValue);
+        SendUpdateWorldState(m_uiRoostWorldState[i], uiValue);
 }
 
 // process the capture events
@@ -345,9 +343,9 @@ void WorldPvPNA::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam)
 void WorldPvPNA::DoSetGraveyard(uint32 uiFaction, bool bRemove)
 {
     if (bRemove)
-        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA,  (Team)uiFaction,      false);
+        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, (Team)uiFaction, false);
     else
-        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_HALAA,    GRAVEYARD_ZONE_ID_HALAA,  (Team)uiFaction, false);
+        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, (Team)uiFaction, false);
 }
 
 void WorldPvPNA::DoHandleFactionObjects(uint32 uiFaction)
@@ -397,7 +395,7 @@ void WorldPvPNA::DoRespawnSoldiers(uint32 uiFaction)
             if (Creature* pSoldier = pPlayer->GetMap()->GetCreature(*itr))
             {
                 // reset respawn time
-                pSoldier->SetRespawnDelay(7*DAY);
+                pSoldier->SetRespawnDelay(7 * DAY);
                 pSoldier->ForcedDespawn();
             }
         }
@@ -421,7 +419,7 @@ void WorldPvPNA::DoRespawnSoldiers(uint32 uiFaction)
             if (Creature* pSoldier = pPlayer->GetMap()->GetCreature(*itr))
             {
                 // reset respawn time
-                pSoldier->SetRespawnDelay(7*DAY);
+                pSoldier->SetRespawnDelay(7 * DAY);
                 pSoldier->ForcedDespawn();
             }
         }
@@ -551,7 +549,7 @@ bool WorldPvPNA::AddBombsToInventory(Player* pPlayer)
 
     Item* item = pPlayer->StoreNewItem(m_Destination, ITEM_ID_FIRE_BOMB, true);
 
-    if(uiBombCount > 0 && item)
+    if (uiBombCount > 0 && item)
         pPlayer->SendNewItem(item, uiBombCount, true, false);
 
     return true;
@@ -582,7 +580,7 @@ void WorldPvPNA::DoRespawnObjects(ObjectGuid GameObjectGuid, bool bRespawn)
     {
         if (bRespawn)
         {
-            pBanner->SetRespawnTime(7*DAY);
+            pBanner->SetRespawnTime(7 * DAY);
             pBanner->Refresh();
         }
         else if (pBanner->isSpawned())

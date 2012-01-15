@@ -38,24 +38,24 @@ bool WorldPvPSI::InitWorldPvPArea()
 // Send initial world states
 void WorldPvPSI::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
-    FillInitialWorldState(data, count, WORLD_STATE_SI_GATHERED_A,     m_uiResourcesAly);
-    FillInitialWorldState(data, count, WORLD_STATE_SI_GATHERED_H,     m_uiResourcesHorde);
-    FillInitialWorldState(data, count, WORLD_STATE_SI_SILITHYST_MAX,  MAX_SILITHYST);
+    FillInitialWorldState(data, count, WORLD_STATE_SI_GATHERED_A, m_uiResourcesAly);
+    FillInitialWorldState(data, count, WORLD_STATE_SI_GATHERED_H, m_uiResourcesHorde);
+    FillInitialWorldState(data, count, WORLD_STATE_SI_SILITHYST_MAX, MAX_SILITHYST);
 }
 
 // Remove world states
 void WorldPvPSI::SendRemoveWorldStates(Player* pPlayer)
 {
-    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_GATHERED_A,    0);
-    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_GATHERED_H,    0);
+    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_GATHERED_A, 0);
+    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_GATHERED_H, 0);
     pPlayer->SendUpdateWorldState(WORLD_STATE_SI_SILITHYST_MAX, 0);
 }
 
 // Update current world states
 void WorldPvPSI::UpdateWorldState()
 {
-    SendUpdateWorldState(WORLD_STATE_SI_GATHERED_A,     m_uiResourcesAly);
-    SendUpdateWorldState(WORLD_STATE_SI_GATHERED_H,     m_uiResourcesHorde);
+    SendUpdateWorldState(WORLD_STATE_SI_GATHERED_A, m_uiResourcesAly);
+    SendUpdateWorldState(WORLD_STATE_SI_GATHERED_H, m_uiResourcesHorde);
 }
 
 // Handle buffs when player enters the zone
@@ -65,7 +65,7 @@ void WorldPvPSI::HandlePlayerEnterZone(Player* pPlayer)
     if (pPlayer->HasAura(SPELL_CENARION_FAVOR))
         pPlayer->RemoveAurasDueToSpell(SPELL_CENARION_FAVOR);
 
-    if(pPlayer->GetTeam() == m_uiLastControllerTeam)
+    if (pPlayer->GetTeam() == m_uiLastControllerTeam)
         pPlayer->CastSpell(pPlayer, SPELL_CENARION_FAVOR, true);
 
     WorldPvP::HandlePlayerEnterZone(pPlayer);
@@ -89,13 +89,13 @@ bool WorldPvPSI::HandleAreaTrigger(Player* pPlayer, uint32 uiTriggerId)
 
     if (uiTriggerId == AREATRIGGER_SILITHUS_ALY)
     {
-        if(pPlayer->GetTeam() == ALLIANCE && pPlayer->HasAura(SPELL_SILITHYST))
+        if (pPlayer->GetTeam() == ALLIANCE && pPlayer->HasAura(SPELL_SILITHYST))
         {
             // remove aura
             pPlayer->RemoveAurasDueToSpell(SPELL_SILITHYST);
 
             ++m_uiResourcesAly;
-            if(m_uiResourcesAly == MAX_SILITHYST)
+            if (m_uiResourcesAly == MAX_SILITHYST)
             {
                 // apply buff to controler faction
                 DoProcessTeamBuff(ALLIANCE, SPELL_CENARION_FAVOR);
@@ -125,13 +125,13 @@ bool WorldPvPSI::HandleAreaTrigger(Player* pPlayer, uint32 uiTriggerId)
     }
     else if (uiTriggerId == AREATRIGGER_SILITHUS_HORDE)
     {
-        if(pPlayer->GetTeam() == HORDE && pPlayer->HasAura(SPELL_SILITHYST))
+        if (pPlayer->GetTeam() == HORDE && pPlayer->HasAura(SPELL_SILITHYST))
         {
             // remove aura
             pPlayer->RemoveAurasDueToSpell(SPELL_SILITHYST);
 
             ++ m_uiResourcesHorde;
-            if(m_uiResourcesHorde == MAX_SILITHYST)
+            if (m_uiResourcesHorde == MAX_SILITHYST)
             {
                 // apply buff to controler faction
                 DoProcessTeamBuff(HORDE, SPELL_CENARION_FAVOR);
@@ -170,7 +170,7 @@ bool WorldPvPSI::HandleDropFlag(Player* pPlayer, uint32 uiSpellId)
 
     // don't drop flag at area trigger
     // we are checking distance from the AT hardcoded coords because it's much faster than checking the area trigger store
-    switch(pPlayer->GetTeam())
+    switch (pPlayer->GetTeam())
     {
         case ALLIANCE:
             if (pPlayer->IsWithinDist3d(aSilithusLocs[0].m_fX, aSilithusLocs[0].m_fY, aSilithusLocs[0].m_fZ, 5.0f))

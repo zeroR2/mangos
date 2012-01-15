@@ -49,28 +49,28 @@ bool WorldPvPHP::InitWorldPvPArea()
 
 void WorldPvPHP::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
-    FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_HP_ALY,   m_uiTowersAlly);
+    FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_HP_ALY, m_uiTowersAlly);
     FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_HP_HORDE, m_uiTowersHorde);
     FillInitialWorldState(data, count, WORLD_STATE_TOWER_DISPLAY_HP_A, 1);
     FillInitialWorldState(data, count, WORLD_STATE_TOWER_DISPLAY_HP_H, 1);
 
-    for (uint8  i = 0; i < MAX_HP_TOWERS; ++i)
-        FillInitialWorldState(data, count, m_uiTowerWorldState[i],    1);
+    for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
+        FillInitialWorldState(data, count, m_uiTowerWorldState[i], 1);
 }
 
 void WorldPvPHP::SendRemoveWorldStates(Player* pPlayer)
 {
-    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_DISPLAY_HP_A,    0);
-    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_DISPLAY_HP_H,    0);
+    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_DISPLAY_HP_A, 0);
+    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_DISPLAY_HP_H, 0);
 
-    for (uint8  i = 0; i < MAX_HP_TOWERS; ++i)
-        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i],         0);
+    for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
+        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 }
 
 void WorldPvPHP::UpdateWorldState()
 {
     // update only tower count; tower states is updated in the process event
-    SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HP_ALY,   m_uiTowersAlly);
+    SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HP_ALY, m_uiTowersAlly);
     SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HP_HORDE, m_uiTowersHorde);
 }
 
@@ -139,7 +139,7 @@ void WorldPvPHP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEvent
 {
     uint32 uiCredit = 0;
 
-    switch(uiEventId)
+    switch (uiEventId)
     {
         case EVENT_OVERLOOK_PROGRESS_ALLIANCE:
         case EVENT_OVERLOOK_PROGRESS_HORDE:
