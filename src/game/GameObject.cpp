@@ -263,25 +263,29 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             }
 
             // add players who entered capture point zone
-            for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
+            std::list<Player*>::iterator itr, next;
+            for (itr = pointPlayers.begin(); itr != pointPlayers.end(); itr = next)
             {
-                if (!(*itr)->IsWorldPvPActive()) // TODO: Should stealthed/invisible/flying players also get quest objective complete if team member wins tower?
-                    continue;
+                next = itr;
+                ++next;
 
-                BattleGroundTeamIndex team;
-                if (((Player*)(*itr))->GetTeam() == ALLIANCE)
-                    team = BG_TEAM_ALLIANCE;
-                else if (((Player*)(*itr))->GetTeam() == HORDE)
-                    team = BG_TEAM_HORDE;
-                else
-                    continue;
-
-                if (m_capturePlayers[team].insert((*itr)).second)
+                // TODO: Should stealthed/invisible/flying players also get quest objective complete if team member wins tower?
+                if ((*itr)->IsWorldPvPActive())
                 {
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, info->capturePoint.neutralPercent);
+                    BattleGroundTeamIndex team = ((Player*)(*itr))->GetTeam() == ALLIANCE ? BG_TEAM_ALLIANCE : BG_TEAM_HORDE;
+                    if (((Player*)(*itr))->GetTeam() != TEAM_NONE)
+                    {
+                        if (!m_capturePlayers[team].insert((*itr)).second)
+                            continue;
+
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, info->capturePoint.neutralPercent);
+                    }
                 }
+
+                // only leave old players in list
+                pointPlayers.erase(itr);
             }
 
             int rangePlayers = m_capturePlayers[BG_TEAM_ALLIANCE].size() - m_capturePlayers[BG_TEAM_HORDE].size();
@@ -325,17 +329,15 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             if ((uint32)m_captureTicks == oldTicks)
                 return;
 
-            // TODO: Don't send this to new players as they already got those packets
-            for (uint8 team = 0; team < BG_TEAMS_COUNT; ++team)
-                for (PlayerSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
-                {
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
-                }
+            for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
+            {
+                (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
+                (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
+            }
 
             // call capture point events
-            Use((*(pointPlayers.begin()))); // TODO: We actually now dont need player pointer in the Use() function of capture points
+            Use(rangePlayers > 0 ? (*(m_capturePlayers[BG_TEAM_ALLIANCE].begin())) : (*(m_capturePlayers[BG_TEAM_HORDE].begin()))); // TODO: We actually now dont need player pointer in the Use() function of capture points
         }
         else
             m_captureTime -= diff;
