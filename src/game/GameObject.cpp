@@ -1815,7 +1815,7 @@ void GameObject::Use(Unit* user)
             }
 
             // alliance takes the tower from neutral or contested to alliance
-            else if ((m_ownerFaction = TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == ALLIANCE && m_captureTicks > CAPTURE_SLIDER_NEUTRAL + neutralHalf)
+            else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == ALLIANCE && m_captureTicks > CAPTURE_SLIDER_NEUTRAL + neutralHalf)
             {
                 if (info->capturePoint.progressEventID1)
                     eventId = info->capturePoint.progressEventID1;
@@ -1829,7 +1829,7 @@ void GameObject::Use(Unit* user)
                 m_ownerFaction = ALLIANCE;
             }
             // horde takes the tower from neutral or contested to horde
-            else if ((m_ownerFaction = TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == HORDE && m_captureTicks < CAPTURE_SLIDER_NEUTRAL - neutralHalf)
+            else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == HORDE && m_captureTicks < CAPTURE_SLIDER_NEUTRAL - neutralHalf)
             {
                 if (info->capturePoint.progressEventID2)
                     eventId = info->capturePoint.progressEventID2;
