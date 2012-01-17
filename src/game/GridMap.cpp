@@ -1253,24 +1253,8 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
             {
                 for(std::list<GameObject*>::iterator iter = tempTargetGOList.begin(); iter != tempTargetGOList.end(); ++iter)
                 {
-                    bool bError = false;
-                    switch ((*iter)->GetGoType())
-                    {
-                        case GAMEOBJECT_TYPE_DOOR:
-                            if ((*iter)->GetGoState() == GO_STATE_READY)
-                                bError = true;
-                            break;
-                        case GAMEOBJECT_TYPE_TRANSPORT:
-                            if ( (*iter)->isSpawned() && (*iter)->GetGoState() == GO_STATE_ACTIVE)
-                                bError = true;
-                            break;
-                        default:
-                            if ((*iter)->isSpawned())
-                                bError = true;
-                            break;
-                    }
-
-                    if (bError)
+                    if (((*iter)->GetGoType() == GAMEOBJECT_TYPE_DOOR && (*iter)->GetGoState() == GO_STATE_READY)
+                        || (*iter)->GetGoType() != GAMEOBJECT_TYPE_DOOR)
                     {
                         ++errorsCount;
                         goodCount = 0;
