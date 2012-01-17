@@ -90,7 +90,7 @@ void BattleGroundWS::Update(uint32 diff)
         {
             if (m_FocusedAssault < BG_WS_FIVE_MINUTES)
             {
-                for (uint8 i = 0; i < BG_TEAMS_COUNT; i++)
+                for (uint8 i = 0; i < PVP_TEAM_COUNT; i++)
                 {
                     Player* carrier = sObjectMgr.GetPlayer(m_FlagKeepers[i]);
                     if (!carrier)
@@ -288,7 +288,7 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player *Source)
     }
     else
     {
-        m_FlagsTimer[GetOtherTeamIndex(GetTeamIndexByTeamId(Source->GetTeam()))] = BG_WS_FLAG_RESPAWN_TIME;
+        m_FlagsTimer[GetOtherTeamIndex(GetTeamIndex(Source->GetTeam()))] = BG_WS_FLAG_RESPAWN_TIME;
     }
 }
 
@@ -366,7 +366,7 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player *Source)
             UpdateWorldState(BG_WS_FLAG_UNK_ALLIANCE, uint32(-1));
         }
 
-        m_FlagsDropTimer[GetOtherTeamIndex(GetTeamIndexByTeamId(Source->GetTeam()))] = BG_WS_FLAG_DROP_TIME;
+        m_FlagsDropTimer[GetOtherTeamIndex(GetTeamIndex(Source->GetTeam()))] = BG_WS_FLAG_DROP_TIME;
     }
 }
 

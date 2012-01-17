@@ -433,7 +433,7 @@ class BattleGround
         void SetTeamStartLoc(Team team, float X, float Y, float Z, float O);
         void GetTeamStartLoc(Team team, float &X, float &Y, float &Z, float &O) const
         {
-            TeamIndex idx = GetTeamIndexByTeamId(team);
+            TeamIndex idx = GetTeamIndex(team);
             X = m_TeamStartLocX[idx];
             Y = m_TeamStartLocY[idx];
             Z = m_TeamStartLocZ[idx];
@@ -477,27 +477,26 @@ class BattleGround
         void SendYell2ToAll(int32 entry, uint32 language, ObjectGuid guid, int32 arg1, int32 arg2);
 
         /* Raid Group */
-        Group *GetBgRaid(Team team) const { return m_BgRaids[GetTeamIndexByTeamId(team)]; }
+        Group *GetBgRaid(Team team) const { return m_BgRaids[GetTeamIndex(team)]; }
         void SetBgRaid(Team team, Group *bg_raid);
 
         virtual void UpdatePlayerScore(Player *Source, uint32 type, uint32 value);
 
-        static TeamIndex GetTeamIndexByTeamId(Team team) { return team == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE; }
-        uint32 GetPlayersCountByTeam(Team team) const { return m_PlayersCount[GetTeamIndexByTeamId(team)]; }
+        uint32 GetPlayersCountByTeam(Team team) const { return m_PlayersCount[GetTeamIndex(team)]; }
         uint32 GetAlivePlayersCountByTeam(Team team) const; // used in arenas to correctly handle death in spirit of redemption / last stand etc. (killer = killed) cases
         void UpdatePlayersCountByTeam(Team team, bool remove)
         {
             if (remove)
-                --m_PlayersCount[GetTeamIndexByTeamId(team)];
+                --m_PlayersCount[GetTeamIndex(team)];
             else
-                ++m_PlayersCount[GetTeamIndexByTeamId(team)];
+                ++m_PlayersCount[GetTeamIndex(team)];
         }
 
         // used for rated arena battles
-        void SetArenaTeamIdForTeam(Team team, uint32 ArenaTeamId) { m_ArenaTeamIds[GetTeamIndexByTeamId(team)] = ArenaTeamId; }
-        uint32 GetArenaTeamIdForTeam(Team team) const             { return m_ArenaTeamIds[GetTeamIndexByTeamId(team)]; }
-        void SetArenaTeamRatingChangeForTeam(Team team, int32 RatingChange) { m_ArenaTeamRatingChanges[GetTeamIndexByTeamId(team)] = RatingChange; }
-        int32 GetArenaTeamRatingChangeForTeam(Team team) const    { return m_ArenaTeamRatingChanges[GetTeamIndexByTeamId(team)]; }
+        void SetArenaTeamIdForTeam(Team team, uint32 ArenaTeamId) { m_ArenaTeamIds[GetTeamIndex(team)] = ArenaTeamId; }
+        uint32 GetArenaTeamIdForTeam(Team team) const             { return m_ArenaTeamIds[GetTeamIndex(team)]; }
+        void SetArenaTeamRatingChangeForTeam(Team team, int32 RatingChange) { m_ArenaTeamRatingChanges[GetTeamIndex(team)] = RatingChange; }
+        int32 GetArenaTeamRatingChangeForTeam(Team team) const    { return m_ArenaTeamRatingChanges[GetTeamIndex(team)]; }
         void CheckArenaWinConditions();
 
         /* Triggers handle */

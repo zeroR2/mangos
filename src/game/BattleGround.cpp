@@ -465,7 +465,7 @@ void BattleGround::Update(uint32 diff)
         {
             if (Player* plr = sObjectMgr.GetPlayer(itr->first))
             {
-                TeamIndex teamIndex = GetTeamIndexByTeamId(plr->GetTeam());
+                TeamIndex teamIndex = GetTeamIndex(plr->GetTeam());
                 if (!plr->isGameMaster() && plr->GetPositionZ() < deadly_Z)
                     plr->TeleportTo(GetMapId(), m_TeamStartLocX[teamIndex], m_TeamStartLocY[teamIndex], m_TeamStartLocZ[teamIndex], m_TeamStartLocO[teamIndex]);
             }
@@ -605,7 +605,7 @@ void BattleGround::Update(uint32 diff)
 
 void BattleGround::SetTeamStartLoc(Team team, float X, float Y, float Z, float O)
 {
-    TeamIndex teamIdx = GetTeamIndexByTeamId(team);
+    TeamIndex teamIdx = GetTeamIndex(team);
     m_TeamStartLocX[teamIdx] = X;
     m_TeamStartLocY[teamIdx] = Y;
     m_TeamStartLocZ[teamIdx] = Z;
@@ -2064,7 +2064,7 @@ void BattleGround::CheckArenaWinConditions()
 
 void BattleGround::SetBgRaid(Team team, Group *bg_raid)
 {
-    Group* &old_raid = m_BgRaids[GetTeamIndexByTeamId(team)];
+    Group* &old_raid = m_BgRaids[GetTeamIndex(team)];
 
     if (old_raid)
         old_raid->SetBattlegroundGroup(NULL);
@@ -2082,7 +2082,7 @@ WorldSafeLocsEntry const* BattleGround::GetClosestGraveYard( Player* player )
 
 bool BattleGround::IsTeamScoreInRange(Team team, uint32 minScore, uint32 maxScore) const
 {
-    TeamIndex team_idx = GetTeamIndexByTeamId(team);
+    TeamIndex team_idx = GetTeamIndex(team);
     uint32 score = (m_TeamScores[team_idx] < 0) ? 0 : uint32(m_TeamScores[team_idx]);
     return score >= minScore && score <= maxScore;
 }

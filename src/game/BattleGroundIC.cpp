@@ -68,7 +68,7 @@ void BattleGroundIC::Reset()
     aOpen = false;              // gate to the alli boss
     hOpen = false;              // gate to the horde boss
 
-    for (uint8 i = 0; i < BG_TEAMS_COUNT; ++i)
+    for (uint8 i = 0; i < PVP_TEAM_COUNT; ++i)
         m_TeamScores[i] = BG_IC_SCORE_INITIAL_POINTS;
 
     for (uint8 i = 0; i < BG_IC_NODES_MAX; ++i)
@@ -454,7 +454,7 @@ void BattleGroundIC::HandleKillPlayer(Player* player, Player* killer)
         return;
 
     BattleGround::HandleKillPlayer(player, killer);
-    UpdateScore(GetTeamIndexByTeamId(player->GetTeam()), -1);
+    UpdateScore(GetTeamIndex(player->GetTeam()), -1);
 }
 
 void BattleGroundIC::EndBattleGround(Team winner)
@@ -502,7 +502,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
 
     BG_IC_Nodes node = BG_IC_Nodes(event);
 
-    TeamIndex teamIndex = GetTeamIndexByTeamId(source->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(source->GetTeam());
 
     // Check if player really could use this banner, not cheated
     if (!(m_Nodes[node] == 0 || teamIndex == m_Nodes[node] % 2))
@@ -598,7 +598,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
 
 void BattleGroundIC::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy)
 {
-    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
     // Seaforium Charge Explosion (A-bomb-inable)
     if (doneBy == 66676)
@@ -743,7 +743,7 @@ void BattleGroundIC::EventPlayerDamageGO(Player *player, GameObject* target_obj,
 
 WorldSafeLocsEntry const* BattleGroundIC::GetClosestGraveYard(Player* player)
 {
-    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
     // Is there any occupied node for this team?
     std::vector<uint8> nodes;

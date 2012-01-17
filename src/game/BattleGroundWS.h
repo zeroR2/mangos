@@ -132,7 +132,7 @@ class BattleGroundWS : public BattleGround
         bool IsHordeFlagPickedup() const            { return !m_FlagKeepers[TEAM_INDEX_HORDE].IsEmpty(); }
         void RespawnFlag(Team team, bool captured);
         void RespawnFlagAfterDrop(Team team);
-        uint8 GetFlagState(Team team)             { return m_FlagState[GetTeamIndexByTeamId(team)]; }
+        uint8 GetFlagState(Team team)             { return m_FlagState[GetTeamIndex(team)]; }
 
         /* Battleground Events */
         virtual void EventPlayerDroppedFlag(Player *Source);
@@ -151,16 +151,16 @@ class BattleGroundWS : public BattleGround
         void UpdateFlagState(Team team, uint32 value);
         void UpdateTeamScore(Team team);
         void UpdatePlayerScore(Player *Source, uint32 type, uint32 value);
-        void SetDroppedFlagGuid(ObjectGuid guid, Team team)  { m_DroppedFlagGuid[GetTeamIndexByTeamId(team)] = guid;}
-        void ClearDroppedFlagGuid(Team team)  { m_DroppedFlagGuid[GetTeamIndexByTeamId(team)].Clear();}
-        ObjectGuid const& GetDroppedFlagGuid(Team team) const { return m_DroppedFlagGuid[GetTeamIndexByTeamId(team)];}
+        void SetDroppedFlagGuid(ObjectGuid guid, Team team)  { m_DroppedFlagGuid[GetTeamIndex(team)] = guid;}
+        void ClearDroppedFlagGuid(Team team)  { m_DroppedFlagGuid[GetTeamIndex(team)].Clear();}
+        ObjectGuid const& GetDroppedFlagGuid(Team team) const { return m_DroppedFlagGuid[GetTeamIndex(team)];}
         virtual void FillInitialWorldStates(WorldPacket& data, uint32& count);
 
         /* Scorekeeping */
-        uint32 GetTeamScore(Team team) const            { return m_TeamScores[GetTeamIndexByTeamId(team)]; }
-        void AddPoint(Team team, uint32 Points = 1)     { m_TeamScores[GetTeamIndexByTeamId(team)] += Points; }
-        void SetTeamPoint(Team team, uint32 Points = 0) { m_TeamScores[GetTeamIndexByTeamId(team)] = Points; }
-        void RemovePoint(Team team, uint32 Points = 1)  { m_TeamScores[GetTeamIndexByTeamId(team)] -= Points; }
+        uint32 GetTeamScore(Team team) const            { return m_TeamScores[GetTeamIndex(team)]; }
+        void AddPoint(Team team, uint32 Points = 1)     { m_TeamScores[GetTeamIndex(team)] += Points; }
+        void SetTeamPoint(Team team, uint32 Points = 0) { m_TeamScores[GetTeamIndex(team)] = Points; }
+        void RemovePoint(Team team, uint32 Points = 1)  { m_TeamScores[GetTeamIndex(team)] -= Points; }
     private:
         void PickOrReturnFlag(Player* pPlayer, Team forTeam, bool pickedUp, bool fromGround = false);
 

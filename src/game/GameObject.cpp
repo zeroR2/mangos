@@ -272,9 +272,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 // TODO: Should stealthed/invisible/flying players also get quest objective complete if team member wins tower?
                 if ((*itr)->IsWorldPvPActive())
                 {
-                    // TODO: possibly move GetTeamIndexByTeamId function to be able to use it here or refacter team and teamId code
-                    TeamIndex team = ((Player*)(*itr))->GetTeam() == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE;
-                    if (!m_capturePlayers[team].insert((*itr)).second)
+                    if (!m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)).second)
                         continue;
 
                     (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);

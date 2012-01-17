@@ -326,7 +326,6 @@ class BattleGroundIC : public BattleGround
         /* Scorekeeping */
         void UpdatePlayerScore(Player *Source, uint32 type, uint32 value, bool doAddHonor = true);
 
-        static TeamIndex GetTeamIndexByTeamId(Team team) { return team == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE; }
         uint32 GetVehicleFaction(uint8 vehicleType) const { return GetCorrectFactionIC(vehicleType); }
         uint32 GetCorrectFactionIC(uint8 vehicleType) const;
 

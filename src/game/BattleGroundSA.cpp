@@ -552,7 +552,7 @@ void BattleGroundSA::EventPlayerClickedOnFlag(Player *source, GameObject* target
 
     BG_SA_Events gyd = BG_SA_Events(objectEvent);
 
-    TeamIndex teamIndex = GetTeamIndexByTeamId(source->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(source->GetTeam());
 
     //make the new banner not capturable by defenders
     m_Gyd[gyd] = BG_SA_GRAVE_STATUS_OCCUPIED + teamIndex;
@@ -597,7 +597,7 @@ void BattleGroundSA::EventPlayerClickedOnFlag(Player *source, GameObject* target
 void BattleGroundSA::SendMessageSA(Player *player, uint32 type, uint32 name)
 {
     uint32 entryMSG = 0;
-    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
     switch (type)
     {
         case 0: entryMSG = LANG_BG_SA_GATE_ATTACK; break;
@@ -612,7 +612,7 @@ void BattleGroundSA::SendMessageSA(Player *player, uint32 type, uint32 name)
 
 void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy)
 {
-    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
     // Seaforium Charge Explosion
     if (doneBy == 52408)
@@ -874,7 +874,7 @@ int32 BattleGroundSA::_GydName(uint8 gyd)
 
 WorldSafeLocsEntry const* BattleGroundSA::GetClosestGraveYard(Player* player)
 {
-    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
     // Is there any occupied node for this team?
     std::vector<uint8> gyd;
