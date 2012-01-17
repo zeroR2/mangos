@@ -1,7 +1,7 @@
 
 -- creature and gameobject initial guid
-SET @CREATURE := 310000;
-SET @GAMEOBJECT := 310000;
+SET @CREATURE := 500000;
+SET @GAMEOBJECT := 500000;
 
 -- cleanup
 DELETE FROM `creature` WHERE `guid` >= @CREATURE AND `guid` <= (@CREATURE + 1000);
