@@ -309,8 +309,8 @@ class BattleGroundEY : public BattleGround
         void RemovePoint(Team team, uint32 Points = 1) { m_TeamScores[GetTeamIndexByTeamId(team)] -= Points; }
         void SetTeamPoint(Team team, uint32 Points = 0) { m_TeamScores[GetTeamIndexByTeamId(team)] = Points; }
 
-        uint32 m_HonorScoreTics[2];
-        uint32 m_TeamPointsCount[BG_TEAMS_COUNT];
+        uint32 m_HonorScoreTics[PVP_TEAM_COUNT];
+        uint32 m_TeamPointsCount[PVP_TEAM_COUNT];
 
         uint32 m_Points_Trigger[BG_EY_NODES_MAX];
 

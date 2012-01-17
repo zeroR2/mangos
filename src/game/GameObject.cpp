@@ -247,7 +247,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             Cell::VisitWorldObjects(this, checker, radius);
 
             // remove players who left capture point zone
-            for (uint8 team = 0; team < BG_TEAMS_COUNT; ++team)
+            for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
             {
                 PlayerSet::iterator itr, next;
                 for (itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); itr = next)
@@ -272,23 +272,21 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 // TODO: Should stealthed/invisible/flying players also get quest objective complete if team member wins tower?
                 if ((*itr)->IsWorldPvPActive())
                 {
-                    BattleGroundTeamIndex team = ((Player*)(*itr))->GetTeam() == ALLIANCE ? BG_TEAM_ALLIANCE : BG_TEAM_HORDE;
-                    if (((Player*)(*itr))->GetTeam() != TEAM_NONE)
-                    {
-                        if (!m_capturePlayers[team].insert((*itr)).second)
-                            continue;
+                    // TODO: possibly move GetTeamIndexByTeamId function to be able to use it here or refacter team and teamId code
+                    TeamIndex team = ((Player*)(*itr))->GetTeam() == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE;
+                    if (!m_capturePlayers[team].insert((*itr)).second)
+                        continue;
 
-                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
-                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, info->capturePoint.neutralPercent);
-                    }
+                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
+                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, info->capturePoint.neutralPercent);
                 }
 
                 // only leave old players in list
                 pointPlayers.erase(itr);
             }
 
-            int rangePlayers = m_capturePlayers[BG_TEAM_ALLIANCE].size() - m_capturePlayers[BG_TEAM_HORDE].size();
+            int rangePlayers = m_capturePlayers[TEAM_INDEX_ALLIANCE].size() - m_capturePlayers[TEAM_INDEX_HORDE].size();
 
             // return if there are not enough players capturing the point (works because minSuperiority is always 1)
             if (rangePlayers == 0)
@@ -337,7 +335,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             }
 
             // call capture point events
-            Use(rangePlayers > 0 ? (*(m_capturePlayers[BG_TEAM_ALLIANCE].begin())) : (*(m_capturePlayers[BG_TEAM_HORDE].begin()))); // TODO: We actually now dont need player pointer in the Use() function of capture points
+            Use(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin()))); // TODO: We actually now dont need player pointer in the Use() function of capture points
         }
         else
             m_captureTime -= diff;
@@ -1793,7 +1791,7 @@ void GameObject::Use(Unit* user)
             // the time being script side can process events and determine which one to use. It
             // require of course that some object call go->Use()
 
-            uint32 progressFaction = m_capturePlayers[BG_TEAM_ALLIANCE].size() > m_capturePlayers[BG_TEAM_HORDE].size() ? ALLIANCE : HORDE;
+            uint32 progressFaction = m_capturePlayers[TEAM_INDEX_ALLIANCE].size() > m_capturePlayers[TEAM_INDEX_HORDE].size() ? ALLIANCE : HORDE;
             uint32 neutralHalf = info->capturePoint.neutralPercent * 0.5f;
             uint32 eventId = 0;
 
@@ -1822,7 +1820,7 @@ void GameObject::Use(Unit* user)
 
                 // handle objective complete
                 if (m_ownerFaction == TEAM_NONE)
-                    sWorldPvPMgr.HandleObjectiveComplete(m_capturePlayers[BG_TEAM_ALLIANCE], info->capturePoint.progressEventID1);
+                    sWorldPvPMgr.HandleObjectiveComplete(m_capturePlayers[TEAM_INDEX_ALLIANCE], info->capturePoint.progressEventID1);
 
                 // set capture state to alliance
                 m_captureState = CAPTURE_STATE_PROGRESS;
@@ -1836,7 +1834,7 @@ void GameObject::Use(Unit* user)
 
                 // handle objective complete
                 if (m_ownerFaction == TEAM_NONE)
-                    sWorldPvPMgr.HandleObjectiveComplete(m_capturePlayers[BG_TEAM_HORDE], info->capturePoint.progressEventID2);
+                    sWorldPvPMgr.HandleObjectiveComplete(m_capturePlayers[TEAM_INDEX_HORDE], info->capturePoint.progressEventID2);
 
                 // set capture state to horde
                 m_captureState = CAPTURE_STATE_PROGRESS;

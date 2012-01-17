@@ -552,7 +552,7 @@ void BattleGroundSA::EventPlayerClickedOnFlag(Player *source, GameObject* target
 
     BG_SA_Events gyd = BG_SA_Events(objectEvent);
 
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(source->GetTeam());
+    TeamIndex teamIndex = GetTeamIndexByTeamId(source->GetTeam());
 
     //make the new banner not capturable by defenders
     m_Gyd[gyd] = BG_SA_GRAVE_STATUS_OCCUPIED + teamIndex;
@@ -565,7 +565,7 @@ void BattleGroundSA::EventPlayerClickedOnFlag(Player *source, GameObject* target
     RewardHonorToTeam(85, (teamIndex == 0) ? ALLIANCE : HORDE);
     RewardXpToTeam(0, 0.6f, (teamIndex == 0) ? ALLIANCE : HORDE);
 
-    if (teamIndex == BG_TEAM_ALLIANCE)
+    if (teamIndex == TEAM_INDEX_ALLIANCE)
     {
         SendWarningToAllSA(gyd, ALLIANCE);
         PlaySoundToAll(BG_SA_SOUND_GYD_CAPTURED_ALLIANCE);
@@ -597,14 +597,14 @@ void BattleGroundSA::EventPlayerClickedOnFlag(Player *source, GameObject* target
 void BattleGroundSA::SendMessageSA(Player *player, uint32 type, uint32 name)
 {
     uint32 entryMSG = 0;
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
     switch (type)
     {
         case 0: entryMSG = LANG_BG_SA_GATE_ATTACK; break;
         case 1: entryMSG = LANG_BG_SA_GATE_DAMAGE; break;
         case 2: entryMSG = LANG_BG_SA_GATE_DETROYED; break;
     }
-    if (teamIndex == BG_TEAM_ALLIANCE)
+    if (teamIndex == TEAM_INDEX_ALLIANCE)
         SendMessage2ToAll(entryMSG,CHAT_MSG_BG_SYSTEM_ALLIANCE, player, name);
     else
         SendMessage2ToAll(entryMSG,CHAT_MSG_BG_SYSTEM_HORDE, player, name);
@@ -612,7 +612,7 @@ void BattleGroundSA::SendMessageSA(Player *player, uint32 type, uint32 name)
 
 void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy)
 {
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
 
     // Seaforium Charge Explosion
     if (doneBy == 52408)
@@ -874,7 +874,7 @@ int32 BattleGroundSA::_GydName(uint8 gyd)
 
 WorldSafeLocsEntry const* BattleGroundSA::GetClosestGraveYard(Player* player)
 {
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
 
     // Is there any occupied node for this team?
     std::vector<uint8> gyd;

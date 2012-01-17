@@ -964,7 +964,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                             if (bg->GetTypeID(true) != BATTLEGROUND_AV)
                                 continue;
 
-                            int8 team = bg->GetTeamIndexByTeamId(GetPlayer()->GetTeam());
+                            TeamIndex team = bg->GetTeamIndexByTeamId(GetPlayer()->GetTeam());
                             if(!((BattleGroundAV*)bg)->hasAllTowers(team))
                                 continue;
                             break;
