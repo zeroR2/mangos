@@ -190,8 +190,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
         m_captureTicks = sWorldPvPMgr.GetCapturePointSlider(GetEntry());
 
         // based on the capture ticks set the state of the capture point
-        
-        if (m_captureTicks <= CAPTURE_SLIDER_NEUTRAL + goinfo->capturePoint.neutralPercent * 0.5f && m_captureTicks >= CAPTURE_SLIDER_NEUTRAL - goinfo->capturePoint.neutralPercent * 0.5f)
+        if (m_captureTicks >= CAPTURE_SLIDER_NEUTRAL - goinfo->capturePoint.neutralPercent * 0.5f && m_captureTicks <= CAPTURE_SLIDER_NEUTRAL + goinfo->capturePoint.neutralPercent * 0.5f)
         {
             m_captureState = CAPTURE_STATE_NEUTRAL;
             SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
@@ -205,7 +204,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
                 m_captureState = CAPTURE_STATE_PROGRESS;
 
             // Also reset artkits
-            SetGoArtKit(m_captureTicks > CAPTURE_SLIDER_NEUTRAL + goinfo->capturePoint.neutralPercent * 0.5f ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
+            SetGoArtKit(m_captureTicks > CAPTURE_SLIDER_NEUTRAL ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
         }
     }
 
@@ -224,14 +223,15 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
     {
         if (m_captureTime < diff)
         {
+            // TODO: On blizz at Zanga with 1 player it increased every 5 seconds + ~150ms and always increased the slider by 1 at same time as player get capture point zone enter packet
             m_captureTime = 1000;
 
             // TODO: Move following code to seperate function
             GameObjectInfo const* info = this->GetGOInfo();
-            if (!info)
+            if (!info) // TODO: Do we actually need this null check?
                 return;
 
-            // visual banner go type 29 don't have radius
+            // visual banners of go type 29 don't have radius
             float radius = info->capturePoint.radius;
             if (!radius)
                 return;
@@ -262,39 +262,32 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 }
             }
 
-            // add players who entered capture point zone
-            std::list<Player*>::iterator itr, next;
-            for (itr = pointPlayers.begin(); itr != pointPlayers.end(); itr = next)
-            {
-                next = itr;
-                ++next;
+            uint32 oldTicks = m_captureTicks;
+            uint32 neutralPercent = info->capturePoint.neutralPercent;
 
-                // TODO: Should stealthed/invisible/flying players also get quest objective complete if team member wins tower?
+            // add players who entered capture point zone
+            for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
+            {
+                // TODO: Should stealthed/pvp_off/flying players also get quest objective complete if team member wins tower? (they definately cant see cp slider)
                 if ((*itr)->IsWorldPvPActive())
                 {
-                    if (!m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)).second)
-                        continue;
-
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, info->capturePoint.neutralPercent);
+                    if (m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)).second)
+                    {
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldTicks);
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldTicks); // also sent redundantly on blizz
+                    }
                 }
-
-                // only leave old players in list
-                pointPlayers.erase(itr);
             }
 
-            int rangePlayers = m_capturePlayers[TEAM_INDEX_ALLIANCE].size() - m_capturePlayers[TEAM_INDEX_HORDE].size();
-
             // return if there are not enough players capturing the point (works because minSuperiority is always 1)
+            int rangePlayers = m_capturePlayers[TEAM_INDEX_ALLIANCE].size() - m_capturePlayers[TEAM_INDEX_HORDE].size();
             if (rangePlayers == 0)
                 return;
 
-            int maxSuperiority = info->capturePoint.maxSuperiority;
-            uint32 neutralPercent = info->capturePoint.neutralPercent;
-            uint32 oldTicks = m_captureTicks;
-
             // cap speed
+            int maxSuperiority = info->capturePoint.maxSuperiority;
             if (rangePlayers > maxSuperiority)
                 rangePlayers = maxSuperiority;
             else if (rangePlayers < -maxSuperiority)
@@ -325,18 +318,22 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             if ((uint32)m_captureTicks == oldTicks)
                 return;
 
-            for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
-            {
-                (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
-                (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
-            }
+            // this is also sent to newly added players even though they already received the capture tick value
+            for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
+                for (PlayerSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
+                {
+                    //(*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
+                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
+                    //(*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                }
 
             // call capture point events
             Use(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin()))); // TODO: We actually now dont need player pointer in the Use() function of capture points
         }
         else
             m_captureTime -= diff;
+
+        return;
     }
 
     switch (m_lootState)

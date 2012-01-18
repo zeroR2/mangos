@@ -24,9 +24,9 @@ INSERT INTO `mangos_string` (`entry`, `content_default`) VALUES
 (10018,'The Alliance lost the Plaguewood Tower!'),
 
 -- hellfire peninsula
-(10019,'The Horde has taken The Overlook!'),
+(10019,'The Horde has taken The Overlook!'), -- The Overlook has been taken by the Horde! (LocalDefense chat, yellow text, from google screenshot)
 (10020,'The Alliance has taken The Overlook!'),
-(10021,'The Horde has taken The Stadium!'),
+(10021,'The Horde has taken The Stadium!'), -- The Stadium has been taken by the Horde! (LocalDefense chat, yellow text, from google screenshot)
 (10022,'The Alliance has taken The Stadium!'),
 (10023,'The Horde has taken Broken Hill!'),
 (10024,'The Alliance has taken Broken Hill!'),
@@ -38,12 +38,15 @@ INSERT INTO `mangos_string` (`entry`, `content_default`) VALUES
 (10030,'The Alliance lost Broken Hill!'),
 
 -- zangarmarsh
-(10031,'The Horde has taken the West Beacon!'),
-(10032,'The Alliance has taken the West Beacon!'),
-(10033,'The Horde has taken the East Beacon!'),
-(10034,'The Alliance has taken the East Beacon!'),
-(10035,'The Horde has captured the Twin Spire Graveyard!'),
-(10036,'The Alliance has captured the Twin Spire Graveyard!'),
+-- SMSG_DEFENSE_MESSAGE (all messages)
+(10031,'|cffffff00The Horde has taken control of the West Beacon!|r'),
+(10032,'|cffffff00The Alliance has taken control of the West Beacon!|r'),
+(10033,'|cffffff00The Horde has taken control of the East Beacon!|r'),
+(10034,'|cffffff00The Alliance has taken control of the East Beacon!|r'),
+-- '|cffffff00The Alliance has taken control of both beacons!|r' (if both beacons are captured)
+-- '|cffffff00The Alliance Field Scout is now issuing battle standards.|r' (if both beacons are captured)
+(10035,'|cffffff00The Horde has taken control of Twin Spire Ruins!|r'),
+(10036,'|cffffff00The Alliance has taken control of Twin Spire Ruins!|r'), -- SMSG_PLAY_SOUND id 8173, from npc 15384 (npc id may be a parsing error, but unlikely)
 (10037,'The Horde lost the West Beacon!'),
 (10038,'The Alliance lost the West Beacon!'),
 (10039,'The Horde lost the East Beacon!'),
