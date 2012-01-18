@@ -276,7 +276,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldTicks);
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldTicks); // also sent redundantly on blizz
+                        //(*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldTicks); // also sent redundantly on blizz
                     }
                 }
             }
@@ -294,7 +294,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 rangePlayers = -maxSuperiority;
 
             // time to capture from 0% to 100% is minTime for maxSuperiority amount of players and maxTime for minSuperiority amount of players
-            float diffTicks = 200.0f /
+            float diffTicks = 100.0f /
                 (float)((maxSuperiority - abs(rangePlayers)) * (info->capturePoint.maxTime - info->capturePoint.minTime) /
                 (float)(maxSuperiority - info->capturePoint.minSuperiority) + info->capturePoint.minTime);
 
