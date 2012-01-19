@@ -68,10 +68,6 @@ GameObject::GameObject() : WorldObject(),
 
 GameObject::~GameObject()
 {
-    // store the capture point slider value
-    GameObjectInfo const* goInfo = GetGOInfo();
-    if (goInfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT && goInfo->capturePoint.radius)
-        sWorldPvPMgr.SetCapturePointSlider(GetEntry(), m_sliderValue);
 }
 
 void GameObject::AddToWorld()
@@ -2296,6 +2292,9 @@ void GameObject::CallCapturePointEvents()
 {
     GameObjectInfo const* info = GetGOInfo(); // already checked if go is null
 
+    // keep slider value here - this should be in the destructore, but for some unk reason it crashes
+    sWorldPvPMgr.SetCapturePointSlider(GetEntry(), m_sliderValue);
+
     // ID1 vs ID2 are possibly related to team. The world states should probably
     // control which event to be used. For this to work, we need a far better system for
     // sWorldStateMgr (system to store and keep track of states) so that we at all times
@@ -2396,9 +2395,9 @@ void GameObject::CallCapturePointEvents()
         // send zone script
         if (m_zoneScript)
             m_zoneScript->ProcessEvent(this, eventId, progressFaction);
-        // if zone script fails send to ScriptMgr
-        // TODO: WHY?
-        //else if (!sScriptMgr.OnProcessEvent(eventId, user, this, true))
-        //    GetMap()->ScriptsStart(sEventScripts, eventId, user, this);
+
+        // Send script event to SD2 and database as well - this can be used for summoning creatures, casting specific spells or spawning GOs
+        if (!sScriptMgr.OnProcessEvent(eventId, this, this, true))
+            GetMap()->ScriptsStart(sEventScripts, eventId, this, this);
     }
 }
