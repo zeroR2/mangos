@@ -256,7 +256,8 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                     ++next;
                     if (std::find(pointPlayers.begin(), pointPlayers.end(), (*itr)) == pointPlayers.end() || !(*itr)->IsWorldPvPActive())
                     {
-                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 0);
+                        // send capture point leave packet
+                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
                         m_capturePlayers[team].erase((*itr));
                     }
                 }
@@ -268,11 +269,12 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             // add players who entered capture point zone
             for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
             {
-                // TODO: Should stealthed/pvp_off/flying players also get quest objective complete if team member wins tower? (they definately cant see cp slider)
                 if ((*itr)->IsWorldPvPActive())
                 {
+                    // the std:insert:pair::second element in the pair is set to false if an element with the same value existed
                     if (m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)).second)
                     {
+                        // send capture point zone enter packets
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldTicks);
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
@@ -312,13 +314,14 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             }
 
             // store the ticks value
+            // TODO: should probably save capture point slider value only when GO is unloaded due to grid system
             sWorldPvPMgr.SetCapturePointSlider(GetEntry(), m_captureTicks);
 
-            // stop if integer of capture ticks don't change
+            // return if slider did not move a whole percent
             if ((uint32)m_captureTicks == oldTicks)
                 return;
 
-            // this is also sent to newly added players even though they already received the capture tick value
+            // on retail this is also sent to newly added players even though they already received a capture tick value
             for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
                 for (PlayerSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
                 {
