@@ -158,7 +158,7 @@ void WorldPvPTF::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
         {
             for (uint8 j = 0; j < 4; ++j)
             {
-                if (uiEventId == aTerokkarTowerEvents[i][j].uiEventEntry)
+                if (uiEventId == aTerokkarTowerEvents[i][j].uiEventEntry && uiFaction != m_uiTowerController[i])
                 {
                     ProcessCaptureEvent(aTerokkarTowerEvents[i][j].uiEventType, uiFaction, aTerokkarTowerEvents[i][j].uiWorldState, i);
                     sWorld.SendZoneText(ZONE_ID_TEROKKAR, sObjectMgr.GetMangosStringForDBCLocale(aTerokkarTowerEvents[i][j].uiZoneText));

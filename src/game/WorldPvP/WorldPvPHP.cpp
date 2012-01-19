@@ -200,7 +200,7 @@ void WorldPvPHP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
         {
             for (uint8 j = 0; j < 4; ++j)
             {
-                if (uiEventId == aHellfireTowerEvents[i][j].uiEventEntry)
+                if (uiEventId == aHellfireTowerEvents[i][j].uiEventEntry && uiFaction != m_uiTowerController[i])
                 {
                     // TODO: Pass pGo to ProcessCaptureEvent function so that we dont have to use that hacky GetPlayerInZone function
                     ProcessCaptureEvent(aHellfireTowerEvents[i][j].uiEventType, uiFaction, aHellfireTowerEvents[i][j].uiWorldState, aHellfireTowerEvents[i][j].uiTowerArtKit, i);

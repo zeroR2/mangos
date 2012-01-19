@@ -211,7 +211,7 @@ void WorldPvPEP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
         {
             for (uint8 j = 0; j < 4; ++j)
             {
-                if (uiEventId == aPlaguelandsTowerEvents[i][j].uiEventEntry/* && uiFaction != m_uiTowerController[i]*/)
+                if (uiEventId == aPlaguelandsTowerEvents[i][j].uiEventEntry && uiFaction != m_uiTowerController[i])
                 {
                     ProcessCaptureEvent(aPlaguelandsTowerEvents[i][j].uiEventType, uiFaction, aPlaguelandsTowerEvents[i][j].uiWorldState, i);
                     sWorld.SendZoneText(ZONE_ID_EASTERN_PLAGUELANDS, sObjectMgr.GetMangosStringForDBCLocale(aPlaguelandsTowerEvents[i][j].uiZoneText));
