@@ -35,6 +35,9 @@ WorldPvPTF::WorldPvPTF() : WorldPvP(),
     m_uiTowerWorldState[2] = WORLD_STATE_TOWER_3_NEUTRAL;
     m_uiTowerWorldState[3] = WORLD_STATE_TOWER_4_NEUTRAL;
     m_uiTowerWorldState[4] = WORLD_STATE_TOWER_5_NEUTRAL;
+
+    for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
+        m_uiTowerController[i] = NEUTRAL;
 }
 
 bool WorldPvPTF::InitWorldPvPArea()
@@ -105,18 +108,38 @@ void WorldPvPTF::OnGameObjectCreate(GameObject* pGo)
     {
         case GO_TEROKKAR_BANNER_1:
             m_TowerBannerGUID[0] = pGo->GetObjectGuid();
+            if (m_uiTowerController[0] == NEUTRAL)
+                pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
+            else
+                pGo->SetGoArtKit(m_uiTowerController[0] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
             break;
         case GO_TEROKKAR_BANNER_2:
             m_TowerBannerGUID[1] = pGo->GetObjectGuid();
+            if (m_uiTowerController[1] == NEUTRAL)
+                pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
+            else
+                pGo->SetGoArtKit(m_uiTowerController[1] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
             break;
         case GO_TEROKKAR_BANNER_3:
             m_TowerBannerGUID[2] = pGo->GetObjectGuid();
+            if (m_uiTowerController[2] == NEUTRAL)
+                pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
+            else
+                pGo->SetGoArtKit(m_uiTowerController[2] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
             break;
         case GO_TEROKKAR_BANNER_4:
             m_TowerBannerGUID[3] = pGo->GetObjectGuid();
+            if (m_uiTowerController[2] == NEUTRAL)
+                pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
+            else
+                pGo->SetGoArtKit(m_uiTowerController[2] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
             break;
         case GO_TEROKKAR_BANNER_5:
             m_TowerBannerGUID[4] = pGo->GetObjectGuid();
+            if (m_uiTowerController[2] == NEUTRAL)
+                pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
+            else
+                pGo->SetGoArtKit(m_uiTowerController[2] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
             break;
         default:
             return;
@@ -181,6 +204,8 @@ void WorldPvPTF::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
             if (uiCaptureType == PROGRESS)
             {
                 SetBannerArtKit(m_TowerBannerGUID[i], uiTeam == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
+                m_uiTowerController[i] = uiTeam;
+
                 if (uiTeam == ALLIANCE)
                     ++m_uiTowersAlly;
                 else
@@ -189,6 +214,8 @@ void WorldPvPTF::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
             else if (uiCaptureType == NEUTRAL)
             {
                 SetBannerArtKit(m_TowerBannerGUID[i], GO_ARTKIT_BANNER_NEUTRAL);
+                m_uiTowerController[i] = NEUTRAL;
+
                 if (uiTeam == ALLIANCE)
                     --m_uiTowersHorde;
                 else
