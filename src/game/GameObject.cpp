@@ -68,6 +68,13 @@ GameObject::GameObject() : WorldObject(),
 
 GameObject::~GameObject()
 {
+    // store the capture point slider value
+    GameObjectInfo const* goInfo = GetGOInfo();
+    if (!goInfo)
+        return;
+
+    if (goInfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT && goInfo->capturePoint.radius)
+        sWorldPvPMgr.SetCapturePointSlider(GetEntry(), m_sliderValue);
 }
 
 void GameObject::AddToWorld()
@@ -2291,9 +2298,6 @@ void GameObject::UpdateCapturePoint(uint32 diff)
 void GameObject::CallCapturePointEvents()
 {
     GameObjectInfo const* info = GetGOInfo(); // already checked if go is null
-
-    // keep slider value here - this should be in the destructore, but for some unk reason it crashes
-    sWorldPvPMgr.SetCapturePointSlider(GetEntry(), m_sliderValue);
 
     // ID1 vs ID2 are possibly related to team. The world states should probably
     // control which event to be used. For this to work, we need a far better system for
