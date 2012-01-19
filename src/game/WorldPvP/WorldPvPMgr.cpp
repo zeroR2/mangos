@@ -205,10 +205,10 @@ void WorldPvPMgr::HandleDropFlag(Player* pPlayer, uint32 uiSpellId)
    @param   player set to which to send the credit
    @param   capture evetn id
  */
-void WorldPvPMgr::HandleObjectiveComplete(std::set<Player*> m_sObjectivePlayers, uint32 uiEventId)
+void WorldPvPMgr::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
 {
     for (WorldPvPSet::iterator itr = m_WorldPvPSet.begin(); itr != m_WorldPvPSet.end(); ++itr)
-        (*itr)->HandleObjectiveComplete(m_sObjectivePlayers, uiEventId);
+        (*itr)->HandleObjectiveComplete(players, uiEventId, uiFaction);
 }
 
 /**

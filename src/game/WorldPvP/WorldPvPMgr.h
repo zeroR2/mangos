@@ -69,7 +69,7 @@ class WorldPvPMgr
         bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
 
         // Handle the complete credit for capture point win events
-        void HandleObjectiveComplete(std::set<Player*> m_sObjectivePlayers, uint32 uiEventId);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
 
         // Handle the kill event inside the area
         void HandlePlayerKill(Player* pPlayer, Unit* pVictim);

@@ -168,7 +168,7 @@ class WorldPvPTF : public WorldPvP
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
-        void HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEventId);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
 
         void Update(uint32 diff);
 

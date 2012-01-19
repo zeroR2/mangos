@@ -82,16 +82,14 @@ void WorldPvPNA::HandlePlayerLeaveZone(Player* pPlayer)
     WorldPvP::HandlePlayerLeaveZone(pPlayer);
 }
 
-void WorldPvPNA::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPNA::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
 {
     if (uiEventId == EVENT_HALAA_BANNER_WIN_ALLIANCE || uiEventId == EVENT_HALAA_BANNER_WIN_HORDE)
     {
-        for (PlayerSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+        for (std::list<Player*>::iterator itr = players.begin(); itr != players.end(); ++itr)
         {
-            if (!(*itr))
-                continue;
-
-            (*itr)->KilledMonsterCredit(NPC_HALAA_COMBATANT);
+            if ((*itr) && (*itr)->GetTeam() == uiFaction)
+                (*itr)->KilledMonsterCredit(NPC_HALAA_COMBATANT);
         }
     }
 }

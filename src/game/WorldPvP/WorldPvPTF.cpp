@@ -148,7 +148,7 @@ void WorldPvPTF::OnGameObjectCreate(GameObject* pGo)
     pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
 }
 
-void WorldPvPTF::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPTF::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
 {
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
     {
@@ -156,12 +156,10 @@ void WorldPvPTF::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEvent
         {
             if (uiEventId == aTerokkarTowerEvents[i][j].uiEventEntry)
             {
-                for (PlayerSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+                for (std::list<Player*>::iterator itr = players.begin(); itr != players.end(); ++itr)
                 {
-                    if (!(*itr))
-                        continue;
-
-                    (*itr)->AreaExploredOrEventHappens((*itr)->GetTeam() == ALLIANCE ? QUEST_SPIRITS_OF_AUCHINDOUM_ALLY : QUEST_SPIRITS_OF_AUCHINDOUM_HORDE);
+                    if ((*itr) && (*itr)->GetTeam() == uiFaction)
+                        (*itr)->AreaExploredOrEventHappens(uiFaction == ALLIANCE ? QUEST_SPIRITS_OF_AUCHINDOUM_ALLY : QUEST_SPIRITS_OF_AUCHINDOUM_HORDE);
                 }
             }
         }

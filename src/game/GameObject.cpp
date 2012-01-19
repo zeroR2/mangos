@@ -2204,50 +2204,48 @@ void GameObject::UpdateCapturePoint(uint32 diff)
             return;
 
         // search for players in radius
-        std::list<Player*> pointPlayers;
-        MaNGOS::AnyPlayerInObjectRangeCheck u_check(this, radius);
-        MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeCheck> checker(pointPlayers, u_check);
+        std::list<Player*> capturingPlayers;
+        MaNGOS::AnyPlayerInObjectRangeWithPvPCheck u_check(this, radius);
+        MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeWithPvPCheck> checker(capturingPlayers, u_check);
         Cell::VisitWorldObjects(this, checker, radius);
 
-        // remove players who left capture point zone
-        for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
+        GuidsSet tempUsers(m_UniqueUsers);
+        uint32 neutralPercent = info->capturePoint.neutralPercent;
+        uint32 oldValue = m_sliderValue;
+        int rangePlayers = 0;
+
+        for (std::list<Player*>::iterator itr = capturingPlayers.begin(); itr != capturingPlayers.end(); ++itr)
         {
-            PlayerSet::iterator itr, next;
-            for (itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); itr = next)
+            if (((Player*)(*itr))->GetTeam() == ALLIANCE)
+                ++rangePlayers;
+            else
+                --rangePlayers;
+
+            ObjectGuid guid = (*itr)->GetObjectGuid();
+            if (!tempUsers.erase(guid))
             {
-                next = itr;
-                ++next;
-                if (std::find(pointPlayers.begin(), pointPlayers.end(), (*itr)) == pointPlayers.end() || !(*itr)->IsWorldPvPActive())
-                {
-                    // send capture point leave packet
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
-                    m_capturePlayers[team].erase((*itr));
-                }
+                // new player entered capture point zone
+                m_UniqueUsers.insert(guid);
+
+                // send capture point zone enter packets
+                (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
+                (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
+                (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                //(*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue); // redundantly sent on retail
             }
         }
 
-        uint32 oldValue = m_sliderValue;
-        uint32 neutralPercent = info->capturePoint.neutralPercent;
-
-        // add players who entered capture point zone
-        for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
+        for (GuidsSet::iterator itr = tempUsers.begin(); itr != tempUsers.end(); ++itr)
         {
-            if ((*itr)->IsWorldPvPActive())
-            {
-                // the std:insert:pair::second element in the pair is set to false if an element with the same value existed
-                if (m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)).second)
-                {
-                    // send capture point zone enter packets
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                    //(*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue); // redundantly sent on retail
-                }
-            }
+            // send capture point leave packet
+            if (Player* owner = GetMap()->GetPlayer(*itr))
+                owner->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
+
+            // player left capture point zone
+            m_UniqueUsers.erase(itr);
         }
 
         // return if there are not enough players capturing the point (works because minSuperiority is always 1)
-        int rangePlayers = m_capturePlayers[TEAM_INDEX_ALLIANCE].size() - m_capturePlayers[TEAM_INDEX_HORDE].size();
         if (rangePlayers == 0)
             return;
 
@@ -2263,14 +2261,17 @@ void GameObject::UpdateCapturePoint(uint32 diff)
             (float)((maxSuperiority - abs(rangePlayers)) * (info->capturePoint.maxTime - info->capturePoint.minTime) /
             (float)(maxSuperiority - info->capturePoint.minSuperiority) + info->capturePoint.minTime);
 
+        uint32 progressFaction;
         if (rangePlayers > 0)
         {
+            progressFaction = ALLIANCE;
             m_sliderValue += diffTicks;
             if (m_sliderValue > CAPTURE_SLIDER_ALLIANCE)
                 m_sliderValue = CAPTURE_SLIDER_ALLIANCE;
         }
         else
         {
+            progressFaction = HORDE;
             m_sliderValue -= diffTicks;
             if (m_sliderValue < CAPTURE_SLIDER_HORDE)
                 m_sliderValue = CAPTURE_SLIDER_HORDE;
@@ -2281,127 +2282,108 @@ void GameObject::UpdateCapturePoint(uint32 diff)
             return;
 
         // on retail this is also sent to newly added players even though they already received a slider value
-        for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
-            for (PlayerSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
-            {
-                //(*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
-                (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_sliderValue);
-                //(*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-            }
+        for (std::list<Player*>::iterator itr = capturingPlayers.begin(); itr != capturingPlayers.end(); ++itr)
+        {
+            //(*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
+            (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_sliderValue);
+            //(*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+        }
 
-        CallCapturePointEvents();
+        uint32 eventId = 0;
+
+        // alliance wins tower with max points
+        if ((uint32)m_sliderValue == CAPTURE_SLIDER_ALLIANCE && m_captureState == CAPTURE_STATE_PROGRESS)
+        {
+            if (info->capturePoint.winEventID1)
+                eventId = info->capturePoint.winEventID1;
+
+            m_captureState = CAPTURE_STATE_WIN;
+        }
+        // horde wins tower with max points
+        else if ((uint32)m_sliderValue == CAPTURE_SLIDER_HORDE && m_captureState == CAPTURE_STATE_PROGRESS)
+        {
+            if (info->capturePoint.winEventID2)
+                eventId = info->capturePoint.winEventID2;
+
+            m_captureState = CAPTURE_STATE_WIN;
+        }
+
+        // alliance takes the tower from neutral or contested to alliance
+        else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == ALLIANCE && m_sliderValue > CAPTURE_SLIDER_NEUTRAL + neutralPercent * 0.5f)
+        {
+            if (info->capturePoint.progressEventID1)
+                eventId = info->capturePoint.progressEventID1;
+
+            // handle objective complete
+            if (m_ownerFaction == TEAM_NONE)
+                sWorldPvPMgr.HandleObjectiveComplete(capturingPlayers, eventId, progressFaction);
+
+            // set capture state to alliance
+            m_captureState = CAPTURE_STATE_PROGRESS;
+            m_ownerFaction = ALLIANCE;
+        }
+        // horde takes the tower from neutral or contested to horde
+        else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == HORDE && m_sliderValue < CAPTURE_SLIDER_NEUTRAL - neutralPercent * 0.5f)
+        {
+            if (info->capturePoint.progressEventID2)
+                eventId = info->capturePoint.progressEventID2;
+
+            // handle objective complete
+            if (m_ownerFaction == TEAM_NONE)
+                sWorldPvPMgr.HandleObjectiveComplete(capturingPlayers, eventId, progressFaction);
+
+            // set capture state to horde
+            m_captureState = CAPTURE_STATE_PROGRESS;
+            m_ownerFaction = HORDE;
+        }
+
+        // alliance takes the tower from horde to neutral
+        else if (m_ownerFaction == HORDE && progressFaction == ALLIANCE && m_sliderValue >= CAPTURE_SLIDER_NEUTRAL - neutralPercent * 0.5f)
+        {
+            if (info->capturePoint.neutralEventID1)
+                eventId = info->capturePoint.neutralEventID1;
+
+            m_captureState = CAPTURE_STATE_NEUTRAL;
+            m_ownerFaction = TEAM_NONE;
+        }
+        // horde takes the tower from alliance to neutral
+        else if (m_ownerFaction == ALLIANCE && progressFaction == HORDE && m_sliderValue <= CAPTURE_SLIDER_NEUTRAL + neutralPercent * 0.5f)
+        {
+            if (info->capturePoint.neutralEventID2)
+                eventId = info->capturePoint.neutralEventID2;
+
+            m_captureState = CAPTURE_STATE_NEUTRAL;
+            m_ownerFaction = TEAM_NONE;
+        }
+
+        // alliance attacks tower which is in progress or control by horde (except if alliance also gains control in that case)
+        else if (m_ownerFaction == HORDE && progressFaction == ALLIANCE && (m_captureState == CAPTURE_STATE_PROGRESS || m_captureState == CAPTURE_STATE_WIN))
+        {
+            if (info->capturePoint.contestedEventID1)
+                eventId = info->capturePoint.contestedEventID1;
+
+            m_captureState = CAPTURE_STATE_CONTEST;
+        }
+        // horde attacks tower which is in progress or control by alliance (except if horde also gains control in that case)
+        else if (m_ownerFaction == ALLIANCE && progressFaction == HORDE && (m_captureState == CAPTURE_STATE_PROGRESS || m_captureState == CAPTURE_STATE_WIN))
+        {
+            if (info->capturePoint.contestedEventID2)
+                eventId = info->capturePoint.contestedEventID2;
+
+            m_captureState = CAPTURE_STATE_CONTEST;
+        }
+
+        if (eventId)
+        {
+            // send zone script
+            if (m_zoneScript)
+                m_zoneScript->ProcessEvent(this, eventId, progressFaction);
+
+            // Send script event to SD2 and database as well - this can be used for summoning creatures, casting specific spells or spawning GOs
+            if (!sScriptMgr.OnProcessEvent(eventId, this, this, true))
+                GetMap()->ScriptsStart(sEventScripts, eventId, this, this);
+        }
     }
     else
         m_tickTime -= diff;
-}
-
-void GameObject::CallCapturePointEvents()
-{
-    GameObjectInfo const* info = GetGOInfo(); // already checked if go is null
-
-    // ID1 vs ID2 are possibly related to team. The world states should probably
-    // control which event to be used. For this to work, we need a far better system for
-    // sWorldStateMgr (system to store and keep track of states) so that we at all times
-    // know the state of every part of the world.
-
-    // Call every event, which is obviously wrong, but can help in further development. For
-    // the time being script side can process events and determine which one to use. It
-    // require of course that some object call go->Use()
-
-    uint32 progressFaction = m_capturePlayers[TEAM_INDEX_ALLIANCE].size() > m_capturePlayers[TEAM_INDEX_HORDE].size() ? ALLIANCE : HORDE;
-    uint32 neutralHalf = info->capturePoint.neutralPercent * 0.5f;
-    uint32 eventId = 0;
-
-    // alliance wins tower with max points
-    if ((uint32)m_sliderValue == CAPTURE_SLIDER_ALLIANCE && m_captureState == CAPTURE_STATE_PROGRESS)
-    {
-        if (info->capturePoint.winEventID1)
-            eventId = info->capturePoint.winEventID1;
-
-        m_captureState = CAPTURE_STATE_WIN;
-    }
-    // horde wins tower with max points
-    else if ((uint32)m_sliderValue == CAPTURE_SLIDER_HORDE && m_captureState == CAPTURE_STATE_PROGRESS)
-    {
-        if (info->capturePoint.winEventID2)
-            eventId = info->capturePoint.winEventID2;
-
-        m_captureState = CAPTURE_STATE_WIN;
-    }
-
-    // alliance takes the tower from neutral or contested to alliance
-    else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == ALLIANCE && m_sliderValue > CAPTURE_SLIDER_NEUTRAL + neutralHalf)
-    {
-        if (info->capturePoint.progressEventID1)
-            eventId = info->capturePoint.progressEventID1;
-
-        // handle objective complete
-        if (m_ownerFaction == TEAM_NONE)
-            sWorldPvPMgr.HandleObjectiveComplete(m_capturePlayers[TEAM_INDEX_ALLIANCE], info->capturePoint.progressEventID1);
-
-        // set capture state to alliance
-        m_captureState = CAPTURE_STATE_PROGRESS;
-        m_ownerFaction = ALLIANCE;
-    }
-    // horde takes the tower from neutral or contested to horde
-    else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == HORDE && m_sliderValue < CAPTURE_SLIDER_NEUTRAL - neutralHalf)
-    {
-        if (info->capturePoint.progressEventID2)
-            eventId = info->capturePoint.progressEventID2;
-
-        // handle objective complete
-        if (m_ownerFaction == TEAM_NONE)
-            sWorldPvPMgr.HandleObjectiveComplete(m_capturePlayers[TEAM_INDEX_HORDE], info->capturePoint.progressEventID2);
-
-        // set capture state to horde
-        m_captureState = CAPTURE_STATE_PROGRESS;
-        m_ownerFaction = HORDE;
-    }
-
-    // alliance takes the tower from horde to neutral
-    else if (m_ownerFaction == HORDE && progressFaction == ALLIANCE && m_sliderValue >= CAPTURE_SLIDER_NEUTRAL - neutralHalf)
-    {
-        if (info->capturePoint.neutralEventID1)
-            eventId = info->capturePoint.neutralEventID1;
-
-        m_captureState = CAPTURE_STATE_NEUTRAL;
-        m_ownerFaction = TEAM_NONE;
-    }
-    // horde takes the tower from alliance to neutral
-    else if (m_ownerFaction == ALLIANCE && progressFaction == HORDE && m_sliderValue <= CAPTURE_SLIDER_NEUTRAL + neutralHalf)
-    {
-        if (info->capturePoint.neutralEventID2)
-            eventId = info->capturePoint.neutralEventID2;
-
-        m_captureState = CAPTURE_STATE_NEUTRAL;
-        m_ownerFaction = TEAM_NONE;
-    }
-
-    // alliance attacks tower which is in progress or control by horde (except if alliance also gains control in that case)
-    else if (m_ownerFaction == HORDE && progressFaction == ALLIANCE && (m_captureState == CAPTURE_STATE_PROGRESS || m_captureState == CAPTURE_STATE_WIN))
-    {
-        if (info->capturePoint.contestedEventID1)
-            eventId = info->capturePoint.contestedEventID1;
-
-        m_captureState = CAPTURE_STATE_CONTEST;
-    }
-    // horde attacks tower which is in progress or control by alliance (except if horde also gains control in that case)
-    else if (m_ownerFaction == ALLIANCE && progressFaction == HORDE && (m_captureState == CAPTURE_STATE_PROGRESS || m_captureState == CAPTURE_STATE_WIN))
-    {
-        if (info->capturePoint.contestedEventID2)
-            eventId = info->capturePoint.contestedEventID2;
-
-        m_captureState = CAPTURE_STATE_CONTEST;
-    }
-
-    if (eventId)
-    {
-        // send zone script
-        if (m_zoneScript)
-            m_zoneScript->ProcessEvent(this, eventId, progressFaction);
-
-        // Send script event to SD2 and database as well - this can be used for summoning creatures, casting specific spells or spawning GOs
-        if (!sScriptMgr.OnProcessEvent(eventId, this, this, true))
-            GetMap()->ScriptsStart(sEventScripts, eventId, this, this);
-    }
 }

@@ -135,7 +135,7 @@ void WorldPvPHP::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void WorldPvPHP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPHP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
 {
     uint32 uiCredit = 0;
 
@@ -158,13 +158,13 @@ void WorldPvPHP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEvent
     if (!uiCredit)
         return;
 
-    for (PlayerSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+    for (std::list<Player*>::iterator itr = players.begin(); itr != players.end(); ++itr)
     {
-        if (!(*itr))
-            continue;
-
-        (*itr)->KilledMonsterCredit(uiCredit);
-        (*itr)->RewardHonor(NULL, 1, HONOR_REWARD_HELLFIRE);
+        if ((*itr) && (*itr)->GetTeam() == uiFaction)
+        {
+            (*itr)->KilledMonsterCredit(uiCredit);
+            (*itr)->RewardHonor(NULL, 1, HONOR_REWARD_HELLFIRE);
+        }
     }
 }
 
