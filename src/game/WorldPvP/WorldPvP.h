@@ -48,24 +48,6 @@ enum GameObjectArtKits
     GO_ARTKIT_BANNER_NEUTRAL                = 21,
 };
 
-enum CapturePointState
-{
-    CAPTURE_STATE_NEUTRAL = 0,
-    CAPTURE_STATE_PROGRESS_ALLIANCE,
-    CAPTURE_STATE_PROGRESS_HORDE,
-    CAPTURE_STATE_CONTEST_ALLIANCE,
-    CAPTURE_STATE_CONTEST_HORDE,
-    CAPTURE_STATE_WIN_ALLIANCE,
-    CAPTURE_STATE_WIN_HORDE
-};
-
-enum CapturePointSlider
-{
-    CAPTURE_SLIDER_ALLIANCE = 100,                          // full alliance
-    CAPTURE_SLIDER_HORDE    = 0,                            // full horde
-    CAPTURE_SLIDER_NEUTRAL  = 50                            // middle
-};
-
 typedef std::set<Player*> PlayerSet;
 
 class WorldPvP : public ZoneScript

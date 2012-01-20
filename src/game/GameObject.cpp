@@ -38,6 +38,7 @@
 #include "BattleGroundAV.h"
 #include "Util.h"
 #include "ScriptMgr.h"
+#include "WorldPvP/WorldPvPMgr.h"
 #include <G3D/Quat.h>
 
 GameObject::GameObject() : WorldObject(),
