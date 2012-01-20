@@ -117,7 +117,7 @@ class WorldPvP : public ZoneScript
         void RegisterZone(uint32 zoneId);
         bool HasPlayer(Player* pPlayer) const;
         void LockCapturePoint(uint32 pointEntry, bool isLocked);
-        void ResetCapturePoint(uint32 pointEntry, float fValue);
+        void ResetCapturePointSliderValue(uint32 pointEntry);
 
         // store the players inside the area depending on the faction
         PlayerSet m_sZonePlayers;

@@ -269,11 +269,7 @@ void WorldPvPTF::Update(uint32 diff)
 
             for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
             {
-                SetBannerArtKit(m_TowerBannerGUID[i], GO_ARTKIT_BANNER_NEUTRAL);
-                // if grid is unloaded the slider reset is enough
-                ResetCapturePoint(aTerokkarTowers[i], CAPTURE_SLIDER_NEUTRAL);
-                // if grid is not unloaded then reset the tower manually
-                DoResetCapturePoints(m_TowerBannerGUID[i]);
+                ResetTower(i);
                 LockCapturePoint(aTerokkarTowers[i], false);
             }
 
@@ -323,13 +319,19 @@ void WorldPvPTF::SetBannerArtKit(ObjectGuid BannerGuid, uint32 uiArtkit)
     }
 }
 
-void WorldPvPTF::DoResetCapturePoints(ObjectGuid BannerGuid)
+void WorldPvPTF::ResetTower(uint8 uiTowerId)
 {
     // neet to use a player as anchor for the map
     Player* pPlayer = GetPlayerInZone();
     if (!pPlayer)
         return;
 
-    if (GameObject* pBanner = pPlayer->GetMap()->GetGameObject(BannerGuid))
+    if (GameObject* pBanner = pPlayer->GetMap()->GetGameObject(m_TowerBannerGUID[uiTowerId]))
+    {
         pBanner->ResetCapturePoint();
+        pBanner->Refresh();
+    }
+    else
+        // if grid is unloaded the slider reset is enough
+        ResetCapturePointSliderValue(aTerokkarTowers[uiTowerId]);
 }

@@ -109,10 +109,10 @@ void WorldPvP::LockCapturePoint(uint32 pointEntry, bool isLocked)
      sWorldPvPMgr.SetCapturePointLockState(pointEntry, isLocked);
 }
 
-// reset a capture point slider
-void WorldPvP::ResetCapturePoint(uint32 pointEntry, float fValue)
+// reset a capture point slider, should only be used for unloaded GOs
+void WorldPvP::ResetCapturePointSliderValue(uint32 pointEntry)
 {
-    sWorldPvPMgr.SetCapturePointSlider(pointEntry, fValue);
+    sWorldPvPMgr.SetCapturePointSlider(pointEntry, -1);
 }
 
 // apply a team buff for the specific zone

@@ -177,15 +177,15 @@ void WorldPvPHP::HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim)
         {
             GameObjectInfo const* info = pBanner->GetGOInfo();
             if (!info)
-                return;
+                continue;
 
             if (!pPlayer->IsWithinDistInMap(pBanner, info->capturePoint.radius))
                 continue;
 
             // check banner faction
-            if (pBanner->GetCapturePointTicks() > CAPTURE_SLIDER_NEUTRAL + info->capturePoint.neutralPercent * 0.5f && pPlayer->GetTeam() == ALLIANCE)
+            if (pBanner->GetOwnerFaction() == ALLIANCE && pPlayer->GetTeam() == ALLIANCE)
                 pPlayer->CastSpell(pPlayer, SPELL_HELLFIRE_TOWER_TOKEN_ALY, true);
-            else if (pBanner->GetCapturePointTicks() < CAPTURE_SLIDER_NEUTRAL - info->capturePoint.neutralPercent * 0.5f && pPlayer->GetTeam() == HORDE)
+            else if (pBanner->GetOwnerFaction() == HORDE && pPlayer->GetTeam() == HORDE)
                 pPlayer->CastSpell(pPlayer, SPELL_HELLFIRE_TOWER_TOKEN_HORDE, true);
         }
     }
@@ -202,6 +202,7 @@ void WorldPvPHP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
             {
                 if (uiEventId == aHellfireTowerEvents[i][j].uiEventEntry)
                 {
+                    // TODO: Pass pGo to ProcessCaptureEvent function so that we dont have to use that hacky GetPlayerInZone function
                     ProcessCaptureEvent(aHellfireTowerEvents[i][j].uiEventType, uiFaction, aHellfireTowerEvents[i][j].uiWorldState, aHellfireTowerEvents[i][j].uiTowerArtKit, i);
                     sWorld.SendZoneText(ZONE_ID_HELLFIRE_PENINSULA, sObjectMgr.GetMangosStringForDBCLocale(aHellfireTowerEvents[i][j].uiZoneText));
                     break;

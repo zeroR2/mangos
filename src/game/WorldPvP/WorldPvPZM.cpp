@@ -201,9 +201,9 @@ void WorldPvPZM::HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim)
                 continue;
 
             // check banner faction
-            if (pBanner->GetCapturePointTicks() > CAPTURE_SLIDER_NEUTRAL + info->capturePoint.neutralPercent * 0.5f && pPlayer->GetTeam() == ALLIANCE)
+            if (pBanner->GetOwnerFaction() == ALLIANCE && pPlayer->GetTeam() == ALLIANCE)
                 pPlayer->CastSpell(pPlayer, SPELL_ZANGA_TOWER_TOKEN_ALY, true);
-            else if (pBanner->GetCapturePointTicks() < CAPTURE_SLIDER_NEUTRAL - info->capturePoint.neutralPercent * 0.5f && pPlayer->GetTeam() == HORDE)
+            else if (pBanner->GetOwnerFaction() == HORDE && pPlayer->GetTeam() == HORDE)
                 pPlayer->CastSpell(pPlayer, SPELL_ZANGA_TOWER_TOKEN_HORDE, true);
         }
     }
