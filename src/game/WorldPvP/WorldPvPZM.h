@@ -105,22 +105,26 @@ enum
 
 struct ZangaTowersEvents
 {
-    uint32 uiEventEntry, uiEventType, uiZoneText, uiWorldState, uiMapState;
+    uint32  uiEventEntry;
+    Team    faction;
+    uint32  uiZoneText;
+    uint32  uiWorldState;
+    uint32  uiMapState;
 };
 
 static const ZangaTowersEvents aZangaTowerEvents[MAX_ZM_TOWERS][4] =
 {
     {
-        {EVENT_EAST_BEACON_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_ZM_CAPTURE_EAST_A,    WORLD_STATE_TOWER_EAST_ALY,     WORLD_STATE_BEACON_EAST_ALY},
-        {EVENT_EAST_BEACON_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_ZM_CAPTURE_EAST_H,    WORLD_STATE_TOWER_EAST_HORDE,   WORLD_STATE_BEACON_EAST_HORDE},
-        {EVENT_EAST_BEACON_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_ZM_LOOSE_EAST_A,      WORLD_STATE_TOWER_EAST_NEUTRAL, WORLD_STATE_BEACON_EAST_NEUTRAL},
-        {EVENT_EAST_BEACON_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_ZM_LOOSE_EAST_H,      WORLD_STATE_TOWER_EAST_NEUTRAL, WORLD_STATE_BEACON_EAST_NEUTRAL},
+        {EVENT_EAST_BEACON_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_ZM_CAPTURE_EAST_A,    WORLD_STATE_TOWER_EAST_ALY,     WORLD_STATE_BEACON_EAST_ALY},
+        {EVENT_EAST_BEACON_PROGRESS_HORDE,      HORDE,      LANG_OPVP_ZM_CAPTURE_EAST_H,    WORLD_STATE_TOWER_EAST_HORDE,   WORLD_STATE_BEACON_EAST_HORDE},
+        {EVENT_EAST_BEACON_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_ZM_LOOSE_EAST_A,      WORLD_STATE_TOWER_EAST_NEUTRAL, WORLD_STATE_BEACON_EAST_NEUTRAL},
+        {EVENT_EAST_BEACON_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_ZM_LOOSE_EAST_H,      WORLD_STATE_TOWER_EAST_NEUTRAL, WORLD_STATE_BEACON_EAST_NEUTRAL},
     },
     {
-        {EVENT_WEST_BEACON_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_ZM_CAPTURE_WEST_A,    WORLD_STATE_TOWER_WEST_ALY,     WORLD_STATE_BEACON_WEST_ALY},
-        {EVENT_WEST_BEACON_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_ZM_CAPTURE_WEST_H,    WORLD_STATE_TOWER_WEST_HORDE,   WORLD_STATE_BEACON_WEST_HORDE},
-        {EVENT_WEST_BEACON_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_ZM_LOOSE_WEST_A,      WORLD_STATE_TOWER_WEST_NEUTRAL, WORLD_STATE_BEACON_WEST_NEUTRAL},
-        {EVENT_WEST_BEACON_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_ZM_LOOSE_WEST_H,      WORLD_STATE_TOWER_WEST_NEUTRAL, WORLD_STATE_BEACON_WEST_NEUTRAL},
+        {EVENT_WEST_BEACON_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_ZM_CAPTURE_WEST_A,    WORLD_STATE_TOWER_WEST_ALY,     WORLD_STATE_BEACON_WEST_ALY},
+        {EVENT_WEST_BEACON_PROGRESS_HORDE,      HORDE,      LANG_OPVP_ZM_CAPTURE_WEST_H,    WORLD_STATE_TOWER_WEST_HORDE,   WORLD_STATE_BEACON_WEST_HORDE},
+        {EVENT_WEST_BEACON_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_ZM_LOOSE_WEST_A,      WORLD_STATE_TOWER_WEST_NEUTRAL, WORLD_STATE_BEACON_WEST_NEUTRAL},
+        {EVENT_WEST_BEACON_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_ZM_LOOSE_WEST_H,      WORLD_STATE_TOWER_WEST_NEUTRAL, WORLD_STATE_BEACON_WEST_NEUTRAL},
     },
 };
 
@@ -136,7 +140,7 @@ class WorldPvPZM : public WorldPvP
 
         void OnCreatureCreate(Creature* pCreature);
         void OnGameObjectCreate(GameObject* pGo);
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
+        void ProcessEvent(GameObject* pGo, uint32 uiEventId);
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
@@ -149,17 +153,17 @@ class WorldPvPZM : public WorldPvP
 
     private:
         // process capture events
-        void ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32 uiNewWorldState, uint32 uiNewMapState, uint32 uiTower);
+        void ProcessCaptureEvent(Team faction, uint32 uiNewWorldState, uint32 uiNewMapState, uint32 uiTower);
 
         // handle graveyard faction banners
         void DoHandleBanners(ObjectGuid BannerGuid, bool bRespawn);
 
         // Handles scouts world states and gossip - ToDo: implement gossip based on condition
-        void DoPrepareFactionScouts(uint32 uiFaction);
-        void DoResetScouts(uint32 uiFaction, bool bIncludeWorldStates = true);
+        void DoPrepareFactionScouts(Team faction);
+        void DoResetScouts(Team faction, bool bIncludeWorldStates = true);
 
         // Link graveyard on central node capture
-        void DoSetGraveyard(uint32 uiFaction, bool bRemove = false);
+        void DoSetGraveyard(Team faction, bool bRemove = false);
 
         // Respawn npcs which act as an artkit visual
         void DoSetBeaconArtkit(ObjectGuid BeaconGuid, bool bRespawn);
@@ -167,8 +171,8 @@ class WorldPvPZM : public WorldPvP
         uint32 m_uiBeaconWorldState[MAX_ZM_TOWERS];
         uint32 m_uiBeaconMapState[MAX_ZM_TOWERS];
 
-        uint32 m_uiBeaconController[MAX_ZM_TOWERS];
-        uint32 m_uiGraveyardController;
+        Team m_uiBeaconController[MAX_ZM_TOWERS];
+        Team m_uiGraveyardController;
 
         uint32 m_uiGraveyardWorldState;
         uint32 m_uiAllianceScoutWorldState;

@@ -163,7 +163,7 @@ class WorldPvPNA : public WorldPvP
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
-        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction);
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
         void OnCreatureCreate(Creature* pCreature);
@@ -171,7 +171,7 @@ class WorldPvPNA : public WorldPvP
         void OnCreatureRespawn(Creature* pCreature);
         void OnGameObjectCreate(GameObject* pGo);
 
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
+        void ProcessEvent(GameObject* pGo, uint32 uiEventId);
 
         bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
 
@@ -185,21 +185,21 @@ class WorldPvPNA : public WorldPvP
         bool HandlePlayerTaxiDrive(Player* pPlayer, uint8 uiPos);
 
         // Link graveyard on Halaa
-        void DoSetGraveyard(uint32 uiFaction, bool bRemove = false);
+        void DoSetGraveyard(Team faction, bool bRemove = false);
 
         // process capture events
-        void ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam);
+        void ProcessCaptureEvent(Team faction);
 
         // set specific faction soldiers and objects after capture
-        void DoRespawnSoldiers(uint32 uiFaction);
-        void DoHandleFactionObjects(uint32 uiFaction);
+        void DoRespawnSoldiers(Team faction);
+        void DoHandleFactionObjects(Team faction);
 
         // set banner artkit
         void SetBannerArtKit(uint32 uiArtKit);
         // handle a specific game objects
         void DoRespawnObjects(ObjectGuid GameObjectGuid, bool bRespawn);
 
-        uint32 m_uiZoneController;
+        Team m_uiZoneController;
         uint32 m_uiControllerWorldState;
         uint32 m_uiControllerMapState;
         uint32 m_uiRoostWorldState[MAX_NA_ROOSTS];

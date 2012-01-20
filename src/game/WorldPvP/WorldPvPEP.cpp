@@ -33,7 +33,7 @@ WorldPvPEP::WorldPvPEP() : WorldPvP(),
     m_uiTowerWorldState[3] = WORLD_STATE_PLAGUEWOOD_NEUTRAL;
 
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
-        m_uiTowerController[i] = NEUTRAL;
+        m_uiTowerController[i] = TEAM_NONE;
 }
 
 bool WorldPvPEP::InitWorldPvPArea()
@@ -126,7 +126,7 @@ void WorldPvPEP::OnGameObjectCreate(GameObject* pGo)
             if (pGo->IsWithinDist2d(m_aTowersSpawnLocs[0].m_fX, m_aTowersSpawnLocs[0].m_fY, 50.0f))
             {
                 m_lTowerBanners[0].push_back(pGo->GetObjectGuid());
-                if (m_uiTowerController[0] == NEUTRAL)
+                if (m_uiTowerController[0] == TEAM_NONE)
                     pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
                 else
                     pGo->SetGoArtKit(m_uiTowerController[0] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
@@ -134,7 +134,7 @@ void WorldPvPEP::OnGameObjectCreate(GameObject* pGo)
             else if (pGo->IsWithinDist2d(m_aTowersSpawnLocs[1].m_fX, m_aTowersSpawnLocs[1].m_fY, 50.0f))
             {
                 m_lTowerBanners[1].push_back(pGo->GetObjectGuid());
-                if (m_uiTowerController[1] == NEUTRAL)
+                if (m_uiTowerController[1] == TEAM_NONE)
                     pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
                 else
                     pGo->SetGoArtKit(m_uiTowerController[1] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
@@ -142,7 +142,7 @@ void WorldPvPEP::OnGameObjectCreate(GameObject* pGo)
             else if (pGo->IsWithinDist2d(m_aTowersSpawnLocs[2].m_fX, m_aTowersSpawnLocs[2].m_fY, 50.0f))
             {
                 m_lTowerBanners[2].push_back(pGo->GetObjectGuid());
-                if (m_uiTowerController[2] == NEUTRAL)
+                if (m_uiTowerController[2] == TEAM_NONE)
                     pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
                 else
                     pGo->SetGoArtKit(m_uiTowerController[2] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
@@ -150,7 +150,7 @@ void WorldPvPEP::OnGameObjectCreate(GameObject* pGo)
             else if (pGo->IsWithinDist2d(m_aTowersSpawnLocs[3].m_fX, m_aTowersSpawnLocs[3].m_fY, 50.0f))
             {
                 m_lTowerBanners[3].push_back(pGo->GetObjectGuid());
-                if (m_uiTowerController[3] == NEUTRAL)
+                if (m_uiTowerController[3] == TEAM_NONE)
                     pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
                 else
                     pGo->SetGoArtKit(m_uiTowerController[3] == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
@@ -165,7 +165,7 @@ void WorldPvPEP::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void WorldPvPEP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
+void WorldPvPEP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction)
 {
     uint32 uiCredit = 0;
 
@@ -194,7 +194,7 @@ void WorldPvPEP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEv
 
     for (std::list<Player*>::iterator itr = players.begin(); itr != players.end(); ++itr)
     {
-        if ((*itr) && (*itr)->GetTeam() == uiFaction)
+        if ((*itr) && (*itr)->GetTeam() == faction)
         {
             (*itr)->KilledMonsterCredit(uiCredit);
             (*itr)->RewardHonor(NULL, 1, HONOR_REWARD_PLAGUELANDS);
@@ -203,7 +203,7 @@ void WorldPvPEP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEv
 }
 
 // process the capture events
-void WorldPvPEP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
+void WorldPvPEP::ProcessEvent(GameObject* pGo, uint32 uiEventId)
 {
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
     {
@@ -211,9 +211,9 @@ void WorldPvPEP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
         {
             for (uint8 j = 0; j < 4; ++j)
             {
-                if (uiEventId == aPlaguelandsTowerEvents[i][j].uiEventEntry && uiFaction != m_uiTowerController[i])
+                if (uiEventId == aPlaguelandsTowerEvents[i][j].uiEventEntry && aPlaguelandsTowerEvents[i][j].faction != m_uiTowerController[i])
                 {
-                    ProcessCaptureEvent(aPlaguelandsTowerEvents[i][j].uiEventType, uiFaction, aPlaguelandsTowerEvents[i][j].uiWorldState, i);
+                    ProcessCaptureEvent(aPlaguelandsTowerEvents[i][j].faction, aPlaguelandsTowerEvents[i][j].uiWorldState, i);
                     sWorld.SendZoneText(ZONE_ID_EASTERN_PLAGUELANDS, sObjectMgr.GetMangosStringForDBCLocale(aPlaguelandsTowerEvents[i][j].uiZoneText));
                     break;
                 }
@@ -222,7 +222,7 @@ void WorldPvPEP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
     }
 }
 
-void WorldPvPEP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32 uiNewWorldState, uint32 uiTower)
+void WorldPvPEP::ProcessCaptureEvent(Team faction, uint32 uiNewWorldState, uint32 uiTower)
 {
     for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
     {
@@ -231,12 +231,11 @@ void WorldPvPEP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
             // remove old tower state
             SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 
-            if (uiCaptureType == PROGRESS)
+            if (faction != TEAM_NONE)
             {
-                SetBannersArtKit(m_lTowerBanners[i], uiTeam == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
-                m_uiTowerController[i] = uiTeam;
+                SetBannersArtKit(m_lTowerBanners[i], faction == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
 
-                if (uiTeam == ALLIANCE)
+                if (faction == ALLIANCE)
                     ++m_uiTowersAlly;
                 else
                     ++m_uiTowersHorde;
@@ -245,38 +244,38 @@ void WorldPvPEP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
                 switch (i)
                 {
                     case 0:     // Northpass
-                        DoUpdateShrine(uiTeam == ALLIANCE ? m_uiLordaeronShrineAlyGUID : m_uiLordaeronShrineHordeGUID);
+                        DoUpdateShrine(faction == ALLIANCE ? m_uiLordaeronShrineAlyGUID : m_uiLordaeronShrineHordeGUID);
                         break;
                     case 1:     // Crownguard
-                        DoSetGraveyard(uiTeam);
+                        DoSetGraveyard(faction);
                         break;
                     case 2:     // Eastwall
-                        if (m_uiTowerController[0] != uiTeam)
-                            DoSummonSoldiersIfCan(uiTeam);
+                        if (m_uiTowerController[0] != faction)
+                            DoSummonSoldiersIfCan(faction);
                         break;
                     case 3:     // Plaguewood
-                        DoSummonFlightMasterIfCan(uiTeam);
+                        DoSummonFlightMasterIfCan(faction);
                         break;
                 }
             }
-            else if (uiCaptureType == NEUTRAL)
+            else
             {
                 SetBannersArtKit(m_lTowerBanners[i], GO_ARTKIT_BANNER_NEUTRAL);
-                m_uiTowerController[i] = NEUTRAL;
 
-                if (uiTeam == ALLIANCE)
-                    --m_uiTowersHorde;
-                else
+                Team oldFaction = m_uiTowerController[i];
+                if (oldFaction == ALLIANCE)
                     --m_uiTowersAlly;
+                else
+                    --m_uiTowersHorde;
 
                 // cancel rewards from each tower
                 switch (i)
                 {
                     case 0:     // Northpass
-                        DoUpdateShrine(uiTeam == ALLIANCE ? m_uiLordaeronShrineAlyGUID : m_uiLordaeronShrineHordeGUID, true);
+                        DoUpdateShrine(oldFaction == ALLIANCE ? m_uiLordaeronShrineAlyGUID : m_uiLordaeronShrineHordeGUID, true);
                         break;
                     case 1:     // Crownguard
-                        DoSetGraveyard(uiTeam, true);
+                        DoSetGraveyard(oldFaction, true);
                         break;
                     case 2:     // Eastwall
                         DoUnsummonSoldiers();
@@ -288,6 +287,7 @@ void WorldPvPEP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
             }
 
             // send new tower state
+            m_uiTowerController[i] = faction;
             m_uiTowerWorldState[i] = uiNewWorldState;
             SendUpdateWorldState(m_uiTowerWorldState[i], 1);
         }
@@ -314,7 +314,7 @@ void WorldPvPEP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
     UpdateWorldState();
 }
 
-void WorldPvPEP::DoSummonFlightMasterIfCan(uint32 uiFaction)
+void WorldPvPEP::DoSummonFlightMasterIfCan(Team faction)
 {
     Player* pPlayer = GetPlayerInZone();
     if (!pPlayer)
@@ -336,7 +336,7 @@ void WorldPvPEP::DoUnsummonFlightMaster()
         pFlightMaster->ForcedDespawn();
 }
 
-void WorldPvPEP::DoSummonSoldiersIfCan(uint32 uiFaction)
+void WorldPvPEP::DoSummonSoldiersIfCan(Team faction)
 {
     Player* pPlayer = GetPlayerInZone();
     if (!pPlayer)
@@ -347,9 +347,9 @@ void WorldPvPEP::DoSummonSoldiersIfCan(uint32 uiFaction)
     for (uint8 i = 0; i < 5; i++)
     {
         if (i == 0)
-            uiEntry = uiFaction == ALLIANCE ? NPC_LORDAERON_COMMANDER : NPC_LORDAERON_VETERAN;
+            uiEntry = faction == ALLIANCE ? NPC_LORDAERON_COMMANDER : NPC_LORDAERON_VETERAN;
         else
-            uiEntry = uiFaction == ALLIANCE ? NPC_LORDAERON_SOLDIER : NPC_LORDAERON_FIGHTER;
+            uiEntry = faction == ALLIANCE ? NPC_LORDAERON_SOLDIER : NPC_LORDAERON_FIGHTER;
 
         if (Creature* pSoldier = pPlayer->SummonCreature(uiEntry, m_aPlaguelandSoldiersSpawnLocs[i].m_fX, m_aPlaguelandSoldiersSpawnLocs[i].m_fY, m_aPlaguelandSoldiersSpawnLocs[i].m_fZ, 2.2f, TEMPSUMMON_DEAD_DESPAWN, 0))
             m_lSoldiersGuids.push_back(pSoldier->GetObjectGuid());
@@ -370,12 +370,12 @@ void WorldPvPEP::DoUnsummonSoldiers()
     }
 }
 
-void WorldPvPEP::DoSetGraveyard(uint32 uiFaction, bool bRemove)
+void WorldPvPEP::DoSetGraveyard(Team faction, bool bRemove)
 {
     if (bRemove)
-        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_EASTERN_PLAGUE, GRAVEYARD_ZONE_EASTERN_PLAGUE,  (Team)uiFaction,      false);
+        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_EASTERN_PLAGUE, GRAVEYARD_ZONE_EASTERN_PLAGUE, faction, false);
     else
-        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_EASTERN_PLAGUE,    GRAVEYARD_ZONE_EASTERN_PLAGUE,  (Team)uiFaction, false);
+        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_EASTERN_PLAGUE, GRAVEYARD_ZONE_EASTERN_PLAGUE, faction, false);
 }
 
 void WorldPvPEP::DoUpdateShrine(ObjectGuid uiShrineGuid, bool bRemove)

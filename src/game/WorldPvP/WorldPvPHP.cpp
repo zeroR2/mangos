@@ -32,7 +32,7 @@ WorldPvPHP::WorldPvPHP() : WorldPvP(),
     m_uiTowerWorldState[2] = WORLD_STATE_BROKEN_HILL_NEUTRAL;
 
     for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
-        m_uiTowerController[i] = NEUTRAL;
+        m_uiTowerController[i] = TEAM_NONE;
 }
 
 bool WorldPvPHP::InitWorldPvPArea()
@@ -100,21 +100,21 @@ void WorldPvPHP::OnGameObjectCreate(GameObject* pGo)
     {
         case GO_TOWER_BANNER_OVERLOOK:
             m_HellfireTowerGUID[0] = pGo->GetObjectGuid();
-            if (m_uiTowerController[0] == NEUTRAL)
+            if (m_uiTowerController[0] == TEAM_NONE)
                 pGo->SetGoArtKit(GO_ARTKIT_OVERLOOK_NEUTRAL);
             else
                 pGo->SetGoArtKit(m_uiTowerController[0] == ALLIANCE ? GO_ARTKIT_OVERLOOK_ALY : GO_ARTKIT_OVERLOOK_HORDE);
             break;
         case GO_TOWER_BANNER_STADIUM:
             m_HellfireTowerGUID[1] = pGo->GetObjectGuid();
-            if (m_uiTowerController[1] == NEUTRAL)
+            if (m_uiTowerController[1] == TEAM_NONE)
                 pGo->SetGoArtKit(GO_ARTKIT_STADIUM_NEUTRAL);
             else
                 pGo->SetGoArtKit(m_uiTowerController[1] == ALLIANCE ? GO_ARTKIT_STADIUM_ALY : GO_ARTKIT_STADIUM_HORDE);
             break;
         case GO_TOWER_BANNER_BROKEN_HILL:
             m_HellfireTowerGUID[2] = pGo->GetObjectGuid();
-            if (m_uiTowerController[2] == NEUTRAL)
+            if (m_uiTowerController[2] == TEAM_NONE)
                 pGo->SetGoArtKit(GO_ARTKIT_BROKEN_HILL_NEUTRAL);
             else
                 pGo->SetGoArtKit(m_uiTowerController[2] == ALLIANCE ? GO_ARTKIT_BROKEN_HILL_ALY : GO_ARTKIT_BROKEN_HILL_HORDE);
@@ -135,7 +135,7 @@ void WorldPvPHP::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void WorldPvPHP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
+void WorldPvPHP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction)
 {
     uint32 uiCredit = 0;
 
@@ -160,7 +160,7 @@ void WorldPvPHP::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEv
 
     for (std::list<Player*>::iterator itr = players.begin(); itr != players.end(); ++itr)
     {
-        if ((*itr) && (*itr)->GetTeam() == uiFaction)
+        if ((*itr) && (*itr)->GetTeam() == faction)
         {
             (*itr)->KilledMonsterCredit(uiCredit);
             (*itr)->RewardHonor(NULL, 1, HONOR_REWARD_HELLFIRE);
@@ -183,16 +183,16 @@ void WorldPvPHP::HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim)
                 continue;
 
             // check banner faction
-            if (pBanner->GetOwnerFaction() == ALLIANCE && pPlayer->GetTeam() == ALLIANCE)
+            if (pBanner->GetCaptureState() == ALLIANCE && pPlayer->GetTeam() == ALLIANCE)
                 pPlayer->CastSpell(pPlayer, SPELL_HELLFIRE_TOWER_TOKEN_ALY, true);
-            else if (pBanner->GetOwnerFaction() == HORDE && pPlayer->GetTeam() == HORDE)
+            else if (pBanner->GetCaptureState() == HORDE && pPlayer->GetTeam() == HORDE)
                 pPlayer->CastSpell(pPlayer, SPELL_HELLFIRE_TOWER_TOKEN_HORDE, true);
         }
     }
 }
 
 // process the capture events
-void WorldPvPHP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
+void WorldPvPHP::ProcessEvent(GameObject* pGo, uint32 uiEventId)
 {
     for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
     {
@@ -200,10 +200,10 @@ void WorldPvPHP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
         {
             for (uint8 j = 0; j < 4; ++j)
             {
-                if (uiEventId == aHellfireTowerEvents[i][j].uiEventEntry && uiFaction != m_uiTowerController[i])
+                if (uiEventId == aHellfireTowerEvents[i][j].uiEventEntry && aHellfireTowerEvents[i][j].faction != m_uiTowerController[i])
                 {
                     // TODO: Pass pGo to ProcessCaptureEvent function so that we dont have to use that hacky GetPlayerInZone function
-                    ProcessCaptureEvent(aHellfireTowerEvents[i][j].uiEventType, uiFaction, aHellfireTowerEvents[i][j].uiWorldState, aHellfireTowerEvents[i][j].uiTowerArtKit, i);
+                    ProcessCaptureEvent(aHellfireTowerEvents[i][j].faction, aHellfireTowerEvents[i][j].uiWorldState, aHellfireTowerEvents[i][j].uiTowerArtKit, i);
                     sWorld.SendZoneText(ZONE_ID_HELLFIRE_PENINSULA, sObjectMgr.GetMangosStringForDBCLocale(aHellfireTowerEvents[i][j].uiZoneText));
                     break;
                 }
@@ -212,7 +212,7 @@ void WorldPvPHP::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
     }
 }
 
-void WorldPvPHP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32 uiNewWorldState, uint32 uiTowerArtKit, uint32 uiTower)
+void WorldPvPHP::ProcessCaptureEvent(Team faction, uint32 uiNewWorldState, uint32 uiTowerArtKit, uint32 uiTower)
 {
     for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
     {
@@ -221,30 +221,29 @@ void WorldPvPHP::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32
             // remove old tower state
             SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 
-            if (uiCaptureType == PROGRESS)
+            if (faction != TEAM_NONE)
             {
-                SetBannerArtKit(m_HellfireBannerGUID[i], uiTeam == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
+                SetBannerArtKit(m_HellfireBannerGUID[i], faction == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
                 SetBannerArtKit(m_HellfireTowerGUID[i], uiTowerArtKit);
-                m_uiTowerController[i] = uiTeam;
 
-                if (uiTeam == ALLIANCE)
+                if (faction == ALLIANCE)
                     ++m_uiTowersAlly;
                 else
                     ++m_uiTowersHorde;
             }
-            else if (uiCaptureType == NEUTRAL)
+            else
             {
                 SetBannerArtKit(m_HellfireBannerGUID[i], GO_ARTKIT_BANNER_NEUTRAL);
                 SetBannerArtKit(m_HellfireTowerGUID[i], uiTowerArtKit);
-                m_uiTowerController[i] = NEUTRAL;
 
-                if (uiTeam == ALLIANCE)
-                    --m_uiTowersHorde;
-                else
+                if (m_uiTowerController[i] == ALLIANCE)
                     --m_uiTowersAlly;
+                else
+                    --m_uiTowersHorde;
             }
 
             // send new tower state
+            m_uiTowerController[i] = faction;
             m_uiTowerWorldState[i] = uiNewWorldState;
             SendUpdateWorldState(m_uiTowerWorldState[i], 1);
         }

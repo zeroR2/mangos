@@ -115,28 +115,32 @@ enum
 
 struct HellfireTowersEvents
 {
-    uint32 uiEventEntry, uiEventType, uiZoneText, uiWorldState, uiTowerArtKit;
+    uint32  uiEventEntry;
+    Team    faction;
+    uint32  uiZoneText;
+    uint32  uiWorldState;
+    uint32  uiTowerArtKit;
 };
 
 static const HellfireTowersEvents aHellfireTowerEvents[MAX_HP_TOWERS][4] =
 {
     {
-        {EVENT_OVERLOOK_PROGRESS_ALLIANCE,      PROGRESS,   LANG_OPVP_HP_CAPTURE_OVERLOOK_A,    WORLD_STATE_OVERLOOK_ALY,           GO_ARTKIT_OVERLOOK_ALY},
-        {EVENT_OVERLOOK_PROGRESS_HORDE,         PROGRESS,   LANG_OPVP_HP_CAPTURE_OVERLOOK_H,    WORLD_STATE_OVERLOOK_HORDE,         GO_ARTKIT_OVERLOOK_HORDE},
-        {EVENT_OVERLOOK_NEUTRAL_HORDE,          NEUTRAL,    LANG_OPVP_HP_LOOSE_OVERLOOK_A,      WORLD_STATE_OVERLOOK_NEUTRAL,       GO_ARTKIT_OVERLOOK_NEUTRAL},
-        {EVENT_OVERLOOK_NEUTRAL_ALLIANCE,       NEUTRAL,    LANG_OPVP_HP_LOOSE_OVERLOOK_H,      WORLD_STATE_OVERLOOK_NEUTRAL,       GO_ARTKIT_OVERLOOK_NEUTRAL},
+        {EVENT_OVERLOOK_PROGRESS_ALLIANCE,      ALLIANCE,   LANG_OPVP_HP_CAPTURE_OVERLOOK_A,    WORLD_STATE_OVERLOOK_ALY,           GO_ARTKIT_OVERLOOK_ALY},
+        {EVENT_OVERLOOK_PROGRESS_HORDE,         HORDE,      LANG_OPVP_HP_CAPTURE_OVERLOOK_H,    WORLD_STATE_OVERLOOK_HORDE,         GO_ARTKIT_OVERLOOK_HORDE},
+        {EVENT_OVERLOOK_NEUTRAL_HORDE,          TEAM_NONE,  LANG_OPVP_HP_LOOSE_OVERLOOK_A,      WORLD_STATE_OVERLOOK_NEUTRAL,       GO_ARTKIT_OVERLOOK_NEUTRAL},
+        {EVENT_OVERLOOK_NEUTRAL_ALLIANCE,       TEAM_NONE,  LANG_OPVP_HP_LOOSE_OVERLOOK_H,      WORLD_STATE_OVERLOOK_NEUTRAL,       GO_ARTKIT_OVERLOOK_NEUTRAL},
     },
     {
-        {EVENT_STADIUM_PROGRESS_ALLIANCE,       PROGRESS,   LANG_OPVP_HP_CAPTURE_STADIUM_A,     WORLD_STATE_STADIUM_ALY,            GO_ARTKIT_STADIUM_ALY},
-        {EVENT_STADIUM_PROGRESS_HORDE,          PROGRESS,   LANG_OPVP_HP_CAPTURE_STADIUM_H,     WORLD_STATE_STADIUM_HORDE,          GO_ARTKIT_STADIUM_HORDE},
-        {EVENT_STADIUM_NEUTRAL_HORDE,           NEUTRAL,    LANG_OPVP_HP_LOOSE_STADIUM_A,       WORLD_STATE_STADIUM_NEUTRAL,        GO_ARTKIT_STADIUM_NEUTRAL},
-        {EVENT_STADIUM_NEUTRAL_ALLIANCE,        NEUTRAL,    LANG_OPVP_HP_LOOSE_STADIUM_H,       WORLD_STATE_STADIUM_NEUTRAL,        GO_ARTKIT_STADIUM_NEUTRAL},
+        {EVENT_STADIUM_PROGRESS_ALLIANCE,       ALLIANCE,   LANG_OPVP_HP_CAPTURE_STADIUM_A,     WORLD_STATE_STADIUM_ALY,            GO_ARTKIT_STADIUM_ALY},
+        {EVENT_STADIUM_PROGRESS_HORDE,          HORDE,      LANG_OPVP_HP_CAPTURE_STADIUM_H,     WORLD_STATE_STADIUM_HORDE,          GO_ARTKIT_STADIUM_HORDE},
+        {EVENT_STADIUM_NEUTRAL_HORDE,           TEAM_NONE,  LANG_OPVP_HP_LOOSE_STADIUM_A,       WORLD_STATE_STADIUM_NEUTRAL,        GO_ARTKIT_STADIUM_NEUTRAL},
+        {EVENT_STADIUM_NEUTRAL_ALLIANCE,        TEAM_NONE,  LANG_OPVP_HP_LOOSE_STADIUM_H,       WORLD_STATE_STADIUM_NEUTRAL,        GO_ARTKIT_STADIUM_NEUTRAL},
     },
     {
-        {EVENT_BROKEN_HILL_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_HP_CAPTURE_BROKENHILL_A,  WORLD_STATE_BROKEN_HILL_ALY,        GO_ARTKIT_BROKEN_HILL_ALY},
-        {EVENT_BROKEN_HILL_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_HP_CAPTURE_BROKENHILL_H,  WORLD_STATE_BROKEN_HILL_HORDE,      GO_ARTKIT_BROKEN_HILL_HORDE},
-        {EVENT_BROKEN_HILL_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_HP_LOOSE_BROKENHILL_A,    WORLD_STATE_BROKEN_HILL_NEUTRAL,    GO_ARTKIT_BROKEN_HILL_NEUTRAL},
-        {EVENT_BROKEN_HILL_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_HP_LOOSE_BROKENHILL_H,    WORLD_STATE_BROKEN_HILL_NEUTRAL,    GO_ARTKIT_BROKEN_HILL_NEUTRAL},
+        {EVENT_BROKEN_HILL_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_HP_CAPTURE_BROKENHILL_A,  WORLD_STATE_BROKEN_HILL_ALY,        GO_ARTKIT_BROKEN_HILL_ALY},
+        {EVENT_BROKEN_HILL_PROGRESS_HORDE,      HORDE,      LANG_OPVP_HP_CAPTURE_BROKENHILL_H,  WORLD_STATE_BROKEN_HILL_HORDE,      GO_ARTKIT_BROKEN_HILL_HORDE},
+        {EVENT_BROKEN_HILL_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_HP_LOOSE_BROKENHILL_A,    WORLD_STATE_BROKEN_HILL_NEUTRAL,    GO_ARTKIT_BROKEN_HILL_NEUTRAL},
+        {EVENT_BROKEN_HILL_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_HP_LOOSE_BROKENHILL_H,    WORLD_STATE_BROKEN_HILL_NEUTRAL,    GO_ARTKIT_BROKEN_HILL_NEUTRAL},
     },
 };
 
@@ -150,11 +154,11 @@ class WorldPvPHP : public WorldPvP
         bool InitWorldPvPArea();
 
         void OnGameObjectCreate(GameObject* pGo);
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
+        void ProcessEvent(GameObject* pGo, uint32 uiEventId);
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
-        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction);
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
         void FillInitialWorldStates(WorldPacket& data, uint32& count);
@@ -164,12 +168,12 @@ class WorldPvPHP : public WorldPvP
         // world state update
         void UpdateWorldState();
         // process capture events
-        void ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32 uiNewWorldState, uint32 uiTowerArtKit, uint32 uiTower);
+        void ProcessCaptureEvent(Team faction, uint32 uiNewWorldState, uint32 uiTowerArtKit, uint32 uiTower);
         // set banners artkit
         void SetBannerArtKit(ObjectGuid BannerGuid, uint32 uiArtKit);
 
+        Team m_uiTowerController[MAX_HP_TOWERS];
         uint32 m_uiTowerWorldState[MAX_HP_TOWERS];
-        uint32 m_uiTowerController[MAX_HP_TOWERS];
         uint32 m_uiTowersAlly;
         uint32 m_uiTowersHorde;
 

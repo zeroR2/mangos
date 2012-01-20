@@ -21,7 +21,7 @@
 
 
 WorldPvPGH::WorldPvPGH() : WorldPvP(),
-    m_uiZoneController(NEUTRAL)
+    m_uiZoneController(TEAM_NONE)
 {
     m_uiTypeId = WORLD_PVP_TYPE_GH;
 }
@@ -89,7 +89,7 @@ void WorldPvPGH::OnGameObjectCreate(GameObject* pGo)
 }
 
 // process the capture events
-void WorldPvPGH::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
+void WorldPvPGH::ProcessEvent(GameObject* pGo, uint32 uiEventId)
 {
     // If we are not using the lighthouse return
     if (pGo->GetEntry() != GO_VENTURE_BAY_LIGHTHOUSE)
@@ -97,48 +97,60 @@ void WorldPvPGH::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
 
     switch (uiEventId)
     {
+        case EVENT_LIGHTHOUSE_WIN_ALLIANCE:
+            ProcessCaptureEvent(CAPTURE_STATE_WIN_ALLIANCE);
+            break;
+        case EVENT_LIGHTHOUSE_WIN_HORDE:
+            ProcessCaptureEvent(CAPTURE_STATE_WIN_HORDE);
+            break;
         case EVENT_LIGHTHOUSE_PROGRESS_ALLIANCE:
+            ProcessCaptureEvent(CAPTURE_STATE_PROGRESS_ALLIANCE);
+            break;
         case EVENT_LIGHTHOUSE_PROGRESS_HORDE:
-            ProcessCaptureEvent(PROGRESS, uiFaction);
+            ProcessCaptureEvent(CAPTURE_STATE_PROGRESS_HORDE);
             break;
         case EVENT_LIGHTHOUSE_NEUTRAL_ALLIANCE:
         case EVENT_LIGHTHOUSE_NEUTRAL_HORDE:
-            ProcessCaptureEvent(NEUTRAL, uiFaction);
-            break;
-        case EVENT_LIGHTHOUSE_WIN_ALLIANCE:
-        case EVENT_LIGHTHOUSE_WIN_HORDE:
-            ProcessCaptureEvent(WIN, uiFaction);
+            ProcessCaptureEvent(CAPTURE_STATE_NEUTRAL);
             break;
     }
 }
 
-void WorldPvPGH::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam)
+void WorldPvPGH::ProcessCaptureEvent(CapturePointState captureState)
 {
-    switch (uiCaptureType)
+    switch (captureState)
     {
-        case NEUTRAL:
-            SetBannerArtKit(GO_ARTKIT_BANNER_NEUTRAL);
-            m_uiZoneController = NEUTRAL;
-            break;
-        case WIN:
+        case CAPTURE_STATE_WIN_ALLIANCE:
             // Spawn the npcs only when the tower is fully controlled
-            DoRespawnSoldiers(uiTeam);
-            m_uiZoneController = uiTeam;
+            DoRespawnSoldiers(ALLIANCE);
+            m_uiZoneController = ALLIANCE;
             break;
-        case PROGRESS:
-            SetBannerArtKit(uiTeam == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
+        case CAPTURE_STATE_WIN_HORDE:
+            // Spawn the npcs only when the tower is fully controlled
+            DoRespawnSoldiers(HORDE);
+            m_uiZoneController = HORDE;
+            break;
+        case CAPTURE_STATE_PROGRESS_ALLIANCE:
+            SetBannerArtKit(GO_ARTKIT_BANNER_ALLIANCE);
+            break;
+        case CAPTURE_STATE_PROGRESS_HORDE:
+            SetBannerArtKit(GO_ARTKIT_BANNER_HORDE);
+            break;
+        case CAPTURE_STATE_NEUTRAL:
+            SetBannerArtKit(GO_ARTKIT_BANNER_NEUTRAL);
+            m_uiZoneController = TEAM_NONE;
             break;
     }
 }
 
-void WorldPvPGH::DoRespawnSoldiers(uint32 uiFaction)
+void WorldPvPGH::DoRespawnSoldiers(Team faction)
 {
     // neet to use a player as anchor for the map
     Player* pPlayer = GetPlayerInZone();
     if (!pPlayer)
         return;
 
-    if (uiFaction == ALLIANCE)
+    if (faction == ALLIANCE)
     {
         // despawn all horde vendors
         for (std::list<ObjectGuid>::const_iterator itr = lHordeVendors.begin(); itr != lHordeVendors.end(); ++itr)
@@ -159,7 +171,7 @@ void WorldPvPGH::DoRespawnSoldiers(uint32 uiFaction)
                 pSoldier->Respawn();
         }
     }
-    else if (uiFaction == HORDE)
+    else if (faction == HORDE)
     {
         // despawn all alliance vendors
         for (std::list<ObjectGuid>::const_iterator itr = lAllianceVendors.begin(); itr != lAllianceVendors.end(); ++itr)

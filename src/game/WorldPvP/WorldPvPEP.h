@@ -202,34 +202,37 @@ static const float aFlightmasterSpawnLocs[4] = {2987.5f, -3049.11f, 120.126f, 5.
 
 struct PlaguelandsTowersEvents
 {
-    uint32 uiEventEntry, uiEventType, uiZoneText, uiWorldState;
+    uint32  uiEventEntry;
+    Team    faction;
+    uint32  uiZoneText;
+    uint32  uiWorldState;
 };
 
 static const PlaguelandsTowersEvents aPlaguelandsTowerEvents[MAX_EP_TOWERS][4] =
 {
     {
-        {EVENT_NORTHPASS_PROGRESS_ALLIANCE,     PROGRESS,   LANG_OPVP_EP_CAPTURE_NPT_A, WORLD_STATE_NORTHPASS_ALY},
-        {EVENT_NORTHPASS_PROGRESS_HORDE,        PROGRESS,   LANG_OPVP_EP_CAPTURE_NPT_H, WORLD_STATE_NORTHPASS_HORDE},
-        {EVENT_NORTHPASS_NEUTRAL_HORDE,         NEUTRAL,    LANG_OPVP_EP_LOOSE_NPT_A,   WORLD_STATE_NORTHPASS_NEUTRAL},
-        {EVENT_NORTHPASS_NEUTRAL_ALLIANCE,      NEUTRAL,    LANG_OPVP_EP_LOOSE_NPT_H,   WORLD_STATE_NORTHPASS_NEUTRAL},
+        {EVENT_NORTHPASS_PROGRESS_ALLIANCE,     ALLIANCE,   LANG_OPVP_EP_CAPTURE_NPT_A, WORLD_STATE_NORTHPASS_ALY},
+        {EVENT_NORTHPASS_PROGRESS_HORDE,        HORDE,      LANG_OPVP_EP_CAPTURE_NPT_H, WORLD_STATE_NORTHPASS_HORDE},
+        {EVENT_NORTHPASS_NEUTRAL_HORDE,         TEAM_NONE,  LANG_OPVP_EP_LOOSE_NPT_A,   WORLD_STATE_NORTHPASS_NEUTRAL},
+        {EVENT_NORTHPASS_NEUTRAL_ALLIANCE,      TEAM_NONE,  LANG_OPVP_EP_LOOSE_NPT_H,   WORLD_STATE_NORTHPASS_NEUTRAL},
     },
     {
-        {EVENT_CROWNGUARD_PROGRESS_ALLIANCE,    PROGRESS,   LANG_OPVP_EP_CAPTURE_CGT_A, WORLD_STATE_CROWNGUARD_ALY},
-        {EVENT_CROWNGUARD_PROGRESS_HORDE,       PROGRESS,   LANG_OPVP_EP_CAPTURE_CGT_H, WORLD_STATE_CROWNGUARD_HORDE},
-        {EVENT_CROWNGUARD_NEUTRAL_HORDE,        NEUTRAL,    LANG_OPVP_EP_LOOSE_CGT_A,   WORLD_STATE_CROWNGUARD_NEUTRAL},
-        {EVENT_CROWNGUARD_NEUTRAL_ALLIANCE,     NEUTRAL,    LANG_OPVP_EP_LOOSE_CGT_H,   WORLD_STATE_CROWNGUARD_NEUTRAL},
+        {EVENT_CROWNGUARD_PROGRESS_ALLIANCE,    ALLIANCE,   LANG_OPVP_EP_CAPTURE_CGT_A, WORLD_STATE_CROWNGUARD_ALY},
+        {EVENT_CROWNGUARD_PROGRESS_HORDE,       HORDE,      LANG_OPVP_EP_CAPTURE_CGT_H, WORLD_STATE_CROWNGUARD_HORDE},
+        {EVENT_CROWNGUARD_NEUTRAL_HORDE,        TEAM_NONE,  LANG_OPVP_EP_LOOSE_CGT_A,   WORLD_STATE_CROWNGUARD_NEUTRAL},
+        {EVENT_CROWNGUARD_NEUTRAL_ALLIANCE,     TEAM_NONE,  LANG_OPVP_EP_LOOSE_CGT_H,   WORLD_STATE_CROWNGUARD_NEUTRAL},
     },
     {
-        {EVENT_EASTWALL_PROGRESS_ALLIANCE,      PROGRESS,   LANG_OPVP_EP_CAPTURE_EWT_A, WORLD_STATE_EASTWALL_ALY},
-        {EVENT_EASTWALL_PROGRESS_HORDE,         PROGRESS,   LANG_OPVP_EP_CAPTURE_EWT_H, WORLD_STATE_EASTWALL_HORDE},
-        {EVENT_EASTWALL_NEUTRAL_HORDE,          NEUTRAL,    LANG_OPVP_EP_LOOSE_EWT_A,   WORLD_STATE_EASTWALL_NEUTRAL},
-        {EVENT_EASTWALL_NEUTRAL_ALLIANCE,       NEUTRAL,    LANG_OPVP_EP_LOOSE_EWT_H,   WORLD_STATE_EASTWALL_NEUTRAL},
+        {EVENT_EASTWALL_PROGRESS_ALLIANCE,      ALLIANCE,   LANG_OPVP_EP_CAPTURE_EWT_A, WORLD_STATE_EASTWALL_ALY},
+        {EVENT_EASTWALL_PROGRESS_HORDE,         HORDE,      LANG_OPVP_EP_CAPTURE_EWT_H, WORLD_STATE_EASTWALL_HORDE},
+        {EVENT_EASTWALL_NEUTRAL_HORDE,          TEAM_NONE,  LANG_OPVP_EP_LOOSE_EWT_A,   WORLD_STATE_EASTWALL_NEUTRAL},
+        {EVENT_EASTWALL_NEUTRAL_ALLIANCE,       TEAM_NONE,  LANG_OPVP_EP_LOOSE_EWT_H,   WORLD_STATE_EASTWALL_NEUTRAL},
     },
     {
-        {EVENT_PLAGUEWOOD_PROGRESS_ALLIANCE,    PROGRESS,   LANG_OPVP_EP_CAPTURE_PWT_A, WORLD_STATE_PLAGUEWOOD_ALY},
-        {EVENT_PLAGUEWOOD_PROGRESS_HORDE,       PROGRESS,   LANG_OPVP_EP_CAPTURE_PWT_H, WORLD_STATE_PLAGUEWOOD_HORDE},
-        {EVENT_PLAGUEWOOD_NEUTRAL_HORDE,        NEUTRAL,    LANG_OPVP_EP_LOOSE_PWT_A,   WORLD_STATE_PLAGUEWOOD_NEUTRAL},
-        {EVENT_PLAGUEWOOD_NEUTRAL_ALLIANCE,     NEUTRAL,    LANG_OPVP_EP_LOOSE_PWT_H,   WORLD_STATE_PLAGUEWOOD_NEUTRAL},
+        {EVENT_PLAGUEWOOD_PROGRESS_ALLIANCE,    ALLIANCE,   LANG_OPVP_EP_CAPTURE_PWT_A, WORLD_STATE_PLAGUEWOOD_ALY},
+        {EVENT_PLAGUEWOOD_PROGRESS_HORDE,       HORDE,      LANG_OPVP_EP_CAPTURE_PWT_H, WORLD_STATE_PLAGUEWOOD_HORDE},
+        {EVENT_PLAGUEWOOD_NEUTRAL_HORDE,        TEAM_NONE,  LANG_OPVP_EP_LOOSE_PWT_A,   WORLD_STATE_PLAGUEWOOD_NEUTRAL},
+        {EVENT_PLAGUEWOOD_NEUTRAL_ALLIANCE,     TEAM_NONE,  LANG_OPVP_EP_LOOSE_PWT_H,   WORLD_STATE_PLAGUEWOOD_NEUTRAL},
     },
 };
 
@@ -244,11 +247,11 @@ class WorldPvPEP : public WorldPvP
         bool InitWorldPvPArea();
 
         void OnGameObjectCreate(GameObject* pGo);
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
+        void ProcessEvent(GameObject* pGo, uint32 uiEventId);
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
-        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction);
 
         void FillInitialWorldStates(WorldPacket& data, uint32& count);
         void SendRemoveWorldStates(Player* pPlayer);
@@ -257,27 +260,27 @@ class WorldPvPEP : public WorldPvP
         // update world state
         void UpdateWorldState();
         // process capture events
-        void ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32 uiNewWorldState, uint32 uiTower);
+        void ProcessCaptureEvent(Team faction, uint32 uiNewWorldState, uint32 uiTower);
 
         // set banners artkit - from a specific tower
         void SetBannersArtKit(std::list<ObjectGuid> lBannersGuids, uint32 uiArtKit);
 
         // plaguewood bonus - flightmaster
-        void DoSummonFlightMasterIfCan(uint32 uiFaction);
+        void DoSummonFlightMasterIfCan(Team faction);
         void DoUnsummonFlightMaster();
 
         // eastwall bonus - soldiers
-        void DoSummonSoldiersIfCan(uint32 uiFaction);
+        void DoSummonSoldiersIfCan(Team faction);
         void DoUnsummonSoldiers();
 
         // northpass bonus - shrine
         void DoUpdateShrine(ObjectGuid uiShrineGuid, bool bRemove = false);
 
         // crownguard bonus - graveyard
-        void DoSetGraveyard(uint32 uiFaction, bool bRemove = false);
+        void DoSetGraveyard(Team faction, bool bRemove = false);
 
+        Team m_uiTowerController[MAX_EP_TOWERS];
         uint32 m_uiTowerWorldState[MAX_EP_TOWERS];
-        uint32 m_uiTowerController[MAX_EP_TOWERS];
         uint32 m_uiTowersAlly;
         uint32 m_uiTowersHorde;
 

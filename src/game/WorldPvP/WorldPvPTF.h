@@ -115,40 +115,43 @@ enum
 
 struct TerokkarTowersEvents
 {
-    uint32 uiEventEntry, uiEventType, uiZoneText, uiWorldState;
+    uint32  uiEventEntry;
+    Team    faction;
+    uint32  uiZoneText;
+    uint32  uiWorldState;
 };
 
 static const TerokkarTowersEvents aTerokkarTowerEvents[MAX_TF_TOWERS][4] =
 {
     {
-        {EVENT_TOWER_1_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_1_ALY},
-        {EVENT_TOWER_1_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_1_HORDE},
-        {EVENT_TOWER_1_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_1_NEUTRAL},
-        {EVENT_TOWER_1_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_1_NEUTRAL},
+        {EVENT_TOWER_1_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_1_ALY},
+        {EVENT_TOWER_1_PROGRESS_HORDE,      HORDE,      LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_1_HORDE},
+        {EVENT_TOWER_1_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_1_NEUTRAL},
+        {EVENT_TOWER_1_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_1_NEUTRAL},
     },
     {
-        {EVENT_TOWER_2_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_2_ALY},
-        {EVENT_TOWER_2_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_2_HORDE},
-        {EVENT_TOWER_2_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_2_NEUTRAL},
-        {EVENT_TOWER_2_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_2_NEUTRAL},
+        {EVENT_TOWER_2_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_2_ALY},
+        {EVENT_TOWER_2_PROGRESS_HORDE,      HORDE,      LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_2_HORDE},
+        {EVENT_TOWER_2_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_2_NEUTRAL},
+        {EVENT_TOWER_2_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_2_NEUTRAL},
     },
     {
-        {EVENT_TOWER_3_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_3_ALY},
-        {EVENT_TOWER_3_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_3_HORDE},
-        {EVENT_TOWER_3_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_3_NEUTRAL},
-        {EVENT_TOWER_3_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_3_NEUTRAL},
+        {EVENT_TOWER_3_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_3_ALY},
+        {EVENT_TOWER_3_PROGRESS_HORDE,      HORDE,      LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_3_HORDE},
+        {EVENT_TOWER_3_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_3_NEUTRAL},
+        {EVENT_TOWER_3_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_3_NEUTRAL},
     },
     {
-        {EVENT_TOWER_4_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_4_ALY},
-        {EVENT_TOWER_4_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_4_HORDE},
-        {EVENT_TOWER_4_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_4_NEUTRAL},
-        {EVENT_TOWER_4_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_4_NEUTRAL},
+        {EVENT_TOWER_4_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_4_ALY},
+        {EVENT_TOWER_4_PROGRESS_HORDE,      HORDE,      LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_4_HORDE},
+        {EVENT_TOWER_4_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_4_NEUTRAL},
+        {EVENT_TOWER_4_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_4_NEUTRAL},
     },
     {
-        {EVENT_TOWER_5_PROGRESS_ALLIANCE,   PROGRESS,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_5_ALY},
-        {EVENT_TOWER_5_PROGRESS_HORDE,      PROGRESS,   LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_5_HORDE},
-        {EVENT_TOWER_5_NEUTRAL_HORDE,       NEUTRAL,    LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_5_NEUTRAL},
-        {EVENT_TOWER_5_NEUTRAL_ALLIANCE,    NEUTRAL,    LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_5_NEUTRAL},
+        {EVENT_TOWER_5_PROGRESS_ALLIANCE,   ALLIANCE,   LANG_OPVP_TF_CAPTURE_A, WORLD_STATE_TOWER_5_ALY},
+        {EVENT_TOWER_5_PROGRESS_HORDE,      HORDE,      LANG_OPVP_TF_CAPTURE_H, WORLD_STATE_TOWER_5_HORDE},
+        {EVENT_TOWER_5_NEUTRAL_HORDE,       TEAM_NONE,  LANG_OPVP_TF_LOOSE_A,   WORLD_STATE_TOWER_5_NEUTRAL},
+        {EVENT_TOWER_5_NEUTRAL_ALLIANCE,    TEAM_NONE,  LANG_OPVP_TF_LOOSE_H,   WORLD_STATE_TOWER_5_NEUTRAL},
     },
 };
 
@@ -164,11 +167,11 @@ class WorldPvPTF : public WorldPvP
         bool InitWorldPvPArea();
 
         void OnGameObjectCreate(GameObject* pGo);
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
+        void ProcessEvent(GameObject* pGo, uint32 uiEventId);
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
-        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction);
 
         void Update(uint32 diff);
 
@@ -179,7 +182,7 @@ class WorldPvPTF : public WorldPvP
         void UpdateWorldState(uint8 uiValue);
         void UpdateTimerWorldState();
         // process capture events
-        void ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam, uint32 uiNewWorldState, uint32 uiTower);
+        void ProcessCaptureEvent(Team faction, uint32 uiNewWorldState, uint32 uiTower);
         // Set artkit visuals
         void SetBannerArtKit(ObjectGuid BannerGuid, uint32 uiArtkit);
         void ResetTower(uint8 uiTowerId);
@@ -187,8 +190,8 @@ class WorldPvPTF : public WorldPvP
         uint32 m_uiTowerWorldState[MAX_TF_TOWERS];
         uint32 m_uiTowerController[MAX_TF_TOWERS];
 
+        Team m_uiZoneController;
         uint32 m_uiControllerWorldState;
-        uint32 m_uiZoneController;
 
         uint32 m_uiZoneLockTimer;
         uint32 m_uiZoneUpdateTimer;

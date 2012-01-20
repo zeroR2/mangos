@@ -116,22 +116,19 @@ void WorldPvP::ResetCapturePointSliderValue(uint32 pointEntry)
 }
 
 // apply a team buff for the specific zone
-void WorldPvP::DoProcessTeamBuff(Team uiTeam, uint32 uiSpellId, bool bRemove)
+void WorldPvP::DoProcessTeamBuff(Team faction, uint32 uiSpellId, bool bRemove)
 {
     for (PlayerSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
-        if (!(*itr))
-            continue;
-
-        if ((*itr)->GetTeam() == uiTeam)
+        if ((*itr) && (*itr)->GetTeam() == faction)
         {
-            if (!bRemove)
-                (*itr)->CastSpell(*itr, uiSpellId, true);
-            else
+            if (bRemove)
             {
                 if ((*itr)->HasAura(uiSpellId))
                     (*itr)->RemoveAurasDueToSpell(uiSpellId);
             }
+            else
+                (*itr)->CastSpell(*itr, uiSpellId, true);
         }
     }
 }

@@ -69,14 +69,14 @@ class WorldPvPMgr
         bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
 
         // Handle the complete credit for capture point win events
-        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction);
+        void HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction);
 
         // Handle the kill event inside the area
         void HandlePlayerKill(Player* pPlayer, Unit* pVictim);
 
         // Handle capture point stuff
-        float GetCapturePointSliderValue(uint32 uiEntry, uint32 uiDefaultValue);
-        void SetCapturePointSlider(uint32 uiEntry, float fValue) { m_CapturePointSlider[uiEntry] = fValue; }
+        int8 GetCapturePointSliderValue(uint32 uiEntry, int8 iDefaultValue);
+        void SetCapturePointSlider(uint32 uiEntry, int8 iValue) { m_CapturePointSlider[uiEntry] = iValue; }
 
         bool GetCapturePointLockState(uint32 uiEntry);
         void SetCapturePointLockState(uint32 uiEntry, bool bLockState) { m_CapturePointState[uiEntry] = bLockState; }
@@ -93,7 +93,7 @@ class WorldPvPMgr
         // used in player event handling
         WorldPvPMap m_WorldPvPMap;
 
-        std::map<uint32 /*capture point entry*/, float /*capture ticks*/> m_CapturePointSlider;
+        std::map<uint32 /*capture point entry*/, int8 /*slider value*/> m_CapturePointSlider;
         std::map<uint32 /*capture point entry*/, bool /*is active*/> m_CapturePointState;
 
         // update interval

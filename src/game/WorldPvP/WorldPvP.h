@@ -30,7 +30,6 @@
 #include "../GameObject.h"
 #include "../ObjectMgr.h"
 
-
 enum WorldPvPTypes
 {
     WORLD_PVP_TYPE_SI = 1,
@@ -49,12 +48,22 @@ enum GameObjectArtKits
     GO_ARTKIT_BANNER_NEUTRAL                = 21,
 };
 
-enum CaptureState
+enum CapturePointState
 {
-    NEUTRAL     = 0,
-    PROGRESS    = 1,
-    CONTESTED   = 2,
-    WIN         = 3
+    CAPTURE_STATE_NEUTRAL = 0,
+    CAPTURE_STATE_PROGRESS_ALLIANCE,
+    CAPTURE_STATE_PROGRESS_HORDE,
+    CAPTURE_STATE_CONTEST_ALLIANCE,
+    CAPTURE_STATE_CONTEST_HORDE,
+    CAPTURE_STATE_WIN_ALLIANCE,
+    CAPTURE_STATE_WIN_HORDE
+};
+
+enum CapturePointSlider
+{
+    CAPTURE_SLIDER_ALLIANCE = 100,                          // full alliance
+    CAPTURE_SLIDER_HORDE    = 0,                            // full horde
+    CAPTURE_SLIDER_NEUTRAL  = 50                            // middle
 };
 
 typedef std::set<Player*> PlayerSet;
@@ -83,7 +92,7 @@ class WorldPvP : public ZoneScript
         virtual void HandlePlayerKillInsideArea(Player* /*pKiller*/, Unit* /*pVictim*/) {}
 
         // handle capture objective complete
-        virtual void HandleObjectiveComplete(std::list<Player*> /*players*/, uint32 /*uiEventId*/, uint32 /*uiFaction*/) {}
+        virtual void HandleObjectiveComplete(std::list<Player*> /*players*/, uint32 /*uiEventId*/, Team /*faction*/) {}
 
         // init all the outdoor pvp area relates stuff
         virtual bool InitWorldPvPArea() { return false; }
@@ -98,7 +107,7 @@ class WorldPvP : public ZoneScript
         virtual void Update(uint32 diff) {}
 
         // applies buff to a team inside the specific zone
-        void DoProcessTeamBuff(Team uiTeam, uint32 spellId, bool bRemove = false);
+        void DoProcessTeamBuff(Team faction, uint32 spellId, bool bRemove = false);
 
         // return outdoor pvp type
         uint32 GetTypeId() { return m_uiTypeId; }
