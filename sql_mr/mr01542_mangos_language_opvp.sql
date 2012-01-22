@@ -1,6 +1,10 @@
 DELETE FROM `mangos_string` WHERE `entry` BETWEEN 10001 AND 10055;
 INSERT INTO `mangos_string` (`entry`, `content_default`) VALUES
 
+-- all messages are sent in yellow text in SMSG_DEFENSE_MESSAGE (LocalDefense channel)
+-- losing control of a capture point doesnt send a text (not yet confirmed for all)
+-- TODO: Switch alliance and horde position (alliance before horde)
+
 -- silithus
 (10001,'The Horde has collected 200 silithyst!'),
 (10002,'The Alliance has collected 200 silithyst!'),
@@ -24,12 +28,14 @@ INSERT INTO `mangos_string` (`entry`, `content_default`) VALUES
 (10018,'The Alliance lost the Plaguewood Tower!'),
 
 -- hellfire peninsula
-(10019,'The Horde has taken The Overlook!'), -- The Overlook has been taken by the Horde! (LocalDefense chat, yellow text, from google screenshot)
-(10020,'The Alliance has taken The Overlook!'),
-(10021,'The Horde has taken The Stadium!'), -- The Stadium has been taken by the Horde! (LocalDefense chat, yellow text, from google screenshot)
-(10022,'The Alliance has taken The Stadium!'),
-(10023,'The Horde has taken Broken Hill!'),
-(10024,'The Alliance has taken Broken Hill!'),
+(10019,'|cffffff00The Overlook has been taken by the Horde!|r'),
+(10020,'|cffffff00The Overlook has been taken by the Alliance!|r'),
+(10021,'|cffffff00The Stadium has been taken by the Horde!|r'),
+(10022,'|cffffff00The Stadium has been taken by the Alliance!|r'),
+(10023,'|cffffff00Broken Hill has been taken by the Horde!|r'),
+(10024,'|cffffff00Broken Hill has been taken by the Alliance!|r'),
+
+ -- following does not exist on retail (confirmed!)
 (10025,'The Horde lost The Overlook!'),
 (10026,'The Alliance lost The Overlook!'),
 (10027,'The Horde lost The Stadium!'),
@@ -38,13 +44,14 @@ INSERT INTO `mangos_string` (`entry`, `content_default`) VALUES
 (10030,'The Alliance lost Broken Hill!'),
 
 -- zangarmarsh
--- SMSG_DEFENSE_MESSAGE (all messages)
 (10031,'|cffffff00The Horde has taken control of the West Beacon!|r'),
 (10032,'|cffffff00The Alliance has taken control of the West Beacon!|r'),
 (10033,'|cffffff00The Horde has taken control of the East Beacon!|r'),
 (10034,'|cffffff00The Alliance has taken control of the East Beacon!|r'),
--- '|cffffff00The Alliance has taken control of both beacons!|r' (if both beacons are captured)
--- '|cffffff00The Alliance Field Scout is now issuing battle standards.|r' (if both beacons are captured)
+-- '|cffffff00The Horde has taken control of both beacons!|r'
+-- '|cffffff00The Alliance has taken control of both beacons!|r'
+-- '|cffffff00The Horde Field Scout is now issuing battle standards.|r'
+-- '|cffffff00The Alliance Field Scout is now issuing battle standards.|r'
 (10035,'|cffffff00The Horde has taken control of Twin Spire Ruins!|r'),
 (10036,'|cffffff00The Alliance has taken control of Twin Spire Ruins!|r'), -- SMSG_PLAY_SOUND id 8173, from npc 15384 (npc id may be a parsing error, but unlikely)
 (10037,'The Horde lost the West Beacon!'),
