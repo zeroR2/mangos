@@ -793,6 +793,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32      m_health;
                                                             // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
 
+        uint32      m_tickTime;
         float       m_sliderValue;
         CapturePointState m_captureState;
         Team        m_ownerFaction;                         // faction which has taken the capture point
