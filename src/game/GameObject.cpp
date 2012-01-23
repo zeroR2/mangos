@@ -2294,20 +2294,25 @@ void GameObject::UpdateCapturePoint(uint32 diff)
         // alliance wins tower with max points
         if ((uint32)m_sliderValue == CAPTURE_SLIDER_ALLIANCE && m_captureState == CAPTURE_STATE_PROGRESS)
         {
-            eventId = info->capturePoint.winEventID1;
+            if (info->capturePoint.winEventID1)
+                eventId = info->capturePoint.winEventID1;
+
             m_captureState = CAPTURE_STATE_WIN;
         }
         // horde wins tower with max points
         else if ((uint32)m_sliderValue == CAPTURE_SLIDER_HORDE && m_captureState == CAPTURE_STATE_PROGRESS)
         {
-            eventId = info->capturePoint.winEventID2;
+            if (info->capturePoint.winEventID2)
+                eventId = info->capturePoint.winEventID2;
+
             m_captureState = CAPTURE_STATE_WIN;
         }
 
         // alliance takes the tower from neutral or contested to alliance
         else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == ALLIANCE && m_sliderValue > CAPTURE_SLIDER_NEUTRAL + neutralPercent * 0.5f)
         {
-            eventId = info->capturePoint.progressEventID1;
+            if (info->capturePoint.progressEventID1)
+                eventId = info->capturePoint.progressEventID1;
 
             // handle objective complete
             if (m_ownerFaction == TEAM_NONE)
@@ -2320,7 +2325,8 @@ void GameObject::UpdateCapturePoint(uint32 diff)
         // horde takes the tower from neutral or contested to horde
         else if ((m_ownerFaction == TEAM_NONE || m_captureState == CAPTURE_STATE_CONTEST) && progressFaction == HORDE && m_sliderValue < CAPTURE_SLIDER_NEUTRAL - neutralPercent * 0.5f)
         {
-            eventId = info->capturePoint.progressEventID2;
+            if (info->capturePoint.progressEventID2)
+                eventId = info->capturePoint.progressEventID2;
 
             // handle objective complete
             if (m_ownerFaction == TEAM_NONE)
@@ -2334,14 +2340,18 @@ void GameObject::UpdateCapturePoint(uint32 diff)
         // alliance takes the tower from horde to neutral
         else if (m_ownerFaction == HORDE && progressFaction == ALLIANCE && m_sliderValue >= CAPTURE_SLIDER_NEUTRAL - neutralPercent * 0.5f)
         {
-            eventId = info->capturePoint.neutralEventID1:
+            if (info->capturePoint.neutralEventID1)
+                eventId = info->capturePoint.neutralEventID1;
+
             m_captureState = CAPTURE_STATE_NEUTRAL;
             m_ownerFaction = TEAM_NONE;
         }
         // horde takes the tower from alliance to neutral
         else if (m_ownerFaction == ALLIANCE && progressFaction == HORDE && m_sliderValue <= CAPTURE_SLIDER_NEUTRAL + neutralPercent * 0.5f)
         {
-            eventId = info->capturePoint.neutralEventID2:
+            if (info->capturePoint.neutralEventID2)
+                eventId = info->capturePoint.neutralEventID2;
+
             m_captureState = CAPTURE_STATE_NEUTRAL;
             m_ownerFaction = TEAM_NONE;
         }
@@ -2349,13 +2359,17 @@ void GameObject::UpdateCapturePoint(uint32 diff)
         // alliance attacks tower which is in progress or control by horde (except if alliance also gains control in that case)
         else if (m_ownerFaction == HORDE && progressFaction == ALLIANCE && (m_captureState == CAPTURE_STATE_PROGRESS || m_captureState == CAPTURE_STATE_WIN))
         {
-            eventId = info->capturePoint.contestedEventID1;
+            if (info->capturePoint.contestedEventID1)
+                eventId = info->capturePoint.contestedEventID1;
+
             m_captureState = CAPTURE_STATE_CONTEST;
         }
         // horde attacks tower which is in progress or control by alliance (except if horde also gains control in that case)
         else if (m_ownerFaction == ALLIANCE && progressFaction == HORDE && (m_captureState == CAPTURE_STATE_PROGRESS || m_captureState == CAPTURE_STATE_WIN))
         {
-            eventId = info->capturePoint.contestedEventID2;
+            if (info->capturePoint.contestedEventID2)
+                eventId = info->capturePoint.contestedEventID2;
+
             m_captureState = CAPTURE_STATE_CONTEST;
         }
 
