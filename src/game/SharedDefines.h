@@ -587,24 +587,6 @@ enum TeamIndex
     TEAM_INDEX_NEUTRAL,
 };
 
-enum CapturePointState
-{
-    CAPTURE_STATE_NEUTRAL = 0,
-    CAPTURE_STATE_PROGRESS_ALLIANCE,
-    CAPTURE_STATE_PROGRESS_HORDE,
-    CAPTURE_STATE_CONTEST_ALLIANCE,
-    CAPTURE_STATE_CONTEST_HORDE,
-    CAPTURE_STATE_WIN_ALLIANCE,
-    CAPTURE_STATE_WIN_HORDE
-};
-
-enum CapturePointSlider
-{
-    CAPTURE_SLIDER_ALLIANCE = 100,                          // full alliance
-    CAPTURE_SLIDER_HORDE    = 0,                            // full horde
-    CAPTURE_SLIDER_NEUTRAL  = 50                            // middle
-};
-
 #define PVP_TEAM_COUNT    2
 
 static inline TeamIndex GetTeamIndex(Team team) { return team == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE; }
