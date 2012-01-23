@@ -75,7 +75,7 @@ class WorldPvPMgr
         void HandlePlayerKill(Player* pPlayer, Unit* pVictim);
 
         // Handle capture point stuff
-        float GetCapturePointSliderValue(uint32 uiEntry, uint32 uiDefaultValue);
+        float GetCapturePointSlider(uint32 uiEntry);
         void SetCapturePointSlider(uint32 uiEntry, float fValue) { m_CapturePointSlider[uiEntry] = fValue; }
 
         bool GetCapturePointLockState(uint32 uiEntry);

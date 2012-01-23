@@ -287,14 +287,14 @@ void WorldPvPMgr::Update(uint32 diff)
 
    @param   capture point entry
  */
-float WorldPvPMgr::GetCapturePointSliderValue(uint32 uiEntry, uint32 uiDefaultValue)
+float WorldPvPMgr::GetCapturePointSlider(uint32 uiEntry)
 {
     std::map<uint32, float>::iterator find = m_CapturePointSlider.find(uiEntry);
-    if (find != m_CapturePointSlider.end() && find->second != -1)
+    if (find != m_CapturePointSlider.end())
         return find->second;
 
     // return default value if we can't find any
-    return uiDefaultValue;
+    return CAPTURE_SLIDER_NEUTRAL;
 }
 
 /**
