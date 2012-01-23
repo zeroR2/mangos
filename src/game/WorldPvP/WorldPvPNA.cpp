@@ -24,7 +24,7 @@
 WorldPvPNA::WorldPvPNA() : WorldPvP(),
     m_uiControllerMapState(WORLD_STATE_NA_HALAA_NEUTRAL),
     m_uiControllerWorldState(0),
-    m_uiZoneController(TEAM_NONE),
+    m_uiZoneController(NEUTRAL),
     m_uiGuardsLeft(0)
 {
     m_uiTypeId = WORLD_PVP_TYPE_NA;
@@ -39,7 +39,7 @@ bool WorldPvPNA::InitWorldPvPArea()
 
 void WorldPvPNA::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
-    if (m_uiZoneController != TEAM_NONE)
+    if (m_uiZoneController != NEUTRAL)
     {
         FillInitialWorldState(data, count, m_uiControllerWorldState, 1);
         FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_LEFT, m_uiGuardsLeft);
@@ -70,7 +70,7 @@ void WorldPvPNA::HandlePlayerEnterZone(Player* pPlayer)
     pPlayer->RemoveAurasDueToSpell(SPELL_STRENGTH_HALAANI);
 
     // Handle the buffs
-    if (pPlayer->GetTeam() == m_uiZoneController && m_uiZoneController != TEAM_NONE)
+    if (pPlayer->GetTeam() == m_uiZoneController && m_uiZoneController != NEUTRAL)
         pPlayer->CastSpell(pPlayer, SPELL_STRENGTH_HALAANI, true);
 }
 
@@ -82,13 +82,13 @@ void WorldPvPNA::HandlePlayerLeaveZone(Player* pPlayer)
     WorldPvP::HandlePlayerLeaveZone(pPlayer);
 }
 
-void WorldPvPNA::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction)
+void WorldPvPNA::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
 {
     if (uiEventId == EVENT_HALAA_BANNER_WIN_ALLIANCE || uiEventId == EVENT_HALAA_BANNER_WIN_HORDE)
     {
         for (std::list<Player*>::iterator itr = players.begin(); itr != players.end(); ++itr)
         {
-            if ((*itr) && (*itr)->GetTeam() == faction)
+            if ((*itr) && (*itr)->GetTeam() == uiFaction)
                 (*itr)->KilledMonsterCredit(NPC_HALAA_COMBATANT);
         }
     }
@@ -296,7 +296,7 @@ void WorldPvPNA::UpdateWyvernsWorldState(uint8 uiValue)
 }
 
 // process the capture events
-void WorldPvPNA::ProcessEvent(GameObject* pGo, uint32 uiEventId)
+void WorldPvPNA::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
 {
     // If we are not using the Halaa banner return
     if (pGo->GetEntry() != GO_HALAA_BANNER)
@@ -305,49 +305,50 @@ void WorldPvPNA::ProcessEvent(GameObject* pGo, uint32 uiEventId)
     switch (uiEventId)
     {
         case EVENT_HALAA_BANNER_WIN_ALLIANCE:
-            ProcessCaptureEvent(ALLIANCE);
-            break;
         case EVENT_HALAA_BANNER_WIN_HORDE:
-            ProcessCaptureEvent(HORDE);
+            ProcessCaptureEvent(WIN, uiFaction);
             break;
     }
 }
 
-void WorldPvPNA::ProcessCaptureEvent(Team faction)
+void WorldPvPNA::ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam)
 {
-    if (m_uiZoneController != TEAM_NONE)
+    if (uiCaptureType == WIN)
     {
-        DoSetGraveyard(m_uiZoneController, true);
-        DoProcessTeamBuff(m_uiZoneController, SPELL_STRENGTH_HALAANI, true);
-        sWorld.SendZoneText(ZONE_ID_NAGRAND, sObjectMgr.GetMangosStringForDBCLocale(m_uiZoneController == ALLIANCE ? LANG_OPVP_NA_LOOSE_A: LANG_OPVP_NA_LOOSE_H));
+        if (m_uiZoneController != NEUTRAL)
+        {
+            DoSetGraveyard((Team)uiTeam, true);
+            DoProcessTeamBuff((Team)m_uiZoneController, SPELL_STRENGTH_HALAANI, true);
+            sWorld.SendZoneText(ZONE_ID_NAGRAND, sObjectMgr.GetMangosStringForDBCLocale(uiTeam == ALLIANCE ? LANG_OPVP_NA_LOOSE_H: LANG_OPVP_NA_LOOSE_A));
+        }
+
+        UpdateWorldState(0);
+        m_uiZoneController = uiTeam;
+        DoRespawnSoldiers(uiTeam);
+        DoSetGraveyard((Team)uiTeam);
+        m_uiControllerWorldState = uiTeam == ALLIANCE ? WORLD_STATE_NA_GUARDS_ALLIANCE : WORLD_STATE_NA_GUARDS_HORDE;
+        m_uiControllerMapState = uiTeam == ALLIANCE ? WORLD_STATE_NA_HALAA_ALLIANCE : WORLD_STATE_NA_HALAA_HORDE;
+
+        SetBannerArtKit(uiTeam == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
+        DoHandleFactionObjects(uiTeam);
+        UpdateWorldState(1);
+
+        DoProcessTeamBuff((Team)m_uiZoneController, SPELL_STRENGTH_HALAANI);
+        sWorld.SendZoneText(ZONE_ID_NAGRAND, sObjectMgr.GetMangosStringForDBCLocale(uiTeam == ALLIANCE ? LANG_OPVP_NA_CAPTURE_A: LANG_OPVP_NA_CAPTURE_H));
     }
-
-    UpdateWorldState(0);
-    DoRespawnSoldiers(faction);
-    DoSetGraveyard(faction);
-    m_uiControllerWorldState = faction == ALLIANCE ? WORLD_STATE_NA_GUARDS_ALLIANCE : WORLD_STATE_NA_GUARDS_HORDE;
-    m_uiControllerMapState = faction == ALLIANCE ? WORLD_STATE_NA_HALAA_ALLIANCE : WORLD_STATE_NA_HALAA_HORDE;
-
-    SetBannerArtKit(faction == ALLIANCE ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
-    DoHandleFactionObjects(faction);
-    m_uiZoneController = faction;
-    UpdateWorldState(1);
-
-    DoProcessTeamBuff(m_uiZoneController, SPELL_STRENGTH_HALAANI);
-    sWorld.SendZoneText(ZONE_ID_NAGRAND, sObjectMgr.GetMangosStringForDBCLocale(faction == ALLIANCE ? LANG_OPVP_NA_CAPTURE_A: LANG_OPVP_NA_CAPTURE_H));
 }
 
-void WorldPvPNA::DoSetGraveyard(Team faction, bool bRemove)
+void WorldPvPNA::DoSetGraveyard(uint32 uiFaction, bool bRemove)
 {
     if (bRemove)
-        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, faction, false);
+        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, (Team)uiFaction, false);
     else
-        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, faction, false);
+        sObjectMgr.AddGraveYardLink(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, (Team)uiFaction, false);
 }
 
-void WorldPvPNA::DoHandleFactionObjects(Team faction)
+void WorldPvPNA::DoHandleFactionObjects(uint32 uiFaction)
 {
-    if (faction == ALLIANCE)
+    if (uiFaction == ALLIANCE)
     {
         for (uint8 i = 0; i < MAX_NA_ROOSTS; ++i)
         {
@@ -361,7 +362,7 @@ void WorldPvPNA::DoHandleFactionObjects(Team faction)
             m_uiRoostWorldState[i] = aHordeNeutralStates[i];
         }
     }
-    else if (faction == HORDE)
+    else if (uiFaction == HORDE)
     {
         for (uint8 i = 0; i < MAX_NA_ROOSTS; ++i)
         {
@@ -377,14 +378,14 @@ void WorldPvPNA::DoHandleFactionObjects(Team faction)
     }
 }
 
-void WorldPvPNA::DoRespawnSoldiers(Team faction)
+void WorldPvPNA::DoRespawnSoldiers(uint32 uiFaction)
 {
     // neet to use a player as anchor for the map
     Player* pPlayer = GetPlayerInZone();
     if (!pPlayer)
         return;
 
-    if (faction == ALLIANCE)
+    if (uiFaction == ALLIANCE)
     {
         // despawn all horde vendors
         for (std::list<ObjectGuid>::const_iterator itr = lHordeSoldiers.begin(); itr != lHordeSoldiers.end(); ++itr)
@@ -408,7 +409,7 @@ void WorldPvPNA::DoRespawnSoldiers(Team faction)
             }
         }
     }
-    else if (faction == HORDE)
+    else if (uiFaction == HORDE)
     {
         // despawn all alliance vendors
         for (std::list<ObjectGuid>::const_iterator itr = lAllianceSoldiers.begin(); itr != lAllianceSoldiers.end(); ++itr)

@@ -205,10 +205,10 @@ void WorldPvPMgr::HandleDropFlag(Player* pPlayer, uint32 uiSpellId)
    @param   player set to which to send the credit
    @param   capture evetn id
  */
-void WorldPvPMgr::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, Team faction)
+void WorldPvPMgr::HandleObjectiveComplete(std::list<Player*> players, uint32 uiEventId, uint32 uiFaction)
 {
     for (WorldPvPSet::iterator itr = m_WorldPvPSet.begin(); itr != m_WorldPvPSet.end(); ++itr)
-        (*itr)->HandleObjectiveComplete(players, uiEventId, faction);
+        (*itr)->HandleObjectiveComplete(players, uiEventId, uiFaction);
 }
 
 /**
@@ -287,14 +287,14 @@ void WorldPvPMgr::Update(uint32 diff)
 
    @param   capture point entry
  */
-int8 WorldPvPMgr::GetCapturePointSliderValue(uint32 uiEntry, int8 iDefaultValue)
+float WorldPvPMgr::GetCapturePointSliderValue(uint32 uiEntry, uint32 uiDefaultValue)
 {
-    std::map<uint32, int8>::iterator find = m_CapturePointSlider.find(uiEntry);
+    std::map<uint32, float>::iterator find = m_CapturePointSlider.find(uiEntry);
     if (find != m_CapturePointSlider.end() && find->second != -1)
         return find->second;
 
-    // return default value if we can't find any or if capture point was reset (-1)
-    return iDefaultValue;
+    // return default value if we can't find any
+    return uiDefaultValue;
 }
 
 /**

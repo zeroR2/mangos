@@ -64,19 +64,19 @@ class WorldPvPGH : public WorldPvP
 
         void OnCreatureCreate(Creature* pCreature);
         void OnGameObjectCreate(GameObject* pGo);
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId);
+        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
 
     private:
         // process capture events
-        void ProcessCaptureEvent(CapturePointState captureState);
+        void ProcessCaptureEvent(uint32 uiCaptureType, uint32 uiTeam);
         // respawn faction soldiers
-        void DoRespawnSoldiers(Team faction);
+        void DoRespawnSoldiers(uint32 uiFaction);
         // set banner artkit
         void SetBannerArtKit(uint32 uiArtKit);
 
         ObjectGuid m_TowerBannerLighthouseGuid;
 
-        Team m_uiZoneController;
+        uint32 m_uiZoneController;
 
         std::list<ObjectGuid> lAllianceSoldiers;
         std::list<ObjectGuid> lHordeSoldiers;

@@ -20,7 +20,6 @@
 #define ZONE_SCRIPT_H
 
 #include "Common.h"
-#include "SharedDefines.h"
 #include "Creature.h"
 
 class Creature;
@@ -47,7 +46,7 @@ class ZoneScript
         //virtual void SetData(uint32 /*DataId*/, uint32 /*Value*/) {}
 
         // Process Capture event
-        virtual void ProcessEvent(GameObject* pGo, uint32 uiEventId) {}
+        virtual void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction) {}
 };
 
 #endif

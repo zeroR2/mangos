@@ -24,7 +24,6 @@
 #include "Object.h"
 #include "LootMgr.h"
 #include "Database/DatabaseEnv.h"
-#include "WorldPvP/WorldPvPMgr.h"
 
 // GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
@@ -596,6 +595,21 @@ enum LootState
     GO_JUST_DEACTIVATED
 };
 
+enum CapturePointState
+{
+    CAPTURE_STATE_NEUTRAL = 0,
+    CAPTURE_STATE_PROGRESS,
+    CAPTURE_STATE_CONTEST,
+    CAPTURE_STATE_WIN
+};
+
+enum CapturePointSlider
+{
+    CAPTURE_SLIDER_ALLIANCE = 100,                          // full alliance
+    CAPTURE_SLIDER_HORDE    = 0,                            // full horde
+    CAPTURE_SLIDER_NEUTRAL  = 50                            // middle
+};
+
 class Unit;
 struct GameObjectDisplayInfoEntry;
 
@@ -755,8 +769,8 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         GameObject* LookupFishingHoleAround(float range);
 
-        void ResetCapturePoint() { SetCapturePointSlider(GetCapturePointStartingValue()); }
-        CapturePointState GetCaptureState() const { return m_captureState; }
+        void ResetCapturePoint() { SetCapturePointSliderValue(GetCapturePointSliderStartingValue()); }
+        Team GetOwnerFaction() const { return m_ownerFaction; }
 
         GridReference<GameObject> &GetGridRef() { return m_gridRef; }
 
@@ -779,8 +793,9 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32      m_health;
                                                             // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
 
-        float       m_captureSlider;
+        float       m_sliderValue;
         CapturePointState m_captureState;
+        Team        m_ownerFaction;                         // faction which has taken the capture point
 
         typedef std::set<ObjectGuid> GuidsSet;
 
@@ -808,8 +823,9 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void SwitchDoorOrButton(bool activate, bool alternative = false);
 
         void UpdateCapturePoint(uint32 diff);
-        void SetCapturePointSlider(int8 value);
-        uint8 GetCapturePointStartingValue() const { return GetGOInfo()->capturePoint.startingValue; } // Should be CAPTURE_SLIDER_NEUTRAL in TBC
+        void CallCapturePointEvents();
+        void SetCapturePointSliderValue(uint32 value);
+        uint32 GetCapturePointSliderStartingValue() const { return GetGOInfo()->capturePoint.startingValue; } // CAPTURE_SLIDER_NEUTRAL in TBC
 
         GridReference<GameObject> m_gridRef;
 };
