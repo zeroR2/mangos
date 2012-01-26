@@ -871,17 +871,13 @@ void Aura::AreaAuraUpdate(uint32 diff)
                     if (!holder || holder->IsDeleted())
                     {
                         SpellAuraHolderPtr newholder = CreateSpellAuraHolder(actualSpellInfo, i_target, caster);
-                        newholder->SetAuraMaxDuration(GetAuraMaxDuration());
                         newholder->SetAuraDuration(GetAuraDuration());
                         Aura* aura = newholder->CreateAura(AURA_CLASS_AREA_AURA, m_effIndex, &actualBasePoints, newholder, i_target, caster, NULL);
                         i_target->AddSpellAuraHolder(newholder);
                     }
                     else
                     {
-                        if (holder->GetAuraDuration() < GetAuraDuration())
-                            holder->SetAuraDuration(GetAuraDuration());
-                        if (holder->GetAuraMaxDuration() < GetAuraMaxDuration())
-                            holder->SetAuraMaxDuration(GetAuraMaxDuration());
+                        holder->SetAuraDuration(GetAuraDuration());
                         Aura* aura = holder->GetAuraByEffectIndex(m_effIndex);
                         if (aura)
                         {
@@ -899,7 +895,6 @@ void Aura::AreaAuraUpdate(uint32 diff)
                             aura->ApplyModifier(true,true);
                             holder->SetInUse(false);
                         }
-                        holder->RefreshHolder();
                     }
                 }
             }
