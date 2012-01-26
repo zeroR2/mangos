@@ -44,8 +44,8 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     if(!GetPlayer()->IsBeingTeleportedFar())
         return;
 
-    if (GetPlayer()->GetVehicleKit())
-        GetPlayer()->GetVehicleKit()->RemoveAllPassengers();
+    if (_player->GetVehicleKit())
+        _player->GetVehicleKit()->RemoveAllPassengers();
 
     // get start teleport coordinates (will used later in fail case)
     WorldLocation old_loc;
@@ -144,21 +144,21 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     // battleground state prepare (in case join to BG), at relogin/tele player not invited
     // only add to bg group and object, if the player was invited (else he entered through command)
-    if(GetPlayer()->InBattleGround())
+    if(_player->InBattleGround())
     {
         // cleanup setting if outdated
         if(!mEntry->IsBattleGroundOrArena())
         {
             // We're not in BG
-            GetPlayer()->SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
+            _player->SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
             // reset destination bg team
-            GetPlayer()->SetBGTeam(TEAM_NONE);
+            _player->SetBGTeam(TEAM_NONE);
         }
         // join to bg case
-        else if(BattleGround *bg = GetPlayer()->GetBattleGround())
+        else if(BattleGround *bg = _player->GetBattleGround())
         {
-            if(GetPlayer()->IsInvitedForBattleGroundInstance(GetPlayer()->GetBattleGroundId()))
-                bg->AddPlayer(GetPlayer());
+            if(_player->IsInvitedForBattleGroundInstance(_player->GetBattleGroundId()))
+                bg->AddPlayer(_player);
         }
     }
 
@@ -167,7 +167,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // flight fast teleport case
     if(GetPlayer()->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
     {
-        if(!GetPlayer()->InBattleGround())
+        if(!_player->InBattleGround())
         {
             // short preparations to continue flight
             FlightPathMovementGenerator* flight = (FlightPathMovementGenerator*)(GetPlayer()->GetMotionMaster()->top());
@@ -198,7 +198,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     // mount allow check
     if(!mEntry->IsMountAllowed())
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+        _player->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 
     // honorless target
     if(GetPlayer()->pvpInfo.inHostileArea)
@@ -224,7 +224,7 @@ void WorldSession::HandleMoveTeleportAckOpcode(WorldPacket& recv_data)
     DEBUG_LOG("Guid: %s", guid.GetString().c_str());
     DEBUG_LOG("Counter %u, time %u", counter, time/IN_MILLISECONDS);
 
-    Unit *mover = GetPlayer()->GetMover();
+    Unit *mover = _player->GetMover();
     Player *plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL;
 
     if(!plMover || !plMover->IsBeingTeleportedNear())
@@ -266,7 +266,7 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
     DEBUG_LOG("WORLD: Recvd %s (%u, 0x%X) opcode", LookupOpcodeName(opcode), opcode, opcode);
     recv_data.hexlike();
 
-    Unit *mover = GetPlayer()->GetMover();
+    Unit *mover = _player->GetMover();
     Player *plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL;
 
     // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
@@ -303,7 +303,7 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
     WorldPacket data(opcode, recv_data.size());
     data << mover->GetPackGUID();             // write guid
     movementInfo.Write(data);                               // write data
-    mover->SendMessageToSetExcept(&data, GetPlayer());
+    mover->SendMessageToSetExcept(&data, _player);
 }
 
 void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
@@ -321,7 +321,7 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
     recv_data >> newspeed;
 
     // now can skip not our packet
-    if(GetPlayer()->GetObjectGuid() != guid)
+    if(_player->GetObjectGuid() != guid)
     {
         recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
         return;
@@ -353,26 +353,26 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
 
     // skip all forced speed changes except last and unexpected
     // in run/mounted case used one ACK and it must be skipped.m_forced_speed_changes[MOVE_RUN} store both.
-    if(GetPlayer()->m_forced_speed_changes[force_move_type] > 0)
+    if(_player->m_forced_speed_changes[force_move_type] > 0)
     {
-        --GetPlayer()->m_forced_speed_changes[force_move_type];
-        if(GetPlayer()->m_forced_speed_changes[force_move_type] > 0)
+        --_player->m_forced_speed_changes[force_move_type];
+        if(_player->m_forced_speed_changes[force_move_type] > 0)
             return;
     }
 
-    if (!GetPlayer()->GetTransport() && fabs(GetPlayer()->GetSpeed(move_type) - newspeed) > 0.01f)
+    if (!_player->GetTransport() && fabs(_player->GetSpeed(move_type) - newspeed) > 0.01f)
     {
-        if(GetPlayer()->GetSpeed(move_type) > newspeed)         // must be greater - just correct
+        if(_player->GetSpeed(move_type) > newspeed)         // must be greater - just correct
         {
             sLog.outError("%sSpeedChange player %s is NOT correct (must be %f instead %f), force set to correct value",
-                move_type_name[move_type], GetPlayer()->GetName(), GetPlayer()->GetSpeed(move_type), newspeed);
-            GetPlayer()->SetSpeedRate(move_type,GetPlayer()->GetSpeedRate(move_type),true);
+                move_type_name[move_type], _player->GetName(), _player->GetSpeed(move_type), newspeed);
+            _player->SetSpeedRate(move_type,_player->GetSpeedRate(move_type),true);
         }
         else                                                // must be lesser - cheating
         {
             BASIC_LOG("Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
-                GetPlayer()->GetName(),GetPlayer()->GetSession()->GetAccountId(),GetPlayer()->GetSpeed(move_type), newspeed);
-            GetPlayer()->GetSession()->KickPlayer();
+                _player->GetName(),_player->GetSession()->GetAccountId(),_player->GetSpeed(move_type), newspeed);
+            _player->GetSession()->KickPlayer();
         }
     }
 }
@@ -385,10 +385,10 @@ void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recv_data)
     ObjectGuid guid;
     recv_data >> guid;
 
-    if(GetPlayer()->GetMover()->GetObjectGuid() != guid)
+    if(_player->GetMover()->GetObjectGuid() != guid)
     {
         sLog.outError("HandleSetActiveMoverOpcode: incorrect mover guid: mover is %s and should be %s",
-            GetPlayer()->GetMover()->GetGuidStr().c_str(), guid.GetString().c_str());
+            _player->GetMover()->GetGuidStr().c_str(), guid.GetString().c_str());
         return;
     }
 }
@@ -404,11 +404,11 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
     recv_data >> old_mover_guid.ReadAsPacked();
     recv_data >> mi;
 
-    if(GetPlayer()->GetMover()->GetObjectGuid() == old_mover_guid)
+    if(_player->GetMover()->GetObjectGuid() == old_mover_guid)
     {
 /*        sLog.outError("HandleMoveNotActiveMover: incorrect mover guid: mover is %s and should be %s instead of %s",
-            GetPlayer()->GetMover()->GetGuidStr().c_str(),
-            GetPlayer()->GetGuidStr().c_str(),
+            _player->GetMover()->GetGuidStr().c_str(),
+            _player->GetGuidStr().c_str(),
             old_mover_guid.GetString().c_str());
 */
         DEBUG_LOG("World: CMSG_MOVE_NOT_ACTIVE_MOVER received, but %s now is active mover!", old_mover_guid.GetString().c_str());
@@ -416,7 +416,7 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
         return;
     }
 
-    GetPlayer()->m_movementInfo = mi;
+    _player->m_movementInfo = mi;
 }
 
 void WorldSession::HandleMountSpecialAnimOpcode(WorldPacket& /*recvdata*/)
@@ -433,7 +433,7 @@ void WorldSession::HandleMoveKnockBackAck( WorldPacket & recv_data )
 {
     DEBUG_LOG("CMSG_MOVE_KNOCK_BACK_ACK");
 
-    Unit *mover = GetPlayer()->GetMover();
+    Unit *mover = _player->GetMover();
     Player *plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL;
 
     // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
@@ -462,7 +462,7 @@ void WorldSession::HandleMoveKnockBackAck( WorldPacket & recv_data )
     data << movementInfo.GetJumpInfo().cosAngle;
     data << movementInfo.GetJumpInfo().xyspeed;
     data << movementInfo.GetJumpInfo().velocity;
-    mover->SendMessageToSetExcept(&data, GetPlayer());
+    mover->SendMessageToSetExcept(&data, _player);
 }
 
 void WorldSession::HandleMoveHoverAck( WorldPacket& recv_data )
@@ -493,7 +493,7 @@ void WorldSession::HandleMoveWaterWalkAck(WorldPacket& recv_data)
 
 void WorldSession::HandleSummonResponseOpcode(WorldPacket& recv_data)
 {
-    if (!GetPlayer()->isAlive() || GetPlayer()->isInCombat())
+    if (!_player->isAlive() || _player->isInCombat())
         return;
 
     ObjectGuid summonerGuid;
@@ -501,13 +501,13 @@ void WorldSession::HandleSummonResponseOpcode(WorldPacket& recv_data)
     recv_data >> summonerGuid;
     recv_data >> agree;
 
-    GetPlayer()->SummonIfPossible(agree);
+    _player->SummonIfPossible(agree);
 }
 
 bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo, ObjectGuid const& guid) const
 {
     // ignore wrong guid (player attempt cheating own session for not own guid possible...)
-    if (guid != GetPlayer()->GetMover()->GetObjectGuid())
+    if (guid != _player->GetMover()->GetObjectGuid())
         return false;
 
     if (!MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o))
@@ -534,7 +534,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
 {
     movementInfo.UpdateTime(WorldTimer::getMSTime());
 
-    Unit *mover = GetPlayer()->GetMover();
+    Unit *mover = _player->GetMover();
 
     if (Player *plMover = mover->GetTypeId() == TYPEID_PLAYER ? (Player*)mover : NULL)
     {
@@ -582,7 +582,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         {
             if(plMover->InBattleGround()
                 && plMover->GetBattleGround()
-                && plMover->GetBattleGround()->HandlePlayerUnderMap(GetPlayer()))
+                && plMover->GetBattleGround()->HandlePlayerUnderMap(_player))
             {
                 // do nothing, the handle already did if returned true
             }

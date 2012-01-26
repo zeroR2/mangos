@@ -85,10 +85,10 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
         SendNotification(LANG_UNKNOWN_LANGUAGE);
         return;
     }
-    if(langDesc->skill_id != 0 && !GetPlayer()->HasSkill(langDesc->skill_id))
+    if(langDesc->skill_id != 0 && !_player->HasSkill(langDesc->skill_id))
     {
         // also check SPELL_AURA_COMPREHEND_LANGUAGE (client offers option to speak in that language)
-        Unit::AuraList const& langAuras = GetPlayer()->GetAurasByType(SPELL_AURA_COMPREHEND_LANGUAGE);
+        Unit::AuraList const& langAuras = _player->GetAurasByType(SPELL_AURA_COMPREHEND_LANGUAGE);
         bool foundAura = false;
         for(Unit::AuraList::const_iterator i = langAuras.begin(); i != langAuras.end(); ++i)
         {
@@ -115,7 +115,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
     else
     {
         // send in universal language if player in .gmon mode (ignore spell effects)
-        if (GetPlayer()->isGameMaster())
+        if (_player->isGameMaster())
             lang = LANG_UNIVERSAL;
         else
         {
@@ -144,14 +144,14 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             }
 
             // but overwrite it by SPELL_AURA_MOD_LANGUAGE auras (only single case used)
-            Unit::AuraList const& ModLangAuras = GetPlayer()->GetAurasByType(SPELL_AURA_MOD_LANGUAGE);
+            Unit::AuraList const& ModLangAuras = _player->GetAurasByType(SPELL_AURA_MOD_LANGUAGE);
             if(!ModLangAuras.empty())
                 lang = ModLangAuras.front()->GetModifier()->m_miscvalue;
         }
 
         if (type != CHAT_MSG_AFK && type != CHAT_MSG_DND)
         {
-            if (!GetPlayer()->CanSpeak())
+            if (!_player->CanSpeak())
             {
                 std::string timeStr = secsToTimeString(m_muteTime - time(NULL));
                 SendNotification(GetMangosString(LANG_WAIT_BEFORE_SPEAKING), timeStr.c_str());
@@ -276,12 +276,12 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             Group *group = GetPlayer()->GetOriginalGroup();
             if(!group)
             {
-                group = GetPlayer()->GetGroup();
+                group = _player->GetGroup();
                 if(!group || group->isBGGroup())
                     return;
             }
 
-            if ((type == CHAT_MSG_PARTY_LEADER) && !group->IsLeader(GetPlayer()->GetObjectGuid()))
+            if ((type == CHAT_MSG_PARTY_LEADER) && !group->IsLeader(_player->GetObjectGuid()))
                 return;
 
             // Playerbot mod: broadcast message to bot members
@@ -406,7 +406,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             if (!group)
             {
                 group = GetPlayer()->GetGroup();
-                if (!group || group->isBGGroup() || !group->isRaidGroup() || !group->IsLeader(GetPlayer()->GetObjectGuid()))
+                if (!group || group->isBGGroup() || !group->isRaidGroup() || !group->IsLeader(_player->GetObjectGuid()))
                     return;
             }
 
@@ -505,9 +505,9 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
 
             sChatLog.ChannelMsg(GetPlayer(), channel, msg);
 
-            if(ChannelMgr* cMgr = channelMgr(GetPlayer()->GetTeam()))
-                if(Channel *chn = cMgr->GetChannel(channel, GetPlayer()))
-                    chn->Say(GetPlayer()->GetObjectGuid(), msg.c_str(), lang);
+            if(ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
+                if(Channel *chn = cMgr->GetChannel(channel, _player))
+                    chn->Say(_player->GetObjectGuid(), msg.c_str(), lang);
         } break;
 
         case CHAT_MSG_AFK:
@@ -515,23 +515,23 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             std::string msg;
             recv_data >> msg;
 
-            if (!GetPlayer()->isInCombat())
+            if (!_player->isInCombat())
             {
-                if (GetPlayer()->isAFK())                       // Already AFK
+                if (_player->isAFK())                       // Already AFK
                 {
                     if (msg.empty())
-                        GetPlayer()->ToggleAFK();               // Remove AFK
+                        _player->ToggleAFK();               // Remove AFK
                     else
-                        GetPlayer()->autoReplyMsg = msg;        // Update message
+                        _player->autoReplyMsg = msg;        // Update message
                 }
                 else                                        // New AFK mode
                 {
-                    GetPlayer()->autoReplyMsg = msg.empty() ? GetMangosString(LANG_PLAYER_AFK_DEFAULT) : msg;
+                    _player->autoReplyMsg = msg.empty() ? GetMangosString(LANG_PLAYER_AFK_DEFAULT) : msg;
 
-                    if (GetPlayer()->isDND())
-                        GetPlayer()->ToggleDND();
+                    if (_player->isDND())
+                        _player->ToggleDND();
 
-                    GetPlayer()->ToggleAFK();
+                    _player->ToggleAFK();
                 }
             }
             break;
@@ -541,21 +541,21 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
             std::string msg;
             recv_data >> msg;
 
-            if (GetPlayer()->isDND())                           // Already DND
+            if (_player->isDND())                           // Already DND
             {
                 if (msg.empty())
-                    GetPlayer()->ToggleDND();                   // Remove DND
+                    _player->ToggleDND();                   // Remove DND
                 else
-                    GetPlayer()->autoReplyMsg = msg;            // Update message
+                    _player->autoReplyMsg = msg;            // Update message
             }
             else                                            // New DND mode
             {
-                GetPlayer()->autoReplyMsg = msg.empty() ? GetMangosString(LANG_PLAYER_DND_DEFAULT) : msg;
+                _player->autoReplyMsg = msg.empty() ? GetMangosString(LANG_PLAYER_DND_DEFAULT) : msg;
 
-                if (GetPlayer()->isAFK())
-                    GetPlayer()->ToggleAFK();
+                if (_player->isAFK())
+                    _player->ToggleAFK();
 
-                GetPlayer()->ToggleDND();
+                _player->ToggleDND();
             }
             break;
         }

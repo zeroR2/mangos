@@ -606,7 +606,7 @@ void WorldSession::HandleAuctionListOwnerItems(WorldPacket & recv_data)
     uint32 count = 0;
     uint32 totalcount = 0;
 
-    auctionHouse->BuildListOwnerItems(data, GetPlayer(), count, totalcount);
+    auctionHouse->BuildListOwnerItems(data, _player, count, totalcount);
     data.put<uint32>(0, count);
     data << uint32(totalcount);
     data << uint32(300);                                    // 2.3.0 delay for next isFull request?
@@ -718,7 +718,7 @@ void WorldSession::HandleAuctionListPendingSales(WorldPacket & recv_data)
 
     // pending list include all auction house entries for character
     for (int i = 0; i < MAX_AUCTION_HOUSE_TYPE; ++i)
-        sAuctionMgr.GetAuctionsMap(AuctionHouseType(i))->BuildListPendingSales(data, GetPlayer(), count);
+        sAuctionMgr.GetAuctionsMap(AuctionHouseType(i))->BuildListPendingSales(data, _player, count);
 
     data.put<uint32>(0, count);
     SendPacket(&data);

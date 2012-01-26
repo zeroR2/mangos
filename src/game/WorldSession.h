@@ -217,7 +217,7 @@ class MANGOS_DLL_SPEC WorldSession
 
         AccountTypes GetSecurity() const { return _security; }
         uint32 GetAccountId() const { return _accountId; }
-        Player* GetPlayer() const;
+        Player* GetPlayer() const { return _player; }
         char const* GetPlayerName() const;
         void SetSecurity(AccountTypes security) { _security = security; }
         std::string const& GetRemoteAddress() { return m_Address; }
@@ -883,8 +883,7 @@ class MANGOS_DLL_SPEC WorldSession
         void LogUnprocessedTail(WorldPacket *packet);
 
         uint32 m_GUIDLow;                                   // set logged or recently logout player (while m_playerRecentlyLogout set)
-        ObjectGuid  m_playerGuid;                           // main storage of player link
-        Player*     m_player;                               // Pointer (updated every update cycle at least!)
+        Player *_player;
         WorldSocket *m_Socket;
         std::string m_Address;
 

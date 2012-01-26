@@ -798,7 +798,7 @@ bool AuctionSorter::operator()(const AuctionEntry *auc1, const AuctionEntry *auc
 void WorldSession::BuildListAuctionItems(std::vector<AuctionEntry*> const& auctions, WorldPacket& data, std::wstring const& wsearchedname, uint32 listfrom, uint32 levelmin,
     uint32 levelmax, uint32 usable, uint32 inventoryType, uint32 itemClass, uint32 itemSubClass, uint32 quality, uint32& count, uint32& totalcount, bool isFull)
 {
-    int loc_idx = GetPlayer()->GetSession()->GetSessionDbLocaleIndex();
+    int loc_idx = _player->GetSession()->GetSessionDbLocaleIndex();
 
     for (std::vector<AuctionEntry*>::const_iterator itr = auctions.begin(); itr != auctions.end(); ++itr)
     {
@@ -835,7 +835,7 @@ void WorldSession::BuildListAuctionItems(std::vector<AuctionEntry*> const& aucti
             if (levelmin != 0x00 && (proto->RequiredLevel < levelmin || (levelmax != 0x00 && proto->RequiredLevel > levelmax)))
                 continue;
 
-            if (usable != 0x00 && GetPlayer()->CanUseItem(item) != EQUIP_ERR_OK)
+            if (usable != 0x00 && _player->CanUseItem(item) != EQUIP_ERR_OK)
                 continue;
 
             std::string name = proto->Name1;

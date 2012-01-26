@@ -235,7 +235,7 @@ void WorldSession::HandleMoveSplineDoneOpcode(WorldPacket& recv_data)
             if(GetPlayer()->m_taxi.SetTaximaskNode(sourcenode))
             {
                 WorldPacket data(SMSG_NEW_TAXI_PATH, 0);
-                GetPlayer()->GetSession()->SendPacket( &data );
+                _player->GetSession()->SendPacket( &data );
             }
         }
 
