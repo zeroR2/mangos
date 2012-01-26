@@ -49,7 +49,7 @@ void WorldSession::HandleAutostoreLootItemOpcode( WorldPacket & recv_data )
             GameObject *go = player->GetMap()->GetGameObject(lguid);
 
             // not check distance for GO in case owned GO (fishing bobber case, for example) or Fishing hole GO
-            if (!go || ((go->GetOwnerGuid() != _player->GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !go->IsWithinDistInMap(_player,INTERACTION_DISTANCE)))
+            if (!go || ((go->GetOwnerGuid() != GetPlayer()->GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !go->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE)))
             {
                 player->SendLootRelease(lguid);
                 return;
@@ -89,7 +89,7 @@ void WorldSession::HandleAutostoreLootItemOpcode( WorldPacket & recv_data )
 
             bool ok_loot = pCreature && pCreature->isAlive() == (player->getClass()==CLASS_ROGUE && pCreature->lootForPickPocketed);
 
-            if( !ok_loot || !pCreature->IsWithinDistInMap(_player,INTERACTION_DISTANCE) )
+            if( !ok_loot || !pCreature->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE) )
             {
                 player->SendLootRelease(lguid);
                 return;
@@ -194,16 +194,16 @@ void WorldSession::HandleLootMoneyOpcode( WorldPacket & /*recv_data*/ )
             GameObject *pGameObject = GetPlayer()->GetMap()->GetGameObject(guid);
 
             // not check distance for GO in case owned GO (fishing bobber case, for example)
-            if( pGameObject && (pGameObject->GetOwnerGuid() == _player->GetObjectGuid() || pGameObject->IsWithinDistInMap(_player,INTERACTION_DISTANCE)) )
+            if( pGameObject && (pGameObject->GetOwnerGuid() == GetPlayer()->GetObjectGuid() || pGameObject->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE)) )
                 pLoot = &pGameObject->loot;
 
             break;
         }
         case HIGHGUID_CORPSE:                               // remove insignia ONLY in BG
         {
-            Corpse *bones = _player->GetMap()->GetCorpse(guid);
+            Corpse *bones = GetPlayer()->GetMap()->GetCorpse(guid);
 
-            if (bones && bones->IsWithinDistInMap(_player,INTERACTION_DISTANCE) )
+            if (bones && bones->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE) )
                 pLoot = &bones->loot;
 
             break;
@@ -224,7 +224,7 @@ void WorldSession::HandleLootMoneyOpcode( WorldPacket & /*recv_data*/ )
 
             bool ok_loot = pCreature && pCreature->isAlive() == (player->getClass()==CLASS_ROGUE && pCreature->lootForPickPocketed);
 
-            if ( ok_loot && pCreature->IsWithinDistInMap(_player,INTERACTION_DISTANCE) )
+            if ( ok_loot && pCreature->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE) )
                 pLoot = &pCreature->loot ;
 
             break;
@@ -291,7 +291,7 @@ void WorldSession::HandleLootOpcode( WorldPacket & recv_data )
     recv_data >> guid;
 
     // Check possible cheat
-    if (!_player->isAlive())
+    if (!GetPlayer()->isAlive())
         return;
 
     GetPlayer()->SendLoot(guid, LOOT_CORPSE);
@@ -329,7 +329,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
             GameObject *go = GetPlayer()->GetMap()->GetGameObject(lguid);
 
             // not check distance for GO in case owned GO (fishing bobber case, for example) or Fishing hole GO
-            if (!go || ((go->GetOwnerGuid() != _player->GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !go->IsWithinDistInMap(_player,INTERACTION_DISTANCE)))
+            if (!go || ((go->GetOwnerGuid() != GetPlayer()->GetObjectGuid() && go->GetGoType() != GAMEOBJECT_TYPE_FISHINGHOLE) && !go->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE)))
                 return;
 
             loot = &go->loot;
@@ -407,8 +407,8 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
         }
         case HIGHGUID_CORPSE:                               // ONLY remove insignia at BG
         {
-            Corpse *corpse = _player->GetMap()->GetCorpse(lguid);
-            if (!corpse || !corpse->IsWithinDistInMap(_player,INTERACTION_DISTANCE) )
+            Corpse *corpse = GetPlayer()->GetMap()->GetCorpse(lguid);
+            if (!corpse || !corpse->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE) )
                 return;
 
             loot = &corpse->loot;
@@ -475,7 +475,7 @@ void WorldSession::DoLootRelease(ObjectGuid lguid)
             Creature* pCreature = GetPlayer()->GetMap()->GetCreature(lguid);
 
             bool ok_loot = pCreature && pCreature->isAlive() == (player->getClass()==CLASS_ROGUE && pCreature->lootForPickPocketed);
-            if ( !ok_loot || !pCreature->IsWithinDistInMap(_player,INTERACTION_DISTANCE) )
+            if ( !ok_loot || !pCreature->IsWithinDistInMap(GetPlayer(),INTERACTION_DISTANCE) )
                 return;
 
             loot = &pCreature->loot;
@@ -514,9 +514,9 @@ void WorldSession::HandleLootMasterGiveOpcode( WorldPacket & recv_data )
 
     recv_data >> lootguid >> slotid >> target_playerguid;
 
-    if (!_player->GetGroup() || _player->GetGroup()->GetLooterGuid() != _player->GetObjectGuid())
+    if (!GetPlayer()->GetGroup() || GetPlayer()->GetGroup()->GetLooterGuid() != GetPlayer()->GetObjectGuid())
     {
-        _player->SendLootRelease(GetPlayer()->GetLootGuid());
+        GetPlayer()->SendLootRelease(GetPlayer()->GetLootGuid());
         return;
     }
 
@@ -526,7 +526,7 @@ void WorldSession::HandleLootMasterGiveOpcode( WorldPacket & recv_data )
 
     DEBUG_LOG("WorldSession::HandleLootMasterGiveOpcode (CMSG_LOOT_MASTER_GIVE, 0x02A3) Target = %s [%s].", target_playerguid.GetString().c_str(), target->GetName());
 
-    if (_player->GetLootGuid() != lootguid)
+    if (GetPlayer()->GetLootGuid() != lootguid)
         return;
 
     Loot *pLoot = NULL;
@@ -565,7 +565,7 @@ void WorldSession::HandleLootMasterGiveOpcode( WorldPacket & recv_data )
         target->SendEquipError( msg, NULL, NULL, item.itemid );
 
         // send duplicate of error massage to master looter
-        _player->SendEquipError( msg, NULL, NULL, item.itemid );
+        GetPlayer()->SendEquipError( msg, NULL, NULL, item.itemid );
         return;
     }
 

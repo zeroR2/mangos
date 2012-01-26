@@ -278,7 +278,7 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket & /*recv_data*/)
     int32 mapid = corpsemapid;
 
     // if corpse at different map
-    if (corpsemapid != _player->GetMapId())
+    if (corpsemapid != GetPlayer()->GetMapId())
     {
         // search entrance map for proper show entrance
         if (MapEntry const* corpseMapEntry = sMapStore.LookupEntry(corpsemapid))
@@ -318,7 +318,7 @@ void WorldSession::HandleNpcTextQueryOpcode( WorldPacket & recv_data )
 
     DETAIL_LOG("WORLD: CMSG_NPC_TEXT_QUERY ID '%u'", textID);
 
-    _player->SetTargetGuid(guid);
+    GetPlayer()->SetTargetGuid(guid);
 
     GossipText const* pGossip = sObjectMgr.GetGossipText(textID);
 
@@ -452,7 +452,7 @@ void WorldSession::HandleQueryQuestsCompletedOpcode( WorldPacket & /*recv_data *
     WorldPacket data(SMSG_ALL_QUESTS_COMPLETED, 4+4*count);
     data << uint32(count);
 
-    for(QuestStatusMap::const_iterator itr = _player->getQuestStatusMap().begin(); itr != _player->getQuestStatusMap().end(); ++itr)
+    for(QuestStatusMap::const_iterator itr = GetPlayer()->getQuestStatusMap().begin(); itr != GetPlayer()->getQuestStatusMap().end(); ++itr)
     {
         if(itr->second.m_rewarded)
         {
@@ -485,10 +485,10 @@ void WorldSession::HandleQuestPOIQueryOpcode(WorldPacket& recv_data)
 
         bool questOk = false;
 
-        uint16 questSlot = _player->FindQuestSlot(questId);
+        uint16 questSlot = GetPlayer()->FindQuestSlot(questId);
 
         if(questSlot != MAX_QUEST_LOG_SIZE)
-            questOk =_player->GetQuestSlotQuestId(questSlot) == questId;
+            questOk =GetPlayer()->GetQuestSlotQuestId(questSlot) == questId;
 
         if(questOk)
         {

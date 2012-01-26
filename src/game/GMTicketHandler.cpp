@@ -122,9 +122,9 @@ void WorldSession::HandleGMTicketCreateOpcode( WorldPacket & recv_data )
     }
 
     if(isFollowup)
-        sTicketMgr.Delete(_player->GetObjectGuid());
+        sTicketMgr.Delete(GetPlayer()->GetObjectGuid());
 
-    sTicketMgr.Create(_player->GetObjectGuid(), ticketText.c_str());
+    sTicketMgr.Create(GetPlayer()->GetObjectGuid(), ticketText.c_str());
 
     SendQueryTimeResponse();
 

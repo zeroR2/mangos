@@ -148,7 +148,7 @@ void WorldSession::HandleLfgClearOpcode( WorldPacket & /*recv_data */ )
 
     sLFGMgr.ClearLFRList(GetPlayer());
 
-    if(sWorld.getConfig(CONFIG_BOOL_RESTRICTED_LFG_CHANNEL) && _player->GetSession()->GetSecurity() == SEC_PLAYER )
+    if(sWorld.getConfig(CONFIG_BOOL_RESTRICTED_LFG_CHANNEL) && GetPlayer()->GetSession()->GetSecurity() == SEC_PLAYER )
         GetPlayer()->LeaveLFGChannel();
 
 }

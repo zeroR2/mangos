@@ -47,7 +47,7 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket &/*recv_data*/)
 
     for(int i = 0; i < MAX_DIFFICULTY; ++i)
     {
-        for (Player::BoundInstancesMap::const_iterator itr = _player->m_boundInstances[i].begin(); itr != _player->m_boundInstances[i].end(); ++itr)
+        for (Player::BoundInstancesMap::const_iterator itr = GetPlayer()->m_boundInstances[i].begin(); itr != GetPlayer()->m_boundInstances[i].end(); ++itr)
         {
             if(itr->second.perm)
             {

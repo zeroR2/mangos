@@ -188,7 +188,7 @@ void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
     // Put record into guild log
     guild->LogGuildEvent(GUILD_EVENT_LOG_UNINVITE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid);
 
-    guild->BroadcastEvent(GE_REMOVED, plName.c_str(), _player->GetName());
+    guild->BroadcastEvent(GE_REMOVED, plName.c_str(), GetPlayer()->GetName());
 }
 
 void WorldSession::HandleGuildAcceptOpcode(WorldPacket& /*recvPacket*/)
@@ -245,7 +245,7 @@ void WorldSession::HandleGuildRosterOpcode(WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received CMSG_GUILD_ROSTER");
 
-    if (Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId()))
+    if (Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId()))
         guild->Roster(this);
 }
 
@@ -299,7 +299,7 @@ void WorldSession::HandleGuildPromoteOpcode(WorldPacket& recvPacket)
     // Put record into guild log
     guild->LogGuildEvent(GUILD_EVENT_LOG_PROMOTE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid, newRankId);
 
-    guild->BroadcastEvent(GE_PROMOTION, _player->GetName(), plName.c_str(), guild->GetRankName(newRankId).c_str());
+    guild->BroadcastEvent(GE_PROMOTION, GetPlayer()->GetName(), plName.c_str(), guild->GetRankName(newRankId).c_str());
 }
 
 void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
@@ -360,27 +360,27 @@ void WorldSession::HandleGuildDemoteOpcode(WorldPacket& recvPacket)
     // Put record into guild log
     guild->LogGuildEvent(GUILD_EVENT_LOG_DEMOTE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid, newRankId);
 
-    guild->BroadcastEvent(GE_DEMOTION, _player->GetName(), plName.c_str(), guild->GetRankName(slot->RankId).c_str());
+    guild->BroadcastEvent(GE_DEMOTION, GetPlayer()->GetName(), plName.c_str(), guild->GetRankName(slot->RankId).c_str());
 }
 
 void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received CMSG_GUILD_LEAVE");
 
-    Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
     if (!guild)
     {
         SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_PLAYER_NOT_IN_GUILD);
         return;
     }
 
-    if (_player->GetObjectGuid() == guild->GetLeaderGuid() && guild->GetMemberSize() > 1)
+    if (GetPlayer()->GetObjectGuid() == guild->GetLeaderGuid() && guild->GetMemberSize() > 1)
     {
         SendGuildCommandResult(GUILD_QUIT_S, "", ERR_GUILD_LEADER_LEAVE);
         return;
     }
 
-    if (_player->GetObjectGuid() == guild->GetLeaderGuid())
+    if (GetPlayer()->GetObjectGuid() == guild->GetLeaderGuid())
     {
         guild->Disband();
         delete guild;
@@ -389,7 +389,7 @@ void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
 
     SendGuildCommandResult(GUILD_QUIT_S, guild->GetName(), ERR_PLAYER_NO_MORE_IN_GUILD);
 
-    if (guild->DelMember(_player->GetObjectGuid()))
+    if (guild->DelMember(GetPlayer()->GetObjectGuid()))
     {
         guild->Disband();
         delete guild;
@@ -397,9 +397,9 @@ void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
     }
 
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_LEAVE_GUILD, _player->GetObjectGuid());
+    guild->LogGuildEvent(GUILD_EVENT_LOG_LEAVE_GUILD, GetPlayer()->GetObjectGuid());
 
-    guild->BroadcastEvent(GE_LEFT, _player->GetObjectGuid(), _player->GetName());
+    guild->BroadcastEvent(GE_LEFT, GetPlayer()->GetObjectGuid(), GetPlayer()->GetName());
 }
 
 void WorldSession::HandleGuildDisbandOpcode(WorldPacket& /*recvPacket*/)
@@ -905,10 +905,10 @@ void WorldSession::HandleGuildBankDepositMoney( WorldPacket & recv_data )
     CharacterDatabase.CommitTransaction();
 
     // logging money
-    if(_player->GetSession()->GetSecurity() > SEC_PLAYER && sWorld.getConfig(CONFIG_BOOL_GM_LOG_TRADE))
+    if(GetPlayer()->GetSession()->GetSecurity() > SEC_PLAYER && sWorld.getConfig(CONFIG_BOOL_GM_LOG_TRADE))
     {
-        sLog.outCommand(_player->GetSession()->GetAccountId(),"GM %s (Account: %u) deposit money (Amount: %u) to guild bank (Guild ID %u)",
-            _player->GetName(),_player->GetSession()->GetAccountId(),money,GuildId);
+        sLog.outCommand(GetPlayer()->GetSession()->GetAccountId(),"GM %s (Account: %u) deposit money (Amount: %u) to guild bank (Guild ID %u)",
+            GetPlayer()->GetName(),GetPlayer()->GetSession()->GetAccountId(),money,GuildId);
     }
 
     // log
@@ -1058,7 +1058,7 @@ void WorldSession::HandleGuildBankSwapItems( WorldPacket & recv_data )
     // Bank <-> Bank
     if (BankToBank)
     {
-        pGuild->SwapItems(_player, BankTab, BankTabSlot, BankTabDst, BankTabSlotDst, SplitedAmount);
+        pGuild->SwapItems(GetPlayer(), BankTab, BankTabSlot, BankTabDst, BankTabSlotDst, SplitedAmount);
         return;
     }
 
@@ -1067,15 +1067,15 @@ void WorldSession::HandleGuildBankSwapItems( WorldPacket & recv_data )
     // allow work with inventory only
     if(!Player::IsInventoryPos(PlayerBag, PlayerSlot) && !(PlayerBag == NULL_BAG && PlayerSlot == NULL_SLOT) )
     {
-        _player->SendEquipError( EQUIP_ERR_NONE, NULL, NULL );
+        GetPlayer()->SendEquipError( EQUIP_ERR_NONE, NULL, NULL );
         return;
     }
 
     // BankToChar swap or char to bank remaining
     if (ToChar)                                             // Bank -> Char cases
-        pGuild->MoveFromBankToChar(_player, BankTab, BankTabSlot, PlayerBag, PlayerSlot, SplitedAmount);
+        pGuild->MoveFromBankToChar(GetPlayer(), BankTab, BankTabSlot, PlayerBag, PlayerSlot, SplitedAmount);
     else                                                    // Char -> Bank cases
-        pGuild->MoveFromCharToBank(_player, PlayerBag, PlayerSlot, BankTab, BankTabSlot, SplitedAmount);
+        pGuild->MoveFromCharToBank(GetPlayer(), PlayerBag, PlayerSlot, BankTab, BankTabSlot, SplitedAmount);
 }
 
 void WorldSession::HandleGuildBankBuyTab( WorldPacket & recv_data )

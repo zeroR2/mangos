@@ -37,7 +37,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
         return;
     }
 
-    Unit *pEnemy = _player->GetMap()->GetUnit(guid);
+    Unit *pEnemy = GetPlayer()->GetMap()->GetUnit(guid);
 
     if(!pEnemy)
     {
@@ -48,7 +48,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
         return;
     }
 
-    if(_player->IsFriendlyTo(pEnemy) || pEnemy->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
+    if(GetPlayer()->IsFriendlyTo(pEnemy) || pEnemy->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
     {
         sLog.outError( "WORLD: Enemy %s is friendly",guid.GetString().c_str());
 
@@ -65,7 +65,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
         return;
     }
 
-    _player->Attack(pEnemy,true);
+    GetPlayer()->Attack(pEnemy,true);
 }
 
 void WorldSession::HandleAttackStopOpcode( WorldPacket & /*recv_data*/ )
