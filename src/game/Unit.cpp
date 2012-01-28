@@ -12173,64 +12173,66 @@ void Unit::RemovePetAura(PetAura const* petSpell)
 
 void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, bool non_positive /*= false*/)
 {
-    Unit::SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
-    for(Unit::SpellAuraHolderMap::iterator iter = auras.begin(); iter != auras.end();)
+    SpellAuraHolderMap& holders = GetSpellAuraHolderMap();
+
+    for (SpellAuraHolderMap::iterator iter = holders.begin(); iter != holders.end(); ++iter)
     {
-        SpellEntry const *spell = iter->second->GetSpellProto();
-        if (spell->Id == exceptSpellId)
-            ++iter;
-        else if (non_positive && iter->second->IsPositive())
-            ++iter;
-        else if (spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
-            ++iter;
-        else if (iter->second->HasMechanicMask(mechMask))
+        if (!iter->second || iter->second->IsDeleted() || iter->second->IsEmptyHolder() ||
+            iter->second->GetId() == exceptSpellId ||
+            non_positive && iter->second->IsPositive() ||
+            iter->second->GetSpellProto()->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
+            continue;
+
+        if (iter->second->HasMechanicMask(mechMask))
         {
             bool removedSingleAura = false;
+            bool hasNotDeletedAuras = false;
 
-            for(int32 i = 0; i < MAX_EFFECT_INDEX; i++)
+            for (int32 i = 0; i < MAX_EFFECT_INDEX; i++)
             {
-                if (iter->second)
+                if (iter->second && !iter->second->IsDeleted() && !iter->second->IsEmptyHolder())
                 {
-                    if ((1 << (spell->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
+                    Aura* aura = iter->second->GetAuraByEffectIndex(SpellEffectIndex(i));
+
+                    if ((1 << (iter->second->GetSpellProto()->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
                     {
-                        RemoveSingleAuraFromSpellAuraHolder(iter->second, SpellEffectIndex(i));
+                        // even if aura already deleted, assuming that not delete all holder
                         removedSingleAura = true;
+
+                        if (aura && !aura->IsDeleted())
+                            RemoveSingleAuraFromSpellAuraHolder(iter->second, SpellEffectIndex(i));
                     }
+                    else if (aura && !aura->IsDeleted())
+                        hasNotDeletedAuras = true;
                 }
             }
 
             if (!removedSingleAura)
-                RemoveAurasDueToSpell(spell->Id);
+                RemoveAurasDueToSpell(iter->second->GetId());
 
-            if (auras.empty())
+            if (holders.empty())
                 break;
-            else if (iter->second)
-                ++iter;
-            else
-                iter = auras.begin();
-         }
-        else
-            ++iter;
+            else if (!hasNotDeletedAuras && !removedSingleAura)
+                iter = holders.begin();
+        }
     }
 }
 
 void Unit::RemoveAurasBySpellMechanic(uint32 mechMask)
 {
-    Unit::SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
-    for(Unit::SpellAuraHolderMap::iterator iter = auras.begin(); iter != auras.end();)
+    Unit::SpellAuraHolderMap& holders = GetSpellAuraHolderMap();
+    for(Unit::SpellAuraHolderMap::iterator iter = holders.begin(); iter != holders.end();)
     {
-        SpellEntry const *spell = iter->second->GetSpellProto();
-
-        if (!iter->second->IsPositive())
+        if (!iter->second || iter->second->IsDeleted() || !iter->second->IsPositive())
             ++iter;
-
-        else if (spell->Mechanic & mechMask)
+        else if (iter->second->GetSpellProto()->Mechanic & mechMask)
         {
-            RemoveAurasDueToSpell(spell->Id);
-            if (auras.empty())
+            RemoveAurasDueToSpell(iter->second->GetId());
+
+            if (holders.empty())
                 break;
             else
-                iter = auras.begin();
+                iter = holders.begin();
         }
         else
             ++iter;
