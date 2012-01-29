@@ -12173,66 +12173,64 @@ void Unit::RemovePetAura(PetAura const* petSpell)
 
 void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, bool non_positive /*= false*/)
 {
-    SpellAuraHolderMap& holders = GetSpellAuraHolderMap();
-
-    for (SpellAuraHolderMap::iterator iter = holders.begin(); iter != holders.end(); ++iter)
+    Unit::SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
+    for(Unit::SpellAuraHolderMap::iterator iter = auras.begin(); iter != auras.end();)
     {
-        if (!iter->second || iter->second->IsDeleted() || iter->second->IsEmptyHolder() ||
-            iter->second->GetId() == exceptSpellId ||
-            non_positive && iter->second->IsPositive() ||
-            iter->second->GetSpellProto()->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
-            continue;
-
-        if (iter->second->HasMechanicMask(mechMask))
+        SpellEntry const *spell = iter->second->GetSpellProto();
+        if (spell->Id == exceptSpellId)
+            ++iter;
+        else if (non_positive && iter->second->IsPositive())
+            ++iter;
+        else if (spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
+            ++iter;
+        else if (iter->second->HasMechanicMask(mechMask))
         {
             bool removedSingleAura = false;
-            bool hasNotDeletedAuras = false;
 
-            for (int32 i = 0; i < MAX_EFFECT_INDEX; i++)
+            for(int32 i = 0; i < MAX_EFFECT_INDEX; i++)
             {
-                if (iter->second && !iter->second->IsDeleted() && !iter->second->IsEmptyHolder())
+                if (iter->second)
                 {
-                    Aura* aura = iter->second->GetAuraByEffectIndex(SpellEffectIndex(i));
-
-                    if ((1 << (iter->second->GetSpellProto()->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
+                    if ((1 << (spell->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
                     {
-                        // even if aura already deleted, assuming that not delete all holder
+                        RemoveSingleAuraFromSpellAuraHolder(iter->second, SpellEffectIndex(i));
                         removedSingleAura = true;
-
-                        if (aura && !aura->IsDeleted())
-                            RemoveSingleAuraFromSpellAuraHolder(iter->second, SpellEffectIndex(i));
                     }
-                    else if (aura && !aura->IsDeleted())
-                        hasNotDeletedAuras = true;
                 }
             }
 
             if (!removedSingleAura)
-                RemoveAurasDueToSpell(iter->second->GetId());
+                RemoveAurasDueToSpell(spell->Id);
 
-            if (holders.empty())
+            if (auras.empty())
                 break;
-            else if (!hasNotDeletedAuras && !removedSingleAura)
-                iter = holders.begin();
-        }
+            else if (iter->second)
+                ++iter;
+            else
+                iter = auras.begin();
+         }
+        else
+            ++iter;
     }
 }
 
 void Unit::RemoveAurasBySpellMechanic(uint32 mechMask)
 {
-    Unit::SpellAuraHolderMap& holders = GetSpellAuraHolderMap();
-    for(Unit::SpellAuraHolderMap::iterator iter = holders.begin(); iter != holders.end();)
+    Unit::SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
+    for(Unit::SpellAuraHolderMap::iterator iter = auras.begin(); iter != auras.end();)
     {
-        if (!iter->second || iter->second->IsDeleted() || !iter->second->IsPositive())
-            ++iter;
-        else if (iter->second->GetSpellProto()->Mechanic & mechMask)
-        {
-            RemoveAurasDueToSpell(iter->second->GetId());
+        SpellEntry const *spell = iter->second->GetSpellProto();
 
-            if (holders.empty())
+        if (!iter->second->IsPositive())
+            ++iter;
+
+        else if (spell->Mechanic & mechMask)
+        {
+            RemoveAurasDueToSpell(spell->Id);
+            if (auras.empty())
                 break;
             else
-                iter = holders.begin();
+                iter = auras.begin();
         }
         else
             ++iter;
