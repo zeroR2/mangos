@@ -16,6 +16,11 @@ ConfVersion=2010100901
 #        Important: DataDir needs to be quoted, as it is a string which may contain space characters.
 #        Example: "@CMAKE_INSTALL_PREFIX@/share/mangos"
 #
+#    DataDirMMAP
+#        Data directory setting for use with MMAP code base 
+#        (used instead of DataDir with mmap.enabled = 1. not used if not setted or equal "").
+#        Example: "./MMAP/"
+#
 #    LogsDir
 #        Logs directory setting.
 #        Important: Logs dir must exists, or all logs need to be disabled
@@ -61,6 +66,7 @@ ConfVersion=2010100901
 
 RealmID = 1
 DataDir = "."
+DataDirMMAP = ""
 LogsDir = ""
 LoginDatabaseInfo     = "127.0.0.1;3306;mangos;mangos;realmd"
 WorldDatabaseInfo     = "127.0.0.1;3306;mangos;mangos;mangos"
@@ -140,10 +146,7 @@ BindIP = "0.0.0.0"
 #
 #    vmap.enableLOS
 #    vmap.enableHeight
-#        Enable/Disable VMaps support for line of sight and height calculation
-#        You need to extract the VMaps in order to enable those options
-#        Default: 0 (disable)
-#                 1 (enable)
+#        Deprecated - always enabled
 #
 #    vmap.ignoreSpellIds
 #        These spells are ignored for LoS calculation
@@ -167,6 +170,16 @@ BindIP = "0.0.0.0"
 #        after that new target movement point calculated. Max: melee attack range (5), min: contact range (0.5)
 #        More distance let have better performence, less distance let have more sensitive reaction at target move.
 #        Default: 1.5
+#
+#    mmap.enabled
+#        Enable/Disable pathfinding using mmaps
+#        Default: 1 (enable)
+#                 0 (disable)
+#
+#    mmap.ignoreMapIds
+#        Disable mmap pathfinding on the listed maps.
+#        List of map ids with delimiter ','
+#
 #
 #    UpdateUptimeInterval
 #        Update realm uptime period in minutes (for save data in 'uptime' table). Must be > 0
@@ -221,12 +234,12 @@ ChangeWeatherInterval = 600000
 PlayerSave.Interval = 900000
 PlayerSave.Stats.MinLevel = 0
 PlayerSave.Stats.SaveOnlyOnLogout = 1
-vmap.enableLOS = 1
-vmap.enableHeight = 1
 vmap.ignoreSpellIds = "7720"
 vmap.enableIndoorCheck = 1
 DetectPosCollision = 1
 TargetPosRecalculateRange = 1.5
+mmap.enabled = 0
+mmap.ignoreMapIds = ""
 UpdateUptimeInterval = 10
 MaxCoreStuckTime = 0
 AddonChannel = 1

@@ -937,8 +937,16 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_UINT32_MIN_LEVEL_FOR_RAID, "Raid.MinLevel", 10);
 
+    setConfig(CONFIG_BOOL_MMAP_ENABLED, "mmap.enabled", false);
+    std::string ignoreMapIds = sConfig.GetStringDefault("mmap.ignoreMapIds", "");
+
     ///- Read the "Data" directory from the config file
-    std::string dataPath = sConfig.GetStringDefault("DataDir", "./");
+    std::string dataPath = getConfig(CONFIG_BOOL_MMAP_ENABLED) ? 
+        sConfig.GetStringDefault("DataDirMMAP", "") : 
+        sConfig.GetStringDefault("DataDir", "./");
+
+    if (dataPath.empty())
+        dataPath = sConfig.GetStringDefault("DataDir", "./");
 
     // for empty string use current dir as for absent case
     if (dataPath.empty())
@@ -959,8 +967,10 @@ void World::LoadConfigSettings(bool reload)
     }
 
     setConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK, "vmap.enableIndoorCheck", true);
-    bool enableLOS = sConfig.GetBoolDefault("vmap.enableLOS", false);
-    bool enableHeight = sConfig.GetBoolDefault("vmap.enableHeight", false);
+//    bool enableLOS = sConfig.GetBoolDefault("vmap.enableLOS", false);
+//    bool enableHeight = sConfig.GetBoolDefault("vmap.enableHeight", false);
+    bool enableLOS = true;
+    bool enableHeight = true;
     std::string ignoreSpellIds = sConfig.GetStringDefault("vmap.ignoreSpellIds", "");
 
     if (!enableHeight)
@@ -972,6 +982,7 @@ void World::LoadConfigSettings(bool reload)
     sLog.outString( "WORLD: VMap support included. LineOfSight:%i, getHeight:%i, indoorCheck:%i",
         enableLOS, enableHeight, getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK) ? 1 : 0);
     sLog.outString( "WORLD: VMap data directory is: %svmaps",m_dataPath.c_str());
+
 
     // chat log and lexics cutter settings
     if (reload)
