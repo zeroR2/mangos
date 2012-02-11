@@ -1288,10 +1288,10 @@ float WorldObject::GetAngle(const WorldObject* obj) const
     if (!obj)
         return 0.0f;
 
+//    MANGOS_ASSERT(obj != this || PrintEntryError("GetAngle (for self)"));
+
     if (obj == this)
         return 0.0f;
-
-    MANGOS_ASSERT(obj != this || PrintEntryError("GetAngle (for self)"));
 
     return GetAngle(obj->GetPositionX(), obj->GetPositionY());
 }
