@@ -11073,17 +11073,21 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
             {
                 case COMMAND_STAY:                          //flat=1792  //STAY
                 {
+                    InterruptNonMeleeSpells(false);
+                    AttackStop();
                     StopMoving();
                     GetMotionMaster()->Clear(false);
                     GetMotionMaster()->MoveIdle();
-                    GetCharmInfo()->SetCommandState( COMMAND_STAY );
+                    GetCharmInfo()->SetCommandState(COMMAND_STAY);
                     break;
                 }
                 case COMMAND_FOLLOW:                        //spellid=1792  //FOLLOW
                 {
+                    InterruptNonMeleeSpells(false);
                     AttackStop();
+                    GetMotionMaster()->Clear(false);
                     GetMotionMaster()->MoveFollow(owner,PET_FOLLOW_DIST,((Pet*)this)->GetPetFollowAngle());
-                    GetCharmInfo()->SetCommandState( COMMAND_FOLLOW );
+                    GetCharmInfo()->SetCommandState(COMMAND_FOLLOW);
                     break;
                 }
                 case COMMAND_ATTACK:                        //spellid=1792  //ATTACK
@@ -11132,6 +11136,12 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                 }
                 case COMMAND_ABANDON:                       // abandon (hunter pet) or dismiss (summoned pet)
                 {
+                    InterruptNonMeleeSpells(false);
+                    AttackStop();
+                    StopMoving();
+                    GetMotionMaster()->Clear(false);
+                    GetMotionMaster()->MoveIdle();
+
                     if(((Creature*)this)->IsPet())
                     {
                         Pet* p = (Pet*)this;
