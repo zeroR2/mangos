@@ -1485,6 +1485,8 @@ void Player::SetDeathState(DeathState s)
             RemovePet(PET_SAVE_REAGENTS);
         }
 
+        _RemoveAllItemMods();
+
         // save value before aura remove in Unit::SetDeathState
         ressSpellId = GetUInt32Value(PLAYER_SELF_RES_SPELL);
 
@@ -1505,6 +1507,11 @@ void Player::SetDeathState(DeathState s)
     // restore resurrection spell id for player after aura remove
     if (s == JUST_DIED && cur && ressSpellId)
         SetUInt32Value(PLAYER_SELF_RES_SPELL, ressSpellId);
+
+    if (!cur && s == ALIVE)
+    {
+        _ApplyAllItemMods();
+    }
 
     if (isAlive() && !cur)
     {
