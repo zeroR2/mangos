@@ -6871,25 +6871,7 @@ SpellCastResult Spell::CheckRange(bool strict)
                     modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, range_mod, this);
 
                 // with additional 5 dist for non stricted case (some melee spells have delay in apply
-                bool retCode = m_caster->CanReachWithMeleeAttack(target, range_mod);
-                if (retCode)
-                    return SPELL_CAST_OK;
-                else if (m_caster->GetTypeId() == TYPEID_PLAYER && target->GetTypeId() == TYPEID_PLAYER)
-                {
-                    float delta1 = sqrt((m_caster->GetPositionX() - target->GetPositionX()) * (m_caster->GetPositionX() - target->GetPositionX()) +
-                                   (m_caster->GetPositionY() - target->GetPositionY()) * (m_caster->GetPositionY() - target->GetPositionY()) +
-                                   (m_caster->GetPositionZ() - target->GetPositionZ()) * (m_caster->GetPositionZ() - target->GetPositionZ()));
-                    float delta2 = sqrt((m_caster->m_movementInfo.GetPos()->x - target->m_movementInfo.GetPos()->x)* (m_caster->m_movementInfo.GetPos()->x - target->m_movementInfo.GetPos()->x) +
-                                   (m_caster->m_movementInfo.GetPos()->y - target->m_movementInfo.GetPos()->y) * (m_caster->m_movementInfo.GetPos()->y - target->m_movementInfo.GetPos()->y) +
-                                   (m_caster->m_movementInfo.GetPos()->y - target->m_movementInfo.GetPos()->z) * (m_caster->m_movementInfo.GetPos()->z - target->m_movementInfo.GetPos()->z));
-                    float delta3 = m_caster->GetDistance(target);
-
-                    sLog.outError("Spell::CheckRange() player %s not shot player %s, reason: strict %u, delta1 %f, delta2 %f, delta3 %f",
-                        m_caster->GetObjectGuid().GetString().c_str(),
-                        target->GetObjectGuid().GetString().c_str(),
-                        strict, delta1, delta2, delta3);
-                }
-                return SPELL_FAILED_OUT_OF_RANGE;
+                return m_caster->CanReachWithMeleeAttack(target, range_mod) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
             }
             break;                                          // let continue in generic way for no target
         }
