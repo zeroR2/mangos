@@ -1123,7 +1123,7 @@ enum ActionBarIndex
 
 #define MAX_UNIT_ACTION_BAR_INDEX (ACTION_BAR_INDEX_END-ACTION_BAR_INDEX_START)
 
-struct CharmInfo
+struct MANGOS_DLL_SPEC CharmInfo
 {
     public:
         explicit CharmInfo(Unit* unit);
@@ -2115,14 +2115,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         inline bool IsSpoofSamePlayerFaction(void)    { return m_spoofSamePlayerFaction; }
         // Frozen Mod
 
-        void SetThreatRedirectionTarget(ObjectGuid guid, uint32 pct)
-        {
-            m_misdirectionTargetGUID = guid;
-            m_ThreatRedirectionPercent = pct;
-        }
-        uint32 GetThreatRedirectionPercent() { return m_ThreatRedirectionPercent; }
-        Unit* GetMisdirectionTarget() { return m_misdirectionTargetGUID.IsEmpty() ?  NULL : GetMap()->GetUnit(m_misdirectionTargetGUID); }
-
         // Movement info
         MovementInfo m_movementInfo;
         Movement::MoveSpline * movespline;
@@ -2263,8 +2255,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         EventProcessor m_Events;
 
         GuardianPetList m_guardianPets;
-        uint32 m_ThreatRedirectionPercent;
-        ObjectGuid m_misdirectionTargetGUID;
 
         ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
 
