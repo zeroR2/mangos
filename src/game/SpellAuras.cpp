@@ -609,6 +609,9 @@ void Aura::SetModifier(AuraType t, int32 a, uint32 pt, int32 miscValue)
 void Aura::UpdateAura(uint32 diff)
 {
     SetInUse(true);
+    if (GetTarget() && GetTarget()->GetMap())
+        GetTarget()->GetMap()->AddProcessedObject(MAX_TYPE_ID);
+
     switch(GetAuraClassType())
     {
         case AURA_CLASS_AREA_AURA:
@@ -12173,6 +12176,9 @@ void SpellAuraHolder::Update(uint32 diff)
         DEBUG_LOG("SpellAuraHolder::Update attempt call Update on holder, but holder not have spellproto!");
         return;
     }
+
+    if (GetTarget() && GetTarget()->GetMap())
+        GetTarget()->GetMap()->AddProcessedObject(MAX_TYPE_ID +1);
 
     if (m_duration > 0)
     {

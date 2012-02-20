@@ -458,6 +458,10 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME,    "VMSS.MapFreezeDetectTime",2000);
     setConfig(CONFIG_UINT32_VMSS_FORCEUNLOADDELAY,    "VMSS.ForceUnloadDelay",3000);
     setConfig(CONFIG_BOOL_VMSS_TRYSKIPFIRST,          "VMSS.TrySkipFirstThreadBreak", false);
+    // VMSS system statistic collector
+    setConfig(CONFIG_BOOL_VMSS_STATISTIC_ENABLE,        "VMSS.Statistic.Enable", false);
+    setConfig(CONFIG_UINT32_VMSS_STATISTIC_THREADSCOUNT,"VMSS.Statistic.Threads",1);
+    setConfig(CONFIG_UINT32_VMSS_STATISTIC_INTERVAL,    "VMSS.Statistic.Interval",60000);
 
     ///- Read all rates from the config file
     setConfigPos(CONFIG_FLOAT_RATE_HEALTH, "Rate.Health", 1.0f);

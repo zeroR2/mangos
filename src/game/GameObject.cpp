@@ -218,6 +218,8 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
         //((Transport*)this)->Update(p_time);
         return;
     }
+    if (GetMap())
+        GetMap()->AddProcessedObject(GetTypeId());
 
     if (GetGoType() == GAMEOBJECT_TYPE_CAPTURE_POINT)
     {
