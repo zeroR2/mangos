@@ -164,9 +164,6 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
 
         void UpdateLoadBalancer(bool b_start);
 
-        void UpdateStatisticForMap(Map* map);
-        void PrintStatistic();
-
     private:
 
         // debugging code, should be deleted some day
@@ -199,9 +196,6 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         uint64 m_workTimeStorage;
         uint64 m_sleepTimeStorage;
         uint32 m_tickCount;
-
-        uint32 m_statisticInterval;
-        std::vector<Map*> m_statMaps;
 
         IntervalTimer i_timer;
 };
