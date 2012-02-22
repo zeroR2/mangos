@@ -1341,11 +1341,6 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
             ++errorsCount;
             goodCount = 0;
         }
-        else if (!IsNextZcoordOK(tstX, tstY, tstZ, 5.0f))
-        {
-            ++errorsCount;
-            goodCount = 0;
-        }
         else if (mover && bGOCheck)
         {
             bool bError = false;
@@ -1372,7 +1367,7 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
             ++goodCount;
         }
 
-//        DEBUG_LOG("TerrainInfo::CheckPathAccurate test data %f %f %f good=%u, errors=%u vmap=%u",tstX,tstY,tstZ, goodCount, errorsCount, vmaperrorsCount);
+        //DEBUG_LOG("TerrainInfo::CheckPathAccurate test data %f %f %f good=%u, errors=%u vmap=%u",tstX,tstY,tstZ, goodCount, errorsCount, vmaperrorsCount);
 
         if (!errorsCount)
         {
@@ -1395,13 +1390,13 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
     {
         dstX = lastGoodX;
         dstY = lastGoodY;
-        dstZ = GetHeight(lastGoodX, lastGoodY, lastGoodZ+2.0f) + 0.5f;
+        dstZ = lastGoodZ + 0.5f;
     }
     else
     {
         dstX = tstX;
         dstY = tstY;
-        dstZ = GetHeight(tstX, tstY, tstZ+2.0f) + 0.5f;
+        dstZ = tstZ + 0.5f;
     }
 
     return (errorsCount == 0);
