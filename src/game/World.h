@@ -650,6 +650,15 @@ class World
         // multithread locking (World locking used only if object map == NULL)
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT) { return i_lock[_locktype]; }
 
+        std::map<std::string,uint32> m_statsWorld;
+        void WorldStatAdd(std::string desq)
+        { 
+            m_statsWorld.insert(std::map<std::string,uint32>::value_type(desq,WorldTimer::getMSTimeDiff(m_previewTimer, WorldTimer::getMSTime()))); 
+            m_previewTimer = WorldTimer::getMSTime(); 
+        };
+        std::map<std::string,uint32>* GetWorldStat() { return &m_statsWorld; };
+        uint32 m_previewTimer;
+
         // reset duel system
         void setDuelResetEnableAreaIds(const char* areas);
         bool IsAreaIdEnabledDuelReset(uint32 areaId);
