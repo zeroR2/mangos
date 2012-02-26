@@ -276,21 +276,6 @@ void Map::AddProcessedObject(uint8 typeId, bool type)
 
 void Map::PrintStatistic()
 {
-    std::map<std::string, uint32>* worldStat = sWorld.GetWorldStat();
-    if (worldStat && !worldStat->empty())
-    {
-        std::string result;
-        for(std::map<std::string, uint32>::const_iterator itr = worldStat->begin(); itr != worldStat->end(); ++itr)
-        {
-            result.append(itr->first);
-            char buffer[255];
-            sprintf(buffer," %u ", itr->second);
-            result.append(buffer);
-        }
-        sLog.outDetail("World::Statistic %s",result.c_str());
-        worldStat->clear();
-    }
-
     sLog.outDetail("Map::Statistic map (id %u, inst %u, diff %u): AVG exec time %f ms, objects/type: %u/%u %u/%u %u/%u %u/%u %u/%u %u/%u %u/%u %u/%u, auras %u, holders %u",
     GetId(), GetInstanceId(), GetDifficulty(),
     ((float)m_executionTime/(float)m_updatesCount),
