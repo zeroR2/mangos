@@ -20,6 +20,7 @@
 #include "Database/DatabaseEnv.h"
 #include "ObjectAccessor.h"
 #include "ObjectGuid.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "World.h"
 #include "Policies/SingletonImp.h"

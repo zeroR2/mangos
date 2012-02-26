@@ -22,7 +22,10 @@
 #include "Common.h"
 #include "Policies/Singleton.h"
 #include "ObjectGuid.h"
+#include "SharedDefines.h"
 #include <string>
+
+class Player;
 
 enum AccountOpResult
 {
