@@ -12525,7 +12525,7 @@ void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed, bool gen
     init.Launch();
 }
 
-void Unit::MonsterMoveJump(float x, float y, float z, float o, float speed, float height, bool isKnockBack, Unit* target)
+void Unit::MonsterMoveToDestination(float x, float y, float z, float o, float speed, float height, bool isKnockBack, Unit* target)
 {
     MaNGOS::NormalizeMapCoord(x);
     MaNGOS::NormalizeMapCoord(y);
@@ -12536,7 +12536,7 @@ void Unit::MonsterMoveJump(float x, float y, float z, float o, float speed, floa
         InterruptNonMeleeSpells(false);
     }
 
-    GetMotionMaster()->MoveJumpTo(x, y, z, o, target, speed, height, 0);
+    GetMotionMaster()->MoveToDestination(x, y, z, o, target, speed, height, 0);
 }
 
 struct SetPvPHelper
@@ -12817,7 +12817,7 @@ void Unit::KnockBackFrom(Unit* target, float horizontalSpeed, float verticalSpee
         float fy = oy + dis * vsin;
         float fz = oz;
 
-        MonsterMoveJump(fx,fy,fz,GetOrientation(),horizontalSpeed,max_height, true);
+        MonsterMoveToDestination(fx,fy,fz,GetOrientation(),horizontalSpeed,max_height, true);
     }
 }
 
