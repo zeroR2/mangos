@@ -25,7 +25,6 @@
 #include "ace/Recursive_Thread_Mutex.h"
 #include "Map.h"
 #include "GridStates.h"
-#include "DBCStores.h"
 #include "MapUpdater.h"
 
 class Transport;
@@ -38,20 +37,13 @@ struct MANGOS_DLL_DECL MapID
 
     bool operator<(const MapID& val) const
     {
-        if (nMapId == val.nMapId)
+        if(nMapId == val.nMapId)
             return nInstanceId < val.nInstanceId;
-
-        if (!Entry()->IsContinent() && val.Entry()->IsContinent())
-            return true;
-        else if (Entry()->IsContinent() && !val.Entry()->IsContinent())
-            return false;
 
         return nMapId < val.nMapId;
     }
 
     bool operator==(const MapID& val) const { return nMapId == val.nMapId && nInstanceId == val.nInstanceId; }
-
-    MapEntry const* Entry() const { return sMapStore.LookupEntry(nMapId); };
 
     uint32 nMapId;
     uint32 nInstanceId;
