@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "AccountMgr.h"
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
 #include "WorldPacket.h"
@@ -317,25 +316,42 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
         return;
     }
 
-    if (sAccountMgr.GetPlayerGuidByName(name))
+    if (sObjectMgr.GetPlayerGuidByName(name))
     {
         data << (uint8)CHAR_CREATE_NAME_IN_USE;
         SendPacket( &data );
         return;
     }
 
+    QueryResult *resultacct = LoginDatabase.PQuery("SELECT SUM(numchars) FROM realmcharacters WHERE acctid = '%u'", GetAccountId());
+    if (resultacct)
+    {
+        Field *fields=resultacct->Fetch();
+        uint32 acctcharcount = fields[0].GetUInt32();
+        delete resultacct;
 
-    if (sAccountMgr.GetCharactersCount(GetAccountId(), true) >= sWorld.getConfig(CONFIG_UINT32_CHARACTERS_PER_ACCOUNT))
-    {
-        data << (uint8)CHAR_CREATE_ACCOUNT_LIMIT;
-        SendPacket( &data );
-        return;
+        if (acctcharcount >= sWorld.getConfig(CONFIG_UINT32_CHARACTERS_PER_ACCOUNT))
+        {
+            data << (uint8)CHAR_CREATE_ACCOUNT_LIMIT;
+            SendPacket( &data );
+            return;
+        }
     }
-    else if (sAccountMgr.GetCharactersCount(GetAccountId(), false) >= sWorld.getConfig(CONFIG_UINT32_CHARACTERS_PER_REALM))
+
+    QueryResult *result = CharacterDatabase.PQuery("SELECT COUNT(guid) FROM characters WHERE account = '%u'", GetAccountId());
+    uint8 charcount = 0;
+    if ( result )
     {
-        data << (uint8)CHAR_CREATE_SERVER_LIMIT;
-        SendPacket( &data );
-        return;
+        Field *fields = result->Fetch();
+        charcount = fields[0].GetUInt8();
+        delete result;
+
+        if (charcount >= sWorld.getConfig(CONFIG_UINT32_CHARACTERS_PER_REALM))
+        {
+            data << (uint8)CHAR_CREATE_SERVER_LIMIT;
+            SendPacket( &data );
+            return;
+        }
     }
 
     // speedup check for heroic class disabled case
@@ -479,8 +495,10 @@ void WorldSession::HandleCharCreateOpcode( WorldPacket & recv_data )
 
     // Player created, save it now
     pNewChar.SaveToDB();
+    charcount += 1;
 
-    sAccountMgr.UpdateCharactersCount(GetAccountId(), realmID);
+    LoginDatabase.PExecute("DELETE FROM realmcharacters WHERE acctid= '%u' AND realmid = '%u'", GetAccountId(), realmID);
+    LoginDatabase.PExecute("INSERT INTO realmcharacters (numchars, acctid, realmid) VALUES (%u, %u, %u)",  charcount, GetAccountId(), realmID);
 
     data << (uint8)CHAR_CREATE_SUCCESS;
     SendPacket( &data );
@@ -597,7 +615,7 @@ void PlayerbotMgr::AddPlayerBot(ObjectGuid playerGuid)
     if (sObjectMgr.GetPlayer(playerGuid))
         return;
 
-    uint32 accountId = sAccountMgr.GetPlayerAccountIdByGUID(playerGuid);
+    uint32 accountId = sObjectMgr.GetPlayerAccountIdByGUID(playerGuid);
     if (accountId == 0)
         return;
 
@@ -608,7 +626,7 @@ void PlayerbotMgr::AddPlayerBot(ObjectGuid playerGuid)
         return;
     }
 
-    uint32 masterId = sAccountMgr.GetPlayerAccountIdByGUID(GetMaster()->GetObjectGuid());
+    uint32 masterId = sObjectMgr.GetPlayerAccountIdByGUID(GetMaster()->GetObjectGuid());
     CharacterDatabase.DelayQueryHolder(&chrHandler, &CharacterHandler::HandlePlayerBotLoginCallback, holder, masterId);
 }
 
@@ -1023,7 +1041,7 @@ void WorldSession::HandleSetPlayerDeclinedNamesOpcode(WorldPacket& recv_data)
 
     // not accept declined names for unsupported languages
     std::string name;
-    if(!sAccountMgr.GetPlayerNameByGUID(guid, name))
+    if(!sObjectMgr.GetPlayerNameByGUID(guid, name))
     {
         WorldPacket data(SMSG_SET_PLAYER_DECLINED_NAMES_RESULT, 4+8);
         data << uint32(1);
@@ -1240,9 +1258,9 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
     }
 
     // character with this name already exist
-    if (sAccountMgr.GetPlayerGuidByName(newname))
+    if (sObjectMgr.GetPlayerGuidByName(newname))
     {
-        ObjectGuid newguid = sAccountMgr.GetPlayerGuidByName(newname);
+        ObjectGuid newguid = sObjectMgr.GetPlayerGuidByName(newname);
         if (newguid != guid)
         {
             WorldPacket data(SMSG_CHAR_FACTION_CHANGE, 1);
@@ -1501,7 +1519,7 @@ void WorldSession::HandleCharCustomizeOpcode(WorldPacket& recv_data)
     }
 
     // character with this name already exist
-    ObjectGuid newguid = sAccountMgr.GetPlayerGuidByName(newname);
+    ObjectGuid newguid = sObjectMgr.GetPlayerGuidByName(newname);
     if (newguid && newguid != guid)
     {
         WorldPacket data(SMSG_CHAR_CUSTOMIZE, 1);

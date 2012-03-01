@@ -40,7 +40,6 @@
 #include "SharedDefines.h"
 #include "LFG.h"
 #include "AntiCheat.h"
-#include "AccountMgr.h"
 
 // Playerbot mod
 #include "playerbot/PlayerbotMgr.h"
@@ -2239,8 +2238,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         AccountLinkedState GetAccountLinkedState();
         bool IsReferAFriendLinked(Player * target);
         void LoadAccountLinkedState();
-        RafLinkedList const* m_referredAccounts;
-        RafLinkedList const* m_referalAccounts;
+        std::vector<uint32> m_referredAccounts;
+        std::vector<uint32> m_referalAccounts;
 
         /*********************************************************/
         /***                 VARIOUS SYSTEMS                   ***/

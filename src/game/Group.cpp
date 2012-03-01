@@ -22,7 +22,6 @@
 #include "WorldSession.h"
 #include "Player.h"
 #include "World.h"
-#include "AccountMgr.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "Group.h"
@@ -188,7 +187,7 @@ bool Group::LoadGroupFromDB(Field* fields)
     m_leaderGuid = ObjectGuid(HIGHGUID_PLAYER, fields[14].GetUInt32());
 
     // group leader not exist
-    if (!sAccountMgr.GetPlayerNameByGUID(m_leaderGuid, m_leaderName))
+    if (!sObjectMgr.GetPlayerNameByGUID(m_leaderGuid, m_leaderName))
         return false;
 
     m_groupType  = GroupType(fields[11].GetUInt8());
@@ -222,7 +221,7 @@ bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags
     member.guid      = ObjectGuid(HIGHGUID_PLAYER, guidLow);
 
     // skip nonexistent member
-    if (!sAccountMgr.GetPlayerNameByGUID(member.guid, member.name))
+    if (!sObjectMgr.GetPlayerNameByGUID(member.guid, member.name))
         return false;
 
     member.group     = subgroup;

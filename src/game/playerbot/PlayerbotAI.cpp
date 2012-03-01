@@ -39,7 +39,6 @@
 #include "PlayerbotWarlockAI.h"
 #include "PlayerbotWarriorAI.h"
 #include "../Player.h"
-#include "../AccountMgr.h"
 #include "../ObjectMgr.h"
 #include "../Chat.h"
 #include "WorldPacket.h"
@@ -5233,7 +5232,7 @@ void PlayerbotAI::ListAuctions()
                 {
                     ObjectGuid guid = ObjectGuid(HIGHGUID_PLAYER, bidder);
                     std::string bidder_name;
-                    if (sAccountMgr.GetPlayerNameByGUID(guid, bidder_name))
+                    if (sObjectMgr.GetPlayerNameByGUID(guid, bidder_name))
                         report << " " << bidder_name << ": ";
 
                         report << Cash(bid);

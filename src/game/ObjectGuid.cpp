@@ -20,7 +20,6 @@
 
 #include "World.h"
 #include "ObjectMgr.h"
-#include "AccountMgr.h"
 
 #include <sstream>
 
@@ -55,7 +54,7 @@ std::string ObjectGuid::GetString() const
     if (IsPlayer())
     {
         std::string name;
-        if (sAccountMgr.GetPlayerNameByGUID(*this, name))
+        if (sObjectMgr.GetPlayerNameByGUID(*this, name))
             str << " " << name;
     }
 

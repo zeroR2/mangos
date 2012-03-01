@@ -21,7 +21,6 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "World.h"
-#include "AccountMgr.h"
 #include "ObjectMgr.h"
 #include "Log.h"
 #include "Opcodes.h"
@@ -481,7 +480,7 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket & recv_data)
 
     // not let enemies sign guild charter
     if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) &&
-        GetPlayer()->GetTeam() != sAccountMgr.GetPlayerTeamByGUID(ownerGuid))
+        GetPlayer()->GetTeam() != sObjectMgr.GetPlayerTeamByGUID(ownerGuid))
     {
         if(type != 9)
             SendArenaTeamCommandResult(ERR_ARENA_TEAM_INVITE_SS, "", "", ERR_ARENA_TEAM_NOT_ALLIED);
