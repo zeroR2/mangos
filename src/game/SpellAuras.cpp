@@ -2780,7 +2780,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 if (GetSpellProto()->SpellFamilyFlags.test<CF_WARRIOR_OVERPOWER>())
                 {
                     // Must be casting target
-                    if (!target->IsNonMeleeSpellCasted(false))
+                    if (!target->IsNonMeleeSpellCasted(false) || !target->GetObjectGuid().IsPlayerOrPet()) //unrelenting assault don't must affect on pve.
                         return;
 
                     Unit* caster = GetCaster();
@@ -3225,8 +3225,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 34477: //Misdirection
             case 57934: //Tricks of Trade
             {
-                if (Unit* caster = GetCaster())
-                    caster->getHostileRefManager().SetThreatRedirection(target->GetObjectGuid(), 100);
+                // Do nothing - all maked in 1'st effect and on aura remove.
                 return;
             }
             case 52098:                                     // Charge Up
