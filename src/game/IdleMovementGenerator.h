@@ -31,7 +31,6 @@ class MANGOS_DLL_SPEC IdleMovementGenerator : public MovementGenerator
         void Reset(Unit &);
         bool Update(Unit &, const uint32 &) { return true; }
         MovementGeneratorType GetMovementGeneratorType() const { return IDLE_MOTION_TYPE; }
-        const char* Name() const { return "<Idle>"; }
 };
 
 extern IdleMovementGenerator si_idleMovement;
@@ -47,7 +46,6 @@ class MANGOS_DLL_SPEC DistractMovementGenerator : public MovementGenerator
         void Reset(Unit& );
         bool Update(Unit& owner, const uint32& time_diff);
         MovementGeneratorType GetMovementGeneratorType() const { return DISTRACT_MOTION_TYPE; }
-        const char* Name() const { return "<Distract>"; }
 
     private:
         uint32 m_timer;
@@ -61,7 +59,6 @@ class MANGOS_DLL_SPEC AssistanceDistractMovementGenerator : public DistractMovem
 
         MovementGeneratorType GetMovementGeneratorType() const { return ASSISTANCE_DISTRACT_MOTION_TYPE; }
         void Finalize(Unit& unit);
-        const char* Name() const { return "<AssistanceDistract>"; }
 };
 
 #endif

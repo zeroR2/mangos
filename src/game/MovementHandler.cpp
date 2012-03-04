@@ -176,7 +176,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         }
 
         // battleground state prepare, stop flight
-        GetPlayer()->GetUnitStateMgr().InitDefaults();
+        GetPlayer()->GetMotionMaster()->MovementExpired();
         GetPlayer()->m_taxi.ClearTaxiDestinations();
     }
 

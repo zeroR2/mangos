@@ -191,12 +191,9 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellEntry const* spellInfo)
 // Methods of class Unit
 
 Unit::Unit() :
-    i_motionMaster(this), 
-    m_ThreatManager(this), 
-    m_HostileRefManager(this),
+    i_motionMaster(this), m_ThreatManager(this), m_HostileRefManager(this),
     m_charmInfo(NULL),
     m_vehicleInfo(NULL),
-    m_stateMgr(this),
     movespline(new Movement::MoveSpline())
 {
     m_objectType |= TYPEMASK_UNIT;
@@ -10004,7 +10001,7 @@ bool Unit::SelectHostileTarget()
 
             // check if currently selected target is reachable
             // NOTE: path alrteady generated from AttackStart()
-           if (!target->isInAccessablePlaceFor(this))
+            if(!GetMotionMaster()->operator->()->IsReachable())
             {
                 // remove all taunts
                 RemoveSpellsCausingAura(SPELL_AURA_MOD_TAUNT);
@@ -10844,7 +10841,6 @@ void Unit::CleanupsBeforeDelete()
         else
             getHostileRefManager().deleteReferences();
         RemoveAllAuras(AURA_REMOVE_BY_DELETE);
-        GetUnitStateMgr().InitDefaults();
     }
     WorldObject::CleanupsBeforeDelete();
 }
@@ -11784,6 +11780,9 @@ void Unit::SetFeared(bool apply, ObjectGuid casterGuid, uint32 spellID, uint32 t
         if (HasAuraType(SPELL_AURA_PREVENTS_FLEEING))
             return;
 
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FLEEING);
+
+        GetMotionMaster()->MovementExpired(false);
         CastStop(GetObjectGuid() == casterGuid ? spellID : 0);
 
         Unit* caster = IsInWorld() ?  GetMap()->GetUnit(casterGuid) : NULL;
@@ -11792,17 +11791,22 @@ void Unit::SetFeared(bool apply, ObjectGuid casterGuid, uint32 spellID, uint32 t
     }
     else
     {
-        GetUnitStateMgr().DropAction(UNIT_ACTION_FEARED);
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_FLEEING);
 
-        // attack caster if can
+        GetMotionMaster()->MovementExpired(false);
+
         if (GetTypeId() != TYPEID_PLAYER && isAlive())
         {
             Creature* c = ((Creature*)this);
+            // restore appropriate movement generator
+            if (getVictim())
+                GetMotionMaster()->MoveChase(getVictim());
+            else
+                GetMotionMaster()->Initialize();
+
+            // attack caster if can
             if (Unit* caster = IsInWorld() ? GetMap()->GetUnit(casterGuid) : NULL)
                 c->AttackedBy(caster);
-
-            if (getVictim() && GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE)
-                GetMotionMaster()->MoveChase(getVictim());
         }
     }
 
@@ -11814,18 +11818,32 @@ void Unit::SetConfused(bool apply, ObjectGuid casterGuid, uint32 spellID)
 {
     if (apply)
     {
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED);
+
         CastStop(GetObjectGuid() == casterGuid ? spellID : 0);
 
         GetMotionMaster()->MoveConfused();
     }
     else
     {
-        GetUnitStateMgr().DropAction(UNIT_ACTION_CONFUSED);
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED);
+
+        StopMoving();
+        GetMotionMaster()->MovementExpired(true);
+
+        if (GetTypeId() == TYPEID_PLAYER)
+        {
+            //Clear unit movement flags
+            ((Player*)this)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
+        }
 
         if (GetTypeId() != TYPEID_PLAYER && isAlive())
         {
-            if (getVictim() && GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE)
+            // restore appropriate movement generator
+            if (getVictim())
                 GetMotionMaster()->MoveChase(getVictim());
+            else
+                GetMotionMaster()->Initialize();
         }
     }
 
@@ -11843,8 +11861,6 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid, uint32 /*spellID*/)
         data<<uint8(0);
         SendMessageToSet(&data,true);
         */
-
-        GetUnitStateMgr().PushAction(UNIT_ACTION_IDLE, UNIT_ACTION_PRIORITY_IMMEDIATE);
 
         if (GetTypeId() != TYPEID_PLAYER)
             StopMoving();
@@ -11885,7 +11901,15 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid, uint32 /*spellID*/)
 
         clearUnitState(UNIT_STAT_DIED);
 
-        GetUnitStateMgr().DropAction(UNIT_ACTION_IDLE);
+        if (GetTypeId() != TYPEID_PLAYER && isAlive())
+        {
+            // restore appropriate movement generator
+            if (getVictim())
+                GetMotionMaster()->MoveChase(getVictim());
+            else
+                GetMotionMaster()->Initialize();
+        }
+
     }
 }
 
@@ -12472,8 +12496,20 @@ void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool ca
     {
         ExitVehicle();
         Creature* c = (Creature*)this;
-        GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
+        // Creature relocation acts like instant movement generator, so current generator expects interrupt/reset calls to react properly
+        if (!c->GetMotionMaster()->empty())
+            if (MovementGenerator *movgen = c->GetMotionMaster()->top())
+                movgen->Interrupt(*c);
+
+        SetPosition(x, y, z, orientation, true);
+
         SendHeartBeat();
+
+        // finished relocation, movegen can different from top before creature relocation,
+        // but apply Reset expected to be safe in any case
+        if (!c->GetMotionMaster()->empty())
+            if (MovementGenerator *movgen = c->GetMotionMaster()->top())
+                movgen->Reset(*c);
     }
 }
 
