@@ -32,14 +32,11 @@
 #endif
 
 class SpellAuraHolder;
-class UnitAction;
 
 #ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
-    OBJECT_SAFE_HANDLER(UnitAction,UnitActionPtr);
 #else
     OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
-    OBJECT_HANDLER(UnitAction,UnitActionPtr);
 #endif
 
 #endif

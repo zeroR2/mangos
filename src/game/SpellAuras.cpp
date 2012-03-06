@@ -4839,6 +4839,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
         pet->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
         pet->StopMoving();
+        pet->GetMotionMaster()->Clear(false);
         pet->GetMotionMaster()->MoveIdle();
     }
     else
@@ -5094,8 +5095,25 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
             target->ModifyAuraState(AURA_STATE_FROZEN, apply);
 
+        target->addUnitState(UNIT_STAT_STUNNED);
+        target->SetTargetGuid(ObjectGuid());
+
+        target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
         target->CastStop(target->GetObjectGuid() == GetCasterGuid() ? GetId() : 0);
-        target->GetUnitStateMgr().PushAction(UNIT_ACTION_ROOT);
+
+        // Creature specific
+        if (target->GetTypeId() != TYPEID_PLAYER)
+            target->StopMoving();
+        else
+        {
+            ((Player*)target)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
+            target->SetStandState(UNIT_STAND_STATE_STAND);// in 1.5 client
+        }
+
+        WorldPacket data(SMSG_FORCE_MOVE_ROOT, 8);
+        data << target->GetPackGUID();
+        data << uint32(0);
+        target->SendMessageToSet(&data, true);
 
         // Deep Freeze damage part
         if (GetId() == 44572 && !(target->IsCharmerOrOwnerPlayerOrPlayerItself() || target->IsVehicle()) && target->IsImmuneToSpellEffect(GetSpellProto(), EFFECT_INDEX_0))
@@ -5173,7 +5191,8 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         if (target->HasAuraType(SPELL_AURA_MOD_STUN))
             return;
 
-        target->GetUnitStateMgr().DropAction(UNIT_ACTION_ROOT);
+        target->clearUnitState(UNIT_STAT_STUNNED);
+        target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
         if(!target->hasUnitState(UNIT_STAT_ROOT | UNIT_STAT_ON_VEHICLE))       // prevent allow move if have also root effect
         {
@@ -5402,13 +5421,12 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
             target->ModifyAuraState(AURA_STATE_FROZEN, apply);
 
+        target->addUnitState(UNIT_STAT_ROOT);
         target->SetTargetGuid(ObjectGuid());
 
         //Save last orientation
-        if (target->getVictim())
+        if ( target->getVictim() )
             target->SetOrientation(target->GetAngle(target->getVictim()));
-
-        target->GetUnitStateMgr().PushAction(UNIT_ACTION_ROOT);
 
         if (target->GetTypeId() == TYPEID_PLAYER)
         {
@@ -5423,6 +5441,8 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
             //Clear unit movement flags
             ((Player*)target)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
         }
+        else
+            target->StopMoving();
     }
     else
     {
@@ -5453,7 +5473,7 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
         if (target->HasAuraType(SPELL_AURA_MOD_ROOT))
             return;
 
-        target->GetUnitStateMgr().DropAction(UNIT_ACTION_ROOT);
+        target->clearUnitState(UNIT_STAT_ROOT);
 
         if(!target->hasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_ON_VEHICLE))      // prevent allow move if have also stun effect
         {

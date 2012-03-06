@@ -36,7 +36,6 @@ class MANGOS_DLL_SPEC FleeingMovementGenerator
         bool Update(T &, const uint32 &);
 
         MovementGeneratorType GetMovementGeneratorType() const { return FLEEING_MOTION_TYPE; }
-        const char* Name() const { return "<Fleeing>"; }
 
     private:
         void _setTargetLocation(T &owner);
@@ -57,7 +56,6 @@ class MANGOS_DLL_SPEC TimedFleeingMovementGenerator
         MovementGeneratorType GetMovementGeneratorType() const { return TIMED_FLEEING_MOTION_TYPE; }
         bool Update(Unit &, const uint32 &);
         void Finalize(Unit &);
-        const char* Name() const { return "<TimedFleeing>"; }
 
     private:
         TimeTracker i_totalFleeTime;

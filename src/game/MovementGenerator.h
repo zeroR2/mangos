@@ -25,9 +25,10 @@
 #include "Dynamic/ObjectRegistry.h"
 #include "Dynamic/FactoryHolder.h"
 #include "MotionMaster.h"
-#include "StateMgr.h"
 
-class MANGOS_DLL_SPEC MovementGenerator : public UnitAction
+class Unit;
+
+class MANGOS_DLL_SPEC MovementGenerator
 {
     public:
         virtual ~MovementGenerator();

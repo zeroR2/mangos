@@ -2722,6 +2722,9 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     if (pTargetDummy)
                     {
+                        if (unitTarget->hasUnitState(UNIT_STAT_FOLLOW | UNIT_STAT_FOLLOW_MOVE))
+                            unitTarget->GetMotionMaster()->MovementExpired();
+
                         unitTarget->MonsterMoveWithSpeed(pTargetDummy->GetPositionX(), pTargetDummy->GetPositionY(), pTargetDummy->GetPositionZ(), 24.f);
 
                         // Add state to temporarily prevent follow
@@ -3331,7 +3334,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     Unit* pZerg = unitTarget->GetMiniPet();
                     if (pZerg && pZerg->isAlive() && pZerg->GetEntry() == 11327)
                     {
-                        pZerg->GetUnitStateMgr().InitDefaults();
+                        pZerg->GetMotionMaster()->MovementExpired();
                         m_caster->DealDamage(pZerg, unitTarget->GetMaxHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
                         ((Creature*)pZerg)->ForcedDespawn(5000);
                     }
@@ -3344,7 +3347,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     m_caster->DealDamage(unitTarget, unitTarget->GetMaxHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
                     ((Pet*)unitTarget)->Unsummon(PET_SAVE_AS_DELETED);
-                    m_caster->GetUnitStateMgr().InitDefaults();
+                    m_caster->GetMotionMaster()->MovementExpired();
                     return;
                 }
                 case 68576:                                 // Eject All Passengers (also used in encounters Lich King, Jaraxxus?)
@@ -8332,6 +8335,9 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                             // can only affect "own" summoned
                             if (pSummon->GetSummonerGuid() == m_caster->GetObjectGuid())
                             {
+                                if (pTarget->hasUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE))
+                                    pTarget->GetMotionMaster()->MovementExpired();
+
                                 // trigger cast of quest complete script (see code for this spell below)
                                 pTarget->CastSpell(pTarget, 44462, true);
 

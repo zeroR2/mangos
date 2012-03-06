@@ -41,7 +41,6 @@ class MANGOS_DLL_SPEC HomeMovementGenerator<Creature>
         void Reset(Creature &);
         bool Update(Creature &, const uint32 &);
         MovementGeneratorType GetMovementGeneratorType() const { return HOME_MOTION_TYPE; }
-        const char* Name() const { return "<Home>"; }
 
     private:
         void _setTargetLocation(Creature &);
