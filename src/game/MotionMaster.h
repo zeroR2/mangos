@@ -38,7 +38,6 @@ class MANGOS_DLL_SPEC MotionMaster
         ~MotionMaster();
 
         void Initialize();
-        void UpdateMotion(uint32 diff);
         void Clear(bool reset = true, bool all = false);
         void MovementExpired(bool reset = true) { Clear(); }
 

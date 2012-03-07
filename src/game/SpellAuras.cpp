@@ -5095,7 +5095,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             target->ModifyAuraState(AURA_STATE_FROZEN, apply);
 
         target->CastStop(target->GetObjectGuid() == GetCasterGuid() ? GetId() : 0);
-        target->GetUnitStateMgr().PushAction(UNIT_ACTION_ROOT);
+        target->GetUnitStateMgr().PushAction(UNIT_ACTION_STUN);
 
         // Deep Freeze damage part
         if (GetId() == 44572 && !(target->IsCharmerOrOwnerPlayerOrPlayerItself() || target->IsVehicle()) && target->IsImmuneToSpellEffect(GetSpellProto(), EFFECT_INDEX_0))
@@ -5173,7 +5173,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         if (target->HasAuraType(SPELL_AURA_MOD_STUN))
             return;
 
-        target->GetUnitStateMgr().DropAction(UNIT_ACTION_ROOT);
+        target->GetUnitStateMgr().DropAction(UNIT_ACTION_STUN);
 
         if(!target->hasUnitState(UNIT_STAT_ROOT | UNIT_STAT_ON_VEHICLE))       // prevent allow move if have also root effect
         {
@@ -5402,27 +5402,8 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
         if (GetSpellSchoolMask(GetSpellProto()) & SPELL_SCHOOL_MASK_FROST)
             target->ModifyAuraState(AURA_STATE_FROZEN, apply);
 
-        target->SetTargetGuid(ObjectGuid());
-
-        //Save last orientation
-        if (target->getVictim())
-            target->SetOrientation(target->GetAngle(target->getVictim()));
-
         target->GetUnitStateMgr().PushAction(UNIT_ACTION_ROOT);
 
-        if (target->GetTypeId() == TYPEID_PLAYER)
-        {
-            if(!target->hasUnitState(UNIT_STAT_ON_VEHICLE))
-            {
-                WorldPacket data(SMSG_FORCE_MOVE_ROOT, 10);
-                data << target->GetPackGUID();
-                data << uint32(2);
-                target->SendMessageToSet(&data, true);
-            }
-
-            //Clear unit movement flags
-            ((Player*)target)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
-        }
     }
     else
     {
@@ -5454,20 +5435,6 @@ void Aura::HandleAuraModRoot(bool apply, bool Real)
             return;
 
         target->GetUnitStateMgr().DropAction(UNIT_ACTION_ROOT);
-
-        if(!target->hasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_ON_VEHICLE))      // prevent allow move if have also stun effect
-        {
-            if (target->getVictim() && target->isAlive())
-                target->SetTargetGuid(target->getVictim()->GetObjectGuid());
-
-            if (target->GetTypeId() == TYPEID_PLAYER)
-            {
-                WorldPacket data(SMSG_FORCE_MOVE_UNROOT, 10);
-                data << target->GetPackGUID();
-                data << (uint32)2;
-                target->SendMessageToSet(&data, true);
-            }
-        }
 
         if (GetSpellProto()->Id == 70980)                   // Web Wrap (Icecrown Citadel, trash mob Nerub'ar Broodkeeper)
             target->CastSpell(target, 71010, true);

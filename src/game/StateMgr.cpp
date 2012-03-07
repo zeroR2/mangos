@@ -164,6 +164,9 @@ public:
             target->SendMessageToSet(&data, true);
         }
         target->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ROOT);
+
+        if(target->getVictim())
+            target->SetTargetGuid(target->getVictim()->GetObjectGuid());
     }
 };
 
@@ -258,10 +261,8 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     if (priority < UNIT_ACTION_PRIORITY_IDLE)
         return;
 
-    ActionInfo* oldInfo = CurrentState();
-    bool bDropOldAction = (oldInfo == m_oldAction);
-
     MAPLOCK_WRITE(GetOwner(), MAP_LOCK_TYPE_DEFAULT);
+    ActionInfo* oldInfo = CurrentState();
     UnitActionStorage::iterator itr = m_actions.find(priority);
     if (itr != m_actions.end())
     {
@@ -271,14 +272,15 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
         if (oldInfo && &itr->second == oldInfo && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
             bActiveActionChanged = true;
 
+        if (&itr->second == m_oldAction)
+            m_oldAction = NULL;
+
         m_actions.erase(itr);
 
         // Finalized not ActionInfo, but real action (saved before), due to ActionInfo wrapper already deleted.
         if (bActiveActionChanged && oldAction)
         {
             oldAction->Finalize(*GetOwner());
-            if (bDropOldAction)
-                m_oldAction = NULL;
         }
 
         // in this point we delete last link to UnitActionPtr, after this UnitAction be auto-deleted...
@@ -398,11 +400,11 @@ void ActionInfo::Finalize(UnitStateMgr* mgr)
         HasFlag(ACTION_STATE_FINALIZED))
         return;
 
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s finalize action %s", mgr->GetOwnerStr().c_str(), TypeName());
     MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_DEFAULT);
-
     AddFlag(ACTION_STATE_FINALIZED);
     RemoveFlag(ACTION_STATE_ACTIVE);
+
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s finalize action %s", mgr->GetOwnerStr().c_str(), TypeName());
 
     if (Action())
         Action()->Finalize(*mgr->GetOwner());
@@ -415,11 +417,11 @@ void ActionInfo::Interrupt(UnitStateMgr* mgr)
         HasFlag(ACTION_STATE_INTERRUPTED))
         return;
 
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s interrupt action %s", mgr->GetOwnerStr().c_str(), TypeName());
     MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_DEFAULT);
-
     AddFlag(ACTION_STATE_INTERRUPTED);
     RemoveFlag(ACTION_STATE_ACTIVE);
+
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s interrupt action %s", mgr->GetOwnerStr().c_str(), TypeName());
 
     if (Action())
         Action()->Interrupt(*mgr->GetOwner());
@@ -427,13 +429,14 @@ void ActionInfo::Interrupt(UnitStateMgr* mgr)
 
 bool ActionInfo::Update(UnitStateMgr* mgr, uint32 diff)
 {
-    // DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s update action %s", mgr->GetOwnerStr().c_str(), TypeName());
     if (Action() && 
         (!HasFlag(ACTION_STATE_INITIALIZED) ||
         HasFlag(ACTION_STATE_INTERRUPTED)))
         Initialize(mgr);
 
     AddFlag(ACTION_STATE_ACTIVE);
+
+    // DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s update action %s", mgr->GetOwnerStr().c_str(), TypeName());
 
     if (Action())
         return Action()->Update(*mgr->GetOwner(), diff);

@@ -2235,7 +2235,24 @@ bool ChatHandler::HandleNpcUnFollowCommand(char* /*args*/)
         return false;
     }
 
-    PSendSysMessage(LANG_CREATURE_NOT_FOLLOW_YOU_NOW, creature->GetName());
+    if (creature->GetMotionMaster()->GetCurrentMovementGeneratorType () != FOLLOW_MOTION_TYPE)
+    {
+        PSendSysMessage(LANG_CREATURE_NOT_FOLLOW_YOU);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    FollowMovementGenerator<Creature> const* mgen
+        = static_cast<FollowMovementGenerator<Creature> const*>((creature->GetMotionMaster()->top()));
+
+    if (mgen->GetTarget() != player)
+        PSendSysMessage(LANG_CREATURE_NOT_FOLLOW_YOU);
+        // Need remove chase action even if chase not for your.
+
+    // remove UNIT_ACTION_CHASE
+    creature->GetUnitStateMgr().DropAction(UNIT_ACTION_CHASE);
+
+    PSendSysMessage(LANG_CREATURE_NOT_FOLLOW_YOU_NOW, creature->GetObjectGuid().GetString().c_str());
     return true;
 }
 

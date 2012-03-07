@@ -57,16 +57,6 @@ MotionMaster::~MotionMaster()
 {
 }
 
-void MotionMaster::UpdateMotion(uint32 diff)
-{
-
-//    if (!empty() && m_owner->hasUnitState(UNIT_STAT_CAN_NOT_MOVE))
-//        return;
-
-    impl()->Update(diff);
-
-}
-
 void MotionMaster::MoveIdle()
 {
     impl()->DropAllStates();

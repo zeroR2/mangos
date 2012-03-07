@@ -1541,7 +1541,7 @@ void Creature::SetDeathState(DeathState s)
             pet->Unsummon(PET_SAVE_AS_DELETED, this);
 
         if (CanFly())
-            i_motionMaster.MoveFall();
+            GetMotionMaster()->MoveFall();
 
         Unit::SetDeathState(CORPSE);
     }
@@ -1560,7 +1560,7 @@ void Creature::SetDeathState(DeathState s)
         Unit::SetDeathState(ALIVE);
 
         clearUnitState(UNIT_STAT_ALL_STATE);
-        i_motionMaster.Initialize();
+        GetMotionMaster()->Initialize();
 
         SetMeleeDamageSchool(SpellSchools(cinfo->dmgschool));
 
