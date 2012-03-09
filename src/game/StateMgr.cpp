@@ -34,10 +34,12 @@ static const class staticActionInfo
         actionInfo[UNIT_ACTION_DOWAYPOINTS](UNIT_ACTION_PRIORITY_DOWAYPOINTS);
         actionInfo[UNIT_ACTION_CHASE](UNIT_ACTION_PRIORITY_CHASE);
         actionInfo[UNIT_ACTION_ASSISTANCE](UNIT_ACTION_PRIORITY_ASSISTANCE,ACTION_TYPE_NONRESTOREABLE);
+        actionInfo[UNIT_ACTION_CONTROLLED](UNIT_ACTION_PRIORITY_CONTROLLED);
         actionInfo[UNIT_ACTION_CONFUSED](UNIT_ACTION_PRIORITY_CONFUSED);
         actionInfo[UNIT_ACTION_FEARED]( UNIT_ACTION_PRIORITY_FEARED);
         actionInfo[UNIT_ACTION_STUN](UNIT_ACTION_PRIORITY_STUN);
         actionInfo[UNIT_ACTION_ROOT](UNIT_ACTION_PRIORITY_ROOT);
+        actionInfo[UNIT_ACTION_ONVEHICLE](UNIT_ACTION_PRIORITY_ONVEHICLE);
         actionInfo[UNIT_ACTION_EFFECT](UNIT_ACTION_PRIORITY_EFFECT,ACTION_TYPE_NONRESTOREABLE);
     }
 
@@ -81,8 +83,6 @@ public:
         data << target->GetPackGUID();
         data << uint32(0);
         target->SendMessageToSet(&data, true);
-
-        target->CastStop();
     }
 
     void Finalize(Unit &u)
@@ -170,12 +170,69 @@ public:
     }
 };
 
-UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId)
+class OnVehicleState : public IdleMovementGenerator
+{
+public:
+    OnVehicleState(int32 _type) : m_seatId(int8(_type))
+    {};
+
+    const char* Name() const { return "<OnVehicle>"; }
+    void Interrupt(Unit &u) {Finalize(u);}
+    void Reset(Unit &u) {Initialize(u);}
+    void Initialize(Unit &u)
+    {
+        Unit* const target = &u;
+        if (!target)
+            return;
+    }
+
+    void Finalize(Unit &u)
+    {
+        Unit* const target = &u;
+        if (!target)
+            return;
+    }
+
+private:
+    int8 m_seatId;
+};
+
+class ControlledState : public IdleMovementGenerator
+{
+
+public:
+    ControlledState(int32 _type) : m_state(uint8(_type))
+    {};
+
+    const char* Name() const { return "<Controlled>"; }
+    void Interrupt(Unit &u) {Finalize(u);}
+    void Reset(Unit &u) {Initialize(u);}
+    void Initialize(Unit &u)
+    {
+        Unit* const target = &u;
+        if (!target)
+            return;
+    }
+
+    void Finalize(Unit &u)
+    {
+        Unit* const target = &u;
+        if (!target)
+            return;
+    }
+
+private:
+    uint8 m_state;
+};
+
+UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId, int32 param)
 {
     UnitActionPtr state = UnitActionPtr(NULL);
     switch (stateId)
     {
         case UNIT_ACTION_CONFUSED:
+        case UNIT_ACTION_FEARED:
+        case UNIT_ACTION_CHASE:
             break;
         case UNIT_ACTION_STUN:
             state = UnitActionPtr(new StunnedState());
@@ -183,9 +240,11 @@ UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId)
         case UNIT_ACTION_ROOT:
             state = UnitActionPtr(new RootState());
             break;
-        case UNIT_ACTION_FEARED:
+        case UNIT_ACTION_ONVEHICLE:
+            state = UnitActionPtr(new OnVehicleState(param));
             break;
-        case UNIT_ACTION_CHASE:
+        case UNIT_ACTION_CONTROLLED:
+            state = UnitActionPtr(new ControlledState(param));
             break;
         default:
             break;
@@ -287,15 +346,15 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     }
 }
 
-void UnitStateMgr::PushAction(UnitActionId actionId)
+void UnitStateMgr::PushAction(UnitActionId actionId, int32 param)
 {
-    UnitActionPtr state = CreateStandartState(actionId);
+    UnitActionPtr state = CreateStandartState(actionId, param);
     PushAction(actionId, state, staticActionInfo[actionId].priority, staticActionInfo[actionId].restoreable); 
 }
 
-void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPriority priority)
+void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPriority priority, int32 param)
 {
-    UnitActionPtr state = CreateStandartState(actionId);
+    UnitActionPtr state = CreateStandartState(actionId, param);
     PushAction(actionId, state, priority, ACTION_TYPE_NONRESTOREABLE);
 }
 
