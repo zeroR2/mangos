@@ -3792,6 +3792,9 @@ void Unit::_UpdateSpells( uint32 time )
             m_currentSpells[i] = NULL;                      // remove pointer
         }
     }
+
+#if defined (NOTSAFE_SEMAPHORE_OVERHANDLING)
+    // for Windows && FreeBSD (old way with double lists, slow but safe)
     std::queue<SpellAuraHolderPtr> updateQueue;
     // update auras
     {
@@ -3799,7 +3802,6 @@ void Unit::_UpdateSpells( uint32 time )
         for (SpellAuraHolderMap::const_iterator itr = m_spellAuraHolders.begin(); itr != m_spellAuraHolders.end(); ++itr)
             if (itr->second && !itr->second->IsDeleted())
                 updateQueue.push(itr->second);
-
     }
 
     while(!updateQueue.empty())
@@ -3825,6 +3827,35 @@ void Unit::_UpdateSpells( uint32 time )
             RemoveSpellAuraHolder(updateQueue.front(), AURA_REMOVE_BY_EXPIRE);
         updateQueue.pop();
     }
+
+#else  /* not defined NOTSAFE_SEMAPHORE_OVERHANDLING */
+    // For Linux/Android/iOS (use double-locked smartholders)
+    // update auras
+    for (SpellAuraHolderMap::iterator itr = m_spellAuraHolders.begin(); itr != m_spellAuraHolders.end();)
+    {
+        SpellAuraHolderPtr holder = itr->second;
+        ++itr;
+        if (holder && !holder->IsDeleted())
+            holder->UpdateHolder(time);
+    }
+
+    // remove expired auras
+    for (SpellAuraHolderMap::iterator itr = m_spellAuraHolders.begin(); itr != m_spellAuraHolders.end();)
+    {
+        SpellAuraHolderPtr holder = itr->second;
+
+        if (holder && 
+            !(holder->IsDeleted() || holder->IsPermanent() || holder->IsPassive()) &&
+            holder->GetAuraDuration() == 0)
+        {
+            RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_EXPIRE);
+            // possible removed not one holder! need recheck all queue.
+            itr = m_spellAuraHolders.begin();
+        }
+        else
+            ++itr;
+    }
+#endif /* NOTSAFE_SEMAPHORE_OVERHANDLING */
 
     if(!m_gameObj.empty())
     {
