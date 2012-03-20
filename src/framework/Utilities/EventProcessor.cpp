@@ -37,13 +37,18 @@ void EventProcessor::Update(uint32 p_time, bool force)
     // update time
     m_time += p_time;
 
-    // main event loop
-    EventList::iterator i;
-    while (((i = m_events.begin()) != m_events.end()) && i->first <= m_time)
+    for (EventList::iterator itr = m_events.begin(); itr != m_events.end(); ++itr)
     {
+        if (itr->first > m_time)
+            continue;
+
         // get and remove event from queue
-        BasicEvent* Event = i->second;
-        m_events.erase(i);
+        BasicEvent* Event = itr->second;
+        if (!Event)
+            continue;
+
+        // remove pointer - container be cleared in locked cycle
+        itr->second = NULL;
 
         if (!Event->to_Abort)
         {
@@ -102,6 +107,18 @@ void EventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime
 
 void EventProcessor::RenewEvents()
 {
+    if (!m_events.empty())
+    {
+        for (EventList::iterator itr = m_events.begin(); itr != m_events.end();)
+        {
+            BasicEvent* Event = itr->second;
+            if (!Event)
+                m_events.erase(itr++);
+            else
+                ++itr;
+        }
+    }
+
     while (!m_queue.empty())
     {
         m_events.insert(m_queue.front());
