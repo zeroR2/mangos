@@ -37,18 +37,13 @@ void EventProcessor::Update(uint32 p_time, bool force)
     // update time
     m_time += p_time;
 
-    for (EventList::iterator itr = m_events.begin(); itr != m_events.end(); ++itr)
+    // main event loop
+    EventList::iterator i;
+    while (((i = m_events.begin()) != m_events.end()) && i->first <= m_time)
     {
-        if (itr->first > m_time)
-            continue;
-
         // get and remove event from queue
-        BasicEvent* Event = itr->second;
-        if (!Event)
-            continue;
-
-        // remove pointer - container be cleared in locked cycle
-        itr->second = NULL;
+        BasicEvent* Event = i->second;
+        m_events.erase(i);
 
         if (!Event->to_Abort)
         {
@@ -75,20 +70,19 @@ void EventProcessor::KillAllEvents(bool force)
     m_aborting = true;
 
     // first, abort all existing events
-    for (EventList::iterator itr = m_events.begin(); itr != m_events.end(); ++itr)
+    for (EventList::iterator i = m_events.begin(); i != m_events.end();)
     {
-        BasicEvent* Event = itr->second;
-        if (!Event)
-            continue;
+        EventList::iterator i_old = i;
+        ++i;
 
-        Event->to_Abort = true;
-        Event->Abort(m_time);
-        if (force || Event->IsDeletable())
+        i_old->second->to_Abort = true;
+        i_old->second->Abort(m_time);
+        if (force || i_old->second->IsDeletable())
         {
-            // remove pointer - container be cleared in locked cycle
-            itr->second = NULL;
+            delete i_old->second;
 
-            delete Event;
+            if (!force)                                      // need per-element cleanup
+                m_events.erase (i_old);
         }
     }
 
@@ -108,18 +102,6 @@ void EventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime
 
 void EventProcessor::RenewEvents()
 {
-    if (!m_events.empty())
-    {
-        for (EventList::iterator itr = m_events.begin(); itr != m_events.end();)
-        {
-            BasicEvent* Event = itr->second;
-            if (!Event)
-                m_events.erase(itr++);
-            else
-                ++itr;
-        }
-    }
-
     while (!m_queue.empty())
     {
         m_events.insert(m_queue.front());
