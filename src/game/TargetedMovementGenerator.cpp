@@ -41,14 +41,14 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
     float x, y, z;
 
     // prevent redundant micro-movement for pets, other followers.
-    if (i_offset && i_target->IsWithinDistInMap(&owner,2*i_offset))
+    if ((fabs(i_offset) > M_NULL_F) && (i_target->GetDistance(&owner) - i_offset) < 2*PET_FOLLOW_DIST)
     {
         if (!owner.movespline->Finalized())
             return;
 
         owner.GetPosition(x, y, z);
     }
-    else if (!i_offset)
+    else if (fabs(i_offset) < M_NULL_F)
     {
         // to nearest contact position
         float dist = 0.0f;
@@ -172,13 +172,11 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
     }
 
     i_recheckDistance.Update(time_diff);
-    if (i_recheckDistance.Passed())
+    if (i_recheckDistance.Passed() && fabs(i_offset) < M_NULL_F)
     {
         i_recheckDistance.Reset(50);
 
         //More distance let have better performance, less distance let have more sensitive reaction at target move.
-        //float allowed_dist = owner.GetObjectBoundingRadius() + sWorld.getConfig(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE);
-
         float allowed_dist = 0.0f;
         if (owner.getVictim() && owner.getVictim()->GetObjectGuid() == i_target->GetObjectGuid())
             allowed_dist = owner.GetFloatValue(UNIT_FIELD_COMBATREACH) + i_target->GetFloatValue(UNIT_FIELD_COMBATREACH) + sWorld.getConfig(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE) - 1.0f;
@@ -197,6 +195,17 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
             targetMoved = !i_target->IsWithinDist2d(dest.x, dest.y, allowed_dist);
 
         if (targetMoved)
+            _setTargetLocation(owner);
+    }
+    else if (i_recheckDistance.Passed())
+    {
+        i_recheckDistance.Reset(50);
+        //More distance let have better performance, less distance let have more sensitive reaction at target move.
+        float allowed_dist = i_target->GetObjectBoundingRadius() + owner.GetObjectBoundingRadius()
+            + sWorld.getConfig(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE);
+        float dist = (owner.movespline->FinalDestination() -
+            G3D::Vector3(i_target->GetPositionX(),i_target->GetPositionY(),i_target->GetPositionZ())).squaredLength();
+        if (dist >= allowed_dist * allowed_dist)
             _setTargetLocation(owner);
     }
 

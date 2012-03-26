@@ -6804,7 +6804,7 @@ SpellCastResult Spell::CheckCasterAuras() const
     return SPELL_CAST_OK;
 }
 
-bool Spell::CanAutoCast(Unit* target)
+SpellCastResult Spell::CanAutoCast(Unit* target)
 {
     ObjectGuid targetguid = target->GetObjectGuid();
 
@@ -6814,20 +6814,20 @@ bool Spell::CanAutoCast(Unit* target)
         {
             if ( m_spellInfo->StackAmount <= 1)
             {
-                if ( target->HasAura(m_spellInfo->Id, SpellEffectIndex(j)) )
-                    return false;
+                if (target->HasAura(m_spellInfo->Id, SpellEffectIndex(j)))
+                    return SPELL_FAILED_TARGET_AURASTATE;
             }
             else
             {
                 if (Aura* aura = target->GetAura(m_spellInfo->Id, SpellEffectIndex(j)))
                     if (aura->GetStackAmount() >= m_spellInfo->StackAmount)
-                        return false;
+                        return SPELL_FAILED_TARGET_AURASTATE;
             }
         }
-        else if ( IsAreaAuraEffect( m_spellInfo->Effect[j] ))
+        else if (IsAreaAuraEffect( m_spellInfo->Effect[j] ))
         {
-                if ( target->HasAura(m_spellInfo->Id, SpellEffectIndex(j)) )
-                    return false;
+            if ( target->HasAura(m_spellInfo->Id, SpellEffectIndex(j)) )
+                return SPELL_FAILED_TARGET_AURASTATE;
         }
     }
 
@@ -6837,11 +6837,11 @@ bool Spell::CanAutoCast(Unit* target)
     {
         FillTargetMap();
         //check if among target units, our WANTED target is as well (->only self cast spells return false)
-        for(TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+        for (TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
             if (ihit->targetGUID == targetguid)
-                return true;
+                return result;
     }
-    return false;                                           //target invalid
+    return result;                                           //target invalid
 }
 
 SpellCastResult Spell::CheckRange(bool strict)

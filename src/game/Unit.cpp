@@ -6631,7 +6631,10 @@ void Unit::AttackedBy(Unit *attacker)
 bool Unit::AttackStop(bool targetSwitch /*=false*/)
 {
     if (!m_attackingGuid || !GetMap())
+    {
+        SendMeleeAttackStop(NULL);
         return false;
+    }
 
     Unit* victim = GetMap()->GetUnit(m_attackingGuid);
     GetMap()->RemoveAttackerFor(m_attackingGuid,GetObjectGuid());
@@ -11118,7 +11121,6 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                     InterruptNonMeleeSpells(false);
                     AttackStop();
                     StopMoving();
-                    GetMotionMaster()->Clear(false);
                     GetMotionMaster()->MoveIdle();
                     GetCharmInfo()->SetState(CHARM_STATE_COMMAND,COMMAND_STAY);
                     SendCharmState();
@@ -11128,7 +11130,6 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                 {
                     InterruptNonMeleeSpells(false);
                     AttackStop();
-                    GetMotionMaster()->Clear(false);
                     GetMotionMaster()->MoveFollow(owner,PET_FOLLOW_DIST,((Pet*)this)->GetPetFollowAngle());
                     GetCharmInfo()->SetState(CHARM_STATE_COMMAND,COMMAND_FOLLOW);
                     SendCharmState();
@@ -11301,10 +11302,6 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
     }
 
     Creature* pet = dynamic_cast<Creature*>(this);
-
-    // auto target selection for some pet spells
-    if (spellInfo->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_VOIDWALKER_SPELLS>() && spellInfo->SpellIconID == 693)
-        targets->setUnitTarget((Unit*)owner);
 
     Unit* unit_target = targets ? targets->getUnitTarget() : NULL;
     if (!unit_target && !(targets->m_targetMask & TARGET_FLAG_DEST_LOCATION))
@@ -11918,11 +11915,11 @@ bool Unit::IsPolymorphed() const
 
 bool Unit::IsCrowdControlled() const
 {
-    return  HasNegativeAuraType(SPELL_AURA_MOD_CONFUSE) ||
-            HasNegativeAuraType(SPELL_AURA_MOD_FEAR) ||
-            HasNegativeAuraType(SPELL_AURA_MOD_STUN) ||
-            HasNegativeAuraType(SPELL_AURA_MOD_ROOT) ||
-            HasNegativeAuraType(SPELL_AURA_TRANSFORM);
+    return  HasAuraType(SPELL_AURA_MOD_CONFUSE) ||
+            HasAuraType(SPELL_AURA_MOD_FEAR) ||
+            HasAuraType(SPELL_AURA_MOD_STUN) ||
+            HasAuraType(SPELL_AURA_MOD_ROOT) ||
+            HasAuraType(SPELL_AURA_TRANSFORM);
 }
 
 void Unit::SetDisplayId(uint32 modelId)
