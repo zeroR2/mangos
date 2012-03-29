@@ -1011,7 +1011,7 @@ void Map::AddObjectToRemoveList(WorldObject *obj)
 
     obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
 
-    i_objectsToRemove.push(obj);
+    i_objectsToRemove.insert(obj);
     //DEBUG_LOG("Object (GUID: %u TypeId: %u ) added to removing list.",obj->GetGUIDLow(),obj->GetTypeId());
 }
 
@@ -1023,8 +1023,8 @@ void Map::RemoveAllObjectsInRemoveList()
     //DEBUG_LOG("Object remover 1 check.");
     while(!i_objectsToRemove.empty())
     {
-        WorldObject* obj = i_objectsToRemove.front();
-        i_objectsToRemove.pop();
+        WorldObject* obj = *i_objectsToRemove.begin();
+        i_objectsToRemove.erase(i_objectsToRemove.begin());
 
         if (!obj)
             continue;
@@ -1034,19 +1034,14 @@ void Map::RemoveAllObjectsInRemoveList()
             case TYPEID_CORPSE:
             {
                 // ??? WTF
-                if (!obj->IsInitialized())
-                    delete obj;
-                else
+                ObjectGuid guid = obj->GetObjectGuid();
+                if (guid && guid.IsUnit())
                 {
-                    ObjectGuid guid = obj->GetObjectGuid();
-                    if (guid && guid.IsUnit())
-                    {
-                        Corpse* corpse = GetCorpse(guid);
-                        if (!corpse)
-                            sLog.outError("Try delete corpse/bones, but corpse of %s not exists!", guid.GetString().c_str());
-                        else
-                            Remove(corpse,true);
-                    }
+                    Corpse* corpse = GetCorpse(guid);
+                    if (!corpse)
+                        sLog.outError("Try delete corpse/bones, but corpse of %s not exists!", guid.GetString().c_str());
+                    else
+                        Remove(corpse,true);
                 }
                 break;
             }
