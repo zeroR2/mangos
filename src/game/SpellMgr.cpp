@@ -4939,32 +4939,3 @@ bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
             return true;
     }
 }
-
-SpellPreferredTargetType GetPreferredTargetForSpell(SpellEntry const* spellInfo)
-{
-    if (IsSpellWithCasterSourceTargetsOnly(spellInfo))
-        return SPELL_PREFERRED_TARGET_SELF;
-
-    bool positive = IsPositiveSpell(spellInfo);
-
-    if (IsAreaOfEffectSpell(spellInfo))
-        return positive ? SPELL_PREFERRED_TARGET_SELF : SPELL_PREFERRED_TARGET_VICTIM;
-
-    if (positive)
-    {
-        if (spellInfo->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_VOIDWALKER_SPELLS>() && spellInfo->SpellIconID == 693)
-            return SPELL_PREFERRED_TARGET_OWNER;
-
-        if (IsSpellAppliesAura(spellInfo))
-            return SPELL_PREFERRED_TARGET_FRIEND;
-
-        return SPELL_PREFERRED_TARGET_SELF;
-    }
-    else
-    {
-        if (IsSpellCauseDamage(spellInfo))
-            return SPELL_PREFERRED_TARGET_VICTIM;
-
-        return SPELL_PREFERRED_TARGET_ENEMY;
-    }
-}

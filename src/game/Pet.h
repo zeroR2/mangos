@@ -185,8 +185,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
                 return m_autospells[pos];
         }
 
-        Unit* SelectPreferredTargetForSpell(SpellEntry const* spellInfo);
-
         void RegenerateAll(uint32 update_diff);             // overwrite Creature::RegenerateAll
         void Regenerate(Powers power, uint32 diff);
         HappinessState GetHappinessState();
