@@ -1110,9 +1110,11 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
     }
 
     // recheck for visibility of target
-    if ((m_spellInfo->speed > 0.0f ||
-        (m_spellInfo->EffectImplicitTargetA[0] == TARGET_CHAIN_DAMAGE && GetSpellCastTime(m_spellInfo, this) > 0)) &&
-        (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell))
+    if (CheckRange(true, unit) != SPELL_CAST_OK ||
+        ((m_spellInfo->speed > 0.0f ||
+        (m_spellInfo->EffectImplicitTargetA[0] == TARGET_CHAIN_DAMAGE &&
+        GetSpellCastTime(m_spellInfo, this) > 0)) &&
+        (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell)))
     {
         caster->SendSpellMiss(unit, m_spellInfo->Id, SPELL_MISS_EVADE);
         missInfo = SPELL_MISS_EVADE;
@@ -6848,10 +6850,10 @@ SpellCastResult Spell::CanAutoCast(Unit* target)
     return result;                                           //target invalid
 }
 
-SpellCastResult Spell::CheckRange(bool strict)
+SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
 {
-    Unit *target = m_targets.getUnitTarget();
-    GameObject *pGoTarget = m_targets.getGOTarget();
+    Unit* target = (checkTarget && checkTarget->GetObjectGuid().IsUnit()) ? (Unit*)checkTarget : m_targets.getUnitTarget();
+    GameObject* pGoTarget = (checkTarget && checkTarget->GetObjectGuid().IsGameObject()) ? (GameObject*)checkTarget : m_targets.getGOTarget();
 
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
 
