@@ -1042,7 +1042,9 @@ void Map::RemoveAllObjectsInRemoveList()
             {
                 // ??? WTF
                 if (!obj->IsInitialized())
-                    delete obj;
+                {
+                    sLog.outError("Try delete uninitialized object as corpse! possible memory leak here.");
+                }
                 else
                 {
                     ObjectGuid guid = obj->GetObjectGuid();

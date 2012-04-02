@@ -1109,8 +1109,10 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
         m_damage += target->damage;
     }
 
-    // recheck for visibility of target
-    if (CheckRange(true, unit) != SPELL_CAST_OK ||
+    // recheck for availability/visibility of target
+    if ((!m_IsTriggeredSpell && 
+        !(m_spellInfo->AttributesEx7 & SPELL_ATTR_EX7_HAS_CHARGE_EFFECT) && 
+        CheckRange(true, unit) != SPELL_CAST_OK) ||
         ((m_spellInfo->speed > 0.0f ||
         (m_spellInfo->EffectImplicitTargetA[0] == TARGET_CHAIN_DAMAGE &&
         GetSpellCastTime(m_spellInfo, this) > 0)) &&
