@@ -398,7 +398,7 @@ class Spell
         void _handle_finish_phase();
 
         SpellCastResult CheckItems();
-        SpellCastResult CheckRange(bool strict, WorldObject* target = NULL);
+        SpellCastResult CheckRange(bool strict);
         SpellCastResult CheckPower();
         SpellCastResult CheckOrTakeRunePower(bool take);
         SpellCastResult CheckCasterAuras() const;
