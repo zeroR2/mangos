@@ -1011,7 +1011,7 @@ void Map::AddObjectToRemoveList(WorldObject *obj)
 
     obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
 
-    i_objectsToRemove.insert(obj);
+    i_objectsToRemove.push(obj);
     //DEBUG_LOG("Object (GUID: %u TypeId: %u ) added to removing list.",obj->GetGUIDLow(),obj->GetTypeId());
 }
 
@@ -1020,28 +1020,42 @@ void Map::RemoveAllObjectsInRemoveList()
     if(i_objectsToRemove.empty())
         return;
 
+    std::set<WorldObject*> deletedList;
+
     //DEBUG_LOG("Object remover 1 check.");
     while(!i_objectsToRemove.empty())
     {
-        WorldObject* obj = *i_objectsToRemove.begin();
-        i_objectsToRemove.erase(i_objectsToRemove.begin());
+        WorldObject* obj = i_objectsToRemove.front();
+        i_objectsToRemove.pop();
 
         if (!obj)
             continue;
+
+        if (deletedList.find(obj) != deletedList.end())
+            continue;
+
+        deletedList.insert(obj);
 
         switch(obj->GetTypeId())
         {
             case TYPEID_CORPSE:
             {
                 // ??? WTF
-                ObjectGuid guid = obj->GetObjectGuid();
-                if (guid && guid.IsUnit())
+                if (!obj->IsInitialized())
                 {
-                    Corpse* corpse = GetCorpse(guid);
-                    if (!corpse)
-                        sLog.outError("Try delete corpse/bones, but corpse of %s not exists!", guid.GetString().c_str());
-                    else
-                        Remove(corpse,true);
+                    sLog.outError("Try delete uninitialized object as corpse! possible memory leak here.");
+                }
+                else
+                {
+                    ObjectGuid guid = obj->GetObjectGuid();
+                    if (guid && guid.IsUnit())
+                    {
+                        Corpse* corpse = GetCorpse(guid);
+                        if (!corpse)
+                            sLog.outError("Try delete corpse/bones, but corpse of %s not exists!", guid.GetString().c_str());
+                        else
+                            Remove(corpse,true);
+                    }
                 }
                 break;
             }
