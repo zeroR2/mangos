@@ -398,8 +398,7 @@ UnitStateMgr::~UnitStateMgr()
 void UnitStateMgr::InitDefaults()
 {
     m_oldAction = NULL;
-    m_actions.clear();
-    PushAction(UNIT_ACTION_IDLE,UNIT_ACTION_PRIORITY_NONE);
+    DropAllStates();
 }
 
 void UnitStateMgr::Update(uint32 diff)
@@ -481,6 +480,20 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     }
 }
 
+void UnitStateMgr::DropActionHigherThen(UnitActionPriority priority)
+{
+    for (UnitActionStorage::reverse_iterator itr = m_actions.rbegin(); itr != m_actions.rend();)
+    {
+        if (itr->second.priority > priority)
+        {
+            ++itr;
+            DropAction(priority);
+        }
+        else
+            ++itr;
+    }
+}
+
 void UnitStateMgr::PushAction(UnitActionId actionId)
 {
     UnitActionPtr state = CreateStandartState(actionId);
@@ -536,7 +549,8 @@ ActionInfo* UnitStateMgr::GetAction(UnitActionPriority priority)
 
 UnitActionPtr UnitStateMgr::CurrentAction()
 {
-    return CurrentState() ? CurrentState()->Action() : UnitActionPtr(NULL);
+    ActionInfo* action = CurrentState();
+    return action ? action->Action() : UnitActionPtr(NULL);
 }
 
 ActionInfo* UnitStateMgr::CurrentState()
@@ -546,14 +560,9 @@ ActionInfo* UnitStateMgr::CurrentState()
 
 void UnitStateMgr::DropAllStates()
 {
-    for (int32 i = UNIT_ACTION_PRIORITY_IDLE; i != UNIT_ACTION_PRIORITY_END; ++i)
-    {
-        if (ActionInfo* state = GetAction(UnitActionPriority(i)))
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop action %s", GetOwnerStr().c_str(), state->TypeName());
-            DropAction(UnitActionPriority(i));
-        }
-    }
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop all active states", GetOwnerStr().c_str());
+    DropActionHigherThen(UNIT_ACTION_PRIORITY_IDLE);
+    PushAction(UNIT_ACTION_IDLE);
 }
 
 std::string const UnitStateMgr::GetOwnerStr() 

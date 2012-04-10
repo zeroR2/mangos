@@ -9804,6 +9804,10 @@ void Unit::SetDeathState(DeathState s)
     {
         RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE); // clear skinnable for creature and player (at battleground)
     }
+    else if (s == DEAD || s == CORPSE)
+    {
+        GetUnitStateMgr().DropAllStates();
+    }
 
     if (m_deathState != ALIVE && s == ALIVE)
     {
