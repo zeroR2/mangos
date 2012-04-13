@@ -5725,7 +5725,6 @@ Aura* Unit::GetTriggeredByClientAura(uint32 spellId)
 {
     if (spellId)
     {
-        MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
         AuraList const& auras = GetAurasByType(SPELL_AURA_PERIODIC_TRIGGER_BY_CLIENT);
         if (!auras.empty())
         {
@@ -5745,7 +5744,6 @@ Aura* Unit::GetTriggeredByClientAura(uint32 spellId)
 
 Aura* Unit::GetScalingAura(AuraType type, uint32 stat)
 {
-    MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
     AuraList const& auras = GetAurasByType(type);
     for (AuraList::const_iterator i = auras.begin(); i != auras.end(); ++i)
     {
@@ -9999,8 +9997,7 @@ bool Unit::SelectHostileTarget()
 
     // First checking if we have some taunt on us
     {
-        MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
-        const AuraList& tauntAuras = GetAurasByType(SPELL_AURA_MOD_TAUNT);
+        AuraList const& tauntAuras = GetAurasByType(SPELL_AURA_MOD_TAUNT);
         if (!tauntAuras.empty())
         {
             Unit* caster;
@@ -12270,7 +12267,6 @@ float Unit::GetAPMultiplier(WeaponAttackType attType, bool normalized)
 
 Aura* Unit::GetDummyAura( uint32 spell_id ) const
 {
-    MAPLOCK_READ(const_cast<Unit*>(this),MAP_LOCK_TYPE_AURAS);
     Unit::AuraList const& mDummy = GetAurasByType(SPELL_AURA_DUMMY);
     for (Unit::AuraList::const_iterator itr = mDummy.begin(); itr != mDummy.end(); ++itr)
     {
