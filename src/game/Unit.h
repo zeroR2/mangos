@@ -37,6 +37,7 @@
 #include "WorldPacket.h"
 #include "SpellAuras.h"
 #include "Timer.h"
+#include "LockedVector.h"
 #include <list>
 #include "StateMgr.h"
 
@@ -1251,7 +1252,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         typedef std::pair<SpellAuraHolderMap::iterator, SpellAuraHolderMap::iterator> SpellAuraHolderBounds;
         typedef std::pair<SpellAuraHolderMap::const_iterator, SpellAuraHolderMap::const_iterator> SpellAuraHolderConstBounds;
         typedef std::set<SpellAuraHolderPtr> SpellAuraHolderSet;
-        typedef std::list<Aura *> AuraList;
+        typedef ACE_Based::LockedVector<Aura*> AuraList;
         typedef std::list<DiminishingReturn> Diminishing;
         typedef std::set<ObjectGuid> ComboPointHolderSet;
         typedef std::map<uint8, uint32> VisibleAuraMap;
