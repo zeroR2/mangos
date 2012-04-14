@@ -21,6 +21,7 @@
 #define _STATEMGR_H
 
 #include "ObjectHandler.h"
+#include "LockedVector.h"
 #include "Common.h"
 #include "MotionMaster.h"
 #include "StateMgrImpl.h"
@@ -61,10 +62,11 @@ struct ActionInfo
     UnitActionPtr      action;
     UnitActionPriority priority;
     uint32             m_flags;
-    bool const         restoreable;
+    bool               restoreable;
 };
 
-typedef std::map<UnitActionPriority, ActionInfo> UnitActionStorage;
+//typedef std::map<UnitActionPriority, ActionInfo> UnitActionStorage;
+typedef ACE_Based::LockedVector<ActionInfo> UnitActionStorage;
 
 class UnitStateMgr
 {
