@@ -452,24 +452,17 @@ void UnitStateMgr::DropAction(UnitActionId actionId)
 
 void UnitStateMgr::DropAction(UnitActionId actionId, UnitActionPriority priority)
 {
-    if (!m_actions.empty())
+    for (UnitActionStorage::iterator itr = m_actions.begin(); itr != m_actions.end();)
     {
-        for (UnitActionStorage::iterator itr = m_actions.begin(); itr != m_actions.end();)
+        if (itr->second.Id == actionId)
         {
-            if (itr->Id == actionId)
-            {
-                UnitActionPriority _priority = itr->priority;
-                if (_priority <= priority)
-                    DropAction(_priority);
-
-                if (m_actions.empty() || itr == m_actions.end())
-                    break;
-
-                itr = m_actions.begin();
-            }
-            else
-                ++itr;
+            UnitActionPriority _priority = itr->first;
+            ++itr;
+            if (_priority <= priority)
+                DropAction(_priority);
         }
+        else
+            ++itr;
     }
 }
 
@@ -482,22 +475,23 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     ActionInfo* oldInfo = CurrentState();
     UnitActionStorage::iterator itr;
     {
-        for (itr = m_actions.begin(); itr != m_actions.end(); ++itr)
-            if (itr->priority == priority)
-                break;
+        MAPLOCK_READ(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+        itr = m_actions.find(priority);
     }
     if (itr != m_actions.end())
     {
         bool bActiveActionChanged = false;
         UnitActionPtr oldAction = oldInfo ? oldInfo->Action() : UnitActionPtr();
         // if dropped current active state...
-        if (oldInfo && &(*itr) == oldInfo && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
+        if (oldInfo && &itr->second == oldInfo && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
             bActiveActionChanged = true;
 
-        if (&(*itr) == m_oldAction)
+        if (&itr->second == m_oldAction)
             m_oldAction = NULL;
-        m_actions.erase(itr);
-
+        {
+            MAPLOCK_WRITE(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+            m_actions.erase(itr);
+        }
         // Finalized not ActionInfo, but real action (saved before), due to ActionInfo wrapper already deleted.
         if (bActiveActionChanged && oldAction)
         {
@@ -547,15 +541,7 @@ void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state, UnitAc
     DropAction(actionId, priority);
     DropAction(priority);
 
-    UnitActionStorage::iterator itr;
-
-    for (itr = m_actions.begin(); itr != m_actions.end(); ++itr)
-    {
-        if (itr->priority > priority)
-            break;
-    }
-
-    m_actions.insert(itr,UnitActionStorage::size_type(1),ActionInfo(actionId, state, priority, restoreable));
+    m_actions.insert(UnitActionStorage::value_type(priority,ActionInfo(actionId, state, priority, restoreable)));
     IncreaseCounter(actionId);
 
 /*
@@ -570,9 +556,9 @@ void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state, UnitAc
 
 ActionInfo* UnitStateMgr::GetAction(UnitActionPriority priority)
 {
-    for (UnitActionStorage::reverse_iterator itr = m_actions.rbegin(); itr != m_actions.rend(); ++itr)
-        if (itr->priority == priority)
-            return &(*itr);
+    UnitActionStorage::iterator itr = m_actions.find(priority);
+    if (itr != m_actions.end())
+        return &itr->second;
     return NULL;
 }
 
@@ -584,7 +570,7 @@ UnitActionPtr UnitStateMgr::CurrentAction()
 
 ActionInfo* UnitStateMgr::CurrentState()
 {
-    return m_actions.empty() ? NULL : &m_actions.back();
+    return m_actions.empty() ? NULL : &m_actions.rbegin()->second;
 }
 
 void UnitStateMgr::DropAllStates()
