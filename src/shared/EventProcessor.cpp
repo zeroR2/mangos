@@ -18,6 +18,11 @@
 
 #include "EventProcessor.h"
 
+bool EventsSortOrder(const BasicEventPtr event1, const BasicEventPtr event2)
+{
+    return event1->m_execTime < event2->m_execTime;
+}
+
 EventProcessor::EventProcessor()
 {
     m_time = 0;
@@ -38,26 +43,24 @@ void EventProcessor::Update(uint32 p_time)
     m_time += p_time;
 
     // main event loop
-    EventList::iterator i;
-    while (((i = m_events.begin()) != m_events.end()) && i->first <= m_time)
+    while (!m_aborting && !m_events.empty() && m_events.back()->m_execTime <= m_time)
     {
-        // get and remove event from queue
-        BasicEvent* Event = i->second;
-        m_events.erase(i);
-
-        if (!Event->to_Abort)
+        BasicEventPtr Event = m_events.back();
+        if (Event)
         {
-            if (Event->Execute(m_time, p_time))
+            if (!Event->to_Abort)
             {
-                // completely destroy event if it is not re-added
-                delete Event;
+                if (Event->Execute(m_time, p_time))
+                    m_events.pop_back();
+                // not delete re-added spellevents, be resorted by add
             }
+            else
+            {
+                Event->Abort(m_time);
+                m_events.pop_back();
+            } 
         }
-        else
-        {
-            Event->Abort(m_time);
-            delete Event;
-        }
+        // Not need delete events - be deleted after cycle finished (if not in active state)
     }
 }
 
@@ -70,37 +73,47 @@ void EventProcessor::KillAllEvents(bool force)
     m_aborting = true;
 
     // first, abort all existing events
-    for (EventList::iterator i = m_events.begin(); i != m_events.end();)
+    while (!m_events.empty())
     {
-        EventList::iterator i_old = i;
-        ++i;
-
-        i_old->second->to_Abort = true;
-        i_old->second->Abort(m_time);
-        if (force || i_old->second->IsDeletable())
+        BasicEventPtr Event = m_events.back();
+        m_events.pop_back();
+        if (Event)
         {
-            delete i_old->second;
-
-            if (!force)                                      // need per-element cleanup
-                m_events.erase (i_old);
+            Event->to_Abort = true;
+            Event->Abort(m_time);
         }
     }
-
-    // fast clear event list (in force case)
-    if (force)
-        m_events.clear();
 }
 
-void EventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
+void EventProcessor::AddEvent(BasicEvent* _event, uint64 e_time, bool set_addtime)
 {
     if (m_aborting)
         return;
 
+    BasicEventPtr Event = BasicEventPtr();
+    for (EventList::reverse_iterator itr = m_events.rbegin(); itr != m_events.rend(); ++itr)
+    {
+        if (&*(*itr) == _event)
+        {
+            Event = *itr;
+            break;
+        }
+    }
+
+    // Not found case
+    if (!Event)
+    {
+        Event = BasicEventPtr(_event);
+        m_events.push_back(Event);
+    }
+
     if (set_addtime)
         Event->m_addTime = m_time;
-
     Event->m_execTime = e_time;
-    m_events.insert(std::pair<uint64, BasicEvent*>(e_time, Event));
+
+    // always sort events after adding new! even not be executed always.
+    if (m_events.size() > 1)
+        m_events.sort(EventsSortOrder);
 }
 
 uint64 EventProcessor::CalculateTime(uint64 t_offset)
