@@ -19,9 +19,9 @@
 #ifndef __EVENTPROCESSOR_H
 #define __EVENTPROCESSOR_H
 
-#include "ObjectHandler.h"
-#include "LockedVector.h"
-#include "ace/Null_Mutex.h"
+#include "Platform/Define.h"
+
+#include <map>
 
 // Note. All times are in milliseconds here.
 
@@ -55,8 +55,7 @@ class BasicEvent
         uint64 m_execTime;                                  // planned time of next execution, filled by event handler
 };
 
-OBJECT_HANDLER(BasicEvent,BasicEventPtr);
-typedef ACE_Based::LockedVector<BasicEventPtr> EventList;
+typedef std::multimap<uint64, BasicEvent*> EventList;
 
 class EventProcessor
 {
