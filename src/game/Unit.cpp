@@ -6645,7 +6645,11 @@ void Unit::AttackedBy(Unit *attacker)
             AddThreat(attacker);
 
         if (Player* attackedPlayer = GetCharmerOrOwnerPlayerOrPlayerItself())
+        {
             attacker->SetContestedPvP(attackedPlayer);
+            attacker->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+        }
 
         SetInCombatWith(attacker);
         attacker->SetInCombatWith(this);
@@ -12331,11 +12335,13 @@ void Unit::SetContestedPvP(Player *attackedPlayer)
 
     if (!player || (attackedPlayer && (attackedPlayer == player || player->IsInDuelWith(attackedPlayer))))
         return;
-
     player->SetContestedPvPTimer(30000);
 
     if (!player->hasUnitState(UNIT_STAT_ATTACK_PLAYER))
     {
+        if (!player->IsPvP())
+            player->SetPvP(true);
+
         player->addUnitState(UNIT_STAT_ATTACK_PLAYER);
         player->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP);
         // call MoveInLineOfSight for nearby contested guards
