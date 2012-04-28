@@ -358,6 +358,7 @@ class Spell
         void EffectQuestStart(SpellEffectIndex eff_idx);
         void EffectActivateRune(SpellEffectIndex eff_idx);
         void EffectSuspendGravity(SpellEffectIndex eff_idx);
+        void EffectUntrainTalents(SpellEffectIndex eff_idx);
         void EffectTeachTaxiNode(SpellEffectIndex eff_idx);
         void EffectWMODamage(SpellEffectIndex eff_idx);
         void EffectWMORepair(SpellEffectIndex eff_idx);
@@ -438,6 +439,8 @@ class Spell
 
         bool CheckTarget( Unit* target, SpellEffectIndex eff );
         SpellCastResult CanAutoCast(Unit* target);
+        bool CheckTargetBeforLimitation(Unit* target);
+        bool CanAutoCast(Unit* target);
 
         static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result);
         void SendCastResult(SpellCastResult result);
