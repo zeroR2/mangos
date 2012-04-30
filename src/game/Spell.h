@@ -439,7 +439,7 @@ class Spell
 
         bool CheckTarget( Unit* target, SpellEffectIndex eff );
         SpellCastResult CanAutoCast(Unit* target);
-        bool CheckTargetBeforLimitation(Unit* target);
+        bool CheckTargetBeforeLimitation(Unit* target);
 
         static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result);
         void SendCastResult(SpellCastResult result);
