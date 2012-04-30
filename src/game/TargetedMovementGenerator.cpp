@@ -305,7 +305,11 @@ void ChaseMovementGenerator<T>::Finalize(T &owner)
     if (owner.GetTypeId() == TYPEID_UNIT && !((Creature*)&owner)->IsPet() && owner.isAlive())
     {
         if (!owner.isInCombat() || ( this->i_target.getTarget() && !this->i_target.getTarget()->isInAccessablePlaceFor(&owner)))
+        {
+            if (owner.isInCombat())
+                owner.CombatStop(true);
             owner.GetMotionMaster()->MoveTargetedHome();
+        }
     }
 }
 
