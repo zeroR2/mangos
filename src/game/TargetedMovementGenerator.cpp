@@ -42,14 +42,14 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
     bool targetIsVictim = owner.getVictim() && owner.getVictim()->GetObjectGuid() == i_target->GetObjectGuid();
 
     // prevent redundant micro-movement for pets, other followers.
-    if ((fabs(i_offset) > M_NULL_F) && (i_target->GetDistance(&owner) - i_offset) < 2*PET_FOLLOW_DIST)
+    if (i_offset && i_target->IsWithinDistInMap(&owner,2*i_offset))
     {
         if (!owner.movespline->Finalized())
             return;
 
         owner.GetPosition(x, y, z);
     }
-    else if (fabs(i_offset) < M_NULL_F)
+    else if (!i_offset)
     {
         // to nearest contact position
         float dist = 0.0f;
@@ -190,11 +190,13 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
         return true;
 
     i_recheckDistance.Update(time_diff);
-    if (i_recheckDistance.Passed() && fabs(i_offset) < M_NULL_F)
+    if (i_recheckDistance.Passed())
     {
         i_recheckDistance.Reset(RECHECK_DISTANCE_TIMER);
 
         //More distance let have better performance, less distance let have more sensitive reaction at target move.
+        //float allowed_dist = owner.GetObjectBoundingRadius() + sWorld.getConfig(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE);
+
         float allowed_dist = 0.0f;
         bool targetIsVictim = owner.getVictim() && owner.getVictim()->GetObjectGuid() == i_target->GetObjectGuid();
         if (targetIsVictim)
