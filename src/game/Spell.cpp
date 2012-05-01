@@ -7995,14 +7995,14 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
                 return true;                                // spell is deletable, finish event
             }
             // event will be re-added automatically at the end of routine)
-        } break;
-
+            break;
+        }
         case SPELL_STATE_CASTING:
         {
             // this spell is in channeled state, process it on the next update
             // event will be re-added automatically at the end of routine)
-        } break;
-
+            break;
+        }
         case SPELL_STATE_DELAYED:
         {
             // first, check, if we have just started
@@ -8034,7 +8034,7 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
                     if (n_offset)
                     {
                         // re-add us to the queue
-                        m_Spell->GetCaster()->AddEvent(this, m_Spell->GetDelayStart() + n_offset, false);
+                        ModExecTime(m_Spell->GetDelayStart() + n_offset);
                         return false;                       // event not complete
                     }
                     // event complete
@@ -8046,21 +8046,22 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
                 // delaying had just started, record the moment
                 m_Spell->SetDelayStart(e_time);
                 // re-plan the event for the delay moment
-                m_Spell->GetCaster()->AddEvent(this, e_time + m_Spell->GetDelayMoment(), false);
+                ModExecTime(e_time + m_Spell->GetDelayMoment());
                 return false;                               // event not complete
             }
-        } break;
-
+            break;
+        }
         default:
         {
             // all other states
             // event will be re-added automatically at the end of routine)
-        } break;
+            break;
+        }
     }
 
     // spell processing not complete, plan event on the next update interval
-    m_Spell->GetCaster()->AddEvent(this, e_time + 1, false);
-    return false;                                           // event not complete
+    return false;                                           // event not complete,
+                                                            //  readd this over eventprocessor on next update interval
 }
 
 void SpellEvent::Abort(uint64 /*e_time*/)
