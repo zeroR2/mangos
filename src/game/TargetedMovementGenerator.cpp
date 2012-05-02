@@ -35,9 +35,6 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
     if (owner.hasUnitState(UNIT_STAT_NOT_MOVE))
         return;
 
-    if (owner.IsNonMeleeSpellCasted(false))
-        return;
-
     if (!i_target->isInAccessablePlaceFor(&owner))
         return;
 
@@ -171,11 +168,9 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
                     break;
                 default:
                     owner.StopMoving();
-                    break;
             }
         }
-        if (owner.IsStopped())
-            return true;
+        return true;
     }
 
     // prevent crash after creature killed pet
@@ -246,6 +241,18 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
 
         if (targetMoved)
             _setTargetLocation(owner);
+    }
+    else if (i_recheckDistance.Passed())
+    {
+        i_recheckDistance.Reset(RECHECK_DISTANCE_TIMER);
+        //More distance let have better performance, less distance let have more sensitive reaction at target move.
+        float allowed_dist = i_target->GetObjectBoundingRadius() + owner.GetObjectBoundingRadius()
+            + sWorld.getConfig(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE);
+        float dist = (owner.movespline->FinalDestination() -
+            G3D::Vector3(i_target->GetPositionX(),i_target->GetPositionY(),i_target->GetPositionZ())).squaredLength();
+        if (dist >= allowed_dist * allowed_dist)
+            _setTargetLocation(owner);
+        i_targetSearchingTimer = 0;
     }
 
     if (owner.movespline->Finalized())
@@ -412,4 +419,3 @@ template void FollowMovementGenerator<Player>::Interrupt(Player &);
 template void FollowMovementGenerator<Creature>::Interrupt(Creature &);
 template void FollowMovementGenerator<Player>::Reset(Player &);
 template void FollowMovementGenerator<Creature>::Reset(Creature &);
-
