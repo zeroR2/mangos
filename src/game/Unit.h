@@ -29,7 +29,7 @@
 #include "HostileRefManager.h"
 #include "FollowerReference.h"
 #include "FollowerRefManager.h"
-#include "Utilities/EventProcessor.h"
+#include "EventProcessor.h"
 #include "MapManager.h"
 #include "MotionMaster.h"
 #include "DBCStructure.h"
@@ -1807,7 +1807,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         EventProcessor* GetEvents();
         void UpdateEvents(uint32 update_diff, uint32 time);
         void KillAllEvents(bool force);
-        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
+        void AddEvent(BasicEvent* Event, uint32 e_time, bool set_addtime = true);
 
         // stat system
         bool HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply);
