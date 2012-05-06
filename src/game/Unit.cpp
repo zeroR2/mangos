@@ -13540,17 +13540,27 @@ EventProcessor* Unit::GetEvents()
 
 void Unit::KillAllEvents(bool force)
 {
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
     GetEvents()->KillAllEvents(force);
 }
 
-void Unit::AddEvent(BasicEvent* Event, uint32 e_time, bool set_addtime)
+void Unit::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 {
-    GetEvents()->AddEvent(Event, GetEvents()->CalculateTime(e_time), set_addtime);
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+    if (set_addtime)
+        GetEvents()->AddEvent(Event, GetEvents()->CalculateTime(e_time), set_addtime);
+    else
+        GetEvents()->AddEvent(Event, e_time, set_addtime);
 }
 
-void Unit::UpdateEvents(uint32 update_diff, uint32 p_time)
+void Unit::UpdateEvents(uint32 update_diff, uint32 time)
 {
-    GetEvents()->Update(update_diff, p_time);
+    {
+        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
+        GetEvents()->RenewEvents();
+    }
+
+    GetEvents()->Update(update_diff);
 }
 
 void DamageInfo::Reset(uint32 _damage)
