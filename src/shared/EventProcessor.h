@@ -19,10 +19,11 @@
 #ifndef __EVENTPROCESSOR_H
 #define __EVENTPROCESSOR_H
 
-#include "Platform/Define.h"
-
-#include <map>
-#include <queue>
+#include "ObjectHandler.h"
+#include "LockedVector.h"
+#include "ace/Null_Mutex.h"
+#include "Log.h"
+#include "Timer.h"
 
 // Note. All times are in milliseconds here.
 
@@ -31,7 +32,7 @@ class BasicEvent
     public:
 
         BasicEvent()
-            : to_Abort(false)
+            : to_Abort(false), finished(false)
         {
         }
 
@@ -46,18 +47,24 @@ class BasicEvent
 
         virtual bool IsDeletable() const { return true; }   // this event can be safely deleted
 
-        virtual void Abort(uint64 /*e_time*/) {}            // this method executes when the event is aborted
+        virtual void Abort(uint32 /*e_time*/) {}            // this method executes when the event is aborted
 
-        bool to_Abort;                                      // set by externals when the event is aborted, aborted events don't execute
-        // and get Abort call when deleted
+        virtual void Finish() { finished = true;}           // this method executes when the event is aborted
 
         // these can be used for time offset control
-        uint64 m_addTime;                                   // time when the event was added to queue, filled by event handler
-        uint64 m_execTime;                                  // planned time of next execution, filled by event handler
+        void ModExecTime(uint32 e_time = 0);
+        bool IsFinished() const     { return finished;}     // check if event finished
+
+        uint32 m_addTime;                                   // time when the event was added to queue, filled by event handler
+        uint32 m_execTime;                                  // planned time of next execution, filled by event handler
+        bool   to_Abort;                                    // set by externals when the event is aborted, aborted events don't execute
+
+    private:
+        bool   finished;                                    // set external where event completely executed (for speedup cleanup)
 };
 
-typedef std::multimap<uint64, BasicEvent*> EventList;
-typedef std::queue<std::pair<uint64, BasicEvent*> > EventNewQueue;
+OBJECT_SAFE_HANDLER(BasicEvent,BasicEventPtr);
+typedef ACE_Based::LockedVector<BasicEventPtr> EventList;
 
 class EventProcessor
 {
@@ -66,17 +73,14 @@ class EventProcessor
         EventProcessor();
         ~EventProcessor();
 
-        void Update(uint32 p_time, bool force = false);
+        void Update(uint32 update_diff, uint32 p_time);
         void KillAllEvents(bool force);
-        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
-        uint64 CalculateTime(uint64 t_offset);
-        void RenewEvents();
+        void AddEvent(BasicEvent* Event, uint32 e_time, bool set_addtime = true);
+        uint32 CalculateTime(uint32 t_offset);
+        void AddEvent(BasicEventPtr Event);
 
     protected:
-        void _AddEvents();
-        uint64 m_time;
         EventList m_events;
-        EventNewQueue m_queue;
         bool m_aborting;
 };
 
