@@ -1784,8 +1784,6 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (!(options & TELE_TO_NOT_LEAVE_TRANSPORT) && m_transport)
     {
         m_transport->RemovePassenger(this);
-        SetTransport(NULL);
-        m_movementInfo.ClearTransportData();
     }
 
     if (GetVehicleKit())
@@ -16638,9 +16636,18 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
         }
     }
 
+    // load the player's map here if it's not already loaded
+    if (!GetMap())
+    {
+        if (Map* map = sMapMgr.CreateMap(GetMapId(), this))
+            SetMap(map);
+        else
+            RelocateToHomebind();
+    }
+
     if (transGUID != 0)
     {
-        m_movementInfo.SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT,transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), 0, -1);
+        m_movementInfo.SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT,transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(),WorldTimer::getMSTime(), -1, NULL);
 
         if ( !MaNGOS::IsValidMapCoord(
             GetPositionX() + m_movementInfo.GetTransportPos()->x, GetPositionY() + m_movementInfo.GetTransportPos()->y,
@@ -16660,26 +16667,21 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
         }
     }
 
-    if (transGUID != 0)
+    if (transGUID != 0 && GetMap())
     {
-        for (MapManager::TransportSet::const_iterator iter = sMapMgr.m_Transports.begin(); iter != sMapMgr.m_Transports.end(); ++iter)
+        if (Transport* transport = GetMap()->GetTransport(ObjectGuid(HIGHGUID_MO_TRANSPORT,0,transGUID)))
         {
-            Transport* transport = *iter;
+            MapEntry const* transMapEntry = sMapStore.LookupEntry(transport->GetMapId());
 
-            if (transport->GetGUIDLow() == transGUID)
+            // client without expansion support
+            if(GetSession()->Expansion() < transMapEntry->Expansion())
             {
-                MapEntry const* transMapEntry = sMapStore.LookupEntry(transport->GetMapId());
-                // client without expansion support
-                if (GetSession()->Expansion() < transMapEntry->Expansion())
-                {
-                    DEBUG_LOG("Player %s using client without required expansion tried login at transport at non accessible map %u", GetName(), transport->GetMapId());
-                    break;
-                }
-
-                SetTransport(transport);
+                DEBUG_LOG("Player::LoadFromDB Player %s using client without required expansion tried login at transport at non accessible map %u", GetName(), transport->GetMapId());
+            }
+            else
+            {
                 transport->AddPassenger(this);
                 SetLocationMapId(transport->GetMapId());
-                break;
             }
         }
 
@@ -16696,14 +16698,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
         }
     }
 
-    // load the player's map here if it's not already loaded
-    if (!GetMap())
-    {
-        if (Map* map = sMapMgr.CreateMap(GetMapId(), this))
-            SetMap(map);
-        else
-            RelocateToHomebind();
-    }
 
     SaveRecallPosition();
 
@@ -21283,8 +21277,6 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
         if (target->isVisibleForInState(this, viewPoint, false))
         {
             target->SendCreateUpdateToPlayer(this);
-            if (target->GetTypeId()!=TYPEID_GAMEOBJECT||!((GameObject*)target)->IsTransport())
-                m_clientGUIDs.insert(target->GetObjectGuid());
 
             DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Object %u (Type: %u) is visible now for player %u. Distance = %f",target->GetGUIDLow(),target->GetTypeId(),GetGUIDLow(),GetDistance(target));
 
@@ -21300,13 +21292,6 @@ template<class T>
 inline void UpdateVisibilityOf_helper(ObjectGuidSet& s64, T* target)
 {
     s64.insert(target->GetObjectGuid());
-}
-
-template<>
-inline void UpdateVisibilityOf_helper(ObjectGuidSet& s64, GameObject* target)
-{
-    if(!target->IsTransport())
-        s64.insert(target->GetObjectGuid());
 }
 
 template<class T>

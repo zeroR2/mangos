@@ -45,6 +45,7 @@
 struct CreatureInfo;
 class Creature;
 class Unit;
+class Transport;
 class WorldPacket;
 class InstanceData;
 class Group;
@@ -135,6 +136,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 
         void PlayerRelocation(Player *, float x, float y, float z, float angl);
         void CreatureRelocation(Creature *creature, float x, float y, float z, float orientation);
+        void TransportRelocation(Transport *, float x, float y, float z, float orientation);
 
         template<class T, class CONTAINER> void Visit(const Cell& cell, TypeContainerVisitor<T, CONTAINER> &visitor);
 
@@ -231,6 +233,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         Pet* GetPet(ObjectGuid guid);
         Creature* GetAnyTypeCreature(ObjectGuid guid);      // normal creature or pet or vehicle
         GameObject* GetGameObject(ObjectGuid guid);
+        Transport* GetTransport(ObjectGuid guid);
         DynamicObject* GetDynamicObject(ObjectGuid guid);
         Corpse* GetCorpse(ObjectGuid guid);                 // !!! find corpse can be not in world
         Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
@@ -288,13 +291,11 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 
     private:
         void LoadMapAndVMap(int gx, int gy);
+        void LoadTransports();
 
         void SetTimer(uint32 t) { i_gridExpiry = t < MIN_GRID_DELAY ? MIN_GRID_DELAY : t; }
 
         void SendInitSelf( Player * player );
-
-        void SendInitTransports( Player * player );
-        void SendRemoveTransports( Player * player );
 
         bool CreatureCellRelocation(Creature *creature, Cell new_cell);
 
