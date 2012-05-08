@@ -13348,7 +13348,7 @@ uint32 Unit::CalculateSpellDurationWithHaste(SpellEntry const* spellProto, uint3
     return duration;
 }
 
-bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* spellInfo, bool strict) const
+bool Unit::IsVisibleTargetForAoEDamage(WorldObject const* caster, SpellEntry const* spellInfo) const
 {
     bool no_stealth = false;
     switch (spellInfo->SpellFamilyName)
@@ -13364,15 +13364,12 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
             break;
     }
 
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_DETECTION) || VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
-        return true;
-
     // spell can't hit stealth/invisible targets (LoS check included)
     if (no_stealth && caster->isType(TYPEMASK_UNIT))
         return isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, false);
     // spell can hit stealth/invisible targets, just check for LoS
     else
-        return spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) ? true : caster->IsWithinLOSInMap(this, strict);
+        return spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS ? true : caster->IsWithinLOSInMap(this);
 }
 
 uint32 Unit::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
