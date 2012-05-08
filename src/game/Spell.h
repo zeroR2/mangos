@@ -844,7 +844,7 @@ namespace MaNGOS
                                 continue;
                         }
 
-                        if (!itr->getSource()->IsVisibleTargetForAoEDamage(i_originalCaster, i_spell.m_spellInfo))
+                        if (!itr->getSource()->IsVisibleTargetForSpell(i_originalCaster, i_spell.m_spellInfo))
                             continue;
                     }
                     break;
