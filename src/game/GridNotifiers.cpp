@@ -182,6 +182,16 @@ ObjectMessageDistDeliverer::Visit(CameraMapType &m)
     }
 }
 
+template<class T> void
+ObjectUpdater::Visit(GridRefManager<T> &m)
+{
+    for(typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
+    {
+        WorldObject::UpdateHelper helper(iter->getSource());
+        helper.Update(i_timeDiff);
+    }
+}
+
 bool RaiseDeadObjectCheck::operator()(Corpse* u)
 {
     // ignore bones
@@ -252,3 +262,6 @@ void MaNGOS::RespawnDo::operator()( GameObject* u ) const
 
     u->Respawn();
 }
+
+template void ObjectUpdater::Visit<GameObject>(GameObjectMapType &);
+template void ObjectUpdater::Visit<DynamicObject>(DynamicObjectMapType &);
