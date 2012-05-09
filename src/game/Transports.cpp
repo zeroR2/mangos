@@ -87,11 +87,18 @@ bool Transport::Create(uint32 entry)
     SetObjectScale(goinfo->size);
 
     SetUInt32Value(GAMEOBJECT_FACTION, goinfo->faction);
+
     //SetUInt32Value(GAMEOBJECT_FLAGS, goinfo->flags);
     SetUInt32Value(GAMEOBJECT_FLAGS, (GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
+
     SetEntry(goinfo->id);
     SetDisplayId(goinfo->displayId);
-    SetGoState(GO_STATE_READY);
+
+    if (goinfo->moTransport.defaultState == 1)
+        SetGoState(GO_STATE_ACTIVE);
+    else
+        SetGoState(GO_STATE_READY);
+
     SetGoType(GameobjectTypes(goinfo->type));
     SetGoArtKit(0);
     SetGoAnimProgress(GO_ANIMPROGRESS_DEFAULT);
@@ -430,6 +437,9 @@ bool Transport::RemovePassenger(Unit* passenger)
 void Transport::Update(uint32 update_diff, uint32 p_time)
 {
 
+    if (GetGoState() == GO_STATE_ACTIVE)
+        return;
+
     if (m_WayPoints.size() <= 1)
         return;
 
@@ -471,6 +481,10 @@ void Transport::Update(uint32 update_diff, uint32 p_time)
                 ++itr;
                 if (!player)
                     continue;
+
+//                float xOffset = (player->GetTransOffsetX() * cos(GetOrientation()) - player->GetTransOffsetY() * sin(GetOrientation()));
+//                float yOffset = (player->GetTransOffsetY() * cos(GetOrientation()) + player->GetTransOffsetX() * sin(GetOrientation()));
+//                player->SetPosition(GetPositionX() + xOffset, GetPositionY() + yOffset, GetPositionZ() + player->GetTransOffsetZ(), GetOrientation() + player->GetTransOffsetO());
 
                 player->SetPosition(GetPositionX(),GetPositionY(),GetPositionZ(),GetOrientation());
             }
