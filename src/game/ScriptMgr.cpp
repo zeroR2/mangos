@@ -85,6 +85,43 @@ ScriptMgr::~ScriptMgr()
 // /////////////////////////////////////////////////////////
 //              DB SCRIPTS (loaders of static data)
 // /////////////////////////////////////////////////////////
+// returns priority (0 == cannot start script)
+uint8 GetSpellStartDBScriptPriority(SpellEntry const* spellinfo, SpellEffectIndex effIdx)
+{
+    if (spellinfo->Effect[effIdx] == SPELL_EFFECT_SCRIPT_EFFECT)
+        return 10;
+
+    if (spellinfo->Effect[effIdx] == SPELL_EFFECT_DUMMY)
+        return 9;
+
+    // NonExisting triggered spells can also start DB-Spell-Scripts
+    if (spellinfo->Effect[effIdx] == SPELL_EFFECT_TRIGGER_SPELL && !sSpellStore.LookupEntry(spellinfo->EffectTriggerSpell[effIdx]))
+        return 5;
+
+    // Can not start script
+    return 0;
+}
+
+// Priorize: SCRIPT_EFFECT before DUMMY before Non-Existing triggered spell, for same priority the first effect with the priority triggers
+bool ScriptMgr::CanSpellEffectStartDBScript(SpellEntry const* spellinfo, SpellEffectIndex effIdx)
+{
+    uint8 priority = GetSpellStartDBScriptPriority(spellinfo, effIdx);
+    if (!priority)
+        return false;
+
+    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+    {
+        uint8 currentPriority = GetSpellStartDBScriptPriority(spellinfo, SpellEffectIndex(i));
+        if (currentPriority < priority)                     // lower priority, continue checking
+            continue;
+        if (currentPriority > priority)                     // take other index with higher priority
+            return false;
+        if (i < effIdx)                                     // same priority at lower index
+            return false;
+    }
+
+    return true;
+}
 
 void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 {
@@ -178,7 +215,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
         switch (tmp.command)
         {
-            case SCRIPT_COMMAND_TALK:
+            case SCRIPT_COMMAND_TALK:                       // 0
             {
                 if (tmp.talk.chatType > CHAT_TYPE_ZONE_YELL)
                 {
@@ -210,7 +247,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 // if (!GetMangosStringLocale(tmp.dataint)) will be checked after db_script_string loading
                 break;
             }
-            case SCRIPT_COMMAND_EMOTE:
+            case SCRIPT_COMMAND_EMOTE:                      // 1
             {
                 if (!sEmotesStore.LookupEntry(tmp.emote.emoteId))
                 {
@@ -219,7 +256,12 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_TELEPORT_TO:
+            case SCRIPT_COMMAND_FIELD_SET:                  // 2
+            case SCRIPT_COMMAND_MOVE_TO:                    // 3
+            case SCRIPT_COMMAND_FLAG_SET:                   // 4
+            case SCRIPT_COMMAND_FLAG_REMOVE:                // 5
+                break;
+            case SCRIPT_COMMAND_TELEPORT_TO:                // 6
             {
                 if (!sMapStore.LookupEntry(tmp.teleportTo.mapId))
                 {
@@ -234,7 +276,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_QUEST_EXPLORED:
+            case SCRIPT_COMMAND_QUEST_EXPLORED:             // 7
             {
                 Quest const* quest = sObjectMgr.GetQuestTemplate(tmp.questExplored.questId);
                 if (!quest)
@@ -276,16 +318,16 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
                 break;
             }
-            case SCRIPT_COMMAND_KILL_CREDIT:
+            case SCRIPT_COMMAND_KILL_CREDIT:                // 8
             {
-                if (!ObjectMgr::GetCreatureTemplate(tmp.killCredit.creatureEntry))
+                if (tmp.killCredit.creatureEntry && !ObjectMgr::GetCreatureTemplate(tmp.killCredit.creatureEntry))
                 {
                     sLog.outErrorDb("Table `%s` has invalid creature (Entry: %u) in SCRIPT_COMMAND_KILL_CREDIT for script id %u", tablename, tmp.killCredit.creatureEntry, tmp.id);
                     continue;
                 }
                 break;
             }
-            case SCRIPT_COMMAND_RESPAWN_GAMEOBJECT:
+            case SCRIPT_COMMAND_RESPAWN_GAMEOBJECT:         // 9
             {
                 uint32 goEntry = 0;
 
@@ -327,7 +369,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:
+            case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:       // 10
             {
                 if (!MaNGOS::IsValidMapCoord(tmp.x, tmp.y, tmp.z, tmp.o))
                 {
@@ -342,8 +384,8 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_OPEN_DOOR:
-            case SCRIPT_COMMAND_CLOSE_DOOR:
+            case SCRIPT_COMMAND_OPEN_DOOR:                  // 11
+            case SCRIPT_COMMAND_CLOSE_DOOR:                 // 12
             {
                 uint32 goEntry = 0;
 
@@ -382,7 +424,9 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
                 break;
             }
-            case SCRIPT_COMMAND_REMOVE_AURA:
+            case SCRIPT_COMMAND_ACTIVATE_OBJECT:            // 13
+                break;
+            case SCRIPT_COMMAND_REMOVE_AURA:                // 14
             {
                 if (!sSpellStore.LookupEntry(tmp.removeAura.spellId))
                 {
@@ -392,7 +436,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_CAST_SPELL:
+            case SCRIPT_COMMAND_CAST_SPELL:                 // 15
             {
                 if (!sSpellStore.LookupEntry(tmp.castSpell.spellId))
                 {
@@ -402,7 +446,17 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_CREATE_ITEM:
+            case SCRIPT_COMMAND_PLAY_SOUND:                 // 16
+            {
+                if (!sSoundEntriesStore.LookupEntry(tmp.playSound.soundId))
+                {
+                    sLog.outErrorDb("Table `%s` using nonexistent sound (id: %u) in SCRIPT_COMMAND_PLAY_SOUND for script id %u",
+                        tablename, tmp.playSound.soundId, tmp.id);
+                    continue;
+                }
+                break;
+            }
+            case SCRIPT_COMMAND_CREATE_ITEM:                // 17
             {
                 if (!ObjectMgr::GetItemPrototype(tmp.createItem.itemEntry))
                 {
@@ -418,12 +472,12 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_DESPAWN_SELF:
+            case SCRIPT_COMMAND_DESPAWN_SELF:               // 18
             {
                 // for later, we might consider despawn by database guid, and define in datalong2 as option to despawn self.
                 break;
             }
-            case SCRIPT_COMMAND_PLAY_MOVIE:
+            case SCRIPT_COMMAND_PLAY_MOVIE:                 // 19
             {
                 if (!sMovieStore.LookupEntry(tmp.playMovie.movieId))
                 {
@@ -433,7 +487,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_MOVEMENT:
+            case SCRIPT_COMMAND_MOVEMENT:                   // 20
             {
                 if (tmp.movement.movementType >= MAX_DB_MOTION_TYPE)
                 {
@@ -444,11 +498,9 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
                 break;
             }
-            case SCRIPT_COMMAND_SET_ACTIVEOBJECT:
-            {
+            case SCRIPT_COMMAND_SET_ACTIVEOBJECT:           // 21
                 break;
-            }
-            case SCRIPT_COMMAND_SET_FACTION:
+            case SCRIPT_COMMAND_SET_FACTION:                // 22
             {
                 if (tmp.faction.factionId && !sFactionTemplateStore.LookupEntry(tmp.faction.factionId))
                 {
@@ -458,7 +510,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
                 break;
             }
-            case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:
+            case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:    // 23
             {
                 if (tmp.data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
                 {
@@ -479,7 +531,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
                 break;
             }
-            case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:
+            case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:    // 24
             {
                 if (tmp.data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
                 {
@@ -500,15 +552,10 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
 
                 break;
             }
-            case SCRIPT_COMMAND_SET_RUN:
-            {
+            case SCRIPT_COMMAND_SET_RUN:                    // 25
+            case SCRIPT_COMMAND_ATTACK_START:               // 26
                 break;
-            }
-            case SCRIPT_COMMAND_ATTACK_START:
-            {
-                break;
-            }
-            case SCRIPT_COMMAND_GO_LOCK_STATE:
+            case SCRIPT_COMMAND_GO_LOCK_STATE:              // 27
             {
                 if (// lock(0x01) and unlock(0x02) together
                     ((tmp.goLockState.lockState & 0x01) && (tmp.goLockState.lockState & 0x02)) ||
@@ -524,7 +571,7 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_STAND_STATE:
+            case SCRIPT_COMMAND_STAND_STATE:                // 28
             {
                 if (tmp.standState.stand_state >= MAX_UNIT_STAND_STATE)
                 {
@@ -533,11 +580,9 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 }
                 break;
             }
-            case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:
-            {
+            case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:           // 29
                 break;
-            }
-            case SCRIPT_COMMAND_SEND_TAXI_PATH:
+            case SCRIPT_COMMAND_SEND_TAXI_PATH:             // 30
             {
                 if (!sTaxiPathStore.LookupEntry(tmp.sendTaxiPath.taxiPathId))
                 {
@@ -568,6 +613,11 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                     }
                 }
                 break;
+            }
+            default:
+            {
+                sLog.outErrorDb("Table `%s` unknown command %u, skipping.", tablename, tmp.command);
+                continue;
             }
         }
 
@@ -640,25 +690,20 @@ void ScriptMgr::LoadSpellScripts()
     LoadScripts(sSpellScripts, "spell_scripts");
 
     // check ids
-    for(ScriptMapMap::const_iterator itr = sSpellScripts.second.begin(); itr != sSpellScripts.second.end(); ++itr)
+    for (ScriptMapMap::const_iterator itr = sSpellScripts.second.begin(); itr != sSpellScripts.second.end(); ++itr)
     {
         SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->first);
-
         if (!spellInfo)
         {
             sLog.outErrorDb("Table `spell_scripts` has not existing spell (Id: %u) as script id", itr->first);
             continue;
         }
 
-        //check for correct spellEffect
+        // check for correct spellEffect
         bool found = false;
-        for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
+        for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
         {
-            // skip empty effects
-            if (!spellInfo->Effect[i])
-                continue;
-
-            if (spellInfo->Effect[i] == SPELL_EFFECT_SCRIPT_EFFECT)
+            if (GetSpellStartDBScriptPriority(spellInfo, SpellEffectIndex(i)))
             {
                 found =  true;
                 break;
@@ -666,7 +711,7 @@ void ScriptMgr::LoadSpellScripts()
         }
 
         if (!found)
-            sLog.outErrorDb("Table `spell_scripts` has unsupported spell (Id: %u) without SPELL_EFFECT_SCRIPT_EFFECT (%u) spell effect", itr->first, SPELL_EFFECT_SCRIPT_EFFECT);
+            sLog.outErrorDb("Table `spell_scripts` has unsupported spell (Id: %u)", itr->first);
     }
 }
 
@@ -822,7 +867,7 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
             resultObject = m_map->GetPet(guid);
             break;
         case HIGHGUID_PLAYER:
-            resultObject = ObjectAccessor::FindPlayer(guid, false);
+            resultObject = m_map->GetPlayer(guid);
             break;
         case HIGHGUID_GAMEOBJECT:
             resultObject = m_map->GetGameObject(guid);
@@ -835,7 +880,7 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
         {
             if (includeItem)
             {
-                if (Player* player = ObjectAccessor::FindPlayer(m_ownerGuid, false))
+                if (Player* player = m_map->GetPlayer(m_ownerGuid))
                     resultObject = player->GetItemByGuid(guid);
                 break;
             }
@@ -985,7 +1030,7 @@ void ScriptAction::HandleScriptStep()
 
     switch (m_script->command)
     {
-        case SCRIPT_COMMAND_TALK:
+        case SCRIPT_COMMAND_TALK:                           // 0
         {
             if (!pSource)
             {
@@ -1044,11 +1089,11 @@ void ScriptAction::HandleScriptStep()
                     pSource->MonsterYellToZone(textId, m_script->talk.language, unitTarget);
                     break;
                 default:
-                    break;                              // must be already checked at load
+                    break;                                  // must be already checked at load
             }
             break;
         }
-        case SCRIPT_COMMAND_EMOTE:
+        case SCRIPT_COMMAND_EMOTE:                          // 1
         {
             if (LogIfNotUnit(pSource))
                 break;
@@ -1056,7 +1101,7 @@ void ScriptAction::HandleScriptStep()
             ((Unit*)pSource)->HandleEmote(m_script->emote.emoteId);
             break;
         }
-        case SCRIPT_COMMAND_FIELD_SET:
+        case SCRIPT_COMMAND_FIELD_SET:                      // 2
             // TODO
             if (!source)
             {
@@ -1072,7 +1117,7 @@ void ScriptAction::HandleScriptStep()
 
             source->SetUInt32Value(m_script->setField.fieldId, m_script->setField.fieldValue);
             break;
-        case SCRIPT_COMMAND_MOVE_TO:
+        case SCRIPT_COMMAND_MOVE_TO:                        // 3
         {
             if (LogIfNotUnit(pSource))
                 break;
@@ -1103,7 +1148,7 @@ void ScriptAction::HandleScriptStep()
             }
             break;
         }
-        case SCRIPT_COMMAND_FLAG_SET:
+        case SCRIPT_COMMAND_FLAG_SET:                       // 4
             // TODO
             if (!source)
             {
@@ -1119,7 +1164,7 @@ void ScriptAction::HandleScriptStep()
 
             source->SetFlag(m_script->setFlag.fieldId, m_script->setFlag.fieldValue);
             break;
-        case SCRIPT_COMMAND_FLAG_REMOVE:
+        case SCRIPT_COMMAND_FLAG_REMOVE:                    // 5
             // TODO
             if (!source)
             {
@@ -1135,7 +1180,7 @@ void ScriptAction::HandleScriptStep()
 
             source->RemoveFlag(m_script->removeFlag.fieldId, m_script->removeFlag.fieldValue);
             break;
-        case SCRIPT_COMMAND_TELEPORT_TO:
+        case SCRIPT_COMMAND_TELEPORT_TO:                    // 6
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -1144,7 +1189,7 @@ void ScriptAction::HandleScriptStep()
             pPlayer->TeleportTo(m_script->teleportTo.mapId, m_script->x, m_script->y, m_script->z, m_script->o);
             break;
         }
-        case SCRIPT_COMMAND_QUEST_EXPLORED:
+        case SCRIPT_COMMAND_QUEST_EXPLORED:                 // 7
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -1178,20 +1223,35 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_KILL_CREDIT:
+        case SCRIPT_COMMAND_KILL_CREDIT:                    // 8
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
                 break;
 
+            uint32 creatureEntry = m_script->killCredit.creatureEntry;
+            WorldObject* pRewardSource = pSource && pSource->GetTypeId() == TYPEID_UNIT ? pSource : (pTarget && pTarget->GetTypeId() == TYPEID_UNIT ? pTarget : NULL);
+
+            // dynamic effect, take entry of reward Source
+            if (!creatureEntry)
+            {
+                if (pRewardSource)
+                    creatureEntry =  pRewardSource->GetEntry();
+                else
+                {
+                    sLog.outError(" DB-SCRIPTS: Process table `%s` id %u, command %u called for dynamic killcredit without creature partner, skipping.", m_table, m_script->id, m_script->command);
+                    break;
+                }
+            }
+
             if (m_script->killCredit.isGroupCredit)
-                pPlayer->RewardPlayerAndGroupAtEvent(m_script->killCredit.creatureEntry, pSource);
+                pPlayer->RewardPlayerAndGroupAtEvent(creatureEntry, pRewardSource);
             else
-                pPlayer->KilledMonsterCredit(m_script->killCredit.creatureEntry);
+                pPlayer->KilledMonsterCredit(creatureEntry, pRewardSource ? pRewardSource->GetObjectGuid() : ObjectGuid());
 
             break;
         }
-        case SCRIPT_COMMAND_RESPAWN_GAMEOBJECT:
+        case SCRIPT_COMMAND_RESPAWN_GAMEOBJECT:             // 9
         {
             GameObject* pGo = NULL;
             uint32 time_to_despawn = m_script->respawnGo.despawnDelay < 5 ? 5 : m_script->respawnGo.despawnDelay;
@@ -1229,14 +1289,14 @@ void ScriptAction::HandleScriptStep()
             }
 
             if (pGo->isSpawned())
-                break;                                  //gameobject already spawned
+                break;                                      //gameobject already spawned
 
             pGo->SetLootState(GO_READY);
-            pGo->SetRespawnTime(time_to_despawn);       //despawn object in ? seconds
+            pGo->SetRespawnTime(time_to_despawn);           //despawn object in ? seconds
             pGo->Refresh();
             break;
         }
-        case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:
+        case SCRIPT_COMMAND_TEMP_SUMMON_CREATURE:           // 10
         {
             if (!pSource)
             {
@@ -1249,7 +1309,7 @@ void ScriptAction::HandleScriptStep()
             float z = m_script->z;
             float o = m_script->o;
 
-            Creature* pCreature = pSource->SummonCreature(m_script->summonCreature.creatureEntry, x, y, z, o, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, m_script->summonCreature.despawnDelay, (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL) ? true: false);
+            Creature* pCreature = pSource->SummonCreature(m_script->summonCreature.creatureEntry, x, y, z, o, m_script->summonCreature.despawnDelay ? TEMPSUMMON_TIMED_OR_DEAD_DESPAWN : TEMPSUMMON_DEAD_DESPAWN, m_script->summonCreature.despawnDelay, (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL) ? true: false);
             if (!pCreature)
             {
                 sLog.outError(" DB-SCRIPTS: Process table `%s` id %u, command %u failed for creature (entry: %u).", m_table, m_script->id, m_script->command, m_script->summonCreature.creatureEntry);
@@ -1258,8 +1318,8 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_OPEN_DOOR:
-        case SCRIPT_COMMAND_CLOSE_DOOR:
+        case SCRIPT_COMMAND_OPEN_DOOR:                      // 11
+        case SCRIPT_COMMAND_CLOSE_DOOR:                     // 12
         {
             GameObject* pDoor;
             uint32 time_to_reset = m_script->changeDoor.resetDelay < 15 ? 15 : m_script->changeDoor.resetDelay;
@@ -1295,7 +1355,7 @@ void ScriptAction::HandleScriptStep()
 
             if (m_script->command == SCRIPT_COMMAND_OPEN_DOOR && pDoor->GetGoState() != GO_STATE_READY ||
                 m_script->command == SCRIPT_COMMAND_CLOSE_DOOR && pDoor->GetGoState() == GO_STATE_READY)
-                break;                                  // to be opened door already open, or to be closed door already closed
+                break;                                      // to be opened door already open, or to be closed door already closed
 
             pDoor->UseDoorOrButton(time_to_reset);
 
@@ -1304,7 +1364,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_ACTIVATE_OBJECT:
+        case SCRIPT_COMMAND_ACTIVATE_OBJECT:                // 13
         {
             if (LogIfNotUnit(pSource))
                 break;
@@ -1314,7 +1374,7 @@ void ScriptAction::HandleScriptStep()
             ((GameObject*)pTarget)->Use((Unit*)pSource);
             break;
         }
-        case SCRIPT_COMMAND_REMOVE_AURA:
+        case SCRIPT_COMMAND_REMOVE_AURA:                    // 14
         {
             if (LogIfNotUnit(pSource))
                 break;
@@ -1322,7 +1382,7 @@ void ScriptAction::HandleScriptStep()
             ((Unit*)pSource)->RemoveAurasDueToSpell(m_script->removeAura.spellId);
             break;
         }
-        case SCRIPT_COMMAND_CAST_SPELL:
+        case SCRIPT_COMMAND_CAST_SPELL:                     // 15
         {
             if (LogIfNotUnit(pSource))
                 break;
@@ -1334,7 +1394,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_PLAY_SOUND: // TODO
+        case SCRIPT_COMMAND_PLAY_SOUND:                     // 16 // TODO
         {
             if (!pSource)
             {
@@ -1370,7 +1430,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_CREATE_ITEM:
+        case SCRIPT_COMMAND_CREATE_ITEM:                    // 17
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -1381,7 +1441,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_DESPAWN_SELF:
+        case SCRIPT_COMMAND_DESPAWN_SELF:                   // 18
         {
             // TODO - Remove this check after a while
             if (pTarget && pTarget->GetTypeId() != TYPEID_UNIT && pSource && pSource->GetTypeId() == TYPEID_UNIT)
@@ -1397,7 +1457,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_PLAY_MOVIE:
+        case SCRIPT_COMMAND_PLAY_MOVIE:                     // 19
         {
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
             if (!pPlayer)
@@ -1407,7 +1467,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_MOVEMENT:
+        case SCRIPT_COMMAND_MOVEMENT:                       // 20
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1430,7 +1490,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_SET_ACTIVEOBJECT:
+        case SCRIPT_COMMAND_SET_ACTIVEOBJECT:               // 21
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1438,7 +1498,7 @@ void ScriptAction::HandleScriptStep()
             ((Creature*)pSource)->SetActiveObjectState(m_script->activeObject.activate);
             break;
         }
-        case SCRIPT_COMMAND_SET_FACTION:
+        case SCRIPT_COMMAND_SET_FACTION:                    // 22
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1450,7 +1510,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:
+        case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:        // 23
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1469,7 +1529,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:
+        case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:        // 24
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1488,7 +1548,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_SET_RUN:
+        case SCRIPT_COMMAND_SET_RUN:                        // 25
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1497,7 +1557,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_ATTACK_START:
+        case SCRIPT_COMMAND_ATTACK_START:                   // 26
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1536,7 +1596,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_GO_LOCK_STATE:
+        case SCRIPT_COMMAND_GO_LOCK_STATE:                  // 27
         {
             if (LogIfNotGameObject(pSource))
                 break;
@@ -1561,7 +1621,7 @@ void ScriptAction::HandleScriptStep()
             else if (m_script->goLockState.lockState & 0x08)
                 pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
         }
-        case SCRIPT_COMMAND_STAND_STATE:
+        case SCRIPT_COMMAND_STAND_STATE:                    // 28
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1570,7 +1630,7 @@ void ScriptAction::HandleScriptStep()
             ((Unit*)pSource)->SetStandState(m_script->standState.stand_state);
             break;
         }
-        case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:
+        case SCRIPT_COMMAND_MODIFY_NPC_FLAGS:               // 29
         {
             if (LogIfNotCreature(pSource))
                 break;
@@ -1592,7 +1652,7 @@ void ScriptAction::HandleScriptStep()
 
             break;
         }
-        case SCRIPT_COMMAND_SEND_TAXI_PATH:
+        case SCRIPT_COMMAND_SEND_TAXI_PATH:                 // 30
         {
             // only Player
             Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);

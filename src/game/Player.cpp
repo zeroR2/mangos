@@ -2535,7 +2535,8 @@ void Player::RemoveFromGroup(Group* group, ObjectGuid guid)
     if (group)
     {
         // remove all auras affecting only group members
-        if (Player *pLeaver = sObjectMgr.GetPlayer(guid))
+        Player *pLeaver = sObjectMgr.GetPlayer(guid);
+        if (pLeaver)
         {
             for(GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
             {
@@ -4351,7 +4352,8 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
     // remove from guild
     if (uint32 guildId = GetGuildIdFromDB(playerguid))
     {
-        if (Guild* guild = sGuildMgr.GetGuildById(guildId))
+        Guild* guild = sGuildMgr.GetGuildById(guildId);
+        if (guild)
         {
             if (guild->DelMember(playerguid))
             {
@@ -4370,7 +4372,8 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
     {
         uint32 groupId = (*resultGroup)[0].GetUInt32();
         delete resultGroup;
-        if (Group* group = sObjectMgr.GetGroupById(groupId))
+        Group* group = sObjectMgr.GetGroupById(groupId);
+        if (group)
             RemoveFromGroup(group, playerguid);
     }
 
@@ -4545,6 +4548,7 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             break;
         default:
             sLog.outError("Player::DeleteFromDB: Unsupported delete method: %u.", charDelete_method);
+            break;
     }
 
     if (updateRealmChars)
@@ -5065,7 +5069,7 @@ void Player::RepopAtGraveyard()
     AreaTableEntry const *zone = GetAreaEntryByAreaID(GetAreaId());
 
     // Such zones are considered unreachable as a ghost and the player must be automatically revived
-    if ((!isAlive() && zone && zone->flags & AREA_FLAG_NEED_FLY) || GetTransport() || GetPositionZ() < -500.0f)
+    if ((!isAlive() && zone && (zone->flags & AREA_FLAG_NEED_FLY)) || GetTransport() || GetPositionZ() < -500.0f)
     {
         ResurrectPlayer(0.5f);
         SpawnCorpseBones();
@@ -6662,14 +6666,13 @@ void Player::RewardReputation(Unit *pVictim, float rate)
 
     uint32 Repfaction1 = Rep->repfaction1;
     uint32 Repfaction2 = Rep->repfaction2;
-    uint32 tabardFactionID = 0;
 
     // Championning tabard reputation system
     if (HasAura(Rep->championingAura))
     {
         if ( Item* pItem = GetItemByPos( INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_TABARD ) )
         {
-            if ( tabardFactionID = pItem->GetProto()->RequiredReputationFaction )
+            if (uint32 tabardFactionID = pItem->GetProto()->RequiredReputationFaction )
             {
                 Repfaction1 = tabardFactionID;
                 Repfaction2 = tabardFactionID;
@@ -7188,7 +7191,8 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
 
         if (sWorld.getConfig(CONFIG_BOOL_WEATHER))
         {
-            if (Weather *wth = sWorld.FindWeather(zone->ID))
+            Weather* wth = sWorld.FindWeather(zone->ID);
+            if (wth)
                 wth->SendWeatherUpdateToPlayer(this);
             else if(!sWorld.AddWeather(zone->ID))
             {
@@ -7209,10 +7213,10 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
     switch(zone->team)
     {
         case AREATEAM_ALLY:
-            pvpInfo.inHostileArea = GetTeam() != ALLIANCE && (sWorld.IsPvPRealm() || zone->flags & AREA_FLAG_CAPITAL);
+            pvpInfo.inHostileArea = GetTeam() != ALLIANCE && (sWorld.IsPvPRealm() || (zone->flags & AREA_FLAG_CAPITAL));
             break;
         case AREATEAM_HORDE:
-            pvpInfo.inHostileArea = GetTeam() != HORDE && (sWorld.IsPvPRealm() || zone->flags & AREA_FLAG_CAPITAL);
+            pvpInfo.inHostileArea = GetTeam() != HORDE && (sWorld.IsPvPRealm() || (zone->flags & AREA_FLAG_CAPITAL));
             break;
         case AREATEAM_NONE:
             // overwrite for battlegrounds, maybe batter some zone flags but current known not 100% fit to this
@@ -8466,7 +8470,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
             // not check distance for GO in case owned GO (fishing bobber case, for example)
             // And permit out of range GO with no owner in case fishing hole
-            if (!go || (loot_type != LOOT_FISHINGHOLE && (loot_type != LOOT_FISHING && loot_type != LOOT_FISHING_FAIL || go->GetOwnerGuid() != GetObjectGuid()) && !go->IsWithinDistInMap(this,INTERACTION_DISTANCE)))
+            if (!go || (loot_type != LOOT_FISHINGHOLE && ((loot_type != LOOT_FISHING && loot_type != LOOT_FISHING_FAIL) || go->GetOwnerGuid() != GetObjectGuid()) && !go->IsWithinDistInMap(this,INTERACTION_DISTANCE)))
             {
                 SendLootRelease(guid);
                 return;
@@ -9614,7 +9618,7 @@ uint8 Player::FindEquipSlot( ItemPrototype const* proto, uint32 slot, bool swap 
             if (CanDualWield())
                 slots[1] = EQUIPMENT_SLOT_OFFHAND;
             break;
-        };
+        }
         case INVTYPE_SHIELD:
             slots[0] = EQUIPMENT_SLOT_OFFHAND;
             break;
@@ -16471,7 +16475,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
         if (!arena_team_id)
             continue;
 
-        if (ArenaTeam * at = sObjectMgr.GetArenaTeamById(arena_team_id))
+        ArenaTeam * at = sObjectMgr.GetArenaTeamById(arena_team_id);
+        if (at)
             if (at->HaveMember(GetObjectGuid()))
                 continue;
 
@@ -17978,8 +17983,8 @@ void Player::_LoadGroup(QueryResult *result)
     {
         uint32 groupId = (*result)[0].GetUInt32();
         delete result;
-
-        if (Group* group = sObjectMgr.GetGroupById(groupId))
+        Group* group = sObjectMgr.GetGroupById(groupId);
+        if (group)
         {
             uint8 subgroup = group->GetMemberGroup(GetObjectGuid());
             SetGroup(group, subgroup);
@@ -18151,10 +18156,9 @@ DungeonPersistentState* Player::GetBoundInstanceSaveForSelfOrGroup(uint32 mapid)
     // then the player's group bind and finally the solo bind.
     if (!pBind || !pBind->perm)
     {
-        InstanceGroupBind *groupBind = NULL;
         // use the player's difficulty setting (it may not be the same as the group's)
         if (Group *group = GetGroup())
-            if (groupBind = group->GetBoundInstance(mapid, this))
+            if (InstanceGroupBind* groupBind = group->GetBoundInstance(mapid, this))
                 state = groupBind->state;
     }
 
@@ -19985,8 +19989,11 @@ void Player::LeaveAllArenaTeams(ObjectGuid guid)
     {
         Field *fields = result->Fetch();
         if (uint32 at_id = fields[0].GetUInt32())
-            if (ArenaTeam * at = sObjectMgr.GetArenaTeamById(at_id))
+        {
+            ArenaTeam* at = sObjectMgr.GetArenaTeamById(at_id);
+            if (at)
                 at->DelMember(guid);
+        }
 
     } while (result->NextRow());
 
@@ -20530,7 +20537,7 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
 
         // possible item converted for BoA case
         ItemPrototype const* crProto = ObjectMgr::GetItemPrototype(crItem->item);
-        if (crProto->Flags & ITEM_FLAG_BOA && crProto->RequiredReputationFaction &&
+        if ((crProto->Flags & ITEM_FLAG_BOA) && crProto->RequiredReputationFaction &&
             uint32(GetReputationRank(crProto->RequiredReputationFaction)) >= crProto->RequiredReputationRank)
             converted = (sObjectMgr.GetItemConvert(crItem->item, getRaceMask()) != 0);
 
@@ -20601,7 +20608,7 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
         }
     }
 
-    uint32 price = (crItem->ExtendedCost == 0 || pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD) ? pProto->BuyPrice * count : 0;
+    uint32 price = (crItem->ExtendedCost == 0 || (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD)) ? pProto->BuyPrice * count : 0;
 
     // reputation discount
     if (price)
@@ -20689,7 +20696,8 @@ uint32 Player::GetMaxPersonalArenaRatingRequirement(uint32 minarenaslot)
     uint32 max_personal_rating = 0;
     for(int i = minarenaslot; i < MAX_ARENA_SLOT; ++i)
     {
-        if (ArenaTeam * at = sObjectMgr.GetArenaTeamById(GetArenaTeamId(i)))
+        ArenaTeam* at = sObjectMgr.GetArenaTeamById(GetArenaTeamId(i));
+        if (at)
         {
             uint32 p_rating = GetArenaPersonalRating(i);
             uint32 t_rating = at->GetRating();
@@ -21786,7 +21794,7 @@ void Player::SetMonthlyQuestStatus(uint32 quest_id)
 void Player::ResetDailyQuestStatus()
 {
     uint32 dailyQuestCount = 0;
-    for(uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)   
+    for(uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
     {
         if(GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx))
             ++dailyQuestCount;
@@ -22246,7 +22254,7 @@ bool Player::isHonorOrXPTarget(Unit* pVictim) const
     {
         if (((Creature*)pVictim)->IsTotem() ||
             ((Creature*)pVictim)->IsPet() ||
-            ((Creature*)pVictim)->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_NO_XP_AT_KILL)
+            (((Creature*)pVictim)->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_NO_XP_AT_KILL))
                 return false;
     }
     return true;
@@ -22284,7 +22292,7 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
 
 void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, WorldObject* pRewardSource)
 {
-    ObjectGuid creature_guid = pRewardSource->GetTypeId()==TYPEID_UNIT ? pRewardSource->GetObjectGuid() : ObjectGuid();
+    ObjectGuid creature_guid = pRewardSource && pRewardSource->GetTypeId() == TYPEID_UNIT ? pRewardSource->GetObjectGuid() : ObjectGuid();
 
     // prepare data for near group iteration
     if (Group *pGroup = GetGroup())
@@ -24912,7 +24920,7 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
         case AREA_LOCKSTATUS_MISSING_ITEM:
             {
                 MapDifficultyEntry const* mapDiff = GetMapDifficultyData(targetMapEntry->MapID,GetDifficulty(targetMapEntry->IsRaid()));
-                if (mapDiff && mapDiff->mapDifficultyFlags & MAP_DIFFICULTY_FLAG_CONDITION)
+                if (mapDiff && (mapDiff->mapDifficultyFlags & MAP_DIFFICULTY_FLAG_CONDITION))
                 {
                     GetSession()->SendAreaTriggerMessage("%s", mapDiff->areaTriggerText[GetSession()->GetSessionDbcLocale()]);
                 }
@@ -25203,14 +25211,14 @@ uint32 Player::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
                     if (skinColour >= 0 && skinColour <= 5) modelid = 29412;
                     else if (skinColour >= 6 && skinColour <= 8) modelid = 29411;
                     else if (skinColour >= 9 && skinColour <= 11) modelid = 29410;
-                    else if (skinColour >= 12 && skinColour <= 14 || skinColour == 18) modelid = 29409;
+                    else if ((skinColour >= 12 && skinColour <= 14) || skinColour == 18) modelid = 29409;
                     else if (skinColour >= 15 && skinColour <= 17) modelid = 8571;
                 }
                 else // form == FORM_BEAR || form == FORM_DIREBEAR
                 {
                     if (skinColour >= 0 && skinColour <= 2) modelid = 29418;
-                    else if (skinColour >= 3 && skinColour <= 5 || skinColour >= 12 && skinColour <= 14) modelid = 29419;
-                    else if (skinColour >= 9 && skinColour <= 11 || skinColour >= 15 && skinColour <= 17) modelid = 29420;
+                    else if ((skinColour >= 3 && skinColour <= 5) || (skinColour >= 12 && skinColour <= 14)) modelid = 29419;
+                    else if ((skinColour >= 9 && skinColour <= 11) || (skinColour >= 15 && skinColour <= 17)) modelid = 29420;
                     else if (skinColour >= 6 && skinColour <= 8) modelid = 2289;
                     else if (skinColour == 18) modelid = 29421;
                 }

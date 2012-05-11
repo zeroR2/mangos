@@ -527,6 +527,7 @@ class Spell
         void ClearCastItem();
 
         static void SelectMountByAreaAndSkill(Unit* target, SpellEntry const* parentSpell, uint32 spellId75, uint32 spellId150, uint32 spellId225, uint32 spellId300, uint32 spellIdSpecial);
+
     protected:
         bool HasGlobalCooldown();
         void TriggerGlobalCooldown();
@@ -690,7 +691,7 @@ enum ReplenishType
 
 namespace MaNGOS
 {
-    struct MANGOS_DLL_DECL SpellNotifierPlayer
+    struct MANGOS_DLL_DECL SpellNotifierPlayer              // Currently unused. When put to use this one requires handling for source-location (smilar to below)
     {
         Spell::UnitList &i_data;
         Spell &i_spell;
@@ -737,6 +738,7 @@ namespace MaNGOS
         bool i_playerControlled;
         float i_centerX;
         float i_centerY;
+        float i_centerZ;
 
         float GetCenterX() const { return i_centerX; }
         float GetCenterY() const { return i_centerY; }
@@ -765,8 +767,18 @@ namespace MaNGOS
                     }
                     break;
                 case PUSH_DEST_CENTER:
-                    i_centerX = i_spell.m_targets.m_destX;
-                    i_centerY = i_spell.m_targets.m_destY;
+                    if (i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
+                    {
+                        i_centerX = i_spell.m_targets.m_destX;
+                        i_centerY = i_spell.m_targets.m_destY;
+                        i_centerZ = i_spell.m_targets.m_destZ;
+                    }
+                    else
+                    {
+                        i_centerX = i_spell.m_targets.m_srcX;
+                        i_centerY = i_spell.m_targets.m_srcY;
+                        i_centerZ = i_spell.m_targets.m_srcZ;
+                    }
                     break;
                 case PUSH_INHERITED_CENTER:
                 {
@@ -881,7 +893,7 @@ namespace MaNGOS
                             i_data->push_back(itr->getSource());
                         break;
                     case PUSH_DEST_CENTER:
-                        if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.m_destX, i_spell.m_targets.m_destY, i_spell.m_targets.m_destZ,i_radius))
+                        if (itr->getSource()->IsWithinDist3d(i_centerX, i_centerY, i_centerZ, i_radius))
                             i_data->push_back(itr->getSource());
                         break;
                     case PUSH_INHERITED_CENTER:
