@@ -2262,7 +2262,7 @@ void Map::LoadTransports()
         std::string name    = fields[1].GetCppString();
         uint32 period       = fields[2].GetUInt32();
 
-        if (Transport::GetStartMapByEntry(entry) != GetId())
+        if (Transport::GetPossibleMapByEntry(entry, true) != GetId())
             continue;
 
         if (Transport* transport = Transport::Load(this, entry, name, period))
