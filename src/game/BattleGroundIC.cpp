@@ -27,7 +27,6 @@
 #include "Vehicle.h"
 #include "Creature.h"
 #include "MapManager.h"
-#include "Transports.h"
 #include "Object.h"
 #include "Util.h"
 
@@ -109,24 +108,6 @@ void BattleGroundIC::Reset()
 
     SpawnGates();
 
-    gunshipHorde = NULL;
-    gunshipAlliance = NULL;
-}
-
-void BattleGroundIC::SendTransportInit(Player* player)
-{
-    if (!gunshipAlliance || !gunshipHorde)
-        return;
-
-    UpdateData transData;
-
-    gunshipAlliance->BuildCreateUpdateBlockForPlayer(&transData, player);
-    gunshipHorde->BuildCreateUpdateBlockForPlayer(&transData, player);
-
-    WorldPacket packet;
-
-    transData.BuildPacket(&packet);
-    player->GetSession()->SendPacket(&packet);
 }
 
 void BattleGroundIC::UpdateScore(TeamIndex teamIdx, int32 points )
@@ -211,9 +192,6 @@ void BattleGroundIC::Update(uint32 diff)
                     PlaySoundToAll(BG_IC_SOUND_NODE_CAPTURED_HORDE);
                 }
 
-                // gunship starting
-                if (node == BG_IC_NODE_HANGAR)
-                    (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipAlliance : gunshipHorde)->BuildStartMovePacket();
             }
         }
     }
@@ -257,8 +235,6 @@ void BattleGroundIC::AddPlayer(Player *plr)
     BattleGroundICScore* sc = new BattleGroundICScore;
 
     m_PlayerScores[plr->GetObjectGuid()] = sc;
-
-    SendTransportInit(plr);
 
     if (GetStatus() != STATUS_IN_PROGRESS)
         MakeInteractive(IC_EVENT_ADD_TELEPORT, 0, false);
@@ -382,22 +358,6 @@ void BattleGroundIC::FillInitialWorldStates(WorldPacket& data, uint32& count)
 
 bool BattleGroundIC::SetupBattleGround()
 {
-//    gunshipHorde = CreateTransport(GO_HORDE_GUNSHIP,TRANSPORT_PERIOD_TIME);
-//    gunshipAlliance = CreateTransport(GO_ALLIANCE_GUNSHIP,TRANSPORT_PERIOD_TIME);
-
-    if (!gunshipAlliance || !gunshipHorde)
-    {
-        sLog.outError("Isle of Conquest: There was an error creating gunships!");
-        return false;
-    }
-
-    //Send transport init packet to all player in map
-    for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end();itr++)
-    {
-        if (Player* player = sObjectMgr.GetPlayer(itr->first))
-            SendTransportInit(player);
-    }
-
     return true;
 }
 
@@ -590,8 +550,6 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
 
         sound = (teamIndex == TEAM_INDEX_ALLIANCE) ? BG_IC_SOUND_NODE_ASSAULTED_ALLIANCE : BG_IC_SOUND_NODE_ASSAULTED_HORDE;
 
-        if (node == BG_IC_NODE_HANGAR)
-            (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipHorde : gunshipAlliance)->BuildStopMovePacket();
     }
     PlaySoundToAll(sound);
 }
@@ -778,52 +736,6 @@ WorldSafeLocsEntry const* BattleGroundIC::GetClosestGraveYard(Player* player)
         good_entry = sWorldSafeLocsStore.LookupEntry( BG_IC_GraveyardIds[teamIndex+5] );
 
     return good_entry;
-}
-
-Transport* BattleGroundIC::CreateTransport(uint32 goEntry, uint32 period)
-{
-/*
-    Transport* t = new Transport;
-
-    const GameObjectInfo* goinfo = sObjectMgr.GetGameObjectInfo(goEntry);
-
-    if (!goinfo)
-    {
-        sLog.outErrorDb("Transport ID: %u will not be loaded, gameobject_template missing", goEntry);
-        delete t;
-        return NULL;
-    }
-
-    std::set<uint32> mapsUsed;
-    t->m_period = period;
-
-    if (!t->GenerateWaypoints(goinfo->moTransport.taxiPathId, mapsUsed))
-        // skip transports with empty waypoints list
-    {
-        sLog.outErrorDb("Transport (path id %u) path size = 0. Transport ignored, check DBC files or transport GO data0 field.",goinfo->moTransport.taxiPathId);
-        delete t;
-        return NULL;
-    }
-
-    uint32 mapid = t->m_WayPoints[0].mapid;
-
-    float x = t->m_WayPoints[0].x;
-    float y = t->m_WayPoints[0].y;
-    float z =  t->m_WayPoints[0].z;
-    float o = 1;
-
-    // creates the Gameobject
-    if (!t->Create(goEntry, mapid, x, y, z, o, GO_ANIMPROGRESS_DEFAULT, 0))
-    {
-        delete t;
-        return NULL;
-    }
-
-    t->SetMap(GetBgMap());
-
-    return t;
-    */
-    return NULL;
 }
 
 void BattleGroundIC::HandleBuffs()
