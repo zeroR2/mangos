@@ -213,7 +213,7 @@ void BattleGroundIC::Update(uint32 diff)
 
                 // gunship starting
                 if (node == BG_IC_NODE_HANGAR)
-                    (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipAlliance : gunshipHorde)->BuildStartMovePacket(GetBgMap());
+                    (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipAlliance : gunshipHorde)->BuildStartMovePacket();
             }
         }
     }
@@ -591,7 +591,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
         sound = (teamIndex == TEAM_INDEX_ALLIANCE) ? BG_IC_SOUND_NODE_ASSAULTED_ALLIANCE : BG_IC_SOUND_NODE_ASSAULTED_HORDE;
 
         if (node == BG_IC_NODE_HANGAR)
-            (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipHorde : gunshipAlliance)->BuildStopMovePacket(GetBgMap());
+            (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipHorde : gunshipAlliance)->BuildStopMovePacket();
     }
     PlaySoundToAll(sound);
 }
