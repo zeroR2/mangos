@@ -1478,24 +1478,6 @@ void GameObject::Use(Unit* user)
 
             return;
         }
-        case GAMEOBJECT_TYPE_MO_TRANSPORT:                   // 15
-        {
-            if (GetGoState() == GO_STATE_READY)
-            {
-                SetGoState(GO_STATE_ACTIVE);
-                SetActiveObjectState(false);
-            }
-            else
-            {
-                SetGoState(GO_STATE_READY);
-                SetActiveObjectState(true);
-            }
-
-            // activate script
-            if (!scriptReturnValue)
-                GetMap()->ScriptsStart(sGameObjectScripts, GetGUIDLow(), spellCaster, this);
-            return;
-        }
         case GAMEOBJECT_TYPE_FISHINGNODE:                   // 17 fishing bobber
         {
             if (user->GetTypeId() != TYPEID_PLAYER)

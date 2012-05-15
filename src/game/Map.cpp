@@ -2306,8 +2306,7 @@ void Map::LoadTransports()
 
         if (Transport* transport = Transport::Load(this, entry, name, period))
         {
-            if (transport->GetGoState() == GO_STATE_READY)
-                transport->SetActiveObjectState(true);
+            transport->SetActiveObjectState(true);
             Add<GameObject>(transport);
             ++count;
             DEBUG_LOG("Map::LoadTransports Loading %s %s, %s, transport map id %u",
