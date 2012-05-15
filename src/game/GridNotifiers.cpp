@@ -45,17 +45,14 @@ VisibleNotifier::Notify()
     // but exist one case when this possible and object not out of range: transports
     if(Transport* transport = player.GetTransport())
     {
-        for(ObjectGuidSet::const_iterator itr = transport->GetPassengers().begin();itr!=transport->GetPassengers().end();++itr)
+        for(Transport::PlayerSet::const_iterator itr = transport->GetPassengers().begin();itr!=transport->GetPassengers().end();++itr)
         {
-            if (i_clientGUIDs.find(*itr) != i_clientGUIDs.end())
+            if (i_clientGUIDs.find((*itr)->GetObjectGuid()) != i_clientGUIDs.end())
             {
                 // ignore far sight case
-                Player* player1 = player.GetMap()->GetPlayer(*itr);
-                if (!player1)
-                    continue;
-                player1->UpdateVisibilityOf(player1, &player);
-                player.UpdateVisibilityOf(&player, player1, i_data, i_visibleNow);
-                i_clientGUIDs.erase(*itr);
+                (*itr)->UpdateVisibilityOf(*itr, &player);
+                player.UpdateVisibilityOf(&player, *itr, i_data, i_visibleNow);
+                i_clientGUIDs.erase((*itr)->GetObjectGuid());
             }
         }
     }
@@ -182,6 +179,16 @@ ObjectMessageDistDeliverer::Visit(CameraMapType &m)
     }
 }
 
+template<class T> void
+ObjectUpdater::Visit(GridRefManager<T> &m)
+{
+    for(typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
+    {
+        WorldObject::UpdateHelper helper(iter->getSource());
+        helper.Update(i_timeDiff);
+    }
+}
+
 bool RaiseDeadObjectCheck::operator()(Corpse* u)
 {
     // ignore bones
@@ -252,3 +259,7 @@ void MaNGOS::RespawnDo::operator()( GameObject* u ) const
 
     u->Respawn();
 }
+
+
+template void ObjectUpdater::Visit<GameObject>(GameObjectMapType &);
+template void ObjectUpdater::Visit<DynamicObject>(DynamicObjectMapType &);

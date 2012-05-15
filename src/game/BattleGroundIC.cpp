@@ -382,8 +382,8 @@ void BattleGroundIC::FillInitialWorldStates(WorldPacket& data, uint32& count)
 
 bool BattleGroundIC::SetupBattleGround()
 {
-//    gunshipHorde = CreateTransport(GO_HORDE_GUNSHIP,TRANSPORT_PERIOD_TIME);
-//    gunshipAlliance = CreateTransport(GO_ALLIANCE_GUNSHIP,TRANSPORT_PERIOD_TIME);
+    gunshipHorde = CreateTransport(GO_HORDE_GUNSHIP,TRANSPORT_PERIOD_TIME);
+    gunshipAlliance = CreateTransport(GO_ALLIANCE_GUNSHIP,TRANSPORT_PERIOD_TIME);
 
     if (!gunshipAlliance || !gunshipHorde)
     {
@@ -782,7 +782,6 @@ WorldSafeLocsEntry const* BattleGroundIC::GetClosestGraveYard(Player* player)
 
 Transport* BattleGroundIC::CreateTransport(uint32 goEntry, uint32 period)
 {
-/*
     Transport* t = new Transport;
 
     const GameObjectInfo* goinfo = sObjectMgr.GetGameObjectInfo(goEntry);
@@ -822,8 +821,6 @@ Transport* BattleGroundIC::CreateTransport(uint32 goEntry, uint32 period)
     t->SetMap(GetBgMap());
 
     return t;
-    */
-    return NULL;
 }
 
 void BattleGroundIC::HandleBuffs()

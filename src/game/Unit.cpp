@@ -12823,6 +12823,8 @@ void Unit::_EnterVehicle(VehicleKit* vehicle, int8 seatId)
     {
         if (GetTypeId() == TYPEID_PLAYER)
             pTransport->RemovePassenger((Player*)this);
+
+        SetTransport(NULL);
     }
 }
 

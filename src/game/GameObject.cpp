@@ -34,7 +34,6 @@
 #include "InstanceData.h"
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
-#include "Transports.h"
 #include "BattleGround.h"
 #include "WorldPvP/WorldPvPMgr.h"
 #include "BattleGroundAV.h"
@@ -219,8 +218,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
 {
     if (GetObjectGuid().IsMOTransport())
     {
-        ((Transport*)this)->Update(update_diff, diff);
-        DEBUG_LOG("Transport::Update %s", GetObjectGuid().GetString().c_str());
+        //((Transport*)this)->Update(p_time);
         return;
     }
 
