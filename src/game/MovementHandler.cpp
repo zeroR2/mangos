@@ -295,7 +295,7 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
     GetPlayer()->GetAntiCheat()->DoAntiCheatCheck(CHECK_MOVEMENT,movementInfo, opcode);
 
     /* process position-change */
-    HandleMoverRelocation(movementInfo, opcode);
+    HandleMoverRelocation(movementInfo);
 
     if (plMover)
         plMover->UpdateFallInformationIfNeed(movementInfo, opcode);
@@ -380,12 +380,11 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
 
 void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recv_data)
 {
+    DEBUG_LOG("WORLD: Recvd CMSG_SET_ACTIVE_MOVER");
     recv_data.hexlike();
+
     ObjectGuid guid;
     recv_data >> guid;
-
-    DEBUG_LOG("WORLD: Recvd CMSG_SET_ACTIVE_MOVER %s", guid.GetString().c_str());
-
     ObjectGuid moverGuid = GetPlayer()->GetMover() ? GetPlayer()->GetMover()->GetObjectGuid() : ObjectGuid();
 
     if ( moverGuid != guid )
@@ -398,15 +397,16 @@ void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recv_data)
 
 void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
 {
+    DEBUG_LOG("WORLD: Recvd CMSG_MOVE_NOT_ACTIVE_MOVER");
     recv_data.hexlike();
+
     ObjectGuid old_mover_guid;
     MovementInfo mi;
+
     recv_data >> old_mover_guid.ReadAsPacked();
     recv_data >> mi;
 
     ObjectGuid moverGuid = GetPlayer()->GetMover() ? GetPlayer()->GetMover()->GetObjectGuid() : ObjectGuid();
-
-    DEBUG_LOG("WORLD: Recvd CMSG_MOVE_NOT_ACTIVE_MOVER old %s new %s",old_mover_guid.GetString().c_str(), moverGuid.GetString().c_str());
 
     if (moverGuid == old_mover_guid)
     {
@@ -447,8 +447,6 @@ void WorldSession::HandleMoveKnockBackAck( WorldPacket & recv_data )
         return;
     }
 
-    uint32 opcode = recv_data.GetOpcode();
-
     ObjectGuid guid;
     MovementInfo movementInfo;
 
@@ -459,7 +457,7 @@ void WorldSession::HandleMoveKnockBackAck( WorldPacket & recv_data )
     if (!VerifyMovementInfo(movementInfo, guid))
         return;
 
-    HandleMoverRelocation(movementInfo, opcode);
+    HandleMoverRelocation(movementInfo);
 
     WorldPacket data(MSG_MOVE_KNOCK_BACK, recv_data.size() + 15);
     data << mover->GetPackGUID();
@@ -531,7 +529,7 @@ bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo, ObjectGu
     return true;
 }
 
-void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo, uint32 opcode)
+void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
 {
     movementInfo.UpdateTime(WorldTimer::getMSTime());
 
@@ -558,7 +556,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo, uint32 opco
                 }
             }
         }
-        else if (plMover->GetTransport() && opcode != MSG_MOVE_HEARTBEAT)               // if we were on a transport, leave
+        else if (plMover->GetTransport())               // if we were on a transport, leave
         {
             plMover->GetTransport()->RemovePassenger(plMover);
             plMover->SetTransport(NULL);
@@ -572,6 +570,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo, uint32 opco
         }
 
         plMover->SetPosition(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o);
+        plMover->m_movementInfo.ClearTransportData();
         plMover->m_movementInfo = movementInfo;
 
         if((movementInfo.GetPos()->z < -500.0f) || (plMover->GetMapId() == 617 && movementInfo.GetPos()->z < 2.0f) || (plMover->GetMapId() == 572 && movementInfo.GetPos()->z < 20.0f)

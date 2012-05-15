@@ -536,7 +536,7 @@ Transport* Transport::Load(Map* map, uint32 entry, const std::string& name, uint
     return transport;
 }
 
-uint32 Transport::GetPossibleMapByEntry(uint32 entry, bool start)
+uint32 Transport::GetStartMapByEntry(uint32 entry)
 {
     GameObjectInfo const* goinfo = ObjectMgr::GetGameObjectInfo(entry);
     if (!goinfo || goinfo->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
@@ -546,5 +546,5 @@ uint32 Transport::GetPossibleMapByEntry(uint32 entry, bool start)
         return UINT32_MAX;
 
     TaxiPathNodeList const& path = sTaxiPathNodesByPath[goinfo->moTransport.taxiPathId];
-    return start ? path[0].mapid : path[path.size() - 1].mapid;
+    return path[0].mapid;
 }

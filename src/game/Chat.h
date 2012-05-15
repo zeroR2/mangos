@@ -623,13 +623,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleMmap(char* args);
         bool HandleMmapTestArea(char* args);
 
-        // Transport debugging commands
-        bool HandleTransportListCommand(char* args);
-        bool HandleTransportCurrentCommand(char* args);
-        bool HandleTransportPathCommand(char* args);
-        bool HandleTransportGoCommand(char* args);
-        bool HandleTransportCommand(char* args);
-
         //! Development Commands
         bool HandleSaveAllCommand(char* args);
 

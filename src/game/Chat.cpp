@@ -420,16 +420,6 @@ ChatCommand * ChatHandler::getCommandTable()
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
 
-    static ChatCommand transportCommandTable[] =
-    {
-        { "list",           SEC_ADMINISTRATOR,  false, &ChatHandler::HandleTransportListCommand,       "", NULL },
-        { "current",        SEC_ADMINISTRATOR,  false, &ChatHandler::HandleTransportCurrentCommand,    "", NULL },
-        { "path",           SEC_ADMINISTRATOR,  false, &ChatHandler::HandleTransportPathCommand,       "", NULL },
-        { "go",             SEC_ADMINISTRATOR,  false, &ChatHandler::HandleTransportGoCommand,         "", NULL },
-        { "",               SEC_ADMINISTRATOR,  false, &ChatHandler::HandleTransportCommand,           "", NULL },
-        { NULL,             0,                  false, NULL,                                           "", NULL }
-    };
-
     static ChatCommand modifyCommandTable[] =
     {
         { "hp",             SEC_MODERATOR,      false, &ChatHandler::HandleModifyHPCommand,            "", NULL },
@@ -851,7 +841,6 @@ ChatCommand * ChatHandler::getCommandTable()
         { "waterwalk",      SEC_GAMEMASTER,     false, &ChatHandler::HandleWaterwalkCommand,           "", NULL },
         //Playerbot mod
         { "bot",            SEC_PLAYER,         false, &ChatHandler::HandlePlayerbotCommand,           "", NULL },
-        { "transport",      SEC_ADMINISTRATOR,  false, NULL,                                           "", transportCommandTable },
         { "quit",           SEC_CONSOLE,        true,  &ChatHandler::HandleQuitCommand,                "", NULL },
         { "gearscore",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleShowGearScoreCommand,       "", NULL },
         { "mmap",           SEC_GAMEMASTER,     false, NULL,                                           "", mmapCommandTable },

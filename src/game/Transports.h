@@ -30,7 +30,7 @@ class Transport : public GameObject
     public:
         static Transport* Load(Map * map, uint32 entry, const std::string& name, uint32 period);
 
-        static uint32 GetPossibleMapByEntry(uint32 entry, bool start = true);
+        static uint32 GetStartMapByEntry(uint32 entry);
 
         void Update(uint32 update_diff, uint32 p_time) override;
         bool AddPassenger(Unit* passenger);
@@ -45,6 +45,7 @@ class Transport : public GameObject
         bool Updated() const { return m_updated; };
         void SetUpdated(bool value) { m_updated = value; };
 
+    private:
         struct WayPoint
         {
             WayPoint() : mapid(0), x(0), y(0), z(0), teleport(false) {}
@@ -65,10 +66,6 @@ class Transport : public GameObject
 
         typedef std::map<uint32, WayPoint> WayPointMap;
 
-        WayPointMap::const_iterator GetCurrent() { return m_curr; }
-        WayPointMap::const_iterator GetNext()    { return m_next; }
-
-    private:
         explicit Transport();
         ~Transport();
 
