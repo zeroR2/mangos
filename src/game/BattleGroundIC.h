@@ -342,6 +342,12 @@ class BattleGroundIC : public BattleGround
         bool aOpen;
         bool hOpen;
 
+        // Transports
+        Transport* gunshipAlliance;
+        Transport* gunshipHorde;
+        Transport* CreateTransport(uint32 goEntry,uint32 period);
+        void SendTransportInit(Player* player);
+
         void HandleBuffs();
 
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
