@@ -42,9 +42,6 @@ class Transport : public GameObject
         ObjectGuidSet const& GetPassengers() const { return m_passengers; }
         uint32 MovementProgress() const { return m_timer;}
 
-        bool Updated() const { return m_updated; };
-        void SetUpdated(bool value) { m_updated = value; };
-
     private:
         struct WayPoint
         {
@@ -86,6 +83,5 @@ class Transport : public GameObject
         ObjectGuidSet m_passengers;
         WayPointMap m_WayPoints;
         uint32 m_nextNodeTime;
-        bool m_updated;
 };
 #endif

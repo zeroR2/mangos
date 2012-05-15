@@ -48,15 +48,6 @@ inline void PlayerCreatureRelocationWorker(Player* pl, Creature* c)
     }
 }
 
-inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType &m)
-{
-    for(CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
-    {
-        WorldObject::UpdateHelper helper(iter->getSource());
-        helper.Update(i_timeDiff);
-    }
-}
-
 inline void CreatureCreatureRelocationWorker(Creature* c1, Creature* c2)
 {
     if (!c1->hasUnitState(UNIT_STAT_LOST_CONTROL))

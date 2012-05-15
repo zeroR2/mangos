@@ -457,6 +457,50 @@ bool Map::loaded(const GridPair &p) const
     return ( getNGrid(p.x_coord, p.y_coord) && isGridObjectDataLoaded(p.x_coord, p.y_coord) );
 }
 
+struct ObjectUpdater
+{
+    template<class T>
+    struct Wrapper
+    {
+        typedef typename std::forward_iterator_tag iterator_category;
+        typedef T* value_type;
+        typedef size_t difference_type;
+        typedef T** pointer;
+        typedef T& reference;
+
+        typedef typename GridRefManager<T>::iterator base;
+
+        base m_itr;
+        explicit Wrapper(base itr) : m_itr(itr) {}
+
+        void operator ++ () { ++m_itr;}
+        value_type operator *() { return m_itr->getSource();}
+        bool operator != (const Wrapper& other) const {
+            return m_itr != other.m_itr;
+        }
+    };
+
+    uint32 i_timeDiff;
+    std::vector<WorldObject*> m_objects;
+    explicit ObjectUpdater(const uint32 &diff) : i_timeDiff(diff) {}
+    template<class T> void Visit(GridRefManager<T> &m)
+    {
+        m_objects.assign(Wrapper<T>(m.begin()), Wrapper<T>(m.end()));
+        std::for_each(m_objects.begin(),m_objects.end(), *this);
+    }
+    void operator() (WorldObject* obj)
+    {
+        if (obj->GetObjectGuid().IsMOTransport())
+            return;
+        WorldObject::UpdateHelper helper(obj);
+        helper.Update(i_timeDiff);
+    }
+    // other objects updated in different way or has no update methodat at all(Cameras):
+    void Visit(PlayerMapType &) {}
+    void Visit(CorpseMapType &) {}
+    void Visit(CameraMapType &) {}
+};
+
 void Map::Update(const uint32 &t_diff)
 {
     /// update worldsessions for existing players
@@ -486,11 +530,11 @@ void Map::Update(const uint32 &t_diff)
     /// update active cells around players and active objects
     resetMarkedCells();
 
-    MaNGOS::ObjectUpdater updater(t_diff);
+    ObjectUpdater updater(t_diff);
     // for creature
-    TypeContainerVisitor<MaNGOS::ObjectUpdater, GridTypeMapContainer  > grid_object_update(updater);
+    TypeContainerVisitor<ObjectUpdater, GridTypeMapContainer  > grid_object_update(updater);
     // for pets
-    TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
+    TypeContainerVisitor<ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
     // the player iterator is stored in the map object
     // to make sure calls to Map::Remove don't invalidate it
@@ -539,16 +583,11 @@ void Map::Update(const uint32 &t_diff)
             if (!obj->IsInWorld() || !obj->IsPositionValid())
                 continue;
 
-            // Update active MO_TRANSPORT objects (if not updated in other objects chain)
+            // Update MO_TRANSPORT
             if (obj->GetObjectGuid().IsMOTransport())
             {
-                if (!((Transport*)obj)->Updated())
-                {
-                    WorldObject::UpdateHelper helper(obj);
-                    helper.Update(t_diff);
-                }
-
-                ((Transport*)obj)->SetUpdated(false);
+                WorldObject::UpdateHelper helper(obj);
+                helper.Update(t_diff);
             }
 
             //lets update mobs/objects in ALL visible cells around player!

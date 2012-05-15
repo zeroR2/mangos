@@ -437,8 +437,6 @@ bool Transport::RemovePassenger(Unit* passenger)
 void Transport::Update(uint32 update_diff, uint32 p_time)
 {
 
-    SetUpdated(true);
-
     if (GetGoState() == GO_STATE_ACTIVE)
         return;
 
