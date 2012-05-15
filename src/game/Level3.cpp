@@ -7471,7 +7471,7 @@ bool ChatHandler::HandleTransportPathCommand(char* args)
             return true;
         }
     }
-    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, current time %u (map %u xyz %f %f %f)",
+    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, current Waypoint %u (map %u xyz %f %f %f)",
             transport->GetObjectGuid().GetString().c_str(), 
             map->GetId(),
             transport->GetName(),
@@ -7482,7 +7482,7 @@ bool ChatHandler::HandleTransportPathCommand(char* args)
             transport->GetCurrent()->second.y,
             transport->GetCurrent()->second.z
         );
-    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, next time %u (map %u xyz %f %f %f)",
+    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, next Waypoint %u (map %u xyz %f %f %f)",
             transport->GetObjectGuid().GetString().c_str(), 
             map->GetId(),
             transport->GetName(),

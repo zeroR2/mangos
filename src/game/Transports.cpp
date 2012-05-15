@@ -106,16 +106,6 @@ bool Transport::Create(uint32 entry)
     // low part always 0, dynamicHighValue is some kind of progression (not implemented)
     SetUInt16Value(GAMEOBJECT_DYNAMIC, 0, 0);
     SetUInt16Value(GAMEOBJECT_DYNAMIC, 1, 0);
-
-    DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "Transport::Create %s (%s) created, %s, %u waypoints, current coords: map %u, %f, %f, %f", 
-        GetObjectGuid().GetString().c_str(),
-        GetName(),
-        isActiveObject() ? "active" : "passive",
-        m_WayPoints.size(),
-        mapid,
-        GetPositionX(),
-        GetPositionY(),
-        GetPositionZ());
     return true;
 }
 
@@ -498,7 +488,7 @@ void Transport::Update(uint32 update_diff, uint32 p_time)
 //                float yOffset = (player->GetTransOffsetY() * cos(GetOrientation()) + player->GetTransOffsetX() * sin(GetOrientation()));
 //                player->SetPosition(GetPositionX() + xOffset, GetPositionY() + yOffset, GetPositionZ() + player->GetTransOffsetZ(), GetOrientation() + player->GetTransOffsetO());
 
-//                player->SetPosition(GetPositionX(),GetPositionY(),GetPositionZ(),GetOrientation());
+                player->SetPosition(GetPositionX(),GetPositionY(),GetPositionZ(),GetOrientation());
             }
         }
         m_nextNodeTime = m_curr->first;
@@ -516,18 +506,16 @@ void Transport::DoEventIfAny(WayPointMap::value_type const& node, bool departure
     }
 }
 
-void Transport::BuildStartMovePacket()
+void Transport::BuildStartMovePacket(Map const* targetMap)
 {
     SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_IN_USE);
     SetGoState(GO_STATE_ACTIVE);
-    //UpdateForMap(true);
 }
 
-void Transport::BuildStopMovePacket()
+void Transport::BuildStopMovePacket(Map const* targetMap)
 {
     RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_IN_USE);
     SetGoState(GO_STATE_READY);
-    //UpdateForMap(true);
 }
 
 Transport* Transport::Load(Map* map, uint32 entry, const std::string& name, uint32 period)
@@ -559,38 +547,4 @@ uint32 Transport::GetPossibleMapByEntry(uint32 entry, bool start)
 
     TaxiPathNodeList const& path = sTaxiPathNodesByPath[goinfo->moTransport.taxiPathId];
     return start ? path[0].mapid : path[path.size() - 1].mapid;
-}
-
-void Transport::UpdateForMap(bool arrival)
-{
-    Map::PlayerList const& pl = GetMap()->GetPlayers();
-
-    if(pl.isEmpty())
-        return;
-
-    if (arrival)
-    {
-        for(Map::PlayerList::const_iterator itr = pl.begin(); itr != pl.end(); ++itr)
-        {
-            if (this != itr->getSource()->GetTransport())
-            {
-                UpdateData transData;
-                BuildCreateUpdateBlockForPlayer(&transData, itr->getSource());
-                WorldPacket packet;
-                transData.BuildPacket(&packet);
-                itr->getSource()->SendDirectMessage(&packet);
-            }
-        }
-    }
-    else
-    {
-        UpdateData transData;
-        BuildOutOfRangeUpdateBlock(&transData);
-        WorldPacket out_packet;
-        transData.BuildPacket(&out_packet);
-
-        for(Map::PlayerList::const_iterator itr = pl.begin(); itr != pl.end(); ++itr)
-            if(this != itr->getSource()->GetTransport())
-                itr->getSource()->SendDirectMessage(&out_packet);
-    }
 }

@@ -36,13 +36,11 @@ class Transport : public GameObject
         bool AddPassenger(Unit* passenger);
         bool RemovePassenger(Unit* passenger);
 
-        void BuildStartMovePacket();
-        void BuildStopMovePacket();
+        void BuildStartMovePacket(Map const *targetMap);
+        void BuildStopMovePacket(Map const *targetMap);
 
         ObjectGuidSet const& GetPassengers() const { return m_passengers; }
         uint32 MovementProgress() const { return m_timer;}
-
-        void UpdateForMap(bool arrival = true);
 
         bool Updated() const { return m_updated; };
         void SetUpdated(bool value) { m_updated = value; };
