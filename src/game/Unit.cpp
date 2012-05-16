@@ -1516,11 +1516,12 @@ void Unit::CastSpell(float x, float y, float z, SpellEntry const *spellInfo, boo
 }
 
 // Obsolete func need remove, here only for comotability vs another patches
-uint32 Unit::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage)
+uint32 Unit::SpellNonMeleeDamageLog(Unit* pVictim, uint32 spellID, uint32 damage)
 {
     SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellID);
     DamageInfo damageInfo(this, pVictim, spellInfo);
-    CalculateSpellDamage(&damageInfo, damage, spellInfo);
+    damageInfo.damage = damage;
+    CalculateSpellDamage(&damageInfo);
     damageInfo.target->CalculateAbsorbResistBlock(this, &damageInfo, spellInfo);
     DealDamageMods(damageInfo.target,damageInfo.damage,&damageInfo.absorb);
     SendSpellNonMeleeDamageLog(&damageInfo);
@@ -1528,82 +1529,84 @@ uint32 Unit::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
     return damageInfo.damage;
 }
 
-void Unit::CalculateSpellDamage(DamageInfo* damageInfo, int32 _damage, SpellEntry const *spellInfo, WeaponAttackType attackType, float DamageMultiplier)
+void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
 {
-    Unit *pVictim = damageInfo->target;
-
-    if (_damage < 0)
+    if (!damageInfo || damageInfo->damage < 0)
         return;
 
-    if(!this || !pVictim)
-        return;
-
-    if(!this->isAlive() || !pVictim->isAlive())
+    if (!damageInfo->target || !isAlive() || !damageInfo->target->isAlive())
         return;
 
     // Check spell crit chance
-    bool crit = IsSpellCrit(pVictim, spellInfo, damageInfo->SchoolMask(), attackType);
-
-    damageInfo->damage = _damage;
+    bool crit = IsSpellCrit(damageInfo->target, damageInfo->m_spellInfo, damageInfo->SchoolMask(), damageInfo->attackType);
 
     // damage bonus (per damage class)
-    switch (spellInfo->DmgClass)
+    switch (damageInfo->m_spellInfo->DmgClass)
     {
         // Melee and Ranged Spells
         case SPELL_DAMAGE_CLASS_RANGED:
         case SPELL_DAMAGE_CLASS_MELEE:
         {
             //Calculate damage bonus
-            damageInfo->damage = MeleeDamageBonusDone(pVictim, damageInfo->damage, attackType, spellInfo, SPELL_DIRECT_DAMAGE);
-            if (DamageMultiplier != 1.0f)
+            damageInfo->damage = MeleeDamageBonusDone(damageInfo->target, damageInfo->damage, damageInfo->attackType, damageInfo->m_spellInfo, damageInfo->damageType);
+            if (fabs(DamageMultiplier - 1.0f) < M_NULL_F)
                 damageInfo->damage = int32(damageInfo->damage * DamageMultiplier);
-            damageInfo->damage = pVictim->MeleeDamageBonusTaken(this, damageInfo->damage, attackType, spellInfo, SPELL_DIRECT_DAMAGE);
+            damageInfo->damage = damageInfo->target->MeleeDamageBonusTaken(this, damageInfo->damage, damageInfo->attackType, damageInfo->m_spellInfo, damageInfo->damageType);
 
             // if crit add critical bonus
             if (crit)
             {
                 damageInfo->HitInfo |=  SPELL_HIT_TYPE_CRIT;
-                damageInfo->damage = SpellCriticalDamageBonus(spellInfo, damageInfo->damage, pVictim);
+                damageInfo->damage = SpellCriticalDamageBonus(damageInfo->m_spellInfo, damageInfo->damage, damageInfo->target);
 
                 // Resilience - reduce crit damage
                 uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
 
-                if (attackType != RANGED_ATTACK)
-                    damageInfo->damage -= pVictim->GetMeleeCritDamageReduction(reduction_affected_damage);
+                if (damageInfo->attackType != RANGED_ATTACK)
+                    damageInfo->damage -= damageInfo->target->GetMeleeCritDamageReduction(reduction_affected_damage);
                 else
-                    damageInfo->damage -= pVictim->GetRangedCritDamageReduction(reduction_affected_damage);
+                    damageInfo->damage -= damageInfo->target->GetRangedCritDamageReduction(reduction_affected_damage);
             }
+            else
+            {
+                damageInfo->HitInfo &=  ~SPELL_HIT_TYPE_CRIT;
+
+                // Resilience - reduce regular damage
+                damageInfo->damage -= damageInfo->target->GetSpellDamageReduction(CalcNotIgnoreDamageReduction(damageInfo));
+            }
+            break;
         }
-        break;
         // Magical Attacks
         case SPELL_DAMAGE_CLASS_NONE:
         case SPELL_DAMAGE_CLASS_MAGIC:
         {
             // Calculate damage bonus
-            damageInfo->damage = SpellDamageBonusDone(pVictim, spellInfo, damageInfo->damage, SPELL_DIRECT_DAMAGE);
+            damageInfo->damage = SpellDamageBonusDone(damageInfo->target, damageInfo->m_spellInfo, damageInfo->damage, damageInfo->damageType);
             if (DamageMultiplier != 1.0f)
-                damageInfo->damage = int32(damageInfo->damage * DamageMultiplier);
-            damageInfo->damage = pVictim->SpellDamageBonusTaken(this, spellInfo, damageInfo->damage, SPELL_DIRECT_DAMAGE);
+                damageInfo->damage = floor((float)damageInfo->damage * DamageMultiplier);
+            damageInfo->damage = damageInfo->target->SpellDamageBonusTaken(this, damageInfo->m_spellInfo, damageInfo->damage, damageInfo->damageType);
 
             // If crit add critical bonus
             if (crit)
             {
-                damageInfo->HitInfo|= SPELL_HIT_TYPE_CRIT;
-                damageInfo->damage = SpellCriticalDamageBonus(spellInfo, damageInfo->damage, pVictim);
+                damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
+                damageInfo->damage = SpellCriticalDamageBonus(damageInfo->m_spellInfo, damageInfo->damage, damageInfo->target);
 
                 // Resilience - reduce crit damage
-                uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-                damageInfo->damage -= pVictim->GetSpellCritDamageReduction(reduction_affected_damage);
+                damageInfo->damage -= damageInfo->target->GetSpellCritDamageReduction(CalcNotIgnoreDamageReduction(damageInfo));
             }
-        }
-        break;
-    }
+            else
+            {
+                damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
 
-    // only from players and their pets
-    if (GetTypeId() == TYPEID_PLAYER || GetObjectGuid().IsPet())
-    {
-        uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-        damageInfo->damage -= pVictim->GetSpellDamageReduction(reduction_affected_damage);
+                // Resilience - reduce regular damage
+                damageInfo->damage -= damageInfo->target->GetSpellDamageReduction(CalcNotIgnoreDamageReduction(damageInfo));
+            }
+            break;
+        }
+        default:
+            sLog.outError("Unit::CalculateSpellDamage unknown damage class by caster: %s, spell %u", GetObjectGuid().GetString().c_str(), damageInfo->m_spellInfo->Id);
+            return;
     }
 
     // damage mitigation
@@ -1613,7 +1616,7 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, int32 _damage, SpellEntr
         if (damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL)
         {
             uint32 armor_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-            damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(pVictim, armor_affected_damage);
+            damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
         }
     }
     else
@@ -7444,8 +7447,10 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
                 int32 maxPercent = (*i)->GetModifier()->m_amount;
                 // effect 0 m_amount
                 int32 stepPercent = CalculateSpellDamage(this, (*i)->GetSpellProto(), EFFECT_INDEX_0);
+
                 // count affliction effects and calc additional damage in percentage
                 int32 modPercent = 0;
+
                 SpellAuraHolderMap const& victimAuras = pVictim->GetSpellAuraHolderMap();
                 for (SpellAuraHolderMap::const_iterator itr = victimAuras.begin(); itr != victimAuras.end(); ++itr)
                 {

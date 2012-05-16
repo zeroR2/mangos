@@ -1203,11 +1203,12 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
     else if (m_damage)
     {
         // Fill base damage struct (unitTarget - is real spell target)
+        damageInfo.damage = m_damage;
+        damageInfo.HitInfo = target->HitInfo;
 
         if (m_spellInfo->speed > 0)
         {
-            damageInfo.damage = m_damage;
-            damageInfo.HitInfo = target->HitInfo;
+            // calculation be maked later
         }
         // Add bonuses and fill damageInfo struct
         else
@@ -1216,7 +1217,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
             if (m_damageIndex >= 0 && m_applyMultiplierMask & (1 << m_damageIndex))
                 dmgMultiplier = m_damageMultipliers[m_damageIndex];
 
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType, dmgMultiplier);
+            caster->CalculateSpellDamage(&damageInfo, dmgMultiplier);
         }
 
         unitTarget->CalculateAbsorbResistBlock(caster, &damageInfo, m_spellInfo);
@@ -1587,7 +1588,8 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo *target)
             float dmgMultiplier = 1.0f;
             if (m_damageIndex >= 0 && m_applyMultiplierMask & (1 << m_damageIndex))
                 dmgMultiplier = m_damageMultipliers[m_damageIndex];
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType, dmgMultiplier);
+            damageInfo.damage = m_damage;
+            caster->CalculateSpellDamage(&damageInfo, dmgMultiplier);
         }
 
         // Update damage multipliers
