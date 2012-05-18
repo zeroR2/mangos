@@ -1216,7 +1216,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
             if (m_damageIndex >= 0 && (m_applyMultiplierMask & (1 << m_damageIndex)))
                 dmgMultiplier = m_damageMultipliers[m_damageIndex];
 
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType, dmgMultiplier);
+            caster->CalculateSpellDamage(&damageInfo, dmgMultiplier);
         }
 
         unitTarget->CalculateAbsorbResistBlock(caster, &damageInfo, m_spellInfo);
@@ -1587,7 +1587,8 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo *target)
             float dmgMultiplier = 1.0f;
             if (m_damageIndex >= 0 && (m_applyMultiplierMask & (1 << m_damageIndex)))
                 dmgMultiplier = m_damageMultipliers[m_damageIndex];
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType, dmgMultiplier);
+            damageInfo.damage = m_damage;
+            caster->CalculateSpellDamage(&damageInfo, dmgMultiplier);
         }
 
         // Update damage multipliers
