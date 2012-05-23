@@ -2667,6 +2667,18 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
 
             pCaster->DealDamageMods(caster,splitdamageInfo.damage,&splitdamageInfo.absorb);
 
+            splitdamageInfo.procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+
+            if (splitdamageInfo.absorb)
+                splitdamageInfo.procEx |= PROC_EX_ABSORB;
+
+            if (splitdamageInfo.damage == 0)
+                splitdamageInfo.procEx &= ~PROC_EX_DIRECT_DAMAGE;
+            else
+                splitdamageInfo.procEx |= PROC_EX_DIRECT_DAMAGE;
+
+            caster->ProcDamageAndSpellFor(true,&splitdamageInfo);
+
             pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, splitdamageInfo.damage, damageInfo->SchoolMask(), splitdamageInfo.absorb, 0, false, 0, false);
             splitdamageInfo.cleanDamage = splitdamageInfo.damage - splitdamageInfo.absorb;
             pCaster->DealDamage(caster, &splitdamageInfo, false);
@@ -2695,6 +2707,18 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
             RemainingDamage -=  int32(splitdamageInfo.damage);
 
             pCaster->DealDamageMods(caster,splitdamageInfo.damage,&splitdamageInfo.absorb);
+
+            splitdamageInfo.procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+
+            if (splitdamageInfo.absorb)
+                splitdamageInfo.procEx |= PROC_EX_ABSORB;
+
+            if (splitdamageInfo.damage == 0)
+                splitdamageInfo.procEx &= ~PROC_EX_DIRECT_DAMAGE;
+            else
+                splitdamageInfo.procEx |= PROC_EX_DIRECT_DAMAGE;
+
+            caster->ProcDamageAndSpellFor(true,&splitdamageInfo);
 
             pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, splitdamageInfo.damage, damageInfo->SchoolMask(), splitdamageInfo.absorb, 0, false, 0, false);
             splitdamageInfo.cleanDamage = splitdamageInfo.damage - splitdamageInfo.absorb;
@@ -2737,12 +2761,27 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
         }
     }
 
+    if (damageInfo->damage > 0 )
+        damageInfo->procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+
     damageInfo->absorb = damageInfo->damage - damageInfo->resist - RemainingDamage - absorb_unaffected_damage;
 
-    if (damageInfo->damage < (damageInfo->absorb + damageInfo->resist))
+    if (damageInfo->absorb)
+        damageInfo->procEx |= PROC_EX_ABSORB;
+
+    if (damageInfo->resist)
+        damageInfo->procEx |= PROC_EX_RESIST;
+
+    if (damageInfo->damage <= (damageInfo->absorb + damageInfo->resist))
+    {
         damageInfo->damage = 0;
+        damageInfo->procEx &= ~PROC_EX_DIRECT_DAMAGE;
+    }
     else
+    {
         damageInfo->damage -= damageInfo->absorb + damageInfo->resist;
+        damageInfo->procEx |= PROC_EX_DIRECT_DAMAGE;
+    }
 }
 
 void Unit::CalculateAbsorbResistBlock(Unit *pCaster, DamageInfo *damageInfo, SpellEntry const* spellProto, WeaponAttackType attType)
