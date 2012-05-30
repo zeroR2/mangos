@@ -27,36 +27,16 @@
 template<>
 void RandomMovementGenerator<Creature>::_setRandomLocation(Creature &creature)
 {
-    if (!creature.GetMap())
-    {
-        i_nextMoveTime.Reset(urand(1000, 2000));
-        return;
-    }
-
     float respX, respY, respZ, respO, wander_distance;
     creature.GetRespawnCoord(respX, respY, respZ, &respO, &wander_distance);
 
-    float angle = rand_norm_f() * (M_PI_F*2.0f);
-    float range = rand_norm_f() * wander_distance;
-
-    if (range < creature.GetObjectBoundingRadius())
-        range = creature.GetObjectBoundingRadius();
+    const float angle = rand_norm_f() * (M_PI_F*2.0f);
+    const float range = rand_norm_f() * wander_distance;
 
     float destX = respX + range * cos(angle);
     float destY = respY + range * sin(angle);
-
-    float f_distance = creature.GetDistance2d(destX, destY);
-    float f_angle = creature.GetAngle(destX, destY);
-
-    float destZ = creature.GetPositionZ();;
-
-    creature.GetClosePoint(destX, destY, destZ, creature.GetObjectBoundingRadius(), f_distance, f_angle, &creature);
-
-    if (!MapManager::IsValidMapCoord(creature.GetMap()->GetId(), destX, destY, destZ, respO))
-    {
-        i_nextMoveTime.Reset(urand(1000, 2000));
-        return;
-    }
+    float destZ = creature.GetPositionZ();
+    creature.UpdateAllowedPositionZ(destX, destY, destZ);
 
     creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
 
@@ -68,7 +48,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature &creature)
     if (creature.CanFly())
         i_nextMoveTime.Reset(0);
     else
-        i_nextMoveTime.Reset(urand(1000, 10000));
+        i_nextMoveTime.Reset(urand(500, 10000));
 }
 
 template<>
