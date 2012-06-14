@@ -1592,7 +1592,6 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
             {
                 damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
                 damageInfo->damage = SpellCriticalDamageBonus(damageInfo->m_spellInfo, damageInfo->damage, damageInfo->target);
-
                 // Resilience - reduce crit damage (full or reduced)
                 uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
                                                    damageInfo->damage :
@@ -5627,11 +5626,11 @@ void Unit::HandleArenaPreparation(bool apply)
         // and auras, which have SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA (former SPELL_ATTR_EX5_UNK2 = 0x00000004).
         for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
         {
-            if (!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_UNK21) &&
+            if ((!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_UNK21) &&
                                                                 // don't remove stances, shadowform, pally/hunter auras
                 !iter->second->IsPassive() &&                   // don't remove passive auras
                 (iter->second->GetAuraMaxDuration() > 0 &&
-                iter->second->GetAuraDuration() <= sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS) ||
+                iter->second->GetAuraDuration() <= sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS)) ||
                 iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA))
             {
                 RemoveSpellAuraHolder(iter->second, AURA_REMOVE_BY_CANCEL);
@@ -13453,7 +13452,7 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
         return isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, false);
     // spell can hit stealth/invisible targets, just check for LoS
     else
-        return spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) ? true : caster->IsWithinLOSInMap(this, strict);
+        return spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) ? true : caster->IsWithinLOSInMap(this);
 }
 
 uint32 Unit::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
