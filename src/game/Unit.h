@@ -959,6 +959,8 @@ struct DamageInfo
     uint32 TargetState;
     MeleeHitOutcome hitOutCome;  // TODO: remove this field (need use TargetState)
 
+    uint32 rage;
+
     // Proc states
     uint32 procAttacker;
     uint32 procVictim;
