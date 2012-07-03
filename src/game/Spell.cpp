@@ -685,6 +685,13 @@ void Spell::FillTargetMap()
                         case TARGET_RANDOM_NEARBY_DEST:
                             SetTargetMap(SpellEffectIndex(i), m_spellInfo->EffectImplicitTargetA[i], tmpUnitLists[i /*==effToIndex[i]*/]);
                         break;
+                        case TARGET_AREAEFFECT_CUSTOM:
+                            // triggered spells get dest point from default target set, ignore it
+                            if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || m_IsTriggeredSpell)
+                                if (WorldObject* castObject = GetCastingObject())
+                                    m_targets.setDestination(castObject->GetPositionX(), castObject->GetPositionY(), castObject->GetPositionZ());
+                            SetTargetMap(SpellEffectIndex(i), m_spellInfo->EffectImplicitTargetB[i], tmpUnitLists[i /*==effToIndex[i]*/]);
+                            break;
                         // most A/B target pairs is self->negative and not expect adding caster to target list
                         default:
                             SetTargetMap(SpellEffectIndex(i), m_spellInfo->EffectImplicitTargetB[i], tmpUnitLists[i /*==effToIndex[i]*/]);
@@ -1779,6 +1786,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 50988:                                 // Glare of the Tribunal (Halls of Stone)
                 case 54148:                                 // Ritual of the Sword (Utgarde Pinnacle, Svala)
                 case 55479:                                 // Forced Obedience (Naxxramas, Razovius)
+                case 56140:                                 // Summon Power Spark (Eye of Eternity, Malygos)
                 case 59870:                                 // Glare of the Tribunal (h) (Halls of Stone)
                 case 62016:                                 // Charge Orb (Ulduar, Thorim)
                 case 62301:                                 // Cosmic Smash (Ulduar, Algalon)
@@ -1992,6 +2000,10 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 73710:                                 // Defile 25H
                     if (Unit* realCaster = GetAffectiveCaster())
                         radius = realCaster->GetObjectScale() * 6;
+                    break;
+                case 56438:                                 // Arcane Overload
+                    if (Unit* realCaster = GetAffectiveCaster())
+                        radius = radius * realCaster->GetObjectScale();
                     break;
                 default:
                     break;
