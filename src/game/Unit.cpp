@@ -12715,9 +12715,6 @@ void Unit::EnterVehicle(Unit* vehicleBase, int8 seatId)
         }
     }
 
-    InterruptNonMeleeSpells(false);
-    RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
-
     SpellEntry const* spellInfo = NULL;
     int32 bp[MAX_EFFECT_INDEX];
     Unit* caster = NULL;
@@ -12849,6 +12846,9 @@ void Unit::_EnterVehicle(VehicleKit* vehicle, int8 seatId)
     }
     else
     {
+        InterruptNonMeleeSpells(false);
+        RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+
         if (Pet* pet = GetPet())
         {
             if (GetTypeId() == TYPEID_PLAYER)
@@ -12895,6 +12895,8 @@ void Unit::_ExitVehicle()
     GetVehicle()->RemovePassenger(this, true);
 
     m_pVehicle = NULL;
+
+    SendHeartBeat();
 
     if (isAlive() && GetTypeId() == TYPEID_PLAYER)
         ((Player*)this)->ResummonPetTemporaryUnSummonedIfAny();
