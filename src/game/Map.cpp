@@ -2084,7 +2084,7 @@ void Map::RemoveAllAttackersFor(ObjectGuid targetGuid)
     }
 }
 
-ObjectGuidSet Map::GetAttackersFor(ObjectGuid targetGuid)
+GuidSet Map::GetAttackersFor(ObjectGuid targetGuid)
 {
     if (!targetGuid.IsEmpty())
     {
@@ -2094,7 +2094,7 @@ ObjectGuidSet Map::GetAttackersFor(ObjectGuid targetGuid)
             return itr->second;
     }
 
-    return ObjectGuidSet();
+    return GuidSet();
 }
 
 void Map::CreateAttackersStorageFor(ObjectGuid targetGuid)
@@ -2105,7 +2105,7 @@ void Map::CreateAttackersStorageFor(ObjectGuid targetGuid)
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr == m_attackersMap.end())
     {
-        m_attackersMap.insert(std::make_pair(targetGuid,ObjectGuidSet()));
+        m_attackersMap.insert(std::make_pair(targetGuid,GuidSet()));
     }
 
 }
