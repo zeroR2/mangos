@@ -89,7 +89,7 @@ void GameObject::AddToWorld()
     if (m_model)
         GetMap()->InsertGameObjectModel(*m_model);
     bool startOpen = (GetGoType() == GAMEOBJECT_TYPE_DOOR || GetGoType() == GAMEOBJECT_TYPE_BUTTON ? GetGOInfo()->door.startOpen : false);
-    EnableCollision(!startOpen);
+    EnableCollision(!startOpen && isSpawned());
 
     Object::AddToWorld();
 }
@@ -2263,9 +2263,9 @@ void GameObject::SetLootState(LootState state)
         bool startOpen = (GetGoType() == GAMEOBJECT_TYPE_DOOR || GetGoType() == GAMEOBJECT_TYPE_BUTTON ? GetGOInfo()->door.startOpen : false);
 
         if (state == GO_ACTIVATED || state == GO_JUST_DEACTIVATED)
-            EnableCollision(startOpen);
+            EnableCollision(startOpen && isSpawned());
         else if (state == GO_READY)
-            EnableCollision(!startOpen);
+            EnableCollision(!startOpen && isSpawned());
     }
 }
 
@@ -2281,9 +2281,9 @@ void GameObject::SetGoState(GOState state)
         bool startOpen = (GetGoType() == GAMEOBJECT_TYPE_DOOR || GetGoType() == GAMEOBJECT_TYPE_BUTTON ? GetGOInfo()->door.startOpen : false);
 
         if (state == GO_STATE_ACTIVE || state == GO_STATE_ACTIVE_ALTERNATIVE)
-            EnableCollision(startOpen);
+            EnableCollision(startOpen && isSpawned());
         else if (state == GO_STATE_READY)
-            EnableCollision(!startOpen);
+            EnableCollision(!startOpen && isSpawned());
     }
 }
 
@@ -2297,7 +2297,7 @@ void GameObject::SetDisplayId(uint32 modelId)
 void GameObject::SetPhaseMask(uint32 newPhaseMask, bool update)
 {
     WorldObject::SetPhaseMask(newPhaseMask, update);
-    EnableCollision(true);
+    EnableCollision(isSpawned());
 }
 
 void GameObject::EnableCollision(bool enable)
