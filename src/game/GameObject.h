@@ -595,23 +595,32 @@ enum LootState
     GO_JUST_DEACTIVATED
 };
 
+// TODO: Move this somewhere else
+enum WorldStateInitialValueType
+{
+    WORLD_STATE_REMOVE              = 0,
+    WORLD_STATE_ADD                 = 1
+};
+
 enum CapturePointState
 {
     CAPTURE_STATE_NEUTRAL = 0,
-    CAPTURE_STATE_PROGRESS,
-    CAPTURE_STATE_CONTEST,
-    CAPTURE_STATE_WIN
+    CAPTURE_STATE_PROGRESS_ALLIANCE,
+    CAPTURE_STATE_PROGRESS_HORDE,
+    CAPTURE_STATE_CONTEST_ALLIANCE,
+    CAPTURE_STATE_CONTEST_HORDE,
+    CAPTURE_STATE_WIN_ALLIANCE,
+    CAPTURE_STATE_WIN_HORDE
 };
 
-// slider values meaning
-// 0   = full horde
-// 100 = full alliance
-// 50  = middle
 enum CapturePointSlider
 {
-    CAPTURE_SLIDER_ALLIANCE = 100,
-    CAPTURE_SLIDER_HORDE    = 0,
-    CAPTURE_SLIDER_NEUTRAL  = 50
+    CAPTURE_SLIDER_ALLIANCE         = 100,                  // full alliance
+    CAPTURE_SLIDER_HORDE            = 0,                    // full horde
+    CAPTURE_SLIDER_NEUTRAL          = 50,                   // middle
+
+    CAPTURE_SLIDER_ALLIANCE_LOCKED  = -1,                   // used to store additional information
+    CAPTURE_SLIDER_HORDE_LOCKED     = -2
 };
 
 class Unit;
@@ -780,6 +789,8 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         GameObject* LookupFishingHoleAround(float range);
 
+        void SetCapturePointSlider(int8 value);
+
         GridReference<GameObject> &GetGridRef() { return m_gridRef; }
 
         bool IsInRange(float x, float y, float z, float radius) const;
@@ -796,7 +807,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
     protected:
         uint32      m_captureTime;
         float       m_captureTicks;
-        CapturePointState m_captureState;
         uint32      m_ownerFaction;                         // faction which has conquered the capture point
         uint32      m_spellId;
         time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),
@@ -807,9 +817,9 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32      m_health;
                                                             // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
 
-        typedef std::set<Player*> PlayersSet;
-
-        GuidSet m_capturePlayers[PVP_TEAM_COUNT];           // player sets for each faction
+        uint32      m_captureTimer;                         // (msecs) timer used for capture points
+        float       m_captureSlider;
+        CapturePointState m_captureState;
 
         GuidSet m_SkillupSet;                               // players that already have skill-up at GO use
 
@@ -834,6 +844,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
     private:
         void SwitchDoorOrButton(bool activate, bool alternative = false);
         void UpdateModel();                                 // updates model in case displayId were changed
+        void TickCapturePoint();
 
         GridReference<GameObject> m_gridRef;
 };

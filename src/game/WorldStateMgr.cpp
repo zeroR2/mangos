@@ -25,6 +25,8 @@
 #include "GridNotifiers.h"
 #include "SQLStorages.h"
 #include "BattleGroundMgr.h"
+#include "GridNotifiers.h"
+#include "CellImpl.h"
 
 INSTANTIATE_SINGLETON_1(WorldStateMgr);
 
@@ -494,8 +496,8 @@ void WorldStateMgr::MapUpdate(Map* map)
 
                 // search for players in radius
                 std::list<Player*> pointPlayers;
-                MaNGOS::AnyPlayerInObjectRangeCheck u_check(go, go->GetGOInfo()->capturePoint.radius);
-                MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeCheck> checker(pointPlayers, u_check);
+                MaNGOS::AnyPlayerInObjectRangeWithOutdoorPvPCheck u_check(go, go->GetGOInfo()->capturePoint.radius);
+                MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeWithOutdoorPvPCheck> checker(pointPlayers, u_check);
                 Cell::VisitWorldObjects(go, checker, go->GetGOInfo()->capturePoint.radius);
 
                 GuidSet currentGuids;
