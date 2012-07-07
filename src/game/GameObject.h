@@ -688,7 +688,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         {
             m_respawnTime = respawn > 0 ? time(NULL) + respawn : 0;
             m_respawnDelayTime = respawn > 0 ? uint32(respawn) : 0;
-            EnableCollision(isSpawned());
         }
         void Respawn();
         bool isSpawned() const
