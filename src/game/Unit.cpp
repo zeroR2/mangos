@@ -13457,7 +13457,7 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
             break;
     }
 
-    // spell can hit all targets in some cases:
+    // spell can hit all targets in two cases:
     if (!VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
         return true;
 
