@@ -10986,7 +10986,7 @@ void Unit::CleanupsBeforeDelete()
         DeleteThreatList();
         if (GetTypeId()==TYPEID_PLAYER)
             getHostileRefManager().setOnlineOfflineState(false);
-        else
+        else if (CanHaveThreatList())
             getHostileRefManager().deleteReferences();
         RemoveAllAuras(AURA_REMOVE_BY_DELETE);
         GetUnitStateMgr().InitDefaults(false);
@@ -13457,7 +13457,7 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
             break;
     }
 
-    // spell can hit all targets in two cases:
+    // spell can hit all targets in some cases:
     if (!VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
         return true;
 
