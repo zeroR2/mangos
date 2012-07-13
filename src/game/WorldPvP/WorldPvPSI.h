@@ -83,7 +83,7 @@ class WorldPvPSI : public WorldPvP
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
 
-        void FillInitialWorldStates(WorldPacket& data, uint32& count);
+        void FillInitialWorldStates(uint32 zoneId);
         void SendRemoveWorldStates(Player* pPlayer);
         void UpdateWorldState();
 

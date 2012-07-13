@@ -262,6 +262,8 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             if (sWorldPvPMgr.GetCapturePointLockState(GetEntry()))
                 return;
 
+            // need move update sending to sWorldstateMgr!
+
             // search for players in radius
             std::list<Player*> pointPlayers;
             MaNGOS::AnyPlayerInObjectRangeCheck u_check(this, radius);
@@ -285,7 +287,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                     {
                         // send capture point leave packet
                         if (pPlayer && pPlayer->IsInWorld())
-                            pPlayer->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
+                            pPlayer->_SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
                         m_capturePlayers[team].erase((*itr));
                     }
                 }

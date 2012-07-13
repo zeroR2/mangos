@@ -47,15 +47,15 @@ bool WorldPvPHP::InitWorldPvPArea()
     return true;
 }
 
-void WorldPvPHP::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void WorldPvPHP::FillInitialWorldStates(uint32 zoneId)
 {
-    FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_HP_ALY, m_uiTowersAlly);
-    FillInitialWorldState(data, count, WORLD_STATE_TOWER_COUNT_HP_HORDE, m_uiTowersHorde);
-    FillInitialWorldState(data, count, WORLD_STATE_TOWER_DISPLAY_HP_A, 1);
-    FillInitialWorldState(data, count, WORLD_STATE_TOWER_DISPLAY_HP_H, 1);
+    FillInitialWorldState(zoneId, WORLD_STATE_TOWER_COUNT_HP_ALY, m_uiTowersAlly);
+    FillInitialWorldState(zoneId, WORLD_STATE_TOWER_COUNT_HP_HORDE, m_uiTowersHorde);
+    FillInitialWorldState(zoneId, WORLD_STATE_TOWER_DISPLAY_HP_A, 1);
+    FillInitialWorldState(zoneId, WORLD_STATE_TOWER_DISPLAY_HP_H, 1);
 
     for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
-        FillInitialWorldState(data, count, m_uiTowerWorldState[i], 1);
+        FillInitialWorldState(zoneId, m_uiTowerWorldState[i], 1);
 }
 
 void WorldPvPHP::SendRemoveWorldStates(Player* pPlayer)

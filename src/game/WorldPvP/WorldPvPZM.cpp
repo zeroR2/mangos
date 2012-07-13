@@ -53,16 +53,16 @@ bool WorldPvPZM::InitWorldPvPArea()
     return true;
 }
 
-void WorldPvPZM::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void WorldPvPZM::FillInitialWorldStates(uint32 zoneId)
 {
-    FillInitialWorldState(data, count, m_uiAllianceScoutWorldState, 1);
-    FillInitialWorldState(data, count, m_uiHordeScoutWorldState, 1);
-    FillInitialWorldState(data, count, m_uiGraveyardWorldState, 1);
+    FillInitialWorldState(zoneId, m_uiAllianceScoutWorldState, 1);
+    FillInitialWorldState(zoneId, m_uiHordeScoutWorldState, 1);
+    FillInitialWorldState(zoneId, m_uiGraveyardWorldState, 1);
 
     for (uint8 i = 0; i < MAX_ZM_TOWERS; ++i)
     {
-        FillInitialWorldState(data, count, m_uiBeaconWorldState[i], 1);
-        FillInitialWorldState(data, count, m_uiBeaconMapState[i], 1);
+        FillInitialWorldState(zoneId, m_uiBeaconWorldState[i], 1);
+        FillInitialWorldState(zoneId, m_uiBeaconMapState[i], 1);
     }
 }
 

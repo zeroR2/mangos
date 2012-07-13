@@ -36,11 +36,11 @@ bool WorldPvPSI::InitWorldPvPArea()
 }
 
 // Send initial world states
-void WorldPvPSI::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void WorldPvPSI::FillInitialWorldStates(uint32 zoneId)
 {
-    FillInitialWorldState(data, count, WORLD_STATE_SI_GATHERED_A, m_uiResourcesAly);
-    FillInitialWorldState(data, count, WORLD_STATE_SI_GATHERED_H, m_uiResourcesHorde);
-    FillInitialWorldState(data, count, WORLD_STATE_SI_SILITHYST_MAX, MAX_SILITHYST);
+    FillInitialWorldState(zoneId, WORLD_STATE_SI_GATHERED_A, m_uiResourcesAly);
+    FillInitialWorldState(zoneId, WORLD_STATE_SI_GATHERED_H, m_uiResourcesHorde);
+    FillInitialWorldState(zoneId, WORLD_STATE_SI_SILITHYST_MAX, MAX_SILITHYST);
 }
 
 // Remove world states

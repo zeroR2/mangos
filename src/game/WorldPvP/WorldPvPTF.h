@@ -172,7 +172,7 @@ class WorldPvPTF : public WorldPvP
 
         void Update(uint32 diff);
 
-        void FillInitialWorldStates(WorldPacket& data, uint32& count);
+        void FillInitialWorldStates(uint32 zoneId);
         void SendRemoveWorldStates(Player* pPlayer);
 
     private:

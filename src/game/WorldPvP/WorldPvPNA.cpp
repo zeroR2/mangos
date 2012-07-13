@@ -37,20 +37,20 @@ bool WorldPvPNA::InitWorldPvPArea()
     return true;
 }
 
-void WorldPvPNA::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void WorldPvPNA::FillInitialWorldStates(uint32 zoneId)
 {
     if (m_uiZoneController != NEUTRAL)
     {
-        FillInitialWorldState(data, count, m_uiControllerWorldState, 1);
-        FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_LEFT, m_uiGuardsLeft);
-        FillInitialWorldState(data, count, WORLD_STATE_NA_GUARDS_MAX, MAX_NA_GUARDS);
+        FillInitialWorldState(zoneId, m_uiControllerWorldState, 1);
+        FillInitialWorldState(zoneId, WORLD_STATE_NA_GUARDS_LEFT, m_uiGuardsLeft);
+        FillInitialWorldState(zoneId, WORLD_STATE_NA_GUARDS_MAX, MAX_NA_GUARDS);
 
         // map states
         for (uint8 i = 0; i < MAX_NA_ROOSTS; ++i)
-            FillInitialWorldState(data, count, m_uiRoostWorldState[i], 1);
+            FillInitialWorldState(zoneId, m_uiRoostWorldState[i], 1);
     }
 
-    FillInitialWorldState(data, count, m_uiControllerMapState, 1);
+    FillInitialWorldState(zoneId, m_uiControllerMapState, 1);
 }
 
 void WorldPvPNA::SendRemoveWorldStates(Player* pPlayer)

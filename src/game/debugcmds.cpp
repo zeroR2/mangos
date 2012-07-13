@@ -221,7 +221,7 @@ bool ChatHandler::HandleDebugUpdateWorldStateCommand(char* args)
     if (!ExtractUInt32(&args, state))
         return false;
 
-    m_session->GetPlayer()->SendUpdateWorldState(world, state);
+    m_session->GetPlayer()->UpdateWorldState(world, state);
     return true;
 }
 

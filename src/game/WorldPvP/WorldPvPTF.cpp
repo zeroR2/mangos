@@ -48,19 +48,19 @@ bool WorldPvPTF::InitWorldPvPArea()
     return true;
 }
 
-void WorldPvPTF::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void WorldPvPTF::FillInitialWorldStates(uint32 zoneId)
 {
-    FillInitialWorldState(data, count, m_uiControllerWorldState, 1);
+    FillInitialWorldState(zoneId, m_uiControllerWorldState, 1);
     if (m_uiControllerWorldState == WORLD_STATE_TF_TOWERS_CONTROLLED)
     {
-        FillInitialWorldState(data, count, WORLD_STATE_TF_TOWER_COUNT_H, m_uiTowersHorde);
-        FillInitialWorldState(data, count, WORLD_STATE_TF_TOWER_COUNT_A, m_uiTowersAlly);
+        FillInitialWorldState(zoneId, WORLD_STATE_TF_TOWER_COUNT_H, m_uiTowersHorde);
+        FillInitialWorldState(zoneId, WORLD_STATE_TF_TOWER_COUNT_A, m_uiTowersAlly);
     }
     else
         UpdateTimerWorldState();
 
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
-        FillInitialWorldState(data, count, m_uiTowerWorldState[i], 1);
+        FillInitialWorldState(zoneId, m_uiTowerWorldState[i], 1);
 }
 
 void WorldPvPTF::SendRemoveWorldStates(Player* pPlayer)

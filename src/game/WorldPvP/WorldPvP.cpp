@@ -105,6 +105,7 @@ void WorldPvP::HandlePlayerKill(Player* pKiller, Unit* pVictim)
 void WorldPvP::RegisterZone(uint32 uiZoneId)
 {
     sWorldPvPMgr.AddZone(uiZoneId, this);
+    FillInitialWorldStates(uiZoneId);
 }
 
 // return if has player inside the zone
@@ -172,4 +173,9 @@ Player* WorldPvP::GetPlayerInZone(bool bOnlyAlive /*=false*/, bool bCanBeGamemas
     }
 
     return NULL;
+}
+
+void WorldPvP::FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32 value)
+{
+    sWorldStateMgr.FillInitialWorldState(stateId, value, WORLD_STATE_TYPE_ZONE, zoneId);
 }

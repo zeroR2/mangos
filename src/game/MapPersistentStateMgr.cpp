@@ -776,6 +776,7 @@ void MapPersistentStateManager::RemovePersistentState(uint32 mapId, uint32 insta
                 }
 
             _ResetSave(m_instanceSaveByInstanceId, itr);
+            sWorldStateMgr.DeleteInstanceState(mapId, instanceId);
         }
     }
     else
