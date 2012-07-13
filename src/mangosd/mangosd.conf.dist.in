@@ -216,8 +216,7 @@ BindIP = "0.0.0.0"
 #    MapUpdate.MaxVisitsInUpdate
 #        Limitation for units update time delta per map update cycle.
 #        MaxVisitorsInUpdate - count of maximal update diffs for calculation update deadline. Min = 1, default = 9, max = 50.
-#        MaxVisitsInUpdate   - limits count of units in one per-visit update cycle (for maps only) min = 10, default = 20, max = 1000.
-#        Max:     1.0 (100%) /0.5 (50%)
+#        MaxVisitsInUpdate   - limits count of units in one per-visit update cycle (for maps only) min = 10, default = 20, max = 100.
 #
 ###################################################################################################################
 
