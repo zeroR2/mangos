@@ -88,9 +88,9 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 -- Silithus
 DELETE FROM `worldstate_template` WHERE `type` = 5 AND `condition` = 1377;
 INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(2313, 5, 1377, 65538, 0, 0, '', ''),
-(2314, 5, 1377, 65538, 0, 0, '', ''),
-(2317, 5, 1377, 65538, 0, 0, '', '');
+(2313, 5, 1377, 65538, 0, 2317, '', ''),
+(2314, 5, 1377, 65538, 0, 2317, '', ''),
+(2317, 5, 1377, 65538, 200,  0, '', '');
 
 
 -- Battlegrounds
@@ -307,5 +307,10 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (4318, 4, 628, 65538, 1, 0, '', ''),
 (4319, 4, 628, 65538, 1, 0, '', ''),
 (4326, 4, 628, 65538, 1, 0, '', '');
+
+-- Halaa WorldPvP area
+DELETE FROM `worldstate_template` WHERE `type` = 5 AND `condition` = 3518;
+INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
+(2671, 5, 3518, 65538, 1,  0, '', '');
 
 -- Arenas

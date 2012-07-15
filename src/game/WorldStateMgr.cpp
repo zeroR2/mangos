@@ -29,10 +29,15 @@ INSTANTIATE_SINGLETON_1(WorldStateMgr);
 
 void WorldStateMgr::Initialize()
 {
+    // for reload case - cleanup states first
+    m_worldStateTemplates.clear();
+    // Load some template types
     LoadTemplatesFromDBC();
     LoadTemplatesFromDB();
     LoadTemplatesFromObjectTemplateDB();
+    // Load states data
     LoadFromDB();
+    // Create all needed states (if not loaded)
     CreateWorldStatesIfNeed();
 };
 
@@ -95,6 +100,7 @@ void WorldStateMgr::Update()
 
 void WorldStateMgr::LoadTemplatesFromDBC()
 {
+    uint32 count = 0;
     for (uint32 i = 1; i < sBattlemasterListStore.GetNumRows(); ++i)
     {
         BattlemasterListEntry const * bl = sBattlemasterListStore.LookupEntry(i);
@@ -102,14 +108,15 @@ void WorldStateMgr::LoadTemplatesFromDBC()
         {
             m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(bl->HolidayWorldStateId, 
                 WorldStateTemplate(bl->HolidayWorldStateId, WORLD_STATE_TYPE_BGWEEKEND, WORLD_STATE_TYPE_BGWEEKEND, (1 << WORLD_STATE_FLAG_INITIAL_STATE), BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)) ? 1 : 0, 0)));
+            ++count;
         }
     }
+    sLog.outString();
+    sLog.outString( ">> Loaded static DBC templates for %u WorldStates", count);
 };
 
 void WorldStateMgr::LoadTemplatesFromDB()
 {
-    // for reload case
-    m_worldStateTemplates.clear();
     //                                                        0       1            2        3          4            5
     QueryResult* result = WorldDatabase.Query("SELECT `state_id`, `type`, `condition`, `flags`, `default`, `linked_id` FROM `worldstate_template`");
     if (!result)
@@ -119,6 +126,7 @@ void WorldStateMgr::LoadTemplatesFromDB()
         return;
     }
 
+    uint32 count = 0;
     BarGoLink bar((int)result->GetRowCount());
     do
     {
@@ -135,19 +143,18 @@ void WorldStateMgr::LoadTemplatesFromDB()
 
         // Store the state data
         m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId, WorldStateTemplate(stateId, type, condition, flags, default_value, linkedId)));
+        ++count;
     }
     while (result->NextRow());
 
     sLog.outString();
-    sLog.outString( ">> Loaded static templates data for %u world states", m_worldStateTemplates.size());
+    sLog.outString( ">> Loaded static templates for %u WorldStates", count);
     delete result;
 
 };
 
 void WorldStateMgr::LoadTemplatesFromObjectTemplateDB()
 {
-    // for reload case
-    // m_worldStateTemplates.clear();
     //                                                     0  
     QueryResult* result = WorldDatabase.PQuery("SELECT `entry` FROM `gameobject_template` WHERE `type` = %u",(uint32)GAMEOBJECT_TYPE_CAPTURE_POINT);
     if (!result)
@@ -197,7 +204,7 @@ void WorldStateMgr::LoadTemplatesFromObjectTemplateDB()
     while (result->NextRow());
 
     sLog.outString();
-    sLog.outString( ">> Loaded static templates data for %u GAMEOBJECT_TYPE_CAPTURE_POINT linked world states", count);
+    sLog.outString( ">> Loaded static templates for %u GAMEOBJECT_TYPE_CAPTURE_POINT linked WorldStates", count);
     delete result;
 
 };
@@ -252,7 +259,7 @@ void WorldStateMgr::LoadFromDB()
     while (result->NextRow());
 
     sLog.outString();
-    sLog.outString( ">> Loaded data for %u world states", m_worldState.size());
+    sLog.outString( ">> Loaded data for %u WorldStates", m_worldState.size());
     delete result;
 
 }
@@ -400,9 +407,18 @@ WorldStateSet WorldStateMgr::GetUpdatedWorldStatesFor(Player* player, time_t upd
     ReadGuard guard(GetLock());
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-            if (itr->second.HasFlag(WORLD_STATE_FLAG_ACTIVE) && itr->second.GetRenewTime() > updateTime)
-                if (IsFitToCondition(player, &itr->second))
+            if (itr->second.HasFlag(WORLD_STATE_FLAG_ACTIVE) && 
+                itr->second.GetRenewTime() >= updateTime &&
+                itr->second.GetRenewTime() != time(NULL) &&
+                IsFitToCondition(player, &itr->second))
+                {
                     statesSet.insert(&itr->second);
+
+                    // Always send Linked worldstate with own chains
+                    if (itr->second.GetTemplate() && itr->second.GetTemplate()->m_linkedId)
+                        if (WorldState* state = const_cast<WorldState*>(GetWorldState(itr->second.GetTemplate()->m_linkedId, player->GetInstanceId())))
+                            statesSet.insert(state);
+                }
     }
     return statesSet;
 };
@@ -588,6 +604,7 @@ void WorldStateMgr::SetWorldStateValueFor(Map* map, uint32 stateId, uint32 value
 {
     if (!map)
         return;
+
     WorldStateBounds bounds = m_worldState.equal_range(stateId);
     if (bounds.first != bounds.second)
     {
@@ -623,6 +640,13 @@ WorldState const* WorldStateMgr::CreateWorldState(WorldStateTemplate const* tmpl
     {
         sLog.outError("WorldStateMgr::CreateWorldState tru create GLOBAL state %u  with instance Id %u.",tmpl->m_stateId, instanceId);
         return NULL;
+    }
+
+    if (WorldState const* _state  = GetWorldState(tmpl->m_stateId, instanceId, tmpl->m_stateType))
+    {
+        DEBUG_LOG("WorldStateMgr::CreateWorldState tru create  state %u  instance %u type %u (value %u) but state exists (value %u).",
+            tmpl->m_stateId, instanceId, tmpl->m_stateType, value, _state->GetValue());
+        return _state;
     }
 
     // Store the state data
@@ -805,8 +829,8 @@ WorldStateSet WorldStateMgr::GetInitWorldStates(uint32 mapId, uint32 instanceId,
     ReadGuard guard(GetLock());
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-        if (itr->second.HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) &&
-            itr->second.HasFlag(WORLD_STATE_FLAG_ACTIVE) &&
+        if ((itr->second.HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) ||
+            itr->second.HasFlag(WORLD_STATE_FLAG_ACTIVE)) &&
             IsFitToCondition(mapId, instanceId, zoneId, areaId, &itr->second))
             statesSet.insert(&itr->second);
     }

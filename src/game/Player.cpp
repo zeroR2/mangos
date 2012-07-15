@@ -1969,12 +1969,13 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
                 GetSession()->SendPacket( &data );
                 SendSavedInstances();
-                m_lastWSUpdateTime = 0;
             }
         }
         else
             return false;
     }
+    // Set last WS update time to 0 - grant sending ALL WS updates from new map.
+    SetLastWorldStateUpdateTime(time_t(0));
     return true;
 }
 
@@ -8898,7 +8899,7 @@ void Player::SendUpdatedWorldStates(bool force)
     for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
         _SendUpdateWorldState((*itr)->GetId(), (*itr)->GetValue());
 
-    SetLastWorldStateUpdateTime();
+    SetLastWorldStateUpdateTime(time(NULL));
 }
 
 void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)

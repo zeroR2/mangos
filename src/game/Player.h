@@ -2098,7 +2098,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void UpdateWorldState(uint32 state, uint32 value);
         void SendUpdatedWorldStates(bool force = false);
         time_t const& GetLastWorldStateUpdateTime() { return m_lastWSUpdateTime; };
-        void SetLastWorldStateUpdateTime()          { m_lastWSUpdateTime = time(NULL); };
+        void SetLastWorldStateUpdateTime(time_t _time)   { m_lastWSUpdateTime = _time; };
 
         void SendDirectMessage(WorldPacket *data);
 
