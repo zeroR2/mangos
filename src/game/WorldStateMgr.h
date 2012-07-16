@@ -247,6 +247,7 @@ class MANGOS_DLL_DECL WorldStateMgr
         // create state operation
         void CreateWorldStatesIfNeed();
         void CreateZoneAreaStateIfNeed(Player* player, uint32 zone, uint32 area);
+        void CreateLinkedWorldStatesIfNeed(WorldObject* object);
 
         // instance operations
         void CreateInstanceState(Map* map);
@@ -295,6 +296,9 @@ class MANGOS_DLL_DECL WorldStateMgr
         // Create and manage asynchronous player update lists (NYI)
         void SendWorldState(Player* player, WorldState const* state);
         void RemoveWorldStateFor(Player* player, uint32 stateId);
+
+        void RemovePendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId);
+        void SendPendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId);
 
     private:
         // multithread locking

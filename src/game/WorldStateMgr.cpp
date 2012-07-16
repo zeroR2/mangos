@@ -22,6 +22,7 @@
 #include "ProgressBar.h"
 #include "Player.h"
 #include "GameObject.h"
+#include "GridNotifiers.h"
 #include "SQLStorages.h"
 #include "BattleGroundMgr.h"
 
@@ -280,6 +281,97 @@ void WorldStateMgr::CreateWorldStatesIfNeed()
     }
 }
 
+void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
+{
+    if (!object)
+        return;
+
+    ObjectGuid guid = object->GetObjectGuid();
+    uint32 instanceId = object->GetMap() ? object->GetMap()->GetInstanceId() :0;
+
+    switch (guid.GetHigh())
+    {
+        case HIGHGUID_GAMEOBJECT:
+        {
+            GameObjectInfo const* goInfo = sGOStorage.LookupEntry<GameObjectInfo>(guid.GetEntry());
+            if (!goInfo || goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
+            {
+                sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this object type not supported!", guid.GetString().c_str());
+                break;
+            }
+
+            // state 1
+            if (goInfo->capturePoint.worldState1)
+            {
+                WorldState const* _state = NULL;
+                if (_state  = GetWorldState(goInfo->capturePoint.worldState1, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                {
+                    if (_state->GetValue() != 0)
+                        DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                            goInfo->capturePoint.worldState1,
+                            guid.GetString().c_str(),
+                            _state->GetValue(),
+                            0
+                        );
+                }
+                else
+                    _state = CreateWorldState(goInfo->capturePoint.worldState1, instanceId, 0);
+
+                const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+            }
+
+            // state 2
+            if (goInfo->capturePoint.worldState2)
+            {
+                WorldState const* _state = NULL;
+                if (_state  = GetWorldState(goInfo->capturePoint.worldState2, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                {
+                    if (_state->GetValue() != 0)
+                        DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                            goInfo->capturePoint.worldState2,
+                            guid.GetString().c_str(),
+                            _state->GetValue(),
+                            0
+                        );
+                }
+                else
+                     _state = CreateWorldState(goInfo->capturePoint.worldState2, instanceId, 0);
+
+                const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+            }
+
+            // state 3
+            if (goInfo->capturePoint.worldState3)
+            {
+                WorldState const* _state = NULL;
+                if (_state  = GetWorldState(goInfo->capturePoint.worldState3, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                {
+                    if (_state->GetValue() != 0)
+                        DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                            goInfo->capturePoint.worldState3,
+                            guid.GetString().c_str(),
+                            _state->GetValue(),
+                            0
+                        );
+                }
+                else
+                    _state = CreateWorldState(goInfo->capturePoint.worldState3, instanceId, goInfo->capturePoint.neutralPercent);
+
+                const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+            }
+
+            break;
+        }
+        case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        case HIGHGUID_PET:
+        case HIGHGUID_PLAYER:
+        default:
+            sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this object type not supported!", guid.GetString().c_str());
+        break;
+    }
+}
+
 void WorldStateMgr::SaveToDB()
 {
     CharacterDatabase.BeginTransaction();
@@ -380,6 +472,112 @@ void WorldStateMgr::MapUpdate(Map* map)
 {
     if (!map)
         return;
+
+    for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
+    {
+        WorldState* state = &itr->second;
+
+        if (!state || !IsFitToCondition(map, state))
+            continue;
+
+        switch (state->GetType())
+        {
+            case WORLD_STATE_TYPE_CAPTURE_POINT:
+            {
+                if (state->GetTemplate() && state->GetTemplate()->m_linkedId)
+                    continue;
+
+                GameObject* go = map->GetGameObject(state->GetLinkedGuid());
+
+                if (!go || go->GetGOInfo()->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
+                    continue;
+
+                // search for players in radius
+                std::list<Player*> pointPlayers;
+                MaNGOS::AnyPlayerInObjectRangeCheck u_check(go, go->GetGOInfo()->capturePoint.radius);
+                MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeCheck> checker(pointPlayers, u_check);
+                Cell::VisitWorldObjects(go, checker, go->GetGOInfo()->capturePoint.radius);
+
+                GuidSet currentGuids;
+                GuidSet differenceGuids;
+
+                for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
+                {
+                    if ((*itr) && (*itr)->IsInWorld() && (*itr)->IsWorldPvPActive()) 
+                    {
+                        if (!state->HasClient(*itr))
+                        {
+                            state->AddClient(*itr);
+                            // send WS activate
+                        }
+                        currentGuids.insert((*itr)->GetObjectGuid());
+                    }
+                }
+                std::set_difference(state->GetClients().begin(),state->GetClients().end(), currentGuids.begin(),currentGuids.end(),std::inserter(differenceGuids,differenceGuids.end()));
+                // work with send lists here
+                for (GuidSet::iterator itr = differenceGuids.begin(); itr != differenceGuids.end(); ++itr)
+                {
+                    if (currentGuids.find(*itr) == currentGuids.end())
+                    {
+                        state->RemoveClient(*itr);
+                        // send WS deactivate
+                    }
+                }
+                break;
+            }
+            case WORLD_STATE_TYPE_MAP:
+            case WORLD_STATE_TYPE_BATTLEGROUND:
+            {
+                for (GuidSet::iterator itr = state->GetClients().begin(); itr != state->GetClients().end();)
+                {
+                    if (!map->GetPlayer(*itr))
+                    {
+                        state->RemoveClient(*itr);
+                    }
+                    else
+                        ++itr;
+                }
+                break;
+            }
+            case WORLD_STATE_TYPE_ZONE:
+            case WORLD_STATE_TYPE_AREA:
+            {
+                for (GuidSet::iterator itr = state->GetClients().begin(); itr != state->GetClients().end();)
+                {
+                    Player* player = map->GetPlayer(*itr);
+                    if (!player || !player->IsInWorld())
+                    {
+                        state->RemoveClient(*itr);
+                    }
+                    else
+                    {
+                        uint32 zone, area;
+                        player->GetZoneAndAreaId(zone, area);
+                        if (state->GetType() == WORLD_STATE_TYPE_ZONE && state->GetCondition() != zone)
+                        {
+                            // send state clean here
+                            state->RemoveClient(*itr);
+                        }
+                        else if (state->GetType() == WORLD_STATE_TYPE_AREA && state->GetCondition() != area)
+                        {
+                            // send state clean here
+                            state->RemoveClient(*itr);
+                        }
+                        else
+                            ++itr;
+                    }
+                }
+                break;
+            }
+            case WORLD_STATE_TYPE_EVENT:
+            case WORLD_STATE_TYPE_BGWEEKEND:
+            case WORLD_STATE_TYPE_CUSTOM:
+            case WORLD_STATE_TYPE_WORLD:
+            case WORLD_STATE_TYPE_WORLD_UNCOMMON:
+            default:
+                break;
+        }
+    }
 }
 
 WorldStateSet WorldStateMgr::GetWorldStatesFor(Player* player, uint32 flags)
@@ -900,6 +1098,14 @@ void WorldStateMgr::RemoveWorldStateFor(Player* player, uint32 stateId)
         const_cast<WorldState*>(state)->RemoveClient(player);
 
     player->_SendUpdateWorldState(stateId, 0);
+}
+
+void WorldStateMgr::RemovePendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId)
+{
+}
+
+void WorldStateMgr::SendPendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId)
+{
 }
 
 bool WorldState::IsExpired() const

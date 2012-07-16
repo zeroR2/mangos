@@ -228,6 +228,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
             // Also reset artkits
             SetGoArtKit(m_captureTicks > CAPTURE_SLIDER_NEUTRAL ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
         }
+        sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
     }
 
     return true;
