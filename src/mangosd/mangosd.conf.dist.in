@@ -152,6 +152,12 @@ BindIP = "0.0.0.0"
 #        Default: 1 (Enabled)
 #                 0 (Disabled)
 #
+#    vmap.Dynamic.DoubleCheck
+#        Enable/Disable dynamic VMap based double check for LOS (needed for "In GO state").
+#        Requires Vmaps && Dynamic VMaps enabled to work.
+#        Default: 0 (Disabled)
+#                 1 (Enabled)
+#
 #
 #    DetectPosCollision
 #        Check final move position, summon position, etc for visible collision with other objects or
@@ -254,6 +260,7 @@ MapUpdate.LoadBalanceHighValue = 0.8
 MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
 MapUpdate.MaxVisitsInUpdate = 10
+vmap.Dynamic.DoubleCheck = 0
 
 ###################################################################################################################
 # SERVER LOGGING
