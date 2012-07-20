@@ -641,18 +641,8 @@ void BattleGroundAV::FillInitialWorldStates()
 
     FillInitialWorldState(BG_AV_Alliance_Score, m_TeamScores[TEAM_INDEX_ALLIANCE]);
     FillInitialWorldState(BG_AV_Horde_Score,    m_TeamScores[TEAM_INDEX_HORDE]);
-    if( GetStatus() == STATUS_IN_PROGRESS )                 // only if game is running the teamscores are displayed
-    {
-        FillInitialWorldState(BG_AV_SHOW_A_SCORE, 1);
-        FillInitialWorldState(BG_AV_SHOW_H_SCORE, 1);
-    }
-    else
-    {
-        FillInitialWorldState(BG_AV_SHOW_A_SCORE, 0);
-        FillInitialWorldState(BG_AV_SHOW_H_SCORE, 0);
-    }
-
     FillInitialWorldState(BG_AV_MineWorldStates[BG_AV_NORTH_MINE][m_Mine_Owner[BG_AV_NORTH_MINE]], 1);
+
     if (m_Mine_Owner[BG_AV_NORTH_MINE] != m_Mine_PrevOwner[BG_AV_NORTH_MINE])
         FillInitialWorldState(BG_AV_MineWorldStates[BG_AV_NORTH_MINE][m_Mine_PrevOwner[BG_AV_NORTH_MINE]], 0);
 
