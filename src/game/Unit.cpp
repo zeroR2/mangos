@@ -793,35 +793,24 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         return damageInfo->damage;
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"Unit::DealDamage DealDamageStart, value %u",damageInfo->damage);
+    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"DealDamageStart");
 
-
-    if (!damageInfo->HasFlag(DAMAGE_SHARED))
+    // share damage by auras
+    AuraList const& vShareDamageAuras = pVictim->GetAurasByType(SPELL_AURA_SHARE_DAMAGE_PCT);
+    for (AuraList::const_iterator itr = vShareDamageAuras.begin(); itr != vShareDamageAuras.end(); ++itr)
     {
-        MAPLOCK_READ(pVictim,MAP_LOCK_TYPE_AURAS);
-        // share damage by auras
-        AuraList const& vShareDamageAuras = pVictim->GetAurasByType(SPELL_AURA_SHARE_DAMAGE_PCT);
-        for (AuraList::const_iterator itr = vShareDamageAuras.begin(); itr != vShareDamageAuras.end(); ++itr)
+        Aura* aura = *itr;
+        if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+            continue;
+
+        if (Unit* shareTarget = aura->GetCaster())
         {
-            Aura* aura = *itr;
-            if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
-                continue;
-
-            if (Unit* shareTarget = aura->GetCaster())
+            if (shareTarget != pVictim && (aura->GetMiscValue() & damageInfo->SchoolMask()))
             {
-                if (shareTarget != pVictim && (aura->GetMiscValue() & damageInfo->SchoolMask()))
-                {
-                    SpellEntry const* shareSpell = aura->GetSpellProto();
-                    uint32 shareDamage = uint32(damageInfo->damage * aura->GetModifier()->m_amount / 100.0f);
-                    DealDamageMods(shareTarget, shareDamage, NULL);
-
-                    DamageInfo sharedDamageInfo   = DamageInfo(this, shareTarget, spellProto);
-                    sharedDamageInfo.cleanDamage  = shareDamage;
-                    sharedDamageInfo.damage       = shareDamage;
-                    sharedDamageInfo.damageType   = damageInfo->damageType;
-                    sharedDamageInfo.AddFlag(DAMAGE_SHARED);
-                    DealDamage(shareTarget, &sharedDamageInfo, false);
-                }
+                SpellEntry const* shareSpell = aura->GetSpellProto();
+                uint32 shareDamage = uint32(damageInfo->damage * aura->GetModifier()->m_amount / 100.0f);
+                DealDamageMods(shareTarget, shareDamage, NULL);
+                DealDamage(shareTarget, shareDamage, 0, damageInfo->damageType, GetSpellSchoolMask(shareSpell), spellProto, false);
             }
         }
     }
