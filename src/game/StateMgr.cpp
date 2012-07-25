@@ -462,9 +462,9 @@ void UnitStateMgr::DropAction(UnitActionId actionId, UnitActionPriority priority
     {
         for (UnitActionStorage::iterator itr = m_actions.begin(); itr != m_actions.end();)
         {
-            if (itr->first == actionId)
+            if (itr->Id == actionId)
             {
-                UnitActionPriority _priority = itr->second.priority;
+                UnitActionPriority _priority = itr->priority;
                 if (_priority <= priority)
                     DropAction(_priority);
 
@@ -489,7 +489,7 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     UnitActionStorage::iterator itr;
     {
         for (itr = m_actions.begin(); itr != m_actions.end(); ++itr)
-            if (itr->first == priority)
+            if (itr->priority == priority)
                 break;
     }
     if (itr != m_actions.end())
@@ -497,10 +497,10 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
         bool bActiveActionChanged = false;
         UnitActionPtr oldAction = oldInfo ? oldInfo->Action() : UnitActionPtr();
         // if dropped current active state...
-        if (oldInfo && itr->second.Action() == oldInfo->Action() && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
+        if (oldInfo && itr->Action() == oldInfo->Action() && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
             bActiveActionChanged = true;
 
-        if (itr->second.Action() == m_oldAction)
+        if (itr->Action() == m_oldAction)
             m_oldAction = UnitActionPtr(NULL);
         m_actions.erase(itr);
 
@@ -553,7 +553,15 @@ void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state, UnitAc
     DropAction(actionId, priority);
     DropAction(priority);
 
-    m_actions.insert(UnitActionStorage::value_type(priority,ActionInfo(actionId, state, priority, restoreable)));
+    UnitActionStorage::iterator itr;
+
+    for (itr = m_actions.begin(); itr != m_actions.end(); ++itr)
+    {
+        if (itr->priority > priority)
+            break;
+    }
+
+    m_actions.insert(itr,UnitActionStorage::size_type(1),ActionInfo(actionId, state, priority, restoreable));
     IncreaseCounter(actionId);
 
 /*
@@ -569,16 +577,16 @@ void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state, UnitAc
 ActionInfo* UnitStateMgr::GetAction(UnitActionPriority priority)
 {
     for (UnitActionStorage::reverse_iterator itr = m_actions.rbegin(); itr != m_actions.rend(); ++itr)
-        if (itr->first == priority)
-            return &itr->second;
+        if (itr->priority == priority)
+            return &(*itr);
     return NULL;
 }
 
 ActionInfo* UnitStateMgr::GetAction(UnitActionPtr _action)
 {
     for (UnitActionStorage::iterator itr = m_actions.begin(); itr != m_actions.end(); ++itr)
-        if (itr->second.Action() == _action)
-            return &itr->second;
+        if (itr->Action() == _action)
+            return &(*itr);
     return NULL;
 }
 
@@ -590,7 +598,7 @@ UnitActionPtr UnitStateMgr::CurrentAction()
 
 ActionInfo* UnitStateMgr::CurrentState()
 {
-    return m_actions.empty() ? NULL : &m_actions.rbegin()->second;
+    return m_actions.empty() ? NULL : &m_actions.back();
 }
 
 void UnitStateMgr::DropAllStates()
