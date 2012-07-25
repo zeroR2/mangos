@@ -239,6 +239,8 @@ class MANGOS_DLL_DECL WorldStateMgr
         void LoadTemplatesFromObjectTemplateDB();
         void LoadTemplatesFromDBC();
         void LoadFromDB();
+        uint32 GetWorldStateTemplatesCount() const { return m_worldStateTemplates.size(); };
+        uint32 GetWorldStatesCount() const         { return m_worldState.size(); };
 
         // Save
         void SaveToDB();

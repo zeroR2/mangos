@@ -472,7 +472,11 @@ WorldStateTemplate const* WorldStateMgr::FindTemplate(uint32 stateId, uint32 typ
 
 void WorldStateMgr::MapUpdate(Map* map)
 {
-    if (!map)
+//    if (!map)
+//        return;
+
+    // Currently this part disabled
+    if (true)
         return;
 
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
