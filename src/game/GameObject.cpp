@@ -2078,7 +2078,6 @@ bool GameObject::CalculateCurrentCollisionState() const
     return result;
 }
 
-
 void GameObject::UpdateModel()
 {
     if (!IsInWorld())
