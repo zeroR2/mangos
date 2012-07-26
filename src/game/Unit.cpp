@@ -10132,11 +10132,7 @@ void Unit::TauntFadeOut(Unit *taunter)
 
     if (m_ThreatManager.isThreatListEmpty())
     {
-        if (((Creature*)this)->AI())
-            ((Creature*)this)->AI()->EnterEvadeMode();
-
-        if (InstanceData* mapInstance = GetInstanceData())
-            mapInstance->OnCreatureEvade((Creature*)this);
+        AddEvent(new EvadeDelayEvent(*this), EVADE_TIME_DELAY_MIN);
 
         if (m_isCreatureLinkingTrigger)
             GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_EVADE, (Creature*)this);
@@ -10233,8 +10229,7 @@ bool Unit::SelectHostileTarget()
                 if(m_ThreatManager.getThreatList().size() < 2)
                 {
                     // only one target in list, we have to evade after timer
-                    // TODO: make timer - inside Creature class
-                    ((Creature*)this)->AI()->EnterEvadeMode();
+                    AddEvent(new EvadeDelayEvent(*this), EVADE_TIME_DELAY);
                 }
                 else
                 {
@@ -10273,10 +10268,7 @@ bool Unit::SelectHostileTarget()
     }
 
     // enter in evade mode in other case
-    ((Creature*)this)->AI()->EnterEvadeMode();
-
-    if (InstanceData* mapInstance = GetInstanceData())
-        mapInstance->OnCreatureEvade((Creature*)this);
+    AddEvent(new EvadeDelayEvent(*this), EVADE_TIME_DELAY_MIN);
 
     if (m_isCreatureLinkingTrigger)
         GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_EVADE, (Creature*)this);
