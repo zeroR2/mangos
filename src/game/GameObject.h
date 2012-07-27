@@ -595,13 +595,6 @@ enum LootState
     GO_JUST_DEACTIVATED
 };
 
-// TODO: Move this somewhere else
-enum WorldStateInitialValueType
-{
-    WORLD_STATE_REMOVE              = 0,
-    WORLD_STATE_ADD                 = 1
-};
-
 enum CapturePointState
 {
     CAPTURE_STATE_NEUTRAL = 0,
@@ -807,7 +800,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
     protected:
         uint32      m_captureTime;
         float       m_captureTicks;
-        uint32      m_ownerFaction;                         // faction which has conquered the capture point
         uint32      m_spellId;
         time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),
         uint32      m_respawnDelayTime;                     // (secs) if 0 then current GO state no dependent from timer

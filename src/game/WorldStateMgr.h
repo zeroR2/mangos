@@ -61,6 +61,12 @@ enum WorldStateFlags
     WORLD_STATE_FLAG_MAX
 };
 
+enum WorldStateInitialValueType
+{
+    WORLD_STATE_REMOVE              = 0,
+    WORLD_STATE_ADD                 = 1
+};
+
 struct WorldStateTemplate
 {
     // Constructor for use with DB templates data
@@ -91,6 +97,7 @@ struct WorldStateTemplate
 
 typedef std::multimap<uint32 /* state id */, WorldStateTemplate>  WorldStateTemplateMap;
 typedef std::pair<WorldStateTemplateMap::const_iterator,WorldStateTemplateMap::const_iterator> WorldStateTemplateBounds;
+typedef std::multimap<uint32 /* uplink state id */, uint32 /* downlink state id */> WorldStatesLinkHash;
 
 struct WorldState
 {
@@ -133,7 +140,6 @@ struct WorldState
 
     void Initialize()
     {
-        m_renewTime = time(NULL);
         m_linkedGuid.Clear();
         m_clientGuids.clear();
         if (m_pState)
@@ -149,6 +155,7 @@ struct WorldState
             m_value     = 0;
             AddFlag(WORLD_STATE_FLAG_CUSTOM);
         };
+        Renew();
     }
 
     void Reload()
@@ -201,8 +208,12 @@ struct WorldState
     void          SetValue(uint32 value)
     {
         m_value = value;
-        AddFlag(WORLD_STATE_FLAG_UPDATED);
         RemoveFlag(WORLD_STATE_FLAG_SAVED);
+        Renew();
+    }
+    void          Renew()
+    {
+        AddFlag(WORLD_STATE_FLAG_UPDATED);
         m_renewTime = time(NULL);
     }
 
@@ -223,7 +234,7 @@ struct WorldState
 
 typedef std::multimap<uint32 /* state id */, WorldState>   WorldStateMap;
 typedef std::pair<WorldStateMap::const_iterator,WorldStateMap::const_iterator> WorldStateBounds;
-typedef std::set<WorldState*> WorldStateSet;
+typedef std::set<WorldState const*> WorldStateSet;
 
 // class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, MaNGOS::ClassLevelLockable<WorldStateMgr, ACE_Thread_Mutex> >
 class MANGOS_DLL_DECL WorldStateMgr
@@ -274,9 +285,12 @@ class MANGOS_DLL_DECL WorldStateMgr
         // External WorldState operations
         uint32 GetWorldStateValue(uint32 stateId);
         uint32 GetWorldStateValueFor(Player* player, uint32 stateId);
+        uint32 GetWorldStateValueFor(Map* map, uint32 stateId);
+        uint32 GetWorldStateValueFor(WorldObject* object, uint32 stateId);
 
         void   SetWorldStateValueFor(Player* player, uint32 stateId, uint32 value);
         void   SetWorldStateValueFor(Map* map, uint32 stateId, uint32 value);
+        void   SetWorldStateValueFor(WorldObject* object, uint32 stateId, uint32 value);
 
         // Method for initial (per-script) WorldState filling (need move all updates like this in DB!)
         void FillInitialWorldState(uint32 stateId, uint32 value, WorldStateType type, uint32 data = 0 /*zone id*/);
@@ -291,13 +305,16 @@ class MANGOS_DLL_DECL WorldStateMgr
         WorldStateSet GetInstanceStates(uint32 mapId, uint32 instanceId, uint32 flags = 0, bool full = false);
         WorldStateSet GetInitWorldStates(uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId);
 
+        bool HasDownLinkedWorldStates(uint32 stateId) const { return m_worldStateLink.find(stateId) != m_worldStateLink.end(); };
+        WorldStateSet GetDownLinkedWorldStates(WorldState const* state);
+
         bool          IsFitToCondition(Player* player, WorldState const* state);
         bool          IsFitToCondition(Map* map, WorldState const* state);
         bool          IsFitToCondition(uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId, WorldState const* state);
 
-        // Create and manage asynchronous player update lists (NYI)
-        void SendWorldState(Player* player, WorldState const* state);
-        void RemoveWorldStateFor(Player* player, uint32 stateId);
+        // Create and manage asynchronous player update lists
+        void AddWorldStateFor(Player* player, uint32 stateId, uint32 instanceId);
+        void RemoveWorldStateFor(Player* player, uint32 stateId, uint32 instanceId);
 
         void RemovePendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId);
         void SendPendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId);
@@ -311,6 +328,7 @@ class MANGOS_DLL_DECL WorldStateMgr
 
         WorldStateTemplateMap   m_worldStateTemplates;    // templates storage
         WorldStateMap           m_worldState;             // data storage
+        WorldStatesLinkHash     m_worldStateLink;         // Links map for speedup linked states search
         LockType                i_lock;
 };
 
