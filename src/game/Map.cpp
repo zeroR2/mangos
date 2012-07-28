@@ -102,7 +102,6 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
     MapPersistentState* persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), GetDifficulty(), 0, IsDungeon());
     persistentState->SetUsedByMapState(this);
     SetBroken(false);
-    sWorldStateMgr.CreateInstanceState(this);
 }
 
 MapPersistentState* Map::GetPersistentState() const

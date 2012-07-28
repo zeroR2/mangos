@@ -208,11 +208,8 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     // set initial data and activate non visual-only capture points
     if (goinfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT && goinfo->capturePoint.radius)
     {
-        // it's wrong! need remove this initialization after WorldState implement.
-        SetCapturePointSlider(CAPTURE_SLIDER_NEUTRAL);
-        // Also reset artkits
-        // SetGoArtKit(m_captureTicks > CAPTURE_SLIDER_NEUTRAL ? GO_ARTKIT_BANNER_ALLIANCE : GO_ARTKIT_BANNER_HORDE);
         sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
+        SetCapturePointSlider(CAPTURE_SLIDER_GET_VALUE);
     }
 
     return true;
@@ -2293,6 +2290,9 @@ void GameObject::SetCapturePointSlider(int8 value)
 {
     GameObjectInfo const* info = GetGOInfo();
 
+    if (!info || info->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
+        return;
+
     switch (value)
     {
         case CAPTURE_SLIDER_ALLIANCE_LOCKED:
@@ -2300,6 +2300,10 @@ void GameObject::SetCapturePointSlider(int8 value)
             break;
         case CAPTURE_SLIDER_HORDE_LOCKED:
             m_captureSlider = CAPTURE_SLIDER_HORDE;
+            break;
+        case CAPTURE_SLIDER_GET_VALUE:
+            m_captureSlider = (float)sWorldStateMgr.GetWorldStateValueFor(this,info->capturePoint.worldState2);
+            SetLootState(GO_ACTIVATED);
             break;
         default:
             m_captureSlider = value;
@@ -2362,13 +2366,6 @@ void GameObject::TickCapturePoint()
             // new player entered capture point zone
             m_UniqueUsers.insert(guid);
             sWorldStateMgr.AddWorldStateFor(player, goInfo->capturePoint.worldState1, GetObjectGuid().GetCounter());
-/*
-            // send capture point enter packets
-            (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
-            (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
-            (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, WORLD_STATE_ADD);
-            (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue); // also redundantly sent on retail to prevent displaying the initial capture direction on client capture slider incorrectly
-*/
         }
     }
 

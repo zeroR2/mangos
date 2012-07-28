@@ -64,9 +64,9 @@ void WorldStateMgr::Update()
                         if (bl && bl->HolidayWorldStateId == state->GetId())
                         {
                             if (BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)))
-                                state->SetValue(1);
+                                state->SetValue(WORLD_STATE_ADD);
                             else
-                                state->SetValue(0);
+                                state->SetValue(WORLD_STATE_REMOVE);
                         }
                     }
                 }
@@ -278,7 +278,7 @@ void WorldStateMgr::CreateWorldStatesIfNeed()
 {
     for (WorldStateTemplateMap::const_iterator itr = m_worldStateTemplates.begin(); itr != m_worldStateTemplates.end(); ++itr)
     {
-        if (itr->second.m_flags & (1 << WORLD_STATE_FLAG_INITIAL_STATE) &&
+        if (itr->second.HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) &&
             (itr->second.m_stateType == WORLD_STATE_TYPE_WORLD ||
             itr->second.m_stateType == WORLD_STATE_TYPE_BGWEEKEND))
         {
@@ -497,59 +497,11 @@ void WorldStateMgr::MapUpdate(Map* map)
         {
             case WORLD_STATE_TYPE_CAPTURE_POINT:
             {
-                if (state->GetTemplate() && state->GetTemplate()->m_linkedId)
-                    continue;
-
-                GameObject* go = map->GetGameObject(state->GetLinkedGuid());
-
-                if (!go || go->GetGOInfo()->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
-                    continue;
-
-                // search for players in radius
-                std::list<Player*> pointPlayers;
-                MaNGOS::AnyPlayerInObjectRangeWithOutdoorPvPCheck u_check(go, go->GetGOInfo()->capturePoint.radius);
-                MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeWithOutdoorPvPCheck> checker(pointPlayers, u_check);
-                Cell::VisitWorldObjects(go, checker, go->GetGOInfo()->capturePoint.radius);
-
-                GuidSet currentGuids;
-                GuidSet differenceGuids;
-
-                for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
-                {
-                    if ((*itr) && (*itr)->IsInWorld() && (*itr)->IsWorldPvPActive()) 
-                    {
-                        if (!state->HasClient(*itr))
-                        {
-                            state->AddClient(*itr);
-                            // send WS activate
-                        }
-                        currentGuids.insert((*itr)->GetObjectGuid());
-                    }
-                }
-                std::set_difference(state->GetClients().begin(),state->GetClients().end(), currentGuids.begin(),currentGuids.end(),std::inserter(differenceGuids,differenceGuids.end()));
-                // work with send lists here
-                for (GuidSet::iterator itr = differenceGuids.begin(); itr != differenceGuids.end(); ++itr)
-                {
-                    if (currentGuids.find(*itr) == currentGuids.end())
-                    {
-                        state->RemoveClient(*itr);
-                        // send WS deactivate
-                    }
-                }
                 break;
             }
             case WORLD_STATE_TYPE_MAP:
             case WORLD_STATE_TYPE_BATTLEGROUND:
             {
-                for (GuidSet::iterator itr = state->GetClients().begin(); itr != state->GetClients().end();)
-                {
-                    if (!map->GetPlayer(*itr))
-                    {
-                        state->RemoveClient(*itr);
-                    }
-                    else
-                        ++itr;
-                }
                 break;
             }
             case WORLD_STATE_TYPE_ZONE:
@@ -623,12 +575,13 @@ WorldStateSet WorldStateMgr::GetUpdatedWorldStatesFor(Player* player, time_t upd
                 itr->second.GetRenewTime() != time(NULL) &&
                 IsFitToCondition(player, &itr->second))
                 {
-                    statesSet.insert(&itr->second);
-
                     // Always send UpLinked worldstate with own chains
+                    // Attention! possible need sent ALL linked chain in this case. need tests.
                     if (itr->second.GetTemplate() && itr->second.GetTemplate()->m_linkedId)
-                        if (WorldState const* state = GetWorldState(itr->second.GetTemplate()->m_linkedId, player->GetInstanceId()))
+                        if (WorldState const* state = GetWorldState(itr->second.GetTemplate()->m_linkedId, itr->second.GetInstance()))
                             statesSet.insert(state);
+
+                    statesSet.insert(&itr->second);
                 }
     }
     return statesSet;
@@ -674,8 +627,7 @@ bool WorldStateMgr::IsFitToCondition(Player* player, WorldState const* state)
         }
         case WORLD_STATE_TYPE_CAPTURE_POINT:
         {
-            // temporary
-            return true;
+            return state->HasClient(player);
             break;
         }
         case WORLD_STATE_TYPE_CUSTOM:
@@ -742,7 +694,7 @@ bool WorldStateMgr::IsFitToCondition(uint32 mapId, uint32 instanceId, uint32 zon
         case WORLD_STATE_TYPE_CAPTURE_POINT:
         {
             // temporary
-            return true;
+            return (instanceId == state->GetInstance());
             break;
         }
         case WORLD_STATE_TYPE_CUSTOM:
@@ -824,13 +776,14 @@ uint32 WorldStateMgr::GetWorldStateValueFor(WorldObject* object, uint32 stateId)
 
     ReadGuard guard(GetLock());
     WorldStateBounds bounds = m_worldState.equal_range(stateId);
-    if (bounds.first == bounds.second)
-        return UINT32_MAX;
 
-    for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
+    if (bounds.first != bounds.second)
     {
-        if (IsFitToCondition(object->GetMap()->GetId(), object->GetObjectGuid().GetCounter(), 0, 0, &iter->second))
-            return iter->second.GetValue();
+        for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
+        {
+            if (IsFitToCondition(object->GetMap()->GetId(), object->GetObjectGuid().GetCounter(), 0, 0, &iter->second))
+                return iter->second.GetValue();
+        }
     }
     return UINT32_MAX;
 };
@@ -853,8 +806,8 @@ void WorldStateMgr::SetWorldStateValueFor(Player* player, uint32 stateId, uint32
             }
         }
     }
-    else
-        CreateWorldState(stateId, player->GetInstanceId(), value);
+
+    CreateWorldState(stateId, player->GetInstanceId(), value);
 };
 
 void WorldStateMgr::SetWorldStateValueFor(Map* map, uint32 stateId, uint32 value)
@@ -875,8 +828,8 @@ void WorldStateMgr::SetWorldStateValueFor(Map* map, uint32 stateId, uint32 value
             }
         }
     }
-    else
-        CreateWorldState(stateId, map->GetInstanceId(), value);
+
+    CreateWorldState(stateId, map->GetInstanceId(), value);
 };
 
 void WorldStateMgr::SetWorldStateValueFor(WorldObject* object, uint32 stateId, uint32 value)
@@ -912,8 +865,8 @@ void WorldStateMgr::SetWorldStateValueFor(WorldObject* object, uint32 stateId, u
             }
         }
     }
-    else
-        CreateWorldState(stateId, object->GetObjectGuid().GetCounter(), value);
+
+    CreateWorldState(stateId, object->GetObjectGuid().GetCounter(), value);
 };
 
 
@@ -1007,6 +960,7 @@ void WorldStateMgr::AddWorldStateFor(Player* player, uint32 stateId, uint32 inst
                 {
                     for (WorldStateSet::const_iterator itr = statesSet.begin(); itr != statesSet.end(); ++itr)
                     {
+                        const_cast<WorldState*>(*itr)->AddClient(player);
                         player->_SendUpdateWorldState((*itr)->GetId(), (*itr)->GetValue());
                         DEBUG_LOG("WorldStateMgr::AddWorldStateFor  send linked state %u value %u for %s",
                         (*itr)->GetId(), (*itr)->GetValue(),
@@ -1031,6 +985,16 @@ void WorldStateMgr::RemoveWorldStateFor(Player* player, uint32 stateId, uint32 i
 
     if (state && state->HasClient(player))
     {
+            // DownLinked states - only client removed
+        if (HasDownLinkedWorldStates(stateId))
+        {
+            WorldStateSet statesSet = GetDownLinkedWorldStates(state);
+            if (!statesSet.empty())
+            {
+                for (WorldStateSet::const_iterator itr = statesSet.begin(); itr != statesSet.end(); ++itr)
+                        const_cast<WorldState*>(*itr)->RemoveClient(player);
+            }
+        }
         const_cast<WorldState*>(state)->RemoveClient(player);
         player->_SendUpdateWorldState(stateId, WORLD_STATE_REMOVE);
         DEBUG_LOG("WorldStateMgr::RemoveWorldStateFor remove main state %u (value %u) for %s",
@@ -1039,26 +1003,15 @@ void WorldStateMgr::RemoveWorldStateFor(Player* player, uint32 stateId, uint32 i
     }
 }
 
-void WorldStateMgr::CreateInstanceState(Map* map)
+void WorldStateMgr::CreateInstanceState(uint32 mapId, uint32 instanceId)
 {
-    if (!map)
-        return;
-
-    WorldStateSet statesSet = GetInstanceStates(map, (1 << WORLD_STATE_FLAG_INITIAL_STATE));
-
-    if (!statesSet.empty())
-        return;
-
     for (WorldStateTemplateMap::const_iterator itr = m_worldStateTemplates.begin(); itr != m_worldStateTemplates.end(); ++itr)
     {
-        if (itr->second.m_flags & (1 << WORLD_STATE_FLAG_INITIAL_STATE) &&
+        if (itr->second.HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) &&
             itr->second.m_stateType == WORLD_STATE_TYPE_MAP &&
-            itr->second.m_condition == map->GetId())
+            itr->second.m_condition == mapId)
         {
-            if (GetWorldState(itr->second.m_stateId, map->GetInstanceId()))
-                continue;
-
-            CreateWorldState(&itr->second, map->GetInstanceId());
+            CreateWorldState(&itr->second, instanceId);
         }
     }
 }

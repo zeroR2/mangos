@@ -1974,8 +1974,6 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         else
             return false;
     }
-    // Set last WS update time to 0 - grant sending ALL WS updates from new map.
-    SetLastWorldStateUpdateTime(time_t(0));
     return true;
 }
 
@@ -8902,7 +8900,10 @@ void Player::SendUpdatedWorldStates(bool force)
         return;
 
     for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    {
+        //DEBUG_LOG("Player::SendUpdatedWorldStates send state %u instance %u value %u to %s",(*itr)->GetId(), (*itr)->GetInstance(),(*itr)->GetValue(),GetObjectGuid().GetString().c_str());
         _SendUpdateWorldState((*itr)->GetId(), (*itr)->GetValue());
+    }
 
     SetLastWorldStateUpdateTime(time(NULL));
 }

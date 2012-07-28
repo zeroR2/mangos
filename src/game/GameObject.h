@@ -613,7 +613,9 @@ enum CapturePointSlider
     CAPTURE_SLIDER_NEUTRAL          = 50,                   // middle
 
     CAPTURE_SLIDER_ALLIANCE_LOCKED  = -1,                   // used to store additional information
-    CAPTURE_SLIDER_HORDE_LOCKED     = -2
+    CAPTURE_SLIDER_HORDE_LOCKED     = -2,
+
+    CAPTURE_SLIDER_GET_VALUE        = INT8_MAX,             // used for get value from linked WorldState (or still intact)
 };
 
 class Unit;

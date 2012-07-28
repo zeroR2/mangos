@@ -263,7 +263,7 @@ class MANGOS_DLL_DECL WorldStateMgr
         void CreateLinkedWorldStatesIfNeed(WorldObject* object);
 
         // instance operations
-        void CreateInstanceState(Map* map);
+        void CreateInstanceState(uint32 mapId, uint32 instanceId);
         void DeleteInstanceState(uint32 mapId, uint32 instanceId);
 
         // Methods for digging current states (need remove after finish alfa state)
