@@ -8891,7 +8891,7 @@ void Player::SendUpdatedWorldStates(bool force)
         return;
 
     // don't need update states more then one time per second
-    if (GetLastWorldStateUpdateTime() == time(NULL))
+    if (IsBeingTeleported() || GetLastWorldStateUpdateTime() == time(NULL))
         return;
 
     WorldStateSet wsSet = sWorldStateMgr.GetUpdatedWorldStatesFor(this, force ? 0 : GetLastWorldStateUpdateTime());
