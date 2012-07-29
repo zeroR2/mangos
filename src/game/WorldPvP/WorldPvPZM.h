@@ -143,7 +143,6 @@ class WorldPvPZM : public WorldPvP
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
         void FillInitialWorldStates(uint32 zoneId);
-        void SendRemoveWorldStates(Player* pPlayer);
 
         bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
 

@@ -158,7 +158,6 @@ class WorldPvPHP : public WorldPvP
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
         void FillInitialWorldStates(uint32 zoneId);
-        void SendRemoveWorldStates(Player* pPlayer);
 
     private:
         // world state update

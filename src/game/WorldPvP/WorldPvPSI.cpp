@@ -40,15 +40,6 @@ void WorldPvPSI::FillInitialWorldStates(uint32 zoneId)
 {
     FillInitialWorldState(zoneId, WORLD_STATE_SI_GATHERED_A, m_uiResourcesAly);
     FillInitialWorldState(zoneId, WORLD_STATE_SI_GATHERED_H, m_uiResourcesHorde);
-    FillInitialWorldState(zoneId, WORLD_STATE_SI_SILITHYST_MAX, MAX_SILITHYST);
-}
-
-// Remove world states
-void WorldPvPSI::SendRemoveWorldStates(Player* pPlayer)
-{
-    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_GATHERED_A, 0);
-    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_GATHERED_H, 0);
-    pPlayer->SendUpdateWorldState(WORLD_STATE_SI_SILITHYST_MAX, 0);
 }
 
 // Update current world states

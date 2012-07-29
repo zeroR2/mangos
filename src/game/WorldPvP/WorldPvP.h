@@ -105,16 +105,13 @@ class WorldPvP : public ZoneScript
         Player* GetPlayerInZone(bool bOnlyAlive = false, bool bCanBeGamemaster = true);
 
         // Wrapper for initial (per-script) WorldState filling, once per zone
-        void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32 value);
+        void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value);
 
     protected:
         // Player related stuff
         virtual void HandlePlayerEnterZone(Player* pPlayer);
         virtual void HandlePlayerLeaveZone(Player* pPlayer);
         virtual void HandlePlayerKill(Player* pKiller, Unit* pVictim);
-
-        // remove world states
-        virtual void SendRemoveWorldStates(Player* pPlayer) {}
 
         void RegisterZone(uint32 zoneId);
         bool HasPlayer(Player* pPlayer) const;

@@ -41,10 +41,6 @@ void WorldPvP::HandlePlayerLeaveZone(Player* pPlayer)
     if (!pPlayer)
         return;
 
-    // remove the world state information from the player
-    if (!pPlayer->GetSession()->PlayerLogout())
-        SendRemoveWorldStates(pPlayer);
-
     m_sZonePlayers.erase(pPlayer->GetObjectGuid());
 
     sLog.outDebug("Player %s left an outdoorpvp zone", pPlayer->GetName());
@@ -175,7 +171,14 @@ Player* WorldPvP::GetPlayerInZone(bool bOnlyAlive /*=false*/, bool bCanBeGamemas
     return NULL;
 }
 
-void WorldPvP::FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32 value)
+void WorldPvP::FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value)
 {
-    sWorldStateMgr.FillInitialWorldState(stateId, value, WORLD_STATE_TYPE_ZONE, zoneId);
+    uint32 stateValue = sWorldStateMgr.GetWorldStateValueFor(UINT32_MAX, UINT32_MAX, zoneId, UINT32_MAX, stateId);
+
+    if (stateValue != UINT32_MAX)
+    {
+        value = stateValue;
+    }
+    else
+        sWorldStateMgr.FillInitialWorldState(stateId, value, WORLD_STATE_TYPE_ZONE, zoneId);
 }

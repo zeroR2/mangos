@@ -557,7 +557,7 @@ WorldStateSet WorldStateMgr::GetWorldStatesFor(Player* player, uint32 flags)
     {
         if (itr->second.GetFlags() & flags)
             if (bFull || IsFitToCondition(player, &itr->second))
-                statesSet.insert(&itr->second);
+                statesSet.push_back(&itr->second);
     }
     return statesSet;
 };
@@ -579,9 +579,9 @@ WorldStateSet WorldStateMgr::GetUpdatedWorldStatesFor(Player* player, time_t upd
                     // Attention! possible need sent ALL linked chain in this case. need tests.
                     if (itr->second.GetTemplate() && itr->second.GetTemplate()->m_linkedId)
                         if (WorldState const* state = GetWorldState(itr->second.GetTemplate()->m_linkedId, itr->second.GetInstance()))
-                            statesSet.insert(state);
+                            statesSet.push_back(state);
 
-                    statesSet.insert(&itr->second);
+                    statesSet.push_back(&itr->second);
                 }
     }
     return statesSet;
@@ -754,6 +754,21 @@ uint32 WorldStateMgr::GetWorldStateValueFor(Map* map, uint32 stateId)
     for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
     {
         if (IsFitToCondition(map, &iter->second))
+            return iter->second.GetValue();
+    }
+    return UINT32_MAX;
+};
+
+uint32 WorldStateMgr::GetWorldStateValueFor(uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId, uint32 stateId)
+{
+    ReadGuard guard(GetLock());
+    WorldStateBounds bounds = m_worldState.equal_range(stateId);
+    if (bounds.first == bounds.second)
+        return UINT32_MAX;
+
+    for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
+    {
+        if (IsFitToCondition(mapId, instanceId, zoneId, areaId, &iter->second))
             return iter->second.GetValue();
     }
     return UINT32_MAX;
@@ -1093,12 +1108,12 @@ WorldStateSet WorldStateMgr::GetInstanceStates(uint32 mapId, uint32 instanceId, 
             if (itr->second.GetType() == WORLD_STATE_TYPE_MAP &&
                 itr->second.GetCondition() == mapId &&
                 itr->second.GetInstance() == instanceId)
-                statesSet.insert(&itr->second);
+                statesSet.push_back(&itr->second);
             else if (full)
             {
                 Map* map = sMapMgr.FindMap(mapId, instanceId);
                 if (IsFitToCondition(map, &itr->second))
-                    statesSet.insert(&itr->second);
+                    statesSet.push_back(&itr->second);
             }
         }
     }
@@ -1111,12 +1126,25 @@ WorldStateSet WorldStateMgr::GetInitWorldStates(uint32 mapId, uint32 instanceId,
     statesSet.clear();
 
     ReadGuard guard(GetLock());
-    for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
+    for (WorldStateMap::const_iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-        if ((itr->second.HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) ||
-            itr->second.HasFlag(WORLD_STATE_FLAG_ACTIVE)) &&
-            IsFitToCondition(mapId, instanceId, zoneId, areaId, &itr->second))
-            statesSet.insert(&itr->second);
+        WorldState const* state = &itr->second;
+        if (!state)
+            continue;
+
+        if ((state->HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) ||
+            state->HasFlag(WORLD_STATE_FLAG_ACTIVE)) &&
+            IsFitToCondition(mapId, instanceId, zoneId, areaId, state))
+        {
+            // DownLinked states sended always before main!
+            if (HasDownLinkedWorldStates(state->GetId()))
+            {
+                WorldStateSet linkedStatesSet = GetDownLinkedWorldStates(state);
+                if (!linkedStatesSet.empty())
+                    std::copy(linkedStatesSet.begin(), linkedStatesSet.end(), std::back_inserter(statesSet));
+            }
+            statesSet.push_back(&itr->second);
+        }
     }
     return statesSet;
 };
@@ -1134,7 +1162,7 @@ WorldStateSet WorldStateMgr::GetDownLinkedWorldStates(WorldState const* state)
     for (WorldStatesLinkHash::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
     {
         if (WorldState const* linkedState = GetWorldState(itr->second, state->GetInstance()))
-            statesSet.insert(linkedState);
+            statesSet.push_back(linkedState);
     }
     return statesSet;
 }

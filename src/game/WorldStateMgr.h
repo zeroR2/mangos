@@ -234,7 +234,7 @@ struct WorldState
 
 typedef std::multimap<uint32 /* state id */, WorldState>   WorldStateMap;
 typedef std::pair<WorldStateMap::const_iterator,WorldStateMap::const_iterator> WorldStateBounds;
-typedef std::set<WorldState const*> WorldStateSet;
+typedef std::vector<WorldState const*> WorldStateSet;
 
 // class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, MaNGOS::ClassLevelLockable<WorldStateMgr, ACE_Thread_Mutex> >
 class MANGOS_DLL_DECL WorldStateMgr
@@ -286,6 +286,7 @@ class MANGOS_DLL_DECL WorldStateMgr
         uint32 GetWorldStateValue(uint32 stateId);
         uint32 GetWorldStateValueFor(Player* player, uint32 stateId);
         uint32 GetWorldStateValueFor(Map* map, uint32 stateId);
+        uint32 GetWorldStateValueFor(uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId, uint32 stateId);
         uint32 GetWorldStateValueFor(WorldObject* object, uint32 stateId);
 
         void   SetWorldStateValueFor(Player* player, uint32 stateId, uint32 value);

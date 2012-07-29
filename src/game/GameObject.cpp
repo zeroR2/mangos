@@ -2436,20 +2436,11 @@ void GameObject::TickCapturePoint()
         eventId = goInfo->capturePoint.winEventID2;
         m_captureState = CAPTURE_STATE_WIN_HORDE;
     }
-
     /* PROGRESS EVENTS */
     // alliance takes the tower from neutral or contested to alliance
     else if ((m_captureState == CAPTURE_STATE_NEUTRAL && m_captureSlider > CAPTURE_SLIDER_NEUTRAL + neutralPercent * 0.5f) || (m_captureState == CAPTURE_STATE_CONTEST_ALLIANCE && progressFaction == ALLIANCE))
     {
         eventId = goInfo->capturePoint.progressEventID1;
-        GuidSet players;
-        for (GuidSet::iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
-        {
-            Player* player = ObjectMgr::GetPlayer(*itr);
-            if (player && player->GetTeam() == ALLIANCE)
-                players.insert(*itr);
-        }
-        sWorldPvPMgr.HandleObjectiveComplete(players, goInfo->capturePoint.progressEventID1);
 
         // set capture state to alliance
         m_captureState = CAPTURE_STATE_PROGRESS_ALLIANCE;
@@ -2458,15 +2449,6 @@ void GameObject::TickCapturePoint()
     else if ((m_captureState == CAPTURE_STATE_NEUTRAL && m_captureSlider < CAPTURE_SLIDER_NEUTRAL - neutralPercent * 0.5f) || (m_captureState == CAPTURE_STATE_CONTEST_HORDE && progressFaction == HORDE))
     {
         eventId = goInfo->capturePoint.progressEventID2;
-
-        GuidSet players;
-        for (GuidSet::iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
-        {
-            Player* player = ObjectMgr::GetPlayer(*itr);
-            if (player && player->GetTeam() == HORDE)
-                players.insert(*itr);
-        }
-        sWorldPvPMgr.HandleObjectiveComplete(players, goInfo->capturePoint.progressEventID2);
 
         // set capture state to horde
         m_captureState = CAPTURE_STATE_PROGRESS_HORDE;
@@ -2502,12 +2484,25 @@ void GameObject::TickCapturePoint()
 
     if (eventId)
     {
+        GuidSet players;
+        for (GuidSet::iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
+        {
+            Player* player = ObjectMgr::GetPlayer(*itr);
+            if (player && player->GetTeam() == progressFaction)
+                players.insert(*itr);
+        }
+        sWorldPvPMgr.HandleObjectiveComplete(players, eventId);
+
         // send zone script
         if (m_zoneScript)
-            m_zoneScript->ProcessEvent(this, eventId, rangePlayers > 0 ? ALLIANCE : HORDE);
+            m_zoneScript->ProcessEvent(this, eventId, progressFaction);
 
         // Send script event to SD2 and database as well - this can be used for summoning creatures, casting specific spells or spawning GOs
         if (!sScriptMgr.OnProcessEvent(eventId, this, this, true))
             GetMap()->ScriptsStart(sEventScripts, eventId, this, this);
+
+        DEBUG_LOG("GameObject::TickCapturePoint gameobject %s send event %u to faction %u, players group size %u, new state %u",
+            GetObjectGuid().GetString().c_str(),
+            eventId, progressFaction, players.size(), m_captureState);
     }
 }

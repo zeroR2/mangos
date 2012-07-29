@@ -55,28 +55,6 @@ bool WorldPvPZM::InitWorldPvPArea()
 
 void WorldPvPZM::FillInitialWorldStates(uint32 zoneId)
 {
-    FillInitialWorldState(zoneId, m_uiAllianceScoutWorldState, 1);
-    FillInitialWorldState(zoneId, m_uiHordeScoutWorldState, 1);
-    FillInitialWorldState(zoneId, m_uiGraveyardWorldState, 1);
-
-    for (uint8 i = 0; i < MAX_ZM_TOWERS; ++i)
-    {
-        FillInitialWorldState(zoneId, m_uiBeaconWorldState[i], 1);
-        FillInitialWorldState(zoneId, m_uiBeaconMapState[i], 1);
-    }
-}
-
-void WorldPvPZM::SendRemoveWorldStates(Player* pPlayer)
-{
-    pPlayer->SendUpdateWorldState(m_uiAllianceScoutWorldState, 0);
-    pPlayer->SendUpdateWorldState(m_uiHordeScoutWorldState, 0);
-    pPlayer->SendUpdateWorldState(m_uiGraveyardWorldState, 0);
-
-    for (uint8 i = 0; i < MAX_ZM_TOWERS; ++i)
-    {
-        pPlayer->SendUpdateWorldState(m_uiBeaconWorldState[i], 0);
-        pPlayer->SendUpdateWorldState(m_uiBeaconMapState[i], 0);
-    }
 }
 
 void WorldPvPZM::HandlePlayerEnterZone(Player* pPlayer)

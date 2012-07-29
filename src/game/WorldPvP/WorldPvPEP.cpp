@@ -50,17 +50,6 @@ void WorldPvPEP::FillInitialWorldStates(uint32 zoneId)
     FillInitialWorldState(zoneId, WORLD_STATE_TOWER_COUNT_ALY, m_uiTowersAlly);
     FillInitialWorldState(zoneId, WORLD_STATE_TOWER_COUNT_HORDE, m_uiTowersHorde);
 
-    for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
-        FillInitialWorldState(zoneId, m_uiTowerWorldState[i], 1);
-}
-
-void WorldPvPEP::SendRemoveWorldStates(Player* pPlayer)
-{
-    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_ALY, 0);
-    pPlayer->SendUpdateWorldState(WORLD_STATE_TOWER_COUNT_HORDE, 0);
-
-    for (uint8 i = 0; i < MAX_EP_TOWERS; ++i)
-        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 }
 
 void WorldPvPEP::UpdateWorldState()

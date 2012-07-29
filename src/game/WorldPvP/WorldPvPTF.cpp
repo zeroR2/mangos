@@ -50,7 +50,6 @@ bool WorldPvPTF::InitWorldPvPArea()
 
 void WorldPvPTF::FillInitialWorldStates(uint32 zoneId)
 {
-    FillInitialWorldState(zoneId, m_uiControllerWorldState, 1);
     if (m_uiControllerWorldState == WORLD_STATE_TF_TOWERS_CONTROLLED)
     {
         FillInitialWorldState(zoneId, WORLD_STATE_TF_TOWER_COUNT_H, m_uiTowersHorde);
@@ -59,16 +58,6 @@ void WorldPvPTF::FillInitialWorldStates(uint32 zoneId)
     else
         UpdateTimerWorldState();
 
-    for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
-        FillInitialWorldState(zoneId, m_uiTowerWorldState[i], 1);
-}
-
-void WorldPvPTF::SendRemoveWorldStates(Player* pPlayer)
-{
-    pPlayer->SendUpdateWorldState(m_uiControllerWorldState, 0);
-
-    for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
-        pPlayer->SendUpdateWorldState(m_uiTowerWorldState[i], 0);
 }
 
 void WorldPvPTF::UpdateWorldState(uint8 uiValue)

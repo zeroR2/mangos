@@ -84,7 +84,6 @@ class WorldPvPSI : public WorldPvP
         void HandlePlayerLeaveZone(Player* pPlayer);
 
         void FillInitialWorldStates(uint32 zoneId);
-        void SendRemoveWorldStates(Player* pPlayer);
         void UpdateWorldState();
 
         bool HandleAreaTrigger(Player* pPlayer, uint32 uiTriggerId);
