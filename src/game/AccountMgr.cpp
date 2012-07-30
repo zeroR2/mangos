@@ -290,11 +290,11 @@ AccountOpResult AccountMgr::AddRAFLink(uint32 accid, uint32 friendid)
 
     RafLinkedList* referred = GetRAFAccounts(accid, true);
     if (referred)
-        referred->push_back(accid);
+        referred->push_back(friendid);
 
     RafLinkedList* referal = GetRAFAccounts(friendid, false);
     if (referal)
-        referal->push_back(friendid);
+        referal->push_back(accid);
 
     return AOR_OK;
 }
@@ -392,10 +392,20 @@ void AccountMgr::ClearPlayerDataCache(ObjectGuid guid)
     if (!guid || !guid.IsPlayer())
         return;
 
+    uint32 accId = GetPlayerAccountIdByGUID(guid);
+
     WriteGuard Guard(GetLock());
     PlayerDataCacheMap::iterator itr = mPlayerDataCacheMap.find(guid);
     if (itr != mPlayerDataCacheMap.end())
         mPlayerDataCacheMap.erase(itr);
+
+    RafLinkedMap::iterator itr1 = mRAFLinkedMap.find(std::pair<uint32,bool>(accId, true));
+    if (itr1 != mRAFLinkedMap.end())
+        mRAFLinkedMap.erase(itr1);
+    itr1 = mRAFLinkedMap.find(std::pair<uint32,bool>(accId, false));
+    if (itr1 != mRAFLinkedMap.end())
+        mRAFLinkedMap.erase(itr1);
+
 }
 
 void AccountMgr::MakePlayerDataCache(Player* player)
