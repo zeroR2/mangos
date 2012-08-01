@@ -591,6 +591,8 @@ Player::~Player ()
     // it must be unloaded already in PlayerLogout and accessed only for loggined player
     //m_social = NULL;
 
+    sAccountMgr.ClearPlayerDataCache(GetObjectGuid());
+
     // Note: buy back item already deleted from DB when player was saved
     for(int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
@@ -24144,6 +24146,9 @@ bool Player::CheckRAFConditions()
                 continue;
 
             if (member->GetAccountLinkedState() == STATE_NOT_LINKED)
+                continue;
+
+            if (sAccountMgr.GetPlayerAccountIdByGUID(GetObjectGuid()) == sAccountMgr.GetPlayerAccountIdByGUID(member->GetObjectGuid()))
                 continue;
 
             if (!IsReferAFriendLinked(member))
