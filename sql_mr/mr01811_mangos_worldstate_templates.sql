@@ -187,97 +187,76 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (2314, 5, 1377, 65538, 0, 2317, '', ''),
 (2317, 5, 1377, 65538, 200,  0, '', '');
 
+
 -- Battlegrounds
 -- Alterac valley
 DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = 30;
 INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
--- Stoneheart Grave
 (1301, 4, 30, 65538, 0, 0, '', ''),
 (1302, 4, 30, 65538, 1, 0, '', ''),
 (1303, 4, 30, 65538, 0, 0, '', ''),
 (1304, 4, 30, 65538, 0, 0, '', ''),
--- Stormpike first aid station
 (1325, 4, 30, 65538, 1, 0, '', ''),
 (1326, 4, 30, 65538, 0, 0, '', ''),
 (1327, 4, 30, 65538, 0, 0, '', ''),
 (1328, 4, 30, 65538, 0, 0, '', ''),
--- Frostwolf Hut
 (1329, 4, 30, 65538, 0, 0, '', ''),
 (1330, 4, 30, 65538, 1, 0, '', ''),
 (1331, 4, 30, 65538, 0, 0, '', ''),
 (1332, 4, 30, 65538, 0, 0, '', ''),
--- Stormpike first aid station
 (1333, 4, 30, 65538, 1, 0, '', ''),
 (1334, 4, 30, 65538, 0, 0, '', ''),
 (1335, 4, 30, 65538, 0, 0, '', ''),
 (1336, 4, 30, 65538, 0, 0, '', ''),
--- Frostwolf Grave
 (1337, 4, 30, 65538, 0, 0, '', ''),
 (1338, 4, 30, 65538, 1, 0, '', ''),
 (1339, 4, 30, 65538, 0, 0, '', ''),
 (1340, 4, 30, 65538, 0, 0, '', ''),
--- Snowfall Grave
 (1341, 4, 30, 65538, 0, 0, '', ''),
 (1342, 4, 30, 65538, 0, 0, '', ''),
 (1343, 4, 30, 65538, 0, 0, '', ''),
 (1344, 4, 30, 65538, 0, 0, '', ''),
--- Iceblood grave
 (1346, 4, 30, 65538, 0, 0, '', ''),
 (1347, 4, 30, 65538, 1, 0, '', ''),
 (1348, 4, 30, 65538, 0, 0, '', ''),
 (1349, 4, 30, 65538, 0, 0, '', ''),
--- Dunbaldar South Bunker
+(1357, 4, 30, 65538, 1, 0, '', ''),
+(1360, 4, 30, 65538, 1, 0, '', ''),
 (1361, 4, 30, 65538, 1, 0, '', ''),
-(1370, 4, 30, 65538, 0, 0, '', ''),
-(1375, 4, 30, 65538, 0, 0, '', ''),
-(1378, 4, 30, 65538, 0, 0, '', ''),
--- Dunbaldar North Bunker
 (1362, 4, 30, 65538, 1, 0, '', ''),
-(1374, 4, 30, 65538, 0, 0, '', ''),
-(1379, 4, 30, 65538, 0, 0, '', ''),
-(1371, 4, 30, 65538, 0, 0, '', ''),
--- Icewing Bunker
 (1363, 4, 30, 65538, 1, 0, '', ''),
-(1372, 4, 30, 65538, 0, 0, '', ''),
-(1376, 4, 30, 65538, 0, 0, '', ''),
-(1380, 4, 30, 65538, 0, 0, '', ''),
--- Stoneheart Bunker
 (1364, 4, 30, 65538, 1, 0, '', ''),
-(1373, 4, 30, 65538, 0, 0, '', ''),
-(1377, 4, 30, 65538, 0, 0, '', ''),
-(1381, 4, 30, 65538, 0, 0, '', ''),
--- Iceblood Tower
-(1368, 4, 30, 65538, 0, 0, '', ''),
-(1385, 4, 30, 65538, 1, 0, '', ''),
-(1390, 4, 30, 65538, 0, 0, '', ''),
-(1395, 4, 30, 65538, 0, 0, '', ''),
--- Tower Point
-(1367, 4, 30, 65538, 0, 0, '', ''),
-(1384, 4, 30, 65538, 1, 0, '', ''),
-(1389, 4, 30, 65538, 0, 0, '', ''),
-(1394, 4, 30, 65538, 0, 0, '', ''),
--- Frostwolf East
-(1366, 4, 30, 65538, 0, 0, '', ''),
-(1383, 4, 30, 65538, 1, 0, '', ''),
-(1388, 4, 30, 65538, 0, 0, '', ''),
-(1393, 4, 30, 65538, 0, 0, '', ''),
--- Frostwolf West
 (1365, 4, 30, 65538, 0, 0, '', ''),
+(1366, 4, 30, 65538, 0, 0, '', ''),
+(1367, 4, 30, 65538, 0, 0, '', ''),
+(1368, 4, 30, 65538, 0, 0, '', ''),
+(1370, 4, 30, 65538, 0, 0, '', ''),
+(1371, 4, 30, 65538, 0, 0, '', ''),
+(1372, 4, 30, 65538, 0, 0, '', ''),
+(1373, 4, 30, 65538, 0, 0, '', ''),
+(1374, 4, 30, 65538, 0, 0, '', ''),
+(1375, 4, 30, 65538, 0, 0, '', ''),
+(1376, 4, 30, 65538, 0, 0, '', ''),
+(1377, 4, 30, 65538, 0, 0, '', ''),
+(1378, 4, 30, 65538, 0, 0, '', ''),
+(1379, 4, 30, 65538, 0, 0, '', ''),
+(1380, 4, 30, 65538, 0, 0, '', ''),
+(1381, 4, 30, 65538, 0, 0, '', ''),
 (1382, 4, 30, 65538, 1, 0, '', ''),
+(1383, 4, 30, 65538, 1, 0, '', ''),
+(1384, 4, 30, 65538, 1, 0, '', ''),
+(1385, 4, 30, 65538, 1, 0, '', ''),
 (1387, 4, 30, 65538, 0, 0, '', ''),
+(1388, 4, 30, 65538, 0, 0, '', ''),
+(1389, 4, 30, 65538, 0, 0, '', ''),
+(1390, 4, 30, 65538, 0, 0, '', ''),
 (1392, 4, 30, 65538, 0, 0, '', ''),
--- Mines
-(1355, 4, 30, 65538, 0, 0, '', 'South mine - alliance'),
-(1356, 4, 30, 65538, 0, 0, '', 'South mine - horde'),
-(1357, 4, 30, 65538, 1, 0, '', 'South mine - neytral'),
-(1358, 4, 30, 65538, 0, 0, '', 'North mine - alliance'),
-(1359, 4, 30, 65538, 0, 0, '', 'North mine - horde'),
-(1360, 4, 30, 65538, 1, 0, '', 'North mine - neytral'),
--- Weather?
-(1966, 4, 30, 65538, 1, 0, '', 'Snowfall'),
--- Counters
-(3127, 4, 30, 65538, 600, 3134, '', 'Alliance score'),
-(3128, 4, 30, 65538, 600, 3133, '', 'Horde score'),
+(1393, 4, 30, 65538, 0, 0, '', ''),
+(1394, 4, 30, 65538, 0, 0, '', ''),
+(1395, 4, 30, 65538, 0, 0, '', ''),
+(1966, 4, 30, 65538, 1, 0, '', ''),
+(3127, 4, 30, 65538, 600, 3134, '', ''),
+(3128, 4, 30, 65538, 600, 3133, '', ''),
 (3133, 4, 30, 65538, 1, 0, '', ''),
 (3134, 4, 30, 65538, 1, 0, '', '');
 
@@ -473,88 +452,5 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (4327, 4, 628, 65538, 1, 0, '', ''),
 (4328, 4, 628, 65538, 1, 0, '', '');
 
--- Instances
--- Zulaman
-SET @MAP := 568;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(3104, 4, @MAP, 65538, 0, 0, '', 'Main WS'),
-(3106, 4, @MAP, 65538, 0, 3104, '', 'Counter');
-
--- Violet hold
-SET @MAP := 608;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(3816, 4, @MAP, 65538, 0, 0, '', 'Main WS'),
-(3815, 4, @MAP, 65538, 0, 3816, '', 'Prisons'),
-(3810, 4, @MAP, 65538, 0, 3816, '', 'Portals');
-
--- Ruby sanctum
-SET @MAP := 724;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(5051, 4, @MAP, 65538, 0, 0, '', 'Main WS'),
-(5050, 4, @MAP, 65538, 0, 5051, '', 'Counter shadow'),
-(5049, 4, @MAP, 65538, 0, 5051, '', 'Counter real');
-
--- Culling of Stratholme
-SET @MAP := 595;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(3479, 4, @MAP, 65538, 0, 0, '', 'Crates WS'),
-(3480, 4, @MAP, 65538, 0, 3479, '', 'Crates count');
-
--- Hyjal
-SET @MAP := 534;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(2453, 4, @MAP, 65538, 0, 0, '', 'Enemy WS'),
-(2454, 4, @MAP, 65538, 0, 2453, '', 'Enemy count'),
-(2842, 4, @MAP, 65538, 0, 0, '', 'Waves');
-
--- Old hillsbrad
-SET @MAP := 560;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(2436, 4, @MAP, 65538, 0, 0, '', 'Old Hillsbrad WS');
-
--- Dark portal
-SET @MAP := 269;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(2541, 4, @MAP, 65538, 0, 0, '', 'Main WS'),
-(2540, 4, @MAP, 65538, 0, 2541, '', 'Shield'),
-(2784, 4, @MAP, 65538, 0, 0, '', 'Rift');
-
--- Ulduar raid
-SET @MAP := 603;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(4132, 4, @MAP, 65538, 0, 0, '', 'Algalon timer'),
-(4131, 4, @MAP, 65538, 0, 4132, '', 'Algalon timer counter');
-
--- Halls of reflection
-SET @MAP := 668;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(4884, 4, @MAP, 65538, 0, 0, '', 'HOR Waves main WS'),
-(4882, 4, @MAP, 65538, 0, 4884, '', 'HOR Waves counter');
-
--- Trial of Crusader
-SET @MAP := 649;
-DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(4390, 4, @MAP, 65538, 0, 0, '', 'TOC attempts main WS'),
-(4389, 4, @MAP, 65538, 0, 4390, '', 'TOC attempts counter');
-
--- Zones
--- Ebon hold
--- SET @MAP := 609;
-SET @_ZONE := 4298;
-DELETE FROM `worldstate_template` WHERE `type` = 5 AND `condition` = @_ZONE;
-INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
-(3592, 5, @_ZONE, 65538, 0, 3605, '', 'Remains'),
-(3603, 5, @_ZONE, 65538, 0, 3603, '', 'Countdown'),
-(3605, 5, @_ZONE, 65538, 0, 0, '', 'Main WS');
 
 -- Arenas
