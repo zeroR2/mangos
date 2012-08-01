@@ -48,12 +48,15 @@ void WorldStateMgr::Initialize()
 void WorldStateMgr::Update()
 {
     {
-    // Update part 1 - calculating (and mark for cleanup)
-
+        // Update part 1 - calculating (and mark for cleanup)
         ReadGuard guard(GetLock());
         for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
         {
             WorldState* state = &itr->second;
+
+            if (!state)
+                continue;
+
             switch (state->GetType())
             {
                 case WORLD_STATE_TYPE_BGWEEKEND:
@@ -82,6 +85,12 @@ void WorldStateMgr::Update()
                 default:
                     break;
             }
+
+            if (state->GetRenewTime() < time(NULL) - (time_t)sWorld.getConfig(CONFIG_UINT32_WORLD_STATE_EXPIRETIME))
+            {
+                state->RemoveFlag(WORLD_STATE_FLAG_ACTIVE);
+                state->AddFlag(WORLD_STATE_FLAG_DELETED);
+            }
         }
     }
 
@@ -89,12 +98,12 @@ void WorldStateMgr::Update()
     SaveToDB();
 
     {
-    // Update part 2 - remove states with WORLD_STATE_FLAG_DELETED flag
+        // Update part 2 - remove states with WORLD_STATE_FLAG_DELETED flag
         WriteGuard guard(GetLock());
         for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end();)
         {
             if (itr->second.HasFlag(WORLD_STATE_FLAG_DELETED))
-                m_worldState.erase(itr);
+                m_worldState.erase(itr++);
             else
                 ++itr;
         }
@@ -449,7 +458,7 @@ void WorldStateMgr::DeleteWorldState(WorldState* state)
     for (WorldStateMap::iterator iter = m_worldState.begin(); iter != m_worldState.end();)
     {
         if (&iter->second == state)
-            m_worldState.erase(iter);
+            m_worldState.erase(iter++);
         else
             ++iter;
     }
