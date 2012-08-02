@@ -82,6 +82,7 @@ void WorldStateMgr::Update()
                 case WORLD_STATE_TYPE_BATTLEGROUND:
                 case WORLD_STATE_TYPE_CAPTURE_POINT:
                 case WORLD_STATE_TYPE_WORLD_UNCOMMON:
+                case WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT:
                 default:
                     break;
             }
@@ -261,7 +262,14 @@ void WorldStateMgr::LoadFromDB()
         WorldStateTemplate const* tmpl = FindTemplate(stateId);
         if (tmpl)
         {
-            m_worldState.insert(WorldStateMap::value_type(stateId, WorldState(tmpl, instanceId, flags, _value, renewtime)));
+            // Some worldstates loaded after creating (linked). need only set value.
+            if (WorldState const* state  = GetWorldState(stateId, instanceId, type))
+            {
+                if (state->GetValue() != _value)
+                    const_cast<WorldState*>(state)->SetValue(_value);
+            }
+            else
+                m_worldState.insert(WorldStateMap::value_type(stateId, WorldState(tmpl, instanceId, flags, _value, renewtime)));
         }
         else if (type == WORLD_STATE_TYPE_CUSTOM)
         {
@@ -312,72 +320,101 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
         case HIGHGUID_GAMEOBJECT:
         {
             GameObjectInfo const* goInfo = sGOStorage.LookupEntry<GameObjectInfo>(guid.GetEntry());
-            if (!goInfo || goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
+            switch (goInfo->type)
             {
-                sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this object type not supported!", guid.GetString().c_str());
-                break;
-            }
-
-            // state 1
-            if (goInfo->capturePoint.worldState1)
-            {
-                WorldState const* _state = NULL;
-                if (_state  = GetWorldState(goInfo->capturePoint.worldState1, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                case GAMEOBJECT_TYPE_CAPTURE_POINT:
                 {
-                    if (_state->GetValue() != WORLD_STATE_ADD)
-                        DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
-                            goInfo->capturePoint.worldState1,
-                            guid.GetString().c_str(),
-                            _state->GetValue(),
-                            WORLD_STATE_ADD
-                        );
+                    // state 1
+                    if (goInfo->capturePoint.worldState1)
+                    {
+                        WorldState const* _state = NULL;
+                        if (_state  = GetWorldState(goInfo->capturePoint.worldState1, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                        {
+                            if (_state->GetValue() != WORLD_STATE_ADD)
+                                DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                                    goInfo->capturePoint.worldState1,
+                                    guid.GetString().c_str(),
+                                    _state->GetValue(),
+                                    WORLD_STATE_ADD
+                                );
+                        }
+                        else
+                            _state = CreateWorldState(goInfo->capturePoint.worldState1, instanceId);
+
+                        const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+                    }
+
+                    // state 2
+                    if (goInfo->capturePoint.worldState2)
+                    {
+                        WorldState const* _state = NULL;
+                        if (_state  = GetWorldState(goInfo->capturePoint.worldState2, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                        {
+                            if (_state->GetValue() != CAPTURE_SLIDER_NEUTRAL)
+                                DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                                    goInfo->capturePoint.worldState2,
+                                    guid.GetString().c_str(),
+                                    _state->GetValue(),
+                                    CAPTURE_SLIDER_NEUTRAL
+                                );
+                        }
+                        else
+                             _state = CreateWorldState(goInfo->capturePoint.worldState2, instanceId);
+
+                        const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+                    }
+
+                    // state 3
+                    if (goInfo->capturePoint.worldState3)
+                    {
+                        WorldState const* _state = NULL;
+                        if (_state  = GetWorldState(goInfo->capturePoint.worldState3, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                        {
+                            if (_state->GetValue() != goInfo->capturePoint.neutralPercent)
+                                DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                                    goInfo->capturePoint.worldState3,
+                                    guid.GetString().c_str(),
+                                    _state->GetValue(),
+                                    goInfo->capturePoint.neutralPercent
+                                );
+                        }
+                        else
+                            _state = CreateWorldState(goInfo->capturePoint.worldState3, instanceId);
+
+                        const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+                    }
+                    break;
                 }
-                else
-                    _state = CreateWorldState(goInfo->capturePoint.worldState1, instanceId);
-
-                const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
-            }
-
-            // state 2
-            if (goInfo->capturePoint.worldState2)
-            {
-                WorldState const* _state = NULL;
-                if (_state  = GetWorldState(goInfo->capturePoint.worldState2, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
                 {
-                    if (_state->GetValue() != CAPTURE_SLIDER_NEUTRAL)
-                        DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
-                            goInfo->capturePoint.worldState2,
-                            guid.GetString().c_str(),
-                            _state->GetValue(),
-                            CAPTURE_SLIDER_NEUTRAL
-                        );
+                    if (goInfo->destructibleBuilding.linkedWorldState)
+                    {
+                        WorldState const* _state = NULL;
+                        if (_state  = GetWorldState(goInfo->destructibleBuilding.linkedWorldState, instanceId, WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT))
+                        {
+                            if (_state->GetValue() != OBJECT_STATE_NONE)
+                                DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
+                                    goInfo->destructibleBuilding.linkedWorldState,
+                                    guid.GetString().c_str(),
+                                    _state->GetValue(),
+                                    OBJECT_STATE_NONE
+                                );
+                        }
+                        else
+                            _state = CreateWorldState(goInfo->destructibleBuilding.linkedWorldState, instanceId);
+
+                        const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
+                    }
+                    else
+                        return;
+                    break;
                 }
-                else
-                     _state = CreateWorldState(goInfo->capturePoint.worldState2, instanceId);
-
-                const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
-            }
-
-            // state 3
-            if (goInfo->capturePoint.worldState3)
-            {
-                WorldState const* _state = NULL;
-                if (_state  = GetWorldState(goInfo->capturePoint.worldState3, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                default:
                 {
-                    if (_state->GetValue() != goInfo->capturePoint.neutralPercent)
-                        DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
-                            goInfo->capturePoint.worldState3,
-                            guid.GetString().c_str(),
-                            _state->GetValue(),
-                            goInfo->capturePoint.neutralPercent
-                        );
+                    sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this GameObject type (%u) not supported!", guid.GetString().c_str(), goInfo->type);
+                    break;
                 }
-                else
-                    _state = CreateWorldState(goInfo->capturePoint.worldState3, instanceId);
-
-                const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
             }
-
             break;
         }
         case HIGHGUID_UNIT:
@@ -385,9 +422,10 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
         case HIGHGUID_PET:
         case HIGHGUID_PLAYER:
         default:
-            sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this object type not supported!", guid.GetString().c_str());
-        break;
+            sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this object type %u not supported!", guid.GetString().c_str(), object->GetTypeId());
+            return;
     }
+    DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed created linked WorldState(s) for %s", object->GetObjectGuid().GetString().c_str());
 }
 
 void WorldStateMgr::SaveToDB()
@@ -639,6 +677,13 @@ bool WorldStateMgr::IsFitToCondition(Player* player, WorldState const* state)
             return state->HasClient(player);
             break;
         }
+        case  WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT:
+        {
+            // Need more correct limitation
+            if (player->GetZoneId() == state->GetCondition())
+                return true;
+            break;
+        }
         case WORLD_STATE_TYPE_CUSTOM:
         {
             if (!state->GetCondition())
@@ -702,8 +747,15 @@ bool WorldStateMgr::IsFitToCondition(uint32 mapId, uint32 instanceId, uint32 zon
         }
         case WORLD_STATE_TYPE_CAPTURE_POINT:
         {
-            // temporary
             return (instanceId == state->GetInstance());
+            break;
+        }
+        case  WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT:
+        {
+            if (instanceId)
+                return (instanceId == state->GetInstance());
+            else
+                return zoneId == state->GetCondition();
             break;
         }
         case WORLD_STATE_TYPE_CUSTOM:

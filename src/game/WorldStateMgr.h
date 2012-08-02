@@ -37,6 +37,7 @@ enum WorldStateType
     WORLD_STATE_TYPE_BATTLEGROUND               = 7,
     WORLD_STATE_TYPE_CAPTURE_POINT              = 8,
     WORLD_STATE_TYPE_WORLD_UNCOMMON             = 9,
+    WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT        = 10,
     WORLD_STATE_TYPE_MAX
 };
 

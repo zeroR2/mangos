@@ -166,9 +166,6 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     SetUInt32Value(GAMEOBJECT_FACTION, goinfo->faction);
     SetUInt32Value(GAMEOBJECT_FLAGS, goinfo->flags);
 
-    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
-        SetFlag(GAMEOBJECT_FLAGS, (GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
-
     SetEntry(goinfo->id);
     SetDisplayId(goinfo->displayId);
 
@@ -178,21 +175,6 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     SetGoType(GameobjectTypes(goinfo->type));
     SetGoArtKit(0);                                         // unknown what this is
     SetGoAnimProgress(animprogress);
-
-    if (goinfo->type == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
-    {
-        m_health = GetMaxHealth();
-        // destructible GO's show their "HP" as their animprogress
-        SetGoAnimProgress(255);
-    }
-
-    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
-    {
-        SetUInt32Value(GAMEOBJECT_LEVEL, goinfo->transport.pause);
-        if (goinfo->transport.startOpen)
-            SetGoState(GO_STATE_ACTIVE);
-    }
-
 
     //Notify the map's instance data.
     //Only works if you create the object in it, not if it is moves to that map.
@@ -205,11 +187,36 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     if (m_zoneScript)
         m_zoneScript->OnGameObjectCreate(this);
 
-    // set initial data and activate non visual-only capture points
-    if (goinfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT && goinfo->capturePoint.radius)
+    switch (goinfo->type)
     {
-        sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
-        SetCapturePointSlider(CAPTURE_SLIDER_GET_VALUE);
+        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
+        {
+            m_health = GetMaxHealth();
+            // destructible GO's show their "HP" as their animprogress
+            SetGoAnimProgress(255);
+            if (goinfo->destructibleBuilding.linkedWorldState)
+                sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
+            break;
+        }
+        case GAMEOBJECT_TYPE_TRANSPORT:
+        {
+            SetFlag(GAMEOBJECT_FLAGS, (GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
+            SetUInt32Value(GAMEOBJECT_LEVEL, goinfo->transport.pause);
+            if (goinfo->transport.startOpen)
+                SetGoState(GO_STATE_ACTIVE);
+            break;
+        }
+        case GAMEOBJECT_TYPE_CAPTURE_POINT:
+        {
+            if (goinfo->capturePoint.radius)
+            {
+                sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
+                SetCapturePointSlider(CAPTURE_SLIDER_GET_VALUE);
+            }
+            break;
+        }
+        default:
+            break;
     }
 
     return true;
@@ -744,7 +751,7 @@ void GameObject::DeleteFromDB()
     WorldDatabase.PExecuteLog("DELETE FROM gameobject_battleground WHERE guid = '%u'", GetGUIDLow());
 }
 
-GameObjectInfo const *GameObject::GetGOInfo() const
+GameObjectInfo const* GameObject::GetGOInfo() const
 {
     return m_goInfo;
 }
@@ -1773,7 +1780,7 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
          m_health -= damage;
          if (pWho)
              if (BattleGround *bg = pWho->GetBattleGround())
-                 bg->EventPlayerDamageGO(pWho, this, m_goInfo->destructibleBuilding.damageEvent, spellId);
+                 bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
     }
 
     else
@@ -1781,30 +1788,39 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
 
     if (HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED)) // from damaged to destroyed
     {
+        // Destroyed
         if (!m_health)
         {
             RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
             SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DESTROYED);
-            SetDisplayId(m_goInfo->destructibleBuilding.destroyedDisplayId);
-            GetMap()->ScriptsStart(sEventScripts, m_goInfo->destructibleBuilding.destroyedEvent, pDoneBy, this);
+            SetDisplayId(GetGOInfo()->destructibleBuilding.destroyedDisplayId);
+            GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.destroyedEvent, pDoneBy, this);
             if (pWho)
             {
-                if (BattleGround *bg = pWho->GetBattleGround())
-                    bg->EventPlayerDamageGO(pWho, this, m_goInfo->destructibleBuilding.destroyedEvent, spellId);
+                if (BattleGround* bg = pWho->GetBattleGround())
+                    bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
+
+                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
+                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, pWho->GetTeam() == HORDE ? OBJECT_STATE_HORDE_DESTROY : OBJECT_STATE_ALLIANCE_DESTROY);
+            }
+            else
+            {
+                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
+                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, OBJECT_STATE_NEUTRAL_DESTROY);
             }
         }
     }
     else                                            // from intact to damaged
     {
-        if (m_health <= m_goInfo->destructibleBuilding.damagedNumHits)
+        if (m_health <= GetGOInfo()->destructibleBuilding.damagedNumHits)
         {
             SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
-            SetDisplayId(m_goInfo->destructibleBuilding.damagedDisplayId);
-            GetMap()->ScriptsStart(sEventScripts, m_goInfo->destructibleBuilding.damageEvent, pDoneBy, this);
+            SetDisplayId(GetGOInfo()->destructibleBuilding.damagedDisplayId);
+            GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.damageEvent, pDoneBy, this);
             // if we have a "dead" display we can "kill" the building after its damaged
-            if (m_goInfo->destructibleBuilding.destroyedDisplayId)
+            if (GetGOInfo()->destructibleBuilding.destroyedDisplayId)
             {
-                m_health = m_goInfo->destructibleBuilding.damagedNumHits;
+                m_health = GetGOInfo()->destructibleBuilding.damagedNumHits;
                 if (!m_health)
                     m_health = 1;
             }
@@ -1813,10 +1829,18 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
                 m_health = 0;
 
             if (pWho)
-                if (BattleGround *bg = pWho->GetBattleGround())
-                {
-                    bg->EventPlayerDamageGO(pWho, this, m_goInfo->destructibleBuilding.damagedEvent, spellId);
-                }
+            {
+                if (BattleGround* bg = pWho->GetBattleGround())
+                    bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
+
+                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
+                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, pWho->GetTeam() == HORDE ? OBJECT_STATE_HORDE_DAMAGE : OBJECT_STATE_ALLIANCE_DAMAGE);
+            }
+            else
+            {
+                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
+                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, OBJECT_STATE_NEUTRAL_DAMAGE);
+            }
          }
     }
     SetGoAnimProgress(m_health * 255 / GetMaxHealth());
@@ -1828,9 +1852,12 @@ void GameObject::Rebuild(Unit* pWho)
         return;
 
     RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
-    SetDisplayId(m_goInfo->displayId);
+    SetDisplayId(GetGOInfo()->displayId);
     m_health = GetMaxHealth();
-    GetMap()->ScriptsStart(sEventScripts, m_goInfo->destructibleBuilding.rebuildingEvent, pWho, this);
+    GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.rebuildingEvent, pWho, this);
+
+    if (GetGOInfo()->destructibleBuilding.linkedWorldState)
+        sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, OBJECT_STATE_NEUTRAL_INTACT);
 
     SetGoAnimProgress(255);
 }
@@ -2505,4 +2532,30 @@ void GameObject::TickCapturePoint()
             GetObjectGuid().GetString().c_str(),
             eventId, progressFaction, players.size(), m_captureState);
     }
+}
+
+uint32 GameObject::GetLinkedWorldState(bool stateId)
+{
+    switch (GetGOInfo()->type)
+    {
+        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
+        {
+            if (GetGOInfo()->destructibleBuilding.linkedWorldState)
+                return stateId ?
+                    GetGOInfo()->destructibleBuilding.linkedWorldState :
+                    sWorldStateMgr.GetWorldStateValueFor(this,GetGOInfo()->destructibleBuilding.linkedWorldState);
+            break;
+        }
+        case GAMEOBJECT_TYPE_CAPTURE_POINT:
+        {
+            if (GetGOInfo()->capturePoint.worldState2)
+                return stateId ? 
+                    GetGOInfo()->capturePoint.worldState2 :
+                    sWorldStateMgr.GetWorldStateValueFor(this,GetGOInfo()->capturePoint.worldState2);
+            break;
+        }
+        default:
+            break;
+    }
+    return UINT32_MAX;
 }

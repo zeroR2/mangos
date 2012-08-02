@@ -379,7 +379,7 @@ struct GameObjectInfo
             uint32 empty10;                                 //20
             uint32 empty11;                                 //21
             uint32 damageEvent;                             //22
-            uint32 empty12;                                 //23
+            uint32 linkedWorldState;                        //23 Custom value - set linked WorldState for this object
         } destructibleBuilding;
         //34 GAMEOBJECT_TYPE_GUILDBANK - empty
         //35 GAMEOBJECT_TYPE_TRAPDOOR
@@ -797,6 +797,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32 GetMaxHealth() const { return m_goInfo->destructibleBuilding.intactNumHits + m_goInfo->destructibleBuilding.damagedNumHits; }
 
         float GetDeterminativeSize(bool b_priorityZ = false) const;
+        uint32 GetLinkedWorldState(bool stateId = false);
 
         GameObjectModel* m_model;
 

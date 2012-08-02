@@ -200,49 +200,83 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (3690, 5, 4197, 65538, 0, 0, '', 'Vehicle number horde'),
 (3691, 5, 4197, 65538, 0, 0, '', 'Vehicle max number horde'),
 -- Workshops
-(3698, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_K_W'),
-(3699, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_K_E'),
-(3700, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_NW'),
-(3701, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_NE'),
-(3702, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_SW'),
-(3703, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_SE'),
+(3698, 5, 4197, 65538, 1, 0, '', 'WORLDSTATE_WORKSHOP_K_W'),
+(3699, 5, 4197, 65538, 1, 0, '', 'WORLDSTATE_WORKSHOP_K_E'),
+(3700, 5, 4197, 65538, 1, 0, '', 'WORLDSTATE_WORKSHOP_NW'),
+(3701, 5, 4197, 65538, 1, 0, '', 'WORLDSTATE_WORKSHOP_NE'),
+(3702, 5, 4197, 65538, 1, 0, '', 'WORLDSTATE_WORKSHOP_SW'),
+(3703, 5, 4197, 65538, 1, 0, '', 'WORLDSTATE_WORKSHOP_SE'),
 -- Buildings
-(3773, 5, 4197, 65538, 0, 0, '', 'Last door 191810'),
-(3763, 5, 4197, 65538, 0, 0, '', 'Fortress door 190375'),
+(3773, 10, 4197, 65538, 1, 0, '', '191810'),
+(3763, 10, 4197, 65538, 1, 0, '', '190375'),
 -- South tower
-(3704, 5, 4197, 65538, 0, 0, '', '190356'),
-(3705, 5, 4197, 65538, 0, 0, '', '190357'),
-(3706, 5, 4197, 65538, 0, 0, '', '190358'),
+(3704, 10, 4197, 65538, 1, 0, '', '190356'),
+(3705, 10, 4197, 65538, 1, 0, '', '190357'),
+(3706, 10, 4197, 65538, 1, 0, '', '190358'),
 -- Wall
-(3765, 5, 4197, 65538, 0, 0, '', '191797'),
-(3771, 5, 4197, 65538, 0, 0, '', '191798'),
-(3768, 5, 4197, 65538, 0, 0, '', '191805'),
+(3765, 10, 4197, 65538, 1, 0, '', '191797'),
+(3771, 10, 4197, 65538, 1, 0, '', '191798'),
+(3768, 10, 4197, 65538, 1, 0, '', '191805'),
 -- Tower of keep
-(3711, 5, 4197, 65538, 0, 0, '', '190221'),
-(3712, 5, 4197, 65538, 0, 0, '', '190378'),
-(3713, 5, 4197, 65538, 0, 0, '', '190373'),
-(3714, 5, 4197, 65538, 0, 0, '', '190377'),
+(3711, 10, 4197, 65538, 1, 0, '', '190221'),
+(3712, 10, 4197, 65538, 1, 0, '', '190378'),
+(3713, 10, 4197, 65538, 1, 0, '', '190373'),
+(3714, 10, 4197, 65538, 1, 0, '', '190377'),
 -- Buildings
-(3749, 5, 4197, 65538, 0, 0, '', '190219'),
-(3750, 5, 4197, 65538, 0, 0, '', '190220'),
-(3764, 5, 4197, 65538, 0, 0, '', '191795'),
-(3772, 5, 4197, 65538, 0, 0, '', '191796'),
-(3762, 5, 4197, 65538, 0, 0, '', '191799'),
-(3766, 5, 4197, 65538, 0, 0, '', '191800'),
-(3770, 5, 4197, 65538, 0, 0, '', '191801'),
-(3751, 5, 4197, 65538, 0, 0, '', '191802'),
-(3752, 5, 4197, 65538, 0, 0, '', '191803'),
-(3767, 5, 4197, 65538, 0, 0, '', '191804'),
-(3769, 5, 4197, 65538, 0, 0, '', '191806'),
-(3759, 5, 4197, 65538, 0, 0, '', '191807'),
-(3760, 5, 4197, 65538, 0, 0, '', '191808'),
-(3761, 5, 4197, 65538, 0, 0, '', '191809'),
-(3753, 5, 4197, 65538, 0, 0, '', '190369'),
-(3758, 5, 4197, 65538, 0, 0, '', '190370'),
-(3754, 5, 4197, 65538, 0, 0, '', '190371'),
-(3757, 5, 4197, 65538, 0, 0, '', '190372'),
-(3755, 5, 4197, 65538, 0, 0, '', '190374'),
-(3756, 5, 4197, 65538, 0, 0, '', '190376');
+(3749, 10, 4197, 65538, 1, 0, '', '190219'),
+(3750, 10, 4197, 65538, 1, 0, '', '190220'),
+(3764, 10, 4197, 65538, 1, 0, '', '191795'),
+(3772, 10, 4197, 65538, 1, 0, '', '191796'),
+(3762, 10, 4197, 65538, 1, 0, '', '191799'),
+(3766, 10, 4197, 65538, 1, 0, '', '191800'),
+(3770, 10, 4197, 65538, 1, 0, '', '191801'),
+(3751, 10, 4197, 65538, 1, 0, '', '191802'),
+(3752, 10, 4197, 65538, 1, 0, '', '191803'),
+(3767, 10, 4197, 65538, 1, 0, '', '191804'),
+(3769, 10, 4197, 65538, 1, 0, '', '191806'),
+(3759, 10, 4197, 65538, 1, 0, '', '191807'),
+(3760, 10, 4197, 65538, 1, 0, '', '191808'),
+(3761, 10, 4197, 65538, 1, 0, '', '191809'),
+(3753, 10, 4197, 65538, 1, 0, '', '190369'),
+(3758, 10, 4197, 65538, 1, 0, '', '190370'),
+(3754, 10, 4197, 65538, 1, 0, '', '190371'),
+(3757, 10, 4197, 65538, 1, 0, '', '190372'),
+(3755, 10, 4197, 65538, 1, 0, '', '190374'),
+(3756, 10, 4197, 65538, 1, 0, '', '190376');
+
+-- Gameobjects link to WS
+UPDATE `gameobject_template` SET `data23` = 3773 WHERE `entry` = 191810;
+UPDATE `gameobject_template` SET `data23` = 3763 WHERE `entry` = 190375;
+UPDATE `gameobject_template` SET `data23` = 3704 WHERE `entry` = 190356;
+UPDATE `gameobject_template` SET `data23` = 3705 WHERE `entry` = 190357;
+UPDATE `gameobject_template` SET `data23` = 3706 WHERE `entry` = 190358;
+UPDATE `gameobject_template` SET `data23` = 3765 WHERE `entry` = 191797;
+UPDATE `gameobject_template` SET `data23` = 3771 WHERE `entry` = 191798;
+UPDATE `gameobject_template` SET `data23` = 3768 WHERE `entry` = 191805;
+UPDATE `gameobject_template` SET `data23` = 3711 WHERE `entry` = 190221;
+UPDATE `gameobject_template` SET `data23` = 3712 WHERE `entry` = 190378;
+UPDATE `gameobject_template` SET `data23` = 3713 WHERE `entry` = 190373;
+UPDATE `gameobject_template` SET `data23` = 3714 WHERE `entry` = 190377;
+UPDATE `gameobject_template` SET `data23` = 3749 WHERE `entry` = 190219;
+UPDATE `gameobject_template` SET `data23` = 3750 WHERE `entry` = 190220;
+UPDATE `gameobject_template` SET `data23` = 3764 WHERE `entry` = 191795;
+UPDATE `gameobject_template` SET `data23` = 3772 WHERE `entry` = 191796;
+UPDATE `gameobject_template` SET `data23` = 3762 WHERE `entry` = 191799;
+UPDATE `gameobject_template` SET `data23` = 3766 WHERE `entry` = 191800;
+UPDATE `gameobject_template` SET `data23` = 3770 WHERE `entry` = 191801;
+UPDATE `gameobject_template` SET `data23` = 3751 WHERE `entry` = 191802;
+UPDATE `gameobject_template` SET `data23` = 3752 WHERE `entry` = 191803;
+UPDATE `gameobject_template` SET `data23` = 3767 WHERE `entry` = 191804;
+UPDATE `gameobject_template` SET `data23` = 3769 WHERE `entry` = 191806;
+UPDATE `gameobject_template` SET `data23` = 3759 WHERE `entry` = 191807;
+UPDATE `gameobject_template` SET `data23` = 3760 WHERE `entry` = 191808;
+UPDATE `gameobject_template` SET `data23` = 3761 WHERE `entry` = 191809;
+UPDATE `gameobject_template` SET `data23` = 3753 WHERE `entry` = 190369;
+UPDATE `gameobject_template` SET `data23` = 3758 WHERE `entry` = 190370;
+UPDATE `gameobject_template` SET `data23` = 3754 WHERE `entry` = 190371;
+UPDATE `gameobject_template` SET `data23` = 3757 WHERE `entry` = 190372;
+UPDATE `gameobject_template` SET `data23` = 3755 WHERE `entry` = 190374;
+UPDATE `gameobject_template` SET `data23` = 3756 WHERE `entry` = 190376;
 
 -- Battlegrounds
 -- Alterac valley
