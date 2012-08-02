@@ -19,8 +19,12 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (3191, 1, 0, 65538, 1, 0, '', 'Current arena season'),
 (3901, 1, 0, 65538, 0, 0, '', 'Previous arena season'),
 -- Wintergrasp
-(3801, 1, 0, 65538, 1, 0, '', '0 - Battle for Wintergrasp in progress, 1 - otherwise'),
-(4354, 1, 0, 65538, 1331819537, 0, '', 'Time when next Battle for Wintergrasp starts');
+(3710, 1, 0, 65538, 0, 0, '', 'Battle for Wintergrasp active 1'),
+(3801, 1, 0, 65538, 1, 0, '', 'Battle for Wintergrasp active 2 (negative)'),
+(3802, 1, 0, 65538, 0, 3801, '', 'WinterGrasp defender (0- ally, 1-horde)'),
+(3803, 1, 0, 65538, 1, 3801, '', 'WinterGrasp attacker (0- ally, 1-horde)'),
+(3781, 1, 0, 65538, 1331819537, 0, '', 'Wintergrasp timer 1'),
+(4354, 1, 0, 65538, 1331819537, 0, '', 'Wintergrasp timer 2');
 
 -- Common values, where excluded in instances and some maps
 DELETE FROM `worldstate_template` WHERE `type` = 9 AND `condition` = 0;
@@ -187,6 +191,59 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (2314, 5, 1377, 65538, 0, 2317, '', ''),
 (2317, 5, 1377, 65538, 200,  0, '', '');
 
+-- WinterGrasp
+DELETE FROM `worldstate_template` WHERE `type` = 5 AND `condition` = 4197;
+INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
+-- Vehicle numbers
+(3680, 5, 4197, 65538, 0, 0, '', 'Vehicle number ally'),
+(3681, 5, 4197, 65538, 0, 0, '', 'Vehicle max number ally'),
+(3690, 5, 4197, 65538, 0, 0, '', 'Vehicle number horde'),
+(3691, 5, 4197, 65538, 0, 0, '', 'Vehicle max number horde'),
+-- Workshops
+(3698, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_K_W'),
+(3699, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_K_E'),
+(3700, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_NW'),
+(3701, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_NE'),
+(3702, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_SW'),
+(3703, 5, 4197, 65538, 0, 0, '', 'WORLDSTATE_WORKSHOP_SE'),
+-- Buildings
+(3773, 5, 4197, 65538, 0, 0, '', 'Last door 191810'),
+(3763, 5, 4197, 65538, 0, 0, '', 'Fortress door 190375'),
+-- South tower
+(3704, 5, 4197, 65538, 0, 0, '', '190356'),
+(3705, 5, 4197, 65538, 0, 0, '', '190357'),
+(3706, 5, 4197, 65538, 0, 0, '', '190358'),
+-- Wall
+(3765, 5, 4197, 65538, 0, 0, '', '191797'),
+(3771, 5, 4197, 65538, 0, 0, '', '191798'),
+(3768, 5, 4197, 65538, 0, 0, '', '191805'),
+-- Tower of keep
+(3711, 5, 4197, 65538, 0, 0, '', '190221'),
+(3712, 5, 4197, 65538, 0, 0, '', '190378'),
+(3713, 5, 4197, 65538, 0, 0, '', '190373'),
+(3714, 5, 4197, 65538, 0, 0, '', '190377'),
+-- Buildings
+(3749, 5, 4197, 65538, 0, 0, '', '190219'),
+(3750, 5, 4197, 65538, 0, 0, '', '190220'),
+(3764, 5, 4197, 65538, 0, 0, '', '191795'),
+(3772, 5, 4197, 65538, 0, 0, '', '191796'),
+(3762, 5, 4197, 65538, 0, 0, '', '191799'),
+(3766, 5, 4197, 65538, 0, 0, '', '191800'),
+(3770, 5, 4197, 65538, 0, 0, '', '191801'),
+(3751, 5, 4197, 65538, 0, 0, '', '191802'),
+(3752, 5, 4197, 65538, 0, 0, '', '191803'),
+(3767, 5, 4197, 65538, 0, 0, '', '191804'),
+(3769, 5, 4197, 65538, 0, 0, '', '191806'),
+(3759, 5, 4197, 65538, 0, 0, '', '191807'),
+(3760, 5, 4197, 65538, 0, 0, '', '191808'),
+(3761, 5, 4197, 65538, 0, 0, '', '191809'),
+(3753, 5, 4197, 65538, 0, 0, '', '190369'),
+(3758, 5, 4197, 65538, 0, 0, '', '190370'),
+(3754, 5, 4197, 65538, 0, 0, '', '190371'),
+(3757, 5, 4197, 65538, 0, 0, '', '190372'),
+(3755, 5, 4197, 65538, 0, 0, '', '190374'),
+(3756, 5, 4197, 65538, 0, 0, '', '190376');
+
 -- Battlegrounds
 -- Alterac valley
 DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = 30;
@@ -337,7 +394,6 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 -- Resources
 (1780, 4, 529, 65538, 1600, 0, '', ''),
 (1955, 4, 529, 65538, 1400, 0, '', '');
-
 
 -- EY
 DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = 566;

@@ -67,6 +67,20 @@ enum WorldStateInitialValueType
     WORLD_STATE_ADD                 = 1
 };
 
+enum GameObjectWorldState
+{
+    OBJECT_STATE_NONE                = 0,
+    OBJECT_STATE_NEUTRAL_INTACT      = 1,
+    OBJECT_STATE_NEUTRAL_DAMAGE      = 2,
+    OBJECT_STATE_NEUTRAL_DESTROY     = 3,
+    OBJECT_STATE_HORDE_INTACT        = 4,
+    OBJECT_STATE_HORDE_DAMAGE        = 5,
+    OBJECT_STATE_HORDE_DESTROY       = 6,
+    OBJECT_STATE_ALLIANCE_INTACT     = 7,
+    OBJECT_STATE_ALLIANCE_DAMAGE     = 8,
+    OBJECT_STATE_ALLIANCE_DESTROY    = 9,
+};
+
 struct WorldStateTemplate
 {
     // Constructor for use with DB templates data
