@@ -596,7 +596,7 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setCurrentVictim(NULL);
                     setDirty(true);
                 }
-                if (getOwner() && getOwner()->IsInWorld())
+                if (getOwner() && getOwner()->IsInWorld() &&  getOwner()->CanHaveThreatList() &&  getOwner()->GetObjectGuid() != hostileReference->getUnitGuid())
                     if (Unit* target = ObjectAccessor::GetUnit(*getOwner(), hostileReference->getUnitGuid()))
                         if (getOwner()->IsInMap(target))
                             getOwner()->SendThreatRemove(hostileReference);
