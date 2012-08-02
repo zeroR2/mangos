@@ -485,25 +485,22 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     {
         bool bActiveActionChanged = false;
         ActionInfo* oldInfo = CurrentState();
-        UnitActionPtr oldAction = oldInfo ? oldInfo->Action() : UnitActionPtr();
 
         // if dropped current active state...
-        if (oldInfo && itr->second.Action() == oldInfo->Action() && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
-            bActiveActionChanged = true;
-
-        // in first - erasing current action, if his active
-        if (itr->second.Action() == m_oldAction)
-            m_oldAction = UnitActionPtr(NULL);
+        if (oldInfo && itr->second.priority == oldInfo->priority)
+        {
+            UnitActionPtr oldAction = oldInfo->Action();
+            if (oldAction && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
+            {
+                DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "DropAction: %s finalize (direct) action %s", GetOwnerStr().c_str(), oldAction->Name());
+                oldInfo->Finalize(this);
+            }
+            // erasing current action, if his active
+            m_oldAction = UnitActionPtr();
+        }
 
         // Possible erasing by iterator more fast and logic, but by Key much more safe
         m_actions.erase(priority);
-
-        // Finalized not ActionInfo, but real action (saved before), due to ActionInfo wrapper already deleted.
-        if (bActiveActionChanged && oldAction)
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "DropAction: %s finalize (direct) action %s", GetOwnerStr().c_str(), oldAction->Name());
-            oldAction->Finalize(*GetOwner());
-        }
         // in this point we delete last link to UnitActionPtr, after this UnitAction be auto-deleted...
     }
 }
@@ -657,9 +654,12 @@ void ActionInfo::Delete()
 void ActionInfo::Initialize(UnitStateMgr* mgr)
 {
     if (HasFlag(ACTION_STATE_FINALIZED))
-        return;
+    {
+        RemoveFlag(ACTION_STATE_INITIALIZED);
+        RemoveFlag(ACTION_STATE_FINALIZED);
+    }
 
-    MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+    //MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
     if (!HasFlag(ACTION_STATE_INITIALIZED) && Action())
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s initialize action %s", mgr->GetOwnerStr().c_str(), TypeName());
@@ -677,11 +677,15 @@ void ActionInfo::Initialize(UnitStateMgr* mgr)
 
 void ActionInfo::Finalize(UnitStateMgr* mgr)
 {
-    if (!HasFlag(ACTION_STATE_INITIALIZED) || 
+    if (!HasFlag(ACTION_STATE_INITIALIZED) ||
         HasFlag(ACTION_STATE_FINALIZED))
+    {
+        RemoveFlag(ACTION_STATE_ACTIVE);
+        AddFlag(ACTION_STATE_FINALIZED);
         return;
+    }
 
-    MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+    //MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
     AddFlag(ACTION_STATE_FINALIZED);
     RemoveFlag(ACTION_STATE_ACTIVE);
 
@@ -698,7 +702,7 @@ void ActionInfo::Interrupt(UnitStateMgr* mgr)
         HasFlag(ACTION_STATE_INTERRUPTED))
         return;
 
-    MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+    //MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
     AddFlag(ACTION_STATE_INTERRUPTED);
     RemoveFlag(ACTION_STATE_ACTIVE);
 
@@ -723,6 +727,9 @@ void ActionInfo::Reset(UnitStateMgr* mgr)
 
 bool ActionInfo::Update(UnitStateMgr* mgr, uint32 diff)
 {
+    if (HasFlag(ACTION_STATE_FINALIZED))
+        return false;
+
     if (Action() && 
         (!HasFlag(ACTION_STATE_INITIALIZED) ||
         HasFlag(ACTION_STATE_INTERRUPTED)))
