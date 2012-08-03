@@ -798,6 +798,9 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         float GetDeterminativeSize(bool b_priorityZ = false) const;
         uint32 GetLinkedWorldState(bool stateId = false);
+        void SetLinkedWorldState(uint32 value);
+        Team GetTeam() const;
+        bool SetTeam(Team team);
 
         GameObjectModel* m_model;
 

@@ -80,6 +80,13 @@ enum GameObjectWorldState
     OBJECT_STATE_ALLIANCE_INTACT     = 7,
     OBJECT_STATE_ALLIANCE_DAMAGE     = 8,
     OBJECT_STATE_ALLIANCE_DESTROY    = 9,
+
+    // Counters redefinition
+    OBJECT_STATE_INTACT              = 1,
+    OBJECT_STATE_DAMAGE              = 2,
+    OBJECT_STATE_DESTROY             = 3,
+    OBJECT_STATE_PERIOD              = 3,
+    OBJECT_STATE_LAST_INDEX          = OBJECT_STATE_ALLIANCE_DESTROY,
 };
 
 struct WorldStateTemplate
@@ -106,6 +113,8 @@ struct WorldStateTemplate
     uint32             const m_flags;
     uint32             const m_defaultValue;    // Default value from DB (0 for DBC states)
     uint32             const m_linkedId;        // Linked (uplink) state Id
+
+    std::vector<uint32>   m_linkedList;         // Linked (downlink) states
 
     bool               HasFlag(WorldStateFlags flag) const { return (m_flags & (1 << flag)); };
 };

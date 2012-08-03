@@ -1765,15 +1765,12 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
     if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING || !m_health)
         return;
 
-    Player* pWho = NULL;
-    if (pDoneBy && pDoneBy->GetTypeId() == TYPEID_PLAYER)
-        pWho = (Player*)pDoneBy;
+    if (IsFriendlyTo(pDoneBy))
+        return;
 
-    if (pDoneBy && ((Creature*)pDoneBy)->GetVehicleKit())
-        pWho = (Player*)pDoneBy->GetCharmerOrOwner();
+    Player* pWho = pDoneBy->GetCharmerOrOwnerPlayerOrPlayerItself();
 
-
-    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GO damage taken: %u to health %u", damage, m_health);
+    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken  damage taken: %u to health %u", damage, m_health);
 
     if (m_health > damage)
     {
@@ -1799,15 +1796,9 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
-
-                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
-                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, pWho->GetTeam() == HORDE ? OBJECT_STATE_HORDE_DESTROY : OBJECT_STATE_ALLIANCE_DESTROY);
             }
-            else
-            {
-                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
-                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, OBJECT_STATE_NEUTRAL_DESTROY);
-            }
+            SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
+            DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DESTROY state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
         }
     }
     else                                            // from intact to damaged
@@ -1832,15 +1823,9 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
-
-                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
-                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, pWho->GetTeam() == HORDE ? OBJECT_STATE_HORDE_DAMAGE : OBJECT_STATE_ALLIANCE_DAMAGE);
             }
-            else
-            {
-                if (GetGOInfo()->destructibleBuilding.linkedWorldState)
-                    sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, OBJECT_STATE_NEUTRAL_DAMAGE);
-            }
+            SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DAMAGE);
+            DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DAMAGED state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
          }
     }
     SetGoAnimProgress(m_health * 255 / GetMaxHealth());
@@ -1856,8 +1841,9 @@ void GameObject::Rebuild(Unit* pWho)
     m_health = GetMaxHealth();
     GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.rebuildingEvent, pWho, this);
 
-    if (GetGOInfo()->destructibleBuilding.linkedWorldState)
-        sWorldStateMgr.SetWorldStateValueFor(this, GetGOInfo()->destructibleBuilding.linkedWorldState, OBJECT_STATE_NEUTRAL_INTACT);
+    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
+
+    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::Rebuild %s gain INTACT state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
 
     SetGoAnimProgress(255);
 }
@@ -1956,13 +1942,20 @@ bool GameObject::IsHostileTo(Unit const* unit) const
     if (Unit const* targetOwner = unit->GetCharmerOrOwner())
         return IsHostileTo(targetOwner);
 
+    if (Player const* pPlayer = unit->GetCharmerOrOwnerPlayerOrPlayerItself())
+    {
+        Team team = GetTeam();
+        if (team != TEAM_NONE && team != pPlayer->GetTeam())
+            return true;
+    }
+
     // for not set faction case (wild object) use hostile case
     if (!GetGOInfo()->faction)
         return true;
 
     // faction base cases
-    FactionTemplateEntry const*tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
-    FactionTemplateEntry const*target_faction = unit->getFactionTemplateEntry();
+    FactionTemplateEntry const* tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
+    FactionTemplateEntry const* target_faction = unit->getFactionTemplateEntry();
     if (!tester_faction || !target_faction)
         return false;
 
@@ -1988,6 +1981,9 @@ bool GameObject::IsHostileTo(Unit const* unit) const
 
 bool GameObject::IsFriendlyTo(Unit const* unit) const
 {
+    if (!unit)
+        return true;
+
     // always friendly to GM in GM mode
     if (unit->GetTypeId()==TYPEID_PLAYER && ((Player const*)unit)->isGameMaster())
         return true;
@@ -1999,13 +1995,19 @@ bool GameObject::IsFriendlyTo(Unit const* unit) const
     if (Unit const* targetOwner = unit->GetCharmerOrOwner())
         return IsFriendlyTo(targetOwner);
 
+    if (Player const* pPlayer = unit->GetCharmerOrOwnerPlayerOrPlayerItself())
+    {
+        if (GetTeam() == pPlayer->GetTeam())
+            return true;
+    }
+
     // for not set faction case (wild object) use hostile case
     if (!GetGOInfo()->faction)
         return false;
 
     // faction base cases
-    FactionTemplateEntry const*tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
-    FactionTemplateEntry const*target_faction = unit->getFactionTemplateEntry();
+    FactionTemplateEntry const* tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
+    FactionTemplateEntry const* target_faction = unit->getFactionTemplateEntry();
     if (!tester_faction || !target_faction)
         return false;
 
@@ -2351,9 +2353,6 @@ void GameObject::SetCapturePointSlider(int8 value)
         m_captureState = CAPTURE_STATE_NEUTRAL;
 }
 
-bool IsNotAlliance(ObjectGuid const guid) { return (!ObjectMgr::GetPlayer(guid) || ObjectMgr::GetPlayer(guid)->GetTeam() != ALLIANCE); }
-bool IsNotHorde(ObjectGuid const guid)    { return (!ObjectMgr::GetPlayer(guid) || ObjectMgr::GetPlayer(guid)->GetTeam() != HORDE); }
-
 void GameObject::TickCapturePoint()
 {
     // TODO: On retail: Ticks every 5.2 seconds. slider value increase when new player enters on tick
@@ -2559,3 +2558,149 @@ uint32 GameObject::GetLinkedWorldState(bool stateId)
     }
     return UINT32_MAX;
 }
+
+void GameObject::SetLinkedWorldState(uint32 value)
+{
+    uint32 stateId = 0;
+
+    switch (GetGOInfo()->type)
+    {
+        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
+        {
+            stateId = GetGOInfo()->destructibleBuilding.linkedWorldState;
+            break;
+        }
+        case GAMEOBJECT_TYPE_CAPTURE_POINT:
+        {
+            stateId = GetGOInfo()->capturePoint.worldState2;
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (stateId)
+        sWorldStateMgr.SetWorldStateValueFor(this, stateId, value);
+}
+
+Team GameObject::GetTeam() const
+{
+    if (!GetGOInfo())
+        return TEAM_NONE;
+
+    uint32 wsValue = const_cast<GameObject*>(this)->GetLinkedWorldState();
+
+    if (wsValue == UINT32_MAX)
+        return TEAM_NONE;
+
+    switch (GetGOInfo()->type)
+    {
+        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
+        {
+            switch (wsValue)
+            {
+                case OBJECT_STATE_HORDE_INTACT:
+                case OBJECT_STATE_HORDE_DAMAGE:
+                case OBJECT_STATE_HORDE_DESTROY:
+                    return HORDE;
+                case OBJECT_STATE_ALLIANCE_INTACT:
+                case OBJECT_STATE_ALLIANCE_DAMAGE:
+                case OBJECT_STATE_ALLIANCE_DESTROY:
+                    return ALLIANCE;
+                case OBJECT_STATE_NONE:
+                case OBJECT_STATE_NEUTRAL_INTACT:
+                case OBJECT_STATE_NEUTRAL_DAMAGE:
+                case OBJECT_STATE_NEUTRAL_DESTROY:
+                default:
+                    break;
+            }
+            break;
+        }
+        case GAMEOBJECT_TYPE_CAPTURE_POINT:
+        {
+            switch (wsValue)
+            {
+                case CAPTURE_SLIDER_HORDE:
+                    return HORDE;
+                case CAPTURE_SLIDER_ALLIANCE:
+                    return ALLIANCE;
+                case CAPTURE_SLIDER_NEUTRAL:
+                    break;
+                default:
+                // in this point need calculation from WS
+                {
+                    switch (m_captureState)
+                    {
+                        case CAPTURE_STATE_PROGRESS_ALLIANCE:
+                        case CAPTURE_STATE_WIN_ALLIANCE:
+                            return ALLIANCE;
+                        case CAPTURE_STATE_PROGRESS_HORDE:
+                        case CAPTURE_STATE_WIN_HORDE:
+                            return HORDE;
+                        case CAPTURE_STATE_CONTEST_ALLIANCE:
+                        case CAPTURE_STATE_CONTEST_HORDE:
+                        case CAPTURE_STATE_NEUTRAL:
+                        default:
+                            break;
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return TEAM_NONE;
+}
+
+bool GameObject::SetTeam(Team team)
+{
+    //currently only for GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING, if need for other - make in this method
+
+    if (!GetGOInfo())
+        return false;
+
+    uint32 wsValue = GetLinkedWorldState();
+
+    if (wsValue == UINT32_MAX)
+        return false;
+
+    TeamIndex teamIndex = GetTeamIndex(team);
+
+    switch (GetGOInfo()->type)
+    {
+        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
+        {
+            switch (wsValue)
+            {
+                case OBJECT_STATE_NONE:
+                case OBJECT_STATE_NEUTRAL_INTACT:
+                case OBJECT_STATE_HORDE_INTACT:
+                case OBJECT_STATE_ALLIANCE_INTACT:
+                    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
+                    return true;
+
+                case OBJECT_STATE_HORDE_DAMAGE:
+                case OBJECT_STATE_ALLIANCE_DAMAGE:
+                case OBJECT_STATE_NEUTRAL_DAMAGE:
+                    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DAMAGE);
+                    return true;
+
+                case OBJECT_STATE_HORDE_DESTROY:
+                case OBJECT_STATE_ALLIANCE_DESTROY:
+                case OBJECT_STATE_NEUTRAL_DESTROY:
+                    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
+                    return true;
+
+                default:
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return false;
+}
+

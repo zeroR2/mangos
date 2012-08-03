@@ -36,9 +36,10 @@ void WorldStateMgr::Initialize()
     m_worldStateTemplates.clear();
     m_worldStateLink.clear();
     // Load some template types
-    LoadTemplatesFromDBC();
     LoadTemplatesFromDB();
     LoadTemplatesFromObjectTemplateDB();
+    // DBC templates loaded after DB - may be corrected in database
+    LoadTemplatesFromDBC();
     // Load states data
     LoadFromDB();
     // Create all needed states (if not loaded)
@@ -124,6 +125,111 @@ void WorldStateMgr::LoadTemplatesFromDBC()
                 WorldStateTemplate(bl->HolidayWorldStateId, WORLD_STATE_TYPE_BGWEEKEND, WORLD_STATE_TYPE_BGWEEKEND, (1 << WORLD_STATE_FLAG_INITIAL_STATE), BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)) ? 1 : 0, 0)));
             ++count;
         }
+    }
+
+    for (uint32 i = 0; i < sWorldStateStore.GetNumRows(); ++i)
+    {
+        WorldStateEntry const* wsEntry = sWorldStateStore.LookupEntry(i);
+
+        if (!wsEntry)
+            continue;
+
+        WorldStateType type = WORLD_STATE_TYPE_CUSTOM;
+
+        uint32 id = wsEntry->m_state;
+
+        if (!id)
+            continue;
+
+        uint32 stateId = 0;
+        uint32 condition = 0;
+        std::vector<uint32> linkedList;
+
+        WorldStateTemplate const* tmpl = FindTemplate(stateId);
+
+        if (wsEntry->m_uiType == "CAPTUREPOINT")
+        {
+            stateId = id;
+            type = WORLD_STATE_TYPE_CAPTURE_POINT;
+
+            if (tmpl)
+            {
+                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.push_back(wsEntry->m_linked1);
+                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.push_back(wsEntry->m_linked2);
+                continue;
+            }
+            linkedList.push_back(wsEntry->m_linked1);
+            linkedList.push_back(wsEntry->m_linked2);
+        }
+        else if (wsEntry->map_id && !wsEntry->m_zone)
+        {
+            if (tmpl)
+                continue;
+
+            stateId = id;
+            condition = wsEntry->map_id;
+            type = WORLD_STATE_TYPE_MAP;
+        }
+        else if (wsEntry->map_id && wsEntry->m_zone)
+        {
+            if (tmpl)
+                continue;
+
+            stateId = id;
+            condition = wsEntry->m_zone;
+            type = WORLD_STATE_TYPE_ZONE;
+        }
+
+        // parse linked worldstates here
+        std::string message = wsEntry->m_uiMessage1[sWorld.GetDefaultDbcLocale()];
+        if (!message.empty())
+        {
+            std::string::size_type pos1, pos2, lastpos;
+            pos1 = message.find_first_of("%");
+            while (pos1 != std::string::npos && pos2 != std::string::npos)
+            {
+                pos1 = message.find_first_of("%");
+                pos2 = message.find_first_of("w", pos1);
+                if ((pos2 - pos1) == 5)
+                {
+                    std::string digits = message.substr(pos1+1, 4);
+                    uint32 linkedId = atoi(digits.c_str());
+                    if (linkedId)
+                        linkedList.push_back(linkedId);
+                }
+                message.erase(0,pos2+1);
+            }
+        }
+
+        if (type != WORLD_STATE_TYPE_CUSTOM)
+        {
+            m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId,
+                WorldStateTemplate(stateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, 0)));
+            ++count;
+            if (!linkedList.empty())
+            {
+                std::unique(linkedList.begin(),linkedList.end());
+                for(std::vector<uint32>::const_iterator itr = linkedList.begin(); itr != linkedList.end(); ++itr)
+                {
+                    uint32 linkedstateId = *itr;
+                    WorldStateTemplate const* tmpl = FindTemplate(linkedstateId);
+                    if (tmpl)
+                    {
+                        if (tmpl->m_linkedId != stateId)
+                            sLog.outErrorDb("WorldStateMgr::LoadTemplatesFromDBC template %u present, but linked to %u instead of %u in DBC, need correct!",linkedstateId,tmpl->m_linkedId, stateId);
+                        continue;
+                    }
+                    else
+                    {
+                        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId,
+                            WorldStateTemplate(linkedstateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, stateId)));
+                        ++count;
+                        const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.push_back(linkedstateId);
+                    }
+                }
+            }
+        }
+
     }
     sLog.outString();
     sLog.outString( ">> Loaded static DBC templates for %u WorldStates", count);
@@ -922,7 +1028,9 @@ void WorldStateMgr::SetWorldStateValueFor(WorldObject* object, uint32 stateId, u
 
     GameObjectInfo const* goInfo = ((GameObject*)object)->GetGOInfo();
 
-    if (!goInfo || goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
+    if (!goInfo || 
+        (goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT &&
+        goInfo->type != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING))
     {
         SetWorldStateValueFor(object->GetMap(), stateId, value);
         return;
@@ -933,10 +1041,21 @@ void WorldStateMgr::SetWorldStateValueFor(WorldObject* object, uint32 stateId, u
     {
         for (WorldStateMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
         {
-            if (IsFitToCondition(object->GetMap()->GetId(), object->GetObjectGuid().GetCounter(), 0, 0, &itr->second))
+            WorldState const* _state = &itr->second;
+            if (!_state)
+                continue;
+
+            if (IsFitToCondition(object->GetMap()->GetId(), object->GetObjectGuid().GetCounter(), 0, 0, _state))
             {
-                if ((&itr->second)->GetValue() != value)
-                    const_cast<WorldState*>(&itr->second)->SetValue(value);
+                if (_state->GetValue() != value)
+                    const_cast<WorldState*>(_state)->SetValue(value);
+
+                DEBUG_LOG("WorldStateMgr::SetWorldStateValueFor tru set state %u instance %u, type %u  value %u (%u)  for %s",
+                    _state->GetId(), _state->GetInstance(),
+                    _state->GetType(),
+                    value, _state->GetValue(),
+                    object->GetObjectGuid().GetString().c_str());
+
                 return;
             }
         }
@@ -970,6 +1089,7 @@ WorldState const* WorldStateMgr::CreateWorldState(WorldStateTemplate const* tmpl
     {
         DEBUG_LOG("WorldStateMgr::CreateWorldState tru create  state %u  instance %u type %u (value %u) but state exists (value %u).",
             tmpl->m_stateId, instanceId, tmpl->m_stateType, value, _state->GetValue());
+        const_cast<WorldState*>(_state)->SetValue(value);
         return _state;
     }
 
