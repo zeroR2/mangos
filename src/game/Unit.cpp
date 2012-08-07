@@ -625,14 +625,10 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType)
     SpellIdSet toRemoveSpellList;
     for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end(); ++iter)
     {
-        Aura* aura = *iter;
-        if (!aura)
+        if (!iter->GetHolder() || iter->GetHolder()->IsDeleted())
             continue;
 
-        if (!aura->GetHolder() || aura->GetHolder()->IsDeleted())
-            continue;
-
-        toRemoveSpellList.insert(aura->GetId());
+        toRemoveSpellList.insert(iter->GetHolder()->GetId());
     }
 
     for (SpellIdSet::iterator i = toRemoveSpellList.begin(); i != toRemoveSpellList.end(); ++i)
@@ -642,20 +638,18 @@ void Unit::RemoveSpellsCausingAura(AuraType auraType)
 void Unit::RemoveSpellsCausingAura(AuraType auraType, SpellAuraHolderPtr except)
 {
     SpellIdSet toRemoveSpellList;
-    for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end(); ++iter)
-    {
-        Aura* aura = *iter;
-        if (!aura)
-            continue;
+    AuraList const& auras = GetAurasByType(auraType);
 
-        if (!aura->GetHolder() || aura->GetHolder()->IsDeleted())
+    for (AuraList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
+    {
+        if (!iter->GetHolder() || iter->GetHolder()->IsDeleted())
             continue;
 
         // skip `except` holder
-        if (aura->GetHolder() == except)
+        if (iter->GetHolder() == except)
             continue;
 
-        toRemoveSpellList.insert(aura->GetId());
+        toRemoveSpellList.insert(iter->GetHolder()->GetId());
     }
 
     for (SpellIdSet::iterator i = toRemoveSpellList.begin(); i != toRemoveSpellList.end(); ++i)
@@ -767,12 +761,11 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
         AuraList const& BlessedLife = pVictim->GetAurasByType(SPELL_AURA_PROC_TRIGGER_SPELL);
         for (AuraList::const_iterator i = BlessedLife.begin(); i != BlessedLife.end(); ++i)
         {
-            Aura* aura = *i;
-            if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+            if (!i->GetHolder() || i->GetHolder()->IsDeleted())
                 continue;
 
-            if (aura->GetSpellProto()->SpellFamilyName == SPELLFAMILY_PALADIN && aura->GetSpellProto()->SpellIconID == 2137)
-                if ( urand(0,100) < aura->GetSpellProto()->procChance )
+            if ((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_PALADIN && (*i)->GetSpellProto()->SpellIconID == 2137)
+                if ( urand(0,100) < (*i)->GetSpellProto()->procChance )
                     damageInfo->damage *= 0.5f;
         }
     }
@@ -823,16 +816,15 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             AuraList const& vShareDamageAuras = pVictim->GetAurasByType(SPELL_AURA_SHARE_DAMAGE_PCT);
             for (AuraList::const_iterator itr = vShareDamageAuras.begin(); itr != vShareDamageAuras.end(); ++itr)
             {
-                Aura* aura = *itr;
-                if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                if (!(*itr) || !(*itr)->GetHolder() || (*itr)->GetHolder()->IsDeleted())
                     continue;
 
-                if (Unit* shareTarget = aura->GetCaster())
+                if (Unit* shareTarget = (*itr)->GetCaster())
                 {
-                    if (shareTarget != pVictim && (aura->GetMiscValue() & damageInfo->SchoolMask()))
+                    if (shareTarget != pVictim && ((*itr)->GetMiscValue() & damageInfo->SchoolMask()))
                     {
-                        SpellEntry const* shareSpell = aura->GetSpellProto();
-                        uint32 shareDamage = uint32(damageInfo->damage * aura->GetModifier()->m_amount / 100.0f);
+                        SpellEntry const* shareSpell = (*itr)->GetSpellProto();
+                        uint32 shareDamage = uint32(damageInfo->damage * (*itr)->GetModifier()->m_amount / 100.0f);
                         DealDamageMods(shareTarget, shareDamage, NULL);
                         linkedDamageList.push_back(DamageInfo(this, shareTarget, spellProto));
                         DamageInfo* sharedDamageInfo   = &linkedDamageList.back();
@@ -995,7 +987,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
         bool damageFromSpiritOfRedemtionTalent = spellProto && spellProto->Id == 27795;
 
         // if talent known but not triggered (check priest class for speedup check)
-        Aura* spiritOfRedemtionTalentReady = NULL;
+        AuraPair spiritOfRedemtionTalentReady;
         if ( !damageFromSpiritOfRedemtionTalent &&           // not called from SPELL_AURA_SPIRIT_OF_REDEMPTION
             pVictim->GetTypeId()==TYPEID_PLAYER && pVictim->getClass()==CLASS_PRIEST )
         {
@@ -1004,7 +996,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             {
                 if((*itr)->GetSpellProto()->SpellIconID==1654)
                 {
-                    spiritOfRedemtionTalentReady = *itr;
+                    spiritOfRedemtionTalentReady = (*itr);
                     break;
                 }
             }
@@ -1018,7 +1010,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
 
         DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"DealDamageHealth1");
 
-        if (spiritOfRedemtionTalentReady)
+        if (!spiritOfRedemtionTalentReady.IsEmpty())
         {
             // save value before aura remove
             uint32 ressSpellId = pVictim->GetUInt32Value(PLAYER_SELF_RES_SPELL);
@@ -1032,7 +1024,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             pVictim->SetUInt32Value(PLAYER_SELF_RES_SPELL,ressSpellId);
 
             // FORM_SPIRITOFREDEMPTION and related auras
-            pVictim->CastSpell(pVictim,27827,true,NULL,spiritOfRedemtionTalentReady);
+            pVictim->CastSpell(pVictim,27827,true,NULL,spiritOfRedemtionTalentReady());
         }
         else if (pVictim->IsInWorld())
             pVictim->SetHealth(0);
@@ -1391,7 +1383,7 @@ void Unit::CastStop(uint32 except_spellid)
             InterruptSpell(CurrentSpellTypes(i),false);
 }
 
-void Unit::CastSpell(Unit* Victim, uint32 spellId, bool triggered, Item *castItem, Aura* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
+void Unit::CastSpell(Unit* Victim, uint32 spellId, bool triggered, Item *castItem, Aura const* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
 {
     SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellId);
 
@@ -1407,7 +1399,7 @@ void Unit::CastSpell(Unit* Victim, uint32 spellId, bool triggered, Item *castIte
     CastSpell(Victim, spellInfo, triggered, castItem, triggeredByAura, originalCaster, triggeredBy);
 }
 
-void Unit::CastSpell(Unit* Victim, SpellEntry const *spellInfo, bool triggered, Item *castItem, Aura* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
+void Unit::CastSpell(Unit* Victim, SpellEntry const *spellInfo, bool triggered, Item *castItem, Aura const* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
 {
     if(!spellInfo)
     {
@@ -1468,7 +1460,7 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const *spellInfo, bool triggered, 
 
 }
 
-void Unit::CastCustomSpell(Unit* Victim,uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item *castItem, Aura* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
+void Unit::CastCustomSpell(Unit* Victim,uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item *castItem, Aura const* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
 {
     SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellId);
 
@@ -1484,7 +1476,7 @@ void Unit::CastCustomSpell(Unit* Victim,uint32 spellId, int32 const* bp0, int32 
     CastCustomSpell(Victim, spellInfo, bp0, bp1, bp2, triggered, castItem, triggeredByAura, originalCaster, triggeredBy);
 }
 
-void Unit::CastCustomSpell(Unit* Victim, SpellEntry const *spellInfo, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item *castItem, Aura* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
+void Unit::CastCustomSpell(Unit* Victim, SpellEntry const *spellInfo, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item *castItem, Aura const* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
 {
     if(!spellInfo)
     {
@@ -1543,7 +1535,7 @@ void Unit::CastCustomSpell(Unit* Victim, SpellEntry const *spellInfo, int32 cons
 }
 
 // used for scripting
-void Unit::CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item *castItem, Aura* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
+void Unit::CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item *castItem, Aura const* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
 {
     SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellId);
 
@@ -1560,7 +1552,7 @@ void Unit::CastSpell(float x, float y, float z, uint32 spellId, bool triggered, 
 }
 
 // used for scripting
-void Unit::CastSpell(float x, float y, float z, SpellEntry const *spellInfo, bool triggered, Item *castItem, Aura* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
+void Unit::CastSpell(float x, float y, float z, SpellEntry const *spellInfo, bool triggered, Item *castItem, Aura const* triggeredByAura, ObjectGuid originalCaster, SpellEntry const* triggeredBy)
 {
     if(!spellInfo)
     {
@@ -2287,7 +2279,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
     for(AuraList::const_iterator i = vAbsorb.begin(); i != vAbsorb.end() && RemainingDamage > 0; ++i)
     {
         // only work with proper school mask damage
-        Modifier* i_mod = (*i)->GetModifier();
+        Modifier const* i_mod = (*i)->GetModifier();
         if (!(i_mod->m_miscvalue & damageInfo->SchoolMask()))
             continue;
 
@@ -2314,7 +2306,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                 RemainingDamage = 0;
 
                 // Frost Warding (mana regen)
-                CastCustomSpell(this, 57776, &amount, NULL, NULL, true, NULL, *i);
+                CastCustomSpell(this, 57776, &amount, NULL, NULL, true, NULL, (*i)());
                 break;
             }
         }
@@ -2327,10 +2319,11 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
     int32 incanterAbsorption = 0;
 
     // absorb without mana cost
-    AuraList const& vSchoolAbsorb = GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
-    for(AuraList::const_iterator i = vSchoolAbsorb.begin(); i != vSchoolAbsorb.end() && RemainingDamage > 0; ++i)
+    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
+    AuraList& vSchoolAbsorb = GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
+    for(AuraList::iterator i = vSchoolAbsorb.begin(); i != vSchoolAbsorb.end() && RemainingDamage > 0; ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (!(mod->m_miscvalue & damageInfo->SchoolMask()))
             continue;
 
@@ -2386,7 +2379,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                     else
                         reflectDamage = currentAbsorb / 2;
                     reflectSpell = 33619;
-                    reflectTriggeredBy = *i;
+                    reflectTriggeredBy = (*i)();
                     reflectTriggeredBy->SetInUse(true);     // lock aura from final deletion until processing
                     break;
                 }
@@ -2507,7 +2500,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                                 else
                                     reflectDamage = (*k)->GetModifier()->m_amount * RemainingDamage/100;
                                 reflectSpell = 33619;
-                                reflectTriggeredBy = *i;
+                                reflectTriggeredBy = (*i)();
                                 reflectTriggeredBy->SetInUse(true);// lock aura from final deletion until processing
                             } break;
                             default: break;
@@ -2544,7 +2537,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                     // This, if I'm not mistaken, shows that we get back ~2% of the absorbed damage as runic power.
                     int32 absorbed = RemainingDamage * currentAbsorb / 100;
                     int32 regen = absorbed * 2 / 10;
-                    CastCustomSpell(this, 49088, &regen, NULL, NULL, true, NULL, *i);
+                    CastCustomSpell(this, 49088, &regen, NULL, NULL, true, NULL, (*i)());
                     RemainingDamage -= absorbed;
                     continue;
                 }
@@ -2559,7 +2552,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                 {
                     int32 absorbed = GetArmor() * currentAbsorb / 100;
                     // If we have a glyph
-                    if (Aura* aur = GetDummyAura(58635))
+                    if (Aura const* aur = GetDummyAura(58635))
                         absorbed += absorbed * aur->GetModifier()->m_amount / 100;
                     RemainingDamage = (RemainingDamage < absorbed) ? 0 : RemainingDamage - absorbed;
                     continue;
@@ -2612,11 +2605,11 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
             incanterAbsorption += currentAbsorb;
 
         // Reduce shield amount
-        mod->m_amount-=currentAbsorb;
+        mod->m_amount -= currentAbsorb;
         if((*i)->GetHolder()->DropAuraCharge())
             mod->m_amount = 0;
         // Need remove it later
-        if (mod->m_amount<=0)
+        if (mod->m_amount <=0 )
             existExpired = true;
     }
 
@@ -2905,7 +2898,7 @@ void Unit::CalculateHealAbsorb(const uint32 heal, uint32 *absorb)
     AuraList const& vHealAbsorb = GetAurasByType(SPELL_AURA_HEAL_ABSORB);
     for(AuraList::const_iterator i = vHealAbsorb.begin(); i != vHealAbsorb.end() && RemainingHeal > 0; ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
 
         // Max Amount can be absorbed by this aura
         int32  currentAbsorb = mod->m_amount;
@@ -4354,7 +4347,7 @@ int32 Unit::GetTotalAuraModifierByMiscMask(AuraType auratype, uint32 misc_mask) 
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
 
         if (auratype == SPELL_AURA_MOD_DAMAGE_DONE)
         {
@@ -4393,7 +4386,7 @@ float Unit::GetTotalAuraMultiplierByMiscMask(AuraType auratype, uint32 misc_mask
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (mod->m_miscvalue & misc_mask)
         {
             if((*i)->IsStacking())
@@ -4420,7 +4413,7 @@ int32 Unit::GetMaxPositiveAuraModifierByMiscMask(AuraType auratype, uint32 misc_
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (!(nonStackingOnly && (*i)->IsStacking()) && (mod->m_miscvalue & misc_mask) && mod->m_amount > modifier)
             modifier = mod->m_amount;
     }
@@ -4438,7 +4431,7 @@ int32 Unit::GetMaxNegativeAuraModifierByMiscMask(AuraType auratype, uint32 misc_
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (!(nonStackingOnly && (*i)->IsStacking()) && (mod->m_miscvalue & misc_mask) && mod->m_amount < modifier)
             modifier = mod->m_amount;
     }
@@ -4454,7 +4447,7 @@ int32 Unit::GetTotalAuraModifierByMiscValue(AuraType auratype, int32 misc_value)
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (mod->m_miscvalue == misc_value)
         {
             if((*i)->IsStacking())
@@ -4477,7 +4470,7 @@ float Unit::GetTotalAuraMultiplierByMiscValue(AuraType auratype, int32 misc_valu
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (mod->m_miscvalue == misc_value)
         {
             if((*i)->IsStacking())
@@ -4499,7 +4492,7 @@ int32 Unit::GetMaxPositiveAuraModifierByMiscValue(AuraType auratype, int32 misc_
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (!(nonStackingOnly && (*i)->IsStacking()) && mod->m_amount > modifier && mod->m_miscvalue == misc_value)
             modifier = mod->m_amount;
     }
@@ -4514,7 +4507,7 @@ int32 Unit::GetMaxNegativeAuraModifierByMiscValue(AuraType auratype, int32 misc_
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if (!(nonStackingOnly && (*i)->IsStacking()) && mod->m_miscvalue == misc_value && mod->m_amount < modifier)
             modifier = mod->m_amount;
     }
@@ -4535,7 +4528,7 @@ float Unit::GetTotalAuraMultiplierByMiscValueForMask(AuraType auratype, uint32 m
     AuraList const& mTotalAuraList = GetAurasByType(auratype);
     for(AuraList::const_iterator i = mTotalAuraList.begin();i != mTotalAuraList.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
 
         if (mask & (1 << (mod->m_miscvalue -1)))
         {
@@ -4848,11 +4841,11 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
     return true;
 }
 
-void Unit::AddAuraToModList(Aura *aura)
+void Unit::AddAuraToModList(Aura* aura)
 {
     MAPLOCK_WRITE(this,MAP_LOCK_TYPE_AURAS);
-    if (aura->GetModifier()->m_auraname < TOTAL_AURAS)
-        m_modAuras[aura->GetModifier()->m_auraname].push_back(aura);
+    if (aura && aura->GetModifier()->m_auraname < TOTAL_AURAS)
+        m_modAuras[aura->GetModifier()->m_auraname].push_back(AuraPair(aura));
 }
 
 void Unit::RemoveRankAurasDueToSpell(uint32 spellId)
@@ -5613,7 +5606,7 @@ void Unit::RemoveAura(Aura* aura, AuraRemoveMode mode)
     if (aura->GetModifier()->m_auraname < TOTAL_AURAS)
     {
         MAPLOCK_WRITE(this,MAP_LOCK_TYPE_AURAS);
-        m_modAuras[aura->GetModifier()->m_auraname].remove(aura);
+        m_modAuras[aura->GetModifier()->m_auraname].remove(AuraPair(aura));
 
         // aura _MUST_ be remove from holder before unapply.
         // un-apply code expected that aura not find by diff searches
@@ -5739,12 +5732,12 @@ void Unit::HandleArenaPreparation(bool apply)
 bool Unit::RemoveSpellsCausingAuraByCaster(AuraType auraType, ObjectGuid casterGuid, AuraRemoveMode mode)
 {
     SpellAuraHolderSet toRemoveHolders;
-    for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end(); ++iter)
+    AuraList const& auras = GetAurasByType(auraType);
+    for (AuraList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
     {
-        Aura* aura = *iter;
-        if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted() || aura->GetHolder()->GetCasterGuid() != casterGuid)
+        if (iter->IsEmpty() || (*iter)->GetHolder()->GetCasterGuid() != casterGuid)
             continue;
-        toRemoveHolders.insert(aura->GetHolder());
+        toRemoveHolders.insert(iter->GetHolder());
     }
 
     if (toRemoveHolders.empty())
@@ -5813,6 +5806,7 @@ void Unit::_ApplyAllAuraMods()
 
 bool Unit::HasAuraType(AuraType auraType) const
 {
+    MAPLOCK_READ(const_cast<Unit*>(this), MAP_LOCK_TYPE_AURAS);
     return !GetAurasByType(auraType).empty();
 }
 
@@ -5858,45 +5852,55 @@ Aura* Unit::GetAura(uint32 spellId, SpellEffectIndex effindex)
 
 Aura* Unit::GetAura(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid)
 {
-    AuraList const& auras = GetAurasByType(type);
-    for(AuraList::const_iterator i = auras.begin();i != auras.end(); ++i)
+    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
+    AuraList& auras = GetAurasByType(type);
+    for(AuraList::iterator i = auras.begin(); i != auras.end(); ++i)
+    {
+        if (i->IsEmpty())
+            continue;
+
         if ((*i)->GetSpellProto()->IsFitToFamily(family, classMask) &&
             (!casterGuid || (*i)->GetCasterGuid() == casterGuid))
-            return *i;
+            return (*i)();
+    }
 
     return NULL;
 }
 
 Aura* Unit::GetAuraByEffectMask(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid)
 {
-    AuraList const& auras = GetAurasByType(type);
-    for (AuraList::const_iterator i = auras.begin();i != auras.end(); ++i)
+    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
+    AuraList& auras = GetAurasByType(type);
+    for (AuraList::iterator i = auras.begin(); i != auras.end(); ++i)
     {
+        if (i->IsEmpty())
+            continue;
+
         if ((*i)->GetAuraSpellClassMask() == classMask &&
             (family <= SPELLFAMILY_PET &&  (*i)->GetSpellProto()->SpellFamilyName == family) &&
             (!casterGuid || (*i)->GetCasterGuid() == casterGuid))
-            return *i;
+            return (*i)();
     }
 
     return NULL;
 }
 
-Aura* Unit::GetTriggeredByClientAura(uint32 spellId)
+Aura const* Unit::GetTriggeredByClientAura(uint32 spellId)
 {
     if (spellId)
     {
-        MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
+        MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
         AuraList const& auras = GetAurasByType(SPELL_AURA_PERIODIC_TRIGGER_BY_CLIENT);
         if (!auras.empty())
         {
             for (AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
             {
-                if (!(*itr)->GetHolder() || (*itr)->GetHolder()->IsDeleted())
+                if (itr->IsEmpty())
                     continue;
 
                 if ((*itr)->GetHolder()->GetCasterGuid() == GetObjectGuid() &&
                     (*itr)->GetHolder()->GetSpellProto()->EffectTriggerSpell[(*itr)->GetEffIndex()] == spellId)
-                    return *itr;
+                    return (*itr)();
             }
         }
     }
@@ -5905,19 +5909,17 @@ Aura* Unit::GetTriggeredByClientAura(uint32 spellId)
 
 Aura* Unit::GetScalingAura(AuraType type, uint32 stat)
 {
-    MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
-    AuraList const& auras = GetAurasByType(type);
-    for (AuraList::const_iterator i = auras.begin(); i != auras.end(); ++i)
+    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
+    AuraList& auras = GetAurasByType(type);
+    for (AuraList::iterator i = auras.begin(); i != auras.end(); ++i)
     {
-        Aura* aura = (*i);
-        if (!aura)
+        if (i->IsEmpty())
             continue;
 
-        SpellAuraHolderPtr holder = aura->GetHolder();
-        if (!holder || holder->IsDeleted() || holder->IsEmptyHolder() || holder->GetCasterGuid() != GetObjectGuid())
+        if ((*i)->GetHolder()->GetCasterGuid() != GetObjectGuid())
             continue;
 
-        if (holder->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_PET_SCALING_AURA))
+        if ((*i)->GetHolder()->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_PET_SCALING_AURA))
         {
             switch(type)
             {
@@ -5926,21 +5928,21 @@ Aura* Unit::GetScalingAura(AuraType type, uint32 stat)
                 case SPELL_AURA_MOD_HIT_CHANCE:
                 case SPELL_AURA_MOD_SPELL_HIT_CHANCE:
                 case SPELL_AURA_MOD_EXPERTISE:
-                    return aura;
+                    return (*i)();
                 case SPELL_AURA_MOD_DAMAGE_DONE:
-                    if (aura->GetModifier()->m_miscvalue == SpellSchoolMask(stat))
-                        return aura;
+                    if ((*i)->GetModifier()->m_miscvalue == SpellSchoolMask(stat))
+                        return (*i)();
                     break;
                 case SPELL_AURA_MOD_RESISTANCE:
-                    if (aura->GetModifier()->m_miscvalue & (1 << SpellSchools(stat)))
-                        return aura;
+                    if ((*i)->GetModifier()->m_miscvalue & (1 << SpellSchools(stat)))
+                        return (*i)();
                     break;
                 case SPELL_AURA_MOD_STAT:
-                    if (aura->GetModifier()->m_miscvalue == Stats(stat))
-                        return aura;
+                    if ((*i)->GetModifier()->m_miscvalue == Stats(stat))
+                        return (*i)();
                     break;
                 case SPELL_AURA_HASTE_ALL:
-                    return aura;
+                    return (*i)();
                 default:
                     break;
             }
@@ -5955,7 +5957,7 @@ bool Unit::HasAura(uint32 spellId, SpellEffectIndex effIndex) const
     if (spair.first != spair.second)
     {
         MAPLOCK_READ(const_cast<Unit*>(this), MAP_LOCK_TYPE_AURAS);
-        for(SpellAuraHolderMap::const_iterator i_holder = spair.first; i_holder != spair.second; ++i_holder)
+        for (SpellAuraHolderMap::const_iterator i_holder = spair.first; i_holder != spair.second; ++i_holder)
             if (i_holder->second && !i_holder->second->IsDeleted() && i_holder->second->GetAuraByEffectIndex(effIndex))
                 return true;
     }
@@ -7305,14 +7307,13 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
         {
             for (AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
             {
-                Aura* aura = *itr;
-                if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                if (!(*itr)->GetHolder() || (*itr)->GetHolder()->IsDeleted())
                     continue;
 
-                if (Unit* magnet = aura->GetCaster())
+                if (Unit* magnet = (*itr)->GetCaster())
                 {
                     // spell->CheckTarget() include LOS check
-                    if (magnet->isAlive() && spell->CheckTarget(magnet, eff))
+                    if (magnet && magnet->isAlive() && spell->CheckTarget(magnet, eff))
                         return magnet;
                 }
             }
@@ -7326,16 +7327,15 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
         {
             for (AuraList::const_iterator itr = hitTriggerAuras.begin(); itr != hitTriggerAuras.end(); ++itr)
             {
-                Aura* aura = *itr;
-                if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                if (!(*itr)->GetHolder() || (*itr)->GetHolder()->IsDeleted())
                     continue;
 
-                if (Unit* magnet = aura->GetCaster())
+                if (Unit* magnet = (*itr)->GetCaster())
                 {
                     // spell->CheckTarget() include LOS check
-                    if (magnet->isAlive() && ((!spell && magnet->IsWithinLOSInMap(this)) || (spell && spell->CheckTarget(magnet, eff))))
+                    if (magnet && magnet->isAlive() && ((!spell && magnet->IsWithinLOSInMap(this)) || (spell && spell->CheckTarget(magnet, eff))))
                     {
-                        if (roll_chance_i(aura->GetModifier()->m_amount))
+                        if (roll_chance_i((*itr)->GetModifier()->m_amount))
                             return magnet;
                     }
                 }
@@ -7479,15 +7479,12 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
     AuraList const& mModDamagePercentDone = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
     for(AuraList::const_iterator i = mModDamagePercentDone.begin(); i != mModDamagePercentDone.end(); ++i)
     {
-        Aura* aura = *i;
-        if (!aura || !aura->GetModifier() || !(aura->GetModifier()->m_miscvalue & GetSpellSchoolMask(spellProto)))
+        if (i->IsEmpty() || !(*i)->GetModifier() || !((*i)->GetModifier()->m_miscvalue & GetSpellSchoolMask(spellProto)))
             continue;
 
-        SpellAuraHolderPtr holder = aura->GetHolder();
-        if (!holder || holder->IsDeleted())
-            continue;
+        SpellAuraHolderPtr holder = i->GetHolder();
 
-        int32 calculatedBonus = aura->GetModifier()->m_amount;
+        int32 calculatedBonus = (*i)->GetModifier()->m_amount;
 
         if (holder->GetSpellProto()->EquippedItemClass != -1 ||
                                                             // -1 == any item class (not wand then)
@@ -7499,7 +7496,7 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
         if (calculatedBonus == 0)
         {
             // Clearcasting - bonus from Elemental Oath
-            if (aura->GetSpellProto()->Id == 16246)
+            if ((*i)->GetSpellProto()->Id == 16246)
             {
                 AuraList const& aurasCrit = GetAurasByType(SPELL_AURA_MOD_SPELL_CRIT_CHANCE);
                 for (AuraList::const_iterator itr = aurasCrit.begin(); itr != aurasCrit.end(); itr++)
@@ -7513,7 +7510,7 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
             }
         }
 
-        if (aura->IsStacking())
+        if ((*i)->IsStacking())
             DoneTotalMod *= ((float)calculatedBonus+100.0f)/100.0f;
         else
         {
@@ -7717,7 +7714,7 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
                     // if target have higher level
                     if (pVictim->getLevel() > getLevel())
                         // Glyph of Ice Lance
-                        if (Aura* glyph = GetDummyAura(56377))
+                        if (Aura const* glyph = GetDummyAura(56377))
                             multiplier = glyph->GetModifier()->m_amount;
 
                     DoneTotalMod *= multiplier;
@@ -7853,7 +7850,7 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
             // Death Coil (bonus from Item - Death Knight T8 DPS Relic)
             else if (spellProto->SpellFamilyFlags.test<CF_DEATHKNIGHT_DEATH_COIL>())
             {
-                 if (Aura* sigil = GetDummyAura(64962))
+                 if (Aura const* sigil = GetDummyAura(64962))
                     DoneTotal += sigil->GetModifier()->m_amount;
             }
             break;
@@ -8172,7 +8169,7 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         // Sacred Shield
                         if (spellProto->SpellFamilyFlags.test<CF_PALADIN_FLASH_OF_LIGHT>())
                         {
-                            Aura *aura = pVictim->GetDummyAura(58597);
+                            Aura const* aura = pVictim->GetDummyAura(58597);
                             if (aura && aura->GetCasterGuid() == GetObjectGuid())
                                 crit_chance+=aura->GetModifier()->m_amount;
                         }
@@ -8708,23 +8705,20 @@ uint32 Unit::MeleeDamageBonusDone(Unit *pVictim, uint32 pdamage,WeaponAttackType
         AuraList const& mModDamageDone = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE);
         for(AuraList::const_iterator i = mModDamageDone.begin(); i != mModDamageDone.end(); ++i)
         {
-            Aura* aura = *i;
-            if (!aura)
+            if (i->IsEmpty())
                 continue;
 
-            SpellAuraHolderPtr holder = aura->GetHolder();  // lock holder
-            if (!holder || holder->IsDeleted())
-                continue;
+            SpellAuraHolderPtr holder = i->GetHolder();  // lock holder
 
-            if (((aura->GetModifier()->m_miscvalue & schoolMask) ||                          // schoolmask has to fit with the intrinsic spell school
-                aura->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_PET_SCALING_AURA)) &&   // completely schoolmask-independend: pet scaling auras
+            if ((((*i)->GetModifier()->m_miscvalue & schoolMask) ||                          // schoolmask has to fit with the intrinsic spell school
+                (*i)->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_PET_SCALING_AURA)) &&   // completely schoolmask-independend: pet scaling auras
                                                                                            // Those auras have SPELL_SCHOOL_MASK_MAGIC, but anyway should also affect
                                                                                            // physical damage from non-weapon-damage-based spells (claw, swipe etc.)
-                (aura->GetModifier()->m_miscvalue & GetMeleeDamageSchoolMask()) &&           // AND schoolmask has to fit with weapon damage school (essential for non-physical spells)
+                ((*i)->GetModifier()->m_miscvalue & GetMeleeDamageSchoolMask()) &&           // AND schoolmask has to fit with weapon damage school (essential for non-physical spells)
                 ((holder->GetSpellProto()->EquippedItemClass == -1) ||                     // general, weapon independent
                 (pWeapon && pWeapon->IsFitToSpellRequirements(holder->GetSpellProto()))))  // OR used weapon fits aura requirements
             {
-                DoneFlat += aura->GetModifier()->m_amount;
+                DoneFlat += (*i)->GetModifier()->m_amount;
             }
         }
     }
@@ -8754,20 +8748,17 @@ uint32 Unit::MeleeDamageBonusDone(Unit *pVictim, uint32 pdamage,WeaponAttackType
         AuraList const& mModDamagePercentDone = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
         for(AuraList::const_iterator i = mModDamagePercentDone.begin(); i != mModDamagePercentDone.end(); ++i)
         {
-            Aura* aura = *i;
-            if (!aura)
+            if (i->IsEmpty())
                 continue;
 
-            SpellAuraHolderPtr holder = aura->GetHolder();  // lock holder
-            if (!holder || holder->IsDeleted())
-                continue;
+            SpellAuraHolderPtr holder = i->GetHolder();  // lock holder
 
-            if ((aura->GetModifier()->m_miscvalue & schoolMask) &&                         // schoolmask has to fit with the intrinsic spell school
-                (aura->GetModifier()->m_miscvalue & GetMeleeDamageSchoolMask()) &&         // AND schoolmask has to fit with weapon damage school (essential for non-physical spells)
+            if (((*i)->GetModifier()->m_miscvalue & schoolMask) &&                         // schoolmask has to fit with the intrinsic spell school
+                ((*i)->GetModifier()->m_miscvalue & GetMeleeDamageSchoolMask()) &&         // AND schoolmask has to fit with weapon damage school (essential for non-physical spells)
                 ((holder->GetSpellProto()->EquippedItemClass == -1) ||                     // general, weapon independent
                 (pWeapon && pWeapon->IsFitToSpellRequirements(holder->GetSpellProto()))))  // OR used weapon fits aura requirements
             {
-                DonePercent *= (aura->GetModifier()->m_amount+100.0f) / 100.0f;
+                DonePercent *= ((*i)->GetModifier()->m_amount+100.0f) / 100.0f;
             }
         }
 
@@ -8916,7 +8907,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit *pVictim, uint32 pdamage,WeaponAttackType
         else if (spellProto->SpellFamilyName == SPELLFAMILY_HUNTER && spellProto->SpellFamilyFlags.test<CF_HUNTER_STEADY_SHOT>())
         {
             // search for glyph dummy aura
-            if (Aura *aur = GetDummyAura(56826))
+            if (Aura const* aur = GetDummyAura(56826))
                 // check for Serpent Sting at target
                 if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_HUNTER, CF_HUNTER_SERPENT_STING>())
                     DonePercent *= (aur->GetModifier()->m_amount+100.0f) / 100.0f;
@@ -9670,19 +9661,18 @@ void Unit::UpdateVisibilityAndView()
         if (alist.empty())
             continue;
 
-        for (AuraList::iterator it = alist.begin(); it != alist.end();)
+        for (AuraList::iterator itr = alist.begin(); itr != alist.end();)
         {
-            Aura* aura = (*it);
-            Unit* owner = aura->GetCaster();
+            Unit* owner = (*itr)->GetCaster();
 
             if (!owner || !isVisibleForOrDetect(owner,this,false))
             {
-                alist.erase(it);
-                RemoveAura(aura);
-                it = alist.begin();
+                RemoveAura((*itr)());
+                alist.erase(itr);
+                itr = alist.begin();
             }
             else
-                ++it;
+                ++itr;
         }
     }
 
@@ -10188,8 +10178,7 @@ bool Unit::SelectHostileTarget()
 
     // First checking if we have some taunt on us
     {
-        MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
-        const AuraList& tauntAuras = GetAurasByType(SPELL_AURA_MOD_TAUNT);
+        AuraList const& tauntAuras = GetAurasByType(SPELL_AURA_MOD_TAUNT);
         if (!tauntAuras.empty())
         {
             Unit* caster;
@@ -11544,7 +11533,7 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
     bool triggered = false;
     SpellEntry const* triggeredBy = NULL;
 
-    Aura* triggeredByAura = GetTriggeredByClientAura(spellInfo->Id);
+    Aura const* triggeredByAura = GetTriggeredByClientAura(spellInfo->Id);
     if (triggeredByAura)
     {
         triggered = true;
@@ -11883,9 +11872,9 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, DamageInfo* damageInfo)
             }
 
             itr->first->SetInUse(true);
-            triggeredByAura->SetInUse(true);
+            const_cast<Aura*>(triggeredByAura)->SetInUse(true);
             SpellAuraProcResult procResult = (*this.*AuraProcHandler[itr->first->GetSpellProto()->EffectApplyAuraName[i]])(pTarget, damageInfo, triggeredByAura, procSpell, procFlag, procExtra, cooldown);
-            triggeredByAura->SetInUse(false);
+            const_cast<Aura*>(triggeredByAura)->SetInUse(false);
             itr->first->SetInUse(false);
 
             switch (procResult)
@@ -12525,20 +12514,17 @@ float Unit::GetAPMultiplier(WeaponAttackType attType, bool normalized)
     }
 }
 
-Aura* Unit::GetDummyAura( uint32 spell_id ) const
+Aura const* Unit::GetDummyAura(uint32 spell_id) const
 {
-    MAPLOCK_READ(const_cast<Unit*>(this),MAP_LOCK_TYPE_AURAS);
-    Unit::AuraList const& mDummy = GetAurasByType(SPELL_AURA_DUMMY);
-    for (Unit::AuraList::const_iterator itr = mDummy.begin(); itr != mDummy.end(); ++itr)
+    AuraList const& mDummy = GetAurasByType(SPELL_AURA_DUMMY);
+    for (AuraList::const_iterator itr = mDummy.begin(); itr != mDummy.end(); ++itr)
     {
-        SpellAuraHolderPtr holder = (*itr)->GetHolder();
-        if (!holder || holder->IsDeleted())
+        if (itr->IsEmpty())
             continue;
 
-        if (holder->GetId() == spell_id)
-            return *itr;
+        if ((*itr)->GetHolder()->GetId() == spell_id)
+            return (*itr)();
     }
-
     return NULL;
 }
 
