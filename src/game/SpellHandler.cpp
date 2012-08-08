@@ -403,7 +403,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
     bool triggered = false;
     SpellEntry const* triggeredBy = NULL;
-    Aura const* triggeredByAura = mover->GetTriggeredByClientAura(spellId);
+    Aura* triggeredByAura = mover->GetTriggeredByClientAura(spellId);
     if (triggeredByAura)
     {
         triggered = true;
