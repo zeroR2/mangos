@@ -93,6 +93,7 @@ public:
     void DropAction(UnitActionId actionId);
     void DropAction(UnitActionId actionId, UnitActionPriority priority);
     void DropAction(UnitActionPriority priority);
+    void DropAction(UnitActionPtr _action);
     void DropActionHigherThen(UnitActionPriority priority);
 
     void DropAllStates();
@@ -104,6 +105,8 @@ public:
 
     ActionInfo* GetAction(UnitActionPriority priority);
     ActionInfo* GetAction(UnitActionPtr _action);
+
+    UnitActionStorage const& GetActions() { return m_actions; };
 
     UnitActionPtr CurrentAction();
     ActionInfo*   CurrentState();
