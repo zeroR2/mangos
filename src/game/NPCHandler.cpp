@@ -34,6 +34,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Chat.h"
+#include "WorldPvP/WorldPvPWG.h"
 
 enum StableResultCode
 {
@@ -441,13 +442,25 @@ void WorldSession::SendSpiritResurrect()
         WorldSafeLocsEntry const *ghostGrave = sObjectMgr.GetClosestGraveYard(
             _player->GetPositionX(), _player->GetPositionY(), _player->GetPositionZ(), _player->GetMapId(), _player->GetTeam());
 
-        if(corpseGrave != ghostGrave)
+		bool wintergrasp = false;
+
+		if(_player->GetMapId() == 571 && _player->GetZoneId() == 4197)
+            wintergrasp = true;
+			
+        if(corpseGrave != ghostGrave && !wintergrasp)
             _player->TeleportTo(corpseGrave->map_id, corpseGrave->x, corpseGrave->y, corpseGrave->z, _player->GetOrientation());
         // or update at original position
         else
         {
             _player->GetCamera().UpdateVisibilityForOwner();
             _player->UpdateObjectVisibility();
+			
+			if(wintergrasp)
+			{
+               WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
+               WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+               WG->AddAuraResurrect(_player);
+            }				
         }
     }
     // or update at original position

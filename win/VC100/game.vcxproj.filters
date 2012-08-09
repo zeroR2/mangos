@@ -303,6 +303,9 @@
     <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPTF.cpp">
       <Filter>WorldPvP</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPWG.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>		
     <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPZM.cpp">
       <Filter>WorldPvP</Filter>
     </ClCompile>
@@ -820,8 +823,11 @@
       <Filter>WorldPvP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPTF.h">
-      <Filter>WorldPvP</Filter>
+      <Filter>WorldPvP</Filter>	  
     </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPWG.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>		
     <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPZM.h">
       <Filter>WorldPvP</Filter>
     </ClInclude>

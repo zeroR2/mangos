@@ -535,6 +535,7 @@
     <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPNA.cpp" />
     <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPSI.cpp" />
     <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPTF.cpp" />
+	<ClCompile Include="..\..\src\game\WorldPvP\WorldPvPWG.cpp" />
     <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPZM.cpp" />
     <ClCompile Include="..\..\src\game\WorldSession.cpp" />
     <ClCompile Include="..\..\src\game\WorldSocket.cpp" />
@@ -727,6 +728,7 @@
     <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPNA.h" />
     <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPSI.h" />
     <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPTF.h" />
+	<ClInclude Include="..\..\src\game\WorldPvP\WorldPvPWG.h" />
     <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPZM.h" />
     <ClInclude Include="..\..\src\game\ZoneScript.h" />
     <ClInclude Include="..\..\src\game\WorldSession.h" />

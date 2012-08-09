@@ -54,6 +54,7 @@
 // apply implementation of the singletons
 #include "Policies/SingletonImp.h"
 
+#include "WorldPvP/WorldPvPWG.h"
 
 ObjectGuid CreatureData::GetObjectGuid(uint32 lowguid) const
 {
@@ -2770,4 +2771,43 @@ Unit* Creature::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
     }
 
     return target;
+}
+
+void Creature::CreateVehicleWG(Creature* pCreature,uint32 npc_entry)
+{
+      WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
+	  WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+
+	  WG->CreateVehicle(pCreature,npc_entry);
+
+}
+
+uint32 Creature::GetCountVehicleWG(uint32 team)
+{
+	  uint32 count = NULL;
+
+      WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
+	  WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+
+	  if(team == ALLIANCE)
+	    count = WG->GetCountVehicle(ALLIANCE);
+	  else if(team == HORDE)
+        count = WG->GetCountVehicle(HORDE);
+
+	  return count;
+}
+
+uint32 Creature::GetCountMaxVehicleWG(uint32 team)
+{
+	  uint32 count = NULL;
+
+      WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
+	  WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+
+	  if(team == ALLIANCE)
+	    count = WG->GetCountMaxVehicle(ALLIANCE);
+	  else if(team == HORDE)
+        count = WG->GetCountMaxVehicle(HORDE);
+
+	  return count;
 }

@@ -65,6 +65,8 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 
+#include "WorldPvP/WorldPvPWG.h"
+
 #include <cmath>
 
 // Playerbot mod:
@@ -5088,6 +5090,11 @@ void Player::RepopAtGraveyard()
     // Special handle for battleground maps
     if ( BattleGround *bg = GetBattleGround() )
         ClosestGrave = bg->GetClosestGraveYard(this);
+	else if(GetMapId() == 571 && GetZoneId() == 4197)
+    {
+		if(WorldPvP* WP = GetWorldPvP())
+           ClosestGrave = WP->GetClosestGraveYardWG(this);   
+    }			
     else
         ClosestGrave = sObjectMgr.GetClosestGraveYard( GetPositionX(), GetPositionY(), GetPositionZ(), GetMapId(), GetTeam() );
 

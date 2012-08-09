@@ -44,6 +44,7 @@
 #include "SQLStorages.h"
 #include <G3D/Quat.h>
 
+#include "WorldPvP/WorldPvPWG.h"
 
 GameObject::GameObject() : WorldObject(),
     m_goInfo(NULL),
@@ -1775,8 +1776,16 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
     {
          m_health -= damage;
          if (pWho)
+		 {		 
              if (BattleGround *bg = pWho->GetBattleGround())
                  bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
+             else if(pWho->GetMapId() == 571 && pWho->GetZoneId() == 4197)
+             {
+                 WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
+                 WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+				 WG->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.destroyedEvent);
+             }				 
+		 }
     }
 
     else
@@ -1795,6 +1804,12 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
+                else if(pWho->GetMapId() == 571 && pWho->GetZoneId() == 4197)
+                {
+                    WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
+                    WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+					WG->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damagedEvent);
+                }					
             }
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DESTROY state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());

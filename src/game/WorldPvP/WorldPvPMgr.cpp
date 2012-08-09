@@ -23,6 +23,7 @@
 #include "WorldPvPNA.h"
 #include "WorldPvPSI.h"
 #include "WorldPvPTF.h"
+#include "WorldPvPWG.h"
 #include "WorldPvPZM.h"
 #include "Policies/SingletonImp.h"
 
@@ -130,6 +131,18 @@ void WorldPvPMgr::InitWorldPvP()
         ++uiPvPZonesInitialized;
     }
 
+    pWorldPvP = new WorldPvPWG;
+    if (!pWorldPvP->InitWorldPvPArea())
+    {
+        sLog.outDebug("WorldPvP : WINTERGRASP init failed.");
+        delete pWorldPvP;
+    }
+    else
+    {
+        m_WorldPvPSet.push_back(pWorldPvP);
+        ++uiPvPZonesInitialized;
+    }
+	
     sLog.outString();
     sLog.outString(">> Loaded %u World PvP zones", uiPvPZonesInitialized);
 }

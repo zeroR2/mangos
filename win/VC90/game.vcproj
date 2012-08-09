@@ -2090,6 +2090,14 @@
 				RelativePath="..\..\src\game\WorldPvP\WorldPvPTF.h"
 				>
 			</File>
+ 			<File
+				RelativePath="..\..\src\game\WorldPvP\WorldPvPWG.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\game\WorldPvP\WorldPvPWG.h"
+				>
+			</File>			
 			<File
 				RelativePath="..\..\src\game\WorldPvP\WorldPvPZM.cpp"
 				>

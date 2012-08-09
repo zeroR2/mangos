@@ -40,6 +40,7 @@ enum WorldPvPTypes
     WORLD_PVP_TYPE_TF,
     WORLD_PVP_TYPE_NA,
     WORLD_PVP_TYPE_GH,
+	WORLD_PVP_TYPE_WG
 };
 
 enum GameObjectArtKits
@@ -107,6 +108,14 @@ class WorldPvP : public ZoneScript
         // Wrapper for initial (per-script) WorldState filling, once per zone
         void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value);
 
+		Player* GetPlayersAlliance();
+		Player* GetPlayersHorde();
+		uint32 CountPlayersAlliance();
+		uint32 CountPlayersHorde(); 	
+
+		void CompleteQuest(Player *player, uint32 entry);
+		virtual WorldSafeLocsEntry const* GetClosestGraveYardWG(Player* player);
+		
     protected:
         // Player related stuff
         virtual void HandlePlayerEnterZone(Player* pPlayer);
@@ -120,6 +129,8 @@ class WorldPvP : public ZoneScript
 
         // store the players inside the area depending on the faction
         GuidSet m_sZonePlayers;
+		GuidSet m_sZonePlayersAlliance;
+		GuidSet m_sZonePlayersHorde;
 
         uint32 m_uiTypeId;
 };

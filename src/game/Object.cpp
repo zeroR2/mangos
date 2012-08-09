@@ -1087,6 +1087,15 @@ InstanceData* WorldObject::GetInstanceData() const
     return GetMap()->GetInstanceData();
 }
 
+float WorldObject::GetDistancePointToPoint(WorldObject* w1,WorldObject* w2)
+{
+    float dx, dy, dz;
+    dx = w1->GetPositionX() - w2->GetPositionX();
+    dy = w1->GetPositionY() - w2->GetPositionY();
+    dz = w1->GetPositionZ() - w2->GetPositionZ();   
+
+    return sqrt(dx*dx + dy*dy + dz*dz);
+}
                                                             //slow
 float WorldObject::GetDistance(const WorldObject* obj) const
 {
