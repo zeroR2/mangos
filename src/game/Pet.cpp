@@ -63,6 +63,8 @@ Pet::~Pet()
 
     if (m_baseBonusData)
         delete m_baseBonusData;
+
+    m_removed = true;
 }
 
 void Pet::AddToWorld()
@@ -2877,6 +2879,14 @@ Unit* Pet::GetOwner() const
         return owner;
     else
         return NULL;
+}
+
+bool Pet::IsInEvadeMode()
+{
+    if (IsInUnitState(UNIT_ACTION_DOWAYPOINTS))
+        return true;
+
+    return ((Creature*)this)->IsInEvadeMode();
 }
 
 
