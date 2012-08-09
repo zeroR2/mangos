@@ -1238,10 +1238,6 @@ typedef GuidSet GroupPetList;
 #define REGEN_TIME_FULL     2000                            // For this time difference is computed regen value
 #define REGEN_TIME_PRECISE  500                             // Used in Spell::CheckPower for precise regeneration in spell cast time
 
-// delay time for evading
-#define EVADE_TIME_DELAY    500
-#define EVADE_TIME_DELAY_MIN   0
-
 struct SpellProcEventEntry;                                 // used only privately
 class  VehicleKit;
 
