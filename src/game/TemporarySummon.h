@@ -38,6 +38,8 @@ class TemporarySummon : public Creature
         Unit* GetSummoner() const { return ObjectAccessor::GetUnit(*this, m_summoner); }
         TempSummonType GetTempSummonType() const { return m_type; };
 
+        bool IsInEvadeMode() override;
+
     private:
         void SaveToDB(uint32, uint8, uint32)                // overwrited of Creature::SaveToDB     - don't must be called
         {

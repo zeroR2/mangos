@@ -283,8 +283,17 @@ void TemporarySummon::UnSummon(uint32 delay)
 
     // Prevent double unsummonig before remove from world
     m_type = TEMPSUMMON_MANUAL_DESPAWN;
+    m_lifetime = 0;
 }
 
 void TemporarySummon::SaveToDB()
 {
+}
+
+bool TemporarySummon::IsInEvadeMode()
+{
+    if (m_type == TEMPSUMMON_MANUAL_DESPAWN && m_lifetime == 0)
+        return true;
+
+    return ((Creature*)this)->IsInEvadeMode();
 }
