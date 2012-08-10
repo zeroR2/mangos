@@ -48,10 +48,10 @@ enum AuraClassType
 struct Modifier
 {
     AuraType m_auraname;
-    int32 m_amount;
-    int32 m_miscvalue;
-    uint32 periodictime;
-    int32 m_baseamount;
+    mutable int32    m_amount;
+    int32    m_miscvalue;
+    uint32   periodictime;
+    int32    m_baseamount;
 };
 
 class Unit;
@@ -566,4 +566,53 @@ class MANGOS_DLL_SPEC Aura
 };
 
 MANGOS_DLL_SPEC SpellAuraHolderPtr CreateSpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem = NULL);
+
+class MANGOS_DLL_SPEC AuraPair
+{
+    public:
+        AuraPair() : m_holder(SpellAuraHolderPtr()), m_index(MAX_EFFECT_INDEX) {};
+        AuraPair(SpellAuraHolderPtr holder, SpellEffectIndex idx) : m_holder(holder), m_index(idx) {};
+        AuraPair(Aura const* aura) : m_holder(aura->GetHolder()), m_index(aura->GetEffIndex()) {};
+
+        AuraPair& operator= (AuraPair const& pair)
+        {
+            m_holder = pair.m_holder;
+            m_index  = pair.m_index;
+        }
+
+        Aura* operator () () { return m_holder->GetAuraByEffectIndex(m_index); };
+        Aura const* operator () () const { return m_holder->GetAura(m_index); };
+
+        Aura* operator -> () { return m_holder->GetAuraByEffectIndex(m_index); };
+        Aura const* operator -> () const { return m_holder->GetAura(m_index); };
+
+        Aura operator * () { return *m_holder->GetAuraByEffectIndex(m_index); };
+        Aura const operator * () const { return *m_holder->GetAura(m_index); };
+
+        bool operator == (AuraPair const& pair) const { return (m_index == pair.m_index && m_holder == pair.m_holder); };
+        bool operator == (Aura const* aura)     const { return IsEmpty() ? (aura == NULL) : (aura == GetHolder()->GetAura(m_index)); };
+        bool operator !  ()                     const { return IsEmpty(); };
+        bool operator != (Aura const* aura)     const { return IsEmpty() ? (aura != NULL) : (aura != GetHolder()->GetAura(m_index)); };
+
+        SpellAuraHolderPtr GetHolder()         { return m_holder; };
+        SpellAuraHolderPtr GetHolder()   const { return m_holder; };
+        SpellEffectIndex   GetEffIndex() const { return m_index; };
+
+        bool IsEmpty(bool withDeleted = true) const
+        {
+            return
+                !m_holder ||
+                !m_holder->GetAura(m_index) ||
+                (m_index == MAX_EFFECT_INDEX) ||
+                m_holder->IsEmptyHolder() ||
+                (withDeleted && m_holder->IsDeleted())
+                ;
+        }
+
+    private:
+        SpellAuraHolderPtr m_holder;
+        SpellEffectIndex   m_index;
+};
+
+
 #endif
