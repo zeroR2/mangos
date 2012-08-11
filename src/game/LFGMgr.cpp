@@ -1025,39 +1025,31 @@ void LFGMgr::SendLFGRewards(Group* pGroup)
     pGroup->GetLFGGroupState()->SetState(LFG_STATE_FINISHED_DUNGEON);
     pGroup->GetLFGGroupState()->SetStatus(LFG_STATUS_SAVED);
 
-    LFGDungeonEntry const* dungeon = *pGroup->GetLFGGroupState()->GetDungeons()->begin();
-    LFGDungeonEntry const* realdungeon = pGroup->GetLFGGroupState()->GetDungeon();
+    LFGDungeonEntry const* pRealdungeon = pGroup->GetLFGGroupState()->GetDungeon();
 
-    if (!dungeon)
+    if (!pRealdungeon)
     {
-        DEBUG_LOG("LFGMgr::SendLFGReward: group %u - no dungeon in list", pGroup->GetObjectGuid().GetCounter());
+        DEBUG_LOG("LFGMgr::SendLFGReward: group %u - but no realdungeon", pGroup->GetObjectGuid().GetCounter());
         return;
     }
-    else  if (dungeon->type != LFG_TYPE_RANDOM_DUNGEON)
+    else  if (pRealdungeon->type != LFG_TYPE_RANDOM_DUNGEON)
     {
-        DEBUG_LOG("LFGMgr::SendLFGReward: group %u dungeon %u is not random (%u)", pGroup->GetObjectGuid().GetCounter(), dungeon->ID, dungeon->type);
+        DEBUG_LOG("LFGMgr::SendLFGReward: group %u dungeon %u is not random (%u)", pGroup->GetObjectGuid().GetCounter(), pRealdungeon->ID, pRealdungeon->type);
         return;
     }
 
     for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
     {
-        if (Player* pGroupMember = itr->getSource())
-            if (pGroupMember->IsInWorld())
-            {
-                LFGDungeonSet dungeons;
-                dungeons.clear();
-                dungeons.insert(realdungeon);
-                pGroupMember->GetLFGPlayerState()->SetDungeons(dungeons);
-                SendLFGReward(pGroupMember, dungeon);
-            }
+        Player* pGroupMember = itr->getSource();
+        if (pGroupMember && pGroupMember->IsInWorld())
+            SendLFGReward(pGroupMember, pRealdungeon);
     }
 }
 
-void LFGMgr::SendLFGReward(Player* pPlayer, LFGDungeonEntry const* dungeon)
+void LFGMgr::SendLFGReward(Player* pPlayer, LFGDungeonEntry const* pRandomDungeon)
 {
-    if (!pPlayer || !dungeon)
+    if (!pPlayer || !pRandomDungeon)
         return;
-
 
     if (pPlayer->GetLFGPlayerState()->GetState() == LFG_STATE_FINISHED_DUNGEON)
     {
@@ -1066,7 +1058,7 @@ void LFGMgr::SendLFGReward(Player* pPlayer, LFGDungeonEntry const* dungeon)
     }
 
     // Update achievements
-    if (dungeon->difficulty == DUNGEON_DIFFICULTY_HEROIC)
+    if (pRandomDungeon->difficulty == DUNGEON_DIFFICULTY_HEROIC)
     {
         if (Group* pGroup = pPlayer->GetGroup())
         {
@@ -1077,7 +1069,7 @@ void LFGMgr::SendLFGReward(Player* pPlayer, LFGDungeonEntry const* dungeon)
 
     pPlayer->GetLFGPlayerState()->SetState(LFG_STATE_FINISHED_DUNGEON);
 
-    LFGReward const* reward = GetRandomDungeonReward(dungeon, pPlayer);
+    LFGReward const* reward = GetRandomDungeonReward(pRandomDungeon, pPlayer);
 
     if (!reward)
         return;
@@ -1102,8 +1094,8 @@ void LFGMgr::SendLFGReward(Player* pPlayer, LFGDungeonEntry const* dungeon)
     pPlayer->RewardQuest(qReward,0,NULL,false);
 
     // Give rewards
-    DEBUG_LOG("LFGMgr::RewardDungeonDoneFor: %u done dungeon %u, %s previously done.", pPlayer->GetObjectGuid().GetCounter(), dungeon->ID, index > 0 ? " " : " not");
-    pPlayer->GetSession()->SendLfgPlayerReward(dungeon, reward, qReward, index != 0);
+    DEBUG_LOG("LFGMgr::RewardDungeonDoneFor: %u done dungeon %u, %s previously done.", pPlayer->GetObjectGuid().GetCounter(), pRandomDungeon->ID, index > 0 ? " " : " not");
+    pPlayer->GetSession()->SendLfgPlayerReward(pRandomDungeon, reward, qReward, index != 0);
 }
 
 uint32 LFGMgr::CreateProposal(LFGDungeonEntry const* dungeon, Group* pGroup, GuidSet* guids)
@@ -2589,52 +2581,50 @@ void LFGMgr::UpdateQueueStatus(LFGType type)
 
     uint32 fullCount = 0;
 
-    for (LFGQueueInfoMap::iterator itr = m_queueInfoMap.begin(); itr != m_queueInfoMap.end(); ++itr)
+    for (LFGQueueInfoMap::const_iterator itr = m_queueInfoMap.begin(); itr != m_queueInfoMap.end(); ++itr)
     {
-        LFGQueueInfo* pqInfo = &itr->second;
-        if (!pqInfo)
+        LFGQueueInfo pqInfo = itr->second;
+        ObjectGuid guid = itr->first;       // Player or Group guid
+
+        if (pqInfo.GetDungeonType() != type)
             continue;
 
-        if (pqInfo->GetDungeonType() != type)
-            continue;
-
-        tanks    += (LFG_TANKS_NEEDED - pqInfo->tanks);
-        if (LFG_TANKS_NEEDED - pqInfo->tanks)
-            tanksTime += uint64( time(NULL) - pqInfo->joinTime);
-        healers  += (LFG_HEALERS_NEEDED - pqInfo->healers);
-        if (LFG_HEALERS_NEEDED - pqInfo->healers)
-            healersTime += uint64( time(NULL) - pqInfo->joinTime);
-        damagers += (LFG_DPS_NEEDED - pqInfo->dps);
-        if (LFG_DPS_NEEDED - pqInfo->dps)
-            damagersTime += uint64( time(NULL) - pqInfo->joinTime);
-        if (itr->first.IsGroup())
+        tanks += (LFG_TANKS_NEEDED - pqInfo.tanks);
+        if (LFG_TANKS_NEEDED - pqInfo.tanks)
+            tanksTime += uint64( time(NULL) - pqInfo.joinTime);
+        healers  += (LFG_HEALERS_NEEDED - pqInfo.healers);
+        if (LFG_HEALERS_NEEDED - pqInfo.healers)
+            healersTime += uint64( time(NULL) - pqInfo.joinTime);
+        damagers += (LFG_DPS_NEEDED - pqInfo.dps);
+        if (LFG_DPS_NEEDED - pqInfo.dps)
+            damagersTime += uint64( time(NULL) - pqInfo.joinTime);
+        if (guid.IsGroup())
         {
             Group* pGroup = sObjectMgr.GetGroup(itr->first);
             if (pGroup)
             {
-                fullTime  += uint64( time(NULL) - pqInfo->joinTime)*pGroup->GetMembersCount();
+                fullTime  += uint64( time(NULL) - pqInfo.joinTime) * pGroup->GetMembersCount();
                 fullCount += pGroup->GetMembersCount();
             }
         }
         else
         {
-            fullTime  += uint64( time(NULL) - pqInfo->joinTime);
+            fullTime  += uint64( time(NULL) - pqInfo.joinTime);
             fullCount +=1;
         }
     }
 
-    LFGQueueStatus* status = &m_queueStatus[type];
-    MANGOS_ASSERT(status);
+    LFGQueueStatus status = m_queueStatus[type];
 
-    status->dps     = damagers;
-    status->tanks   = tanks;
-    status->healers = healers;
+    status.dps     = damagers;
+    status.tanks   = tanks;
+    status.healers = healers;
 
-    status->waitTimeTanks  = tanks     ? time_t(tanksTime/tanks)       : 0;
-    status->waitTimeHealer = healers   ? time_t(healersTime/healers)   : 0;
-    status->waitTimeDps    = damagers  ? time_t(damagersTime/damagers) : 0;
+    status.waitTimeTanks  = tanks     ? time_t(tanksTime/tanks)       : 0;
+    status.waitTimeHealer = healers   ? time_t(healersTime/healers)   : 0;
+    status.waitTimeDps    = damagers  ? time_t(damagersTime/damagers) : 0;
 
-    status->avgWaitTime    = fullCount ? time_t(fullTime/fullCount)    : 0;
+    status.avgWaitTime    = fullCount ? time_t(fullTime/fullCount)    : 0;
 
 }
 
