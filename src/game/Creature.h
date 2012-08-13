@@ -807,4 +807,15 @@ class AttackResumeEvent : public BasicEvent
         bool    b_force;
 };
 
+class EvadeDelayEvent : public BasicEvent
+{
+    public:
+        EvadeDelayEvent(Unit& owner, bool force = false) : m_owner(owner), b_force(force) {};
+        bool Execute(uint64 e_time, uint32 p_time);
+    private:
+        EvadeDelayEvent();
+        Unit&   m_owner;
+        bool    b_force;
+};
+
 #endif
