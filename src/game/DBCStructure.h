@@ -2186,18 +2186,12 @@ struct SpellEntry
 
     inline uint32 GetMechanic() const { return Mechanic; };
     inline uint32 GetManaCost() const { return manaCost; };
-    inline uint32 GetSpellFamilyName() const { return SpellFamilyName; };
-    inline uint32 GetAuraInterruptFlags() const { return AuraInterruptFlags; };
-    inline uint32 GetStackAmount() const { return StackAmount; };
     uint32 GetEffectImplicitTargetAByIndex(SpellEffectIndex j) const;
     uint32 GetEffectImplicitTargetBByIndex(SpellEffectIndex j) const;
     uint32 GetEffectApplyAuraNameByIndex(SpellEffectIndex j) const;
     uint32 GetEffectMiscValue(SpellEffectIndex j) const;
 
     SpellEffectEntry const* GetSpellEffect(SpellEffectIndex j) const;
-
-    SpellEntry();
-    ~SpellEntry();
 
     private:
         // prevent creating custom entries (copy data from original in fact)

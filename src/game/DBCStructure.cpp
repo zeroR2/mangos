@@ -75,16 +75,3 @@ SpellEffectEntry const* SpellEntry::GetSpellEffect(SpellEffectIndex j) const
         return m_SpellEffect[j];
     }
 }
-
-SpellEntry::SpellEntry()
-{
-    for (uint8 i = EFFECT_INDEX_0; i < MAX_EFFECT_INDEX; ++i)
-        m_SpellEffect[SpellEffectIndex(i)] = NULL;
-}
-
-SpellEntry::~SpellEntry()
-{
-    for (uint8 i = EFFECT_INDEX_0; i < MAX_EFFECT_INDEX; ++i)
-        if (m_SpellEffect[SpellEffectIndex(i)])
-            delete m_SpellEffect[SpellEffectIndex(i)];
-}
