@@ -427,27 +427,36 @@ void UnitStateMgr::Update(uint32 diff)
         InitDefaults(true);
     }
 
+    // Renew actions from queue
+    while(!m_actionsQueue.empty())
+    {
+        PushAction(m_actionsQueue.top());
+        m_actionsQueue.pop();
+    };
+
     ActionInfo* state = CurrentState();
 
+    // Lock action from deleting while update
+    UnitActionPtr _action = state->Action();
+
     if (!m_oldAction)
-        m_oldAction = state->Action();
-    else if (m_oldAction && m_oldAction != state->Action())
+        m_oldAction = _action;
+    else if (m_oldAction && m_oldAction != _action)
     {
         if (ActionInfo* oldAction = GetAction(m_oldAction))
         {
             if (oldAction->HasFlag(ACTION_STATE_ACTIVE) &&
-                !oldAction->HasFlag(ACTION_STATE_FINALIZED) &&
                 !oldAction->HasFlag(ACTION_STATE_INTERRUPTED))
                 oldAction->Interrupt(this);
         }
         // else do nothing - action be deleted without interrupt/finalize (may be need correct?)
-        m_oldAction = state->Action();
+        m_oldAction = _action;
     }
 
     if (!state->Update(this, diff))
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr: %s finished action %s", GetOwnerStr().c_str(), state->TypeName());
-        DropAction(state->priority);
+        DropAction(_action);
     }
 }
 
@@ -458,10 +467,10 @@ void UnitStateMgr::DropAction(UnitActionId actionId)
 
 void UnitStateMgr::DropAction(UnitActionId actionId, UnitActionPriority priority)
 {
-    if (!m_actions.empty())
+    if (!GetActions().empty())
     {
         std::vector<UnitActionPriority> priorityToDrop;
-        for (UnitActionStorage::const_iterator itr = m_actions.begin(); itr != m_actions.end(); ++itr)
+        for (UnitActionStorage::const_iterator itr = GetActions().begin(); itr != GetActions().end(); ++itr)
             if (itr->first <= priority && itr->second.Id == actionId)
                 priorityToDrop.push_back(itr->first);
 
@@ -476,35 +485,43 @@ void UnitStateMgr::DropAction(UnitActionId actionId, UnitActionPriority priority
 void UnitStateMgr::DropAction(UnitActionPriority priority)
 {
     // Don't remove action with NONE priority - static
-    if (priority < UNIT_ACTION_PRIORITY_IDLE)
+    if (priority < UNIT_ACTION_PRIORITY_IDLE || GetActions().empty())
         return;
 
     UnitActionStorage::iterator itr = m_actions.find(priority);
 
     if (itr != m_actions.end())
     {
-        bool bActiveActionChanged = false;
-        ActionInfo* oldInfo = CurrentState();
-        UnitActionPtr oldAction = oldInfo ? oldInfo->Action() : UnitActionPtr();
+        UnitActionPtr _action = itr->second.Action();
+        DropAction(_action);
+    }
+}
 
-        // if dropped current active state...
-        if (oldInfo && itr->second.Action() == oldInfo->Action() && !oldInfo->HasFlag(ACTION_STATE_FINALIZED))
-            bActiveActionChanged = true;
-
-        // in first - erasing current action, if his active
-        if (itr->second.Action() == m_oldAction)
-            m_oldAction = UnitActionPtr(NULL);
-
-        // Possible erasing by iterator more fast and logic, but by Key much more safe
-        m_actions.erase(priority);
-
-        // Finalized not ActionInfo, but real action (saved before), due to ActionInfo wrapper already deleted.
-        if (bActiveActionChanged && oldAction)
+void UnitStateMgr::DropAction(UnitActionPtr _action)
+{
+    for (UnitActionStorage::iterator itr = m_actions.begin(); itr != m_actions.end(); ++itr)
+    {
+        if (itr->first >= UNIT_ACTION_PRIORITY_IDLE && itr->second == _action)
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "DropAction: %s finalize (direct) action %s", GetOwnerStr().c_str(), oldAction->Name());
-            oldAction->Finalize(*GetOwner());
+            UnitActionPriority priority = itr->first;
+
+            if (itr->second.HasFlag(ACTION_STATE_INITIALIZED) && !itr->second.HasFlag(ACTION_STATE_FINALIZED))
+            {
+                itr->second.Finalize(this);
+                DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "DropAction: %s finalize (direct) action %s", GetOwnerStr().c_str(), _action->Name());
+
+            }
+
+            // In this point erased only ActionInfo, NOT UnitState! UnitState be auto-deleted after lost all pointers.
+            m_actions.erase(priority);
+
+            // Erase current action, if need
+            if (_action == m_oldAction)
+                m_oldAction = UnitActionPtr();
+
+            // not need check other states in storage after deleting
+            break;
         }
-        // in this point we delete last link to UnitActionPtr, after this UnitAction be auto-deleted...
     }
 }
 
@@ -533,51 +550,52 @@ void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state)
 
 void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state, UnitActionPriority priority, eActionType restoreable)
 {
+    m_actionsQueue.push(ActionInfo(actionId, state, priority, restoreable));
+}
+
+void UnitStateMgr::PushAction(ActionInfo const& action)
+{
     ActionInfo* oldInfo = CurrentState();
-    UnitActionPriority _priority = oldInfo ? oldInfo->priority : UNIT_ACTION_PRIORITY_IDLE;
+    UnitActionPriority _priority = oldInfo ? oldInfo->GetPriority() : UNIT_ACTION_PRIORITY_IDLE;
 
     // Only interrupt action, if not drop his below and action lower by priority
-    if (oldInfo &&
-        oldInfo->HasFlag(ACTION_STATE_ACTIVE) && 
-        oldInfo->Id != actionId &&
-        _priority < priority)
+    if  (oldInfo && oldInfo->HasFlag(ACTION_STATE_ACTIVE) && 
+        ((oldInfo->GetId() != action.GetId() && _priority <= action.GetPriority()) ||
+        (oldInfo->GetId() == action.GetId() && _priority <= action.GetPriority() && action.restoreable == ACTION_TYPE_NONRESTOREABLE))
+        )
         oldInfo->Interrupt(this);
 
-    if (_priority > UNIT_ACTION_PRIORITY_IDLE)
+    bool needReplace = true;
+    UnitActionStorage::iterator itr = m_actions.find(action.GetPriority());
+    if (itr != m_actions.end())
     {
-        // Some speedup - testing - not need drop Idle/None actions
-        DropAction(actionId, priority);
-        DropAction(priority);
-    }
-
-    bool needInsert = true;
-
-    if (restoreable != ACTION_TYPE_NONRESTOREABLE)
-    {
-        // Don't replace (only interrupt and reset!) restoreable actions
-        UnitActionStorage::iterator itr = m_actions.find(priority);
-        if (itr != m_actions.end())
+        if (action.restoreable != ACTION_TYPE_NONRESTOREABLE)
         {
-            if (itr->second.Id == actionId)
+            // Don't replace (only interrupt and reset!) restoreable actions
+            if (itr->second.GetId() == action.GetId())
             {
+                // Not need interrupt here - maked before
                 itr->second.Reset(this);
-                needInsert = false;
+                needReplace = false;
             }
+        }
+        else
+        {
+            // Some speedup - testing - not need drop Idle/None actions
+            // DropAction(action.GetId(), action.GetPriority());
+            DropAction(action.GetPriority());
         }
     }
 
-    if (needInsert)
-        m_actions.insert(UnitActionStorage::value_type(priority,ActionInfo(actionId, state, priority, restoreable)));
-
-    IncreaseCounter(actionId);
-/*
-    ActionInfo* newInfo = CurrentState();
-    if (newInfo && newInfo != oldInfo)
+    if (needReplace)
     {
-        if (!newInfo->HasFlag(ACTION_STATE_INITIALIZED))
-            newInfo->Initialize(this);
+        m_actions.insert(UnitActionStorage::value_type(action.GetPriority(), action));
+
+        if (action.GetId() < UNIT_ACTION_END)
+            IncreaseCounter(action.GetId());
     }
-*/
+
+    // FIXME: possible in this point need directly initialize new Action. but current tests maked without this.
 }
 
 ActionInfo* UnitStateMgr::GetAction(UnitActionPriority priority)
@@ -609,24 +627,18 @@ ActionInfo* UnitStateMgr::CurrentState()
 
 void UnitStateMgr::DropAllStates()
 {
-    if (!m_actions.empty())
+    if (!GetActions().empty() && GetCurrentState() != UNIT_ACTION_IDLE)
     {
-        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop all active states (count = %u)", GetOwnerStr().c_str(), m_actions.size());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop all active states (count = %u)", GetOwnerStr().c_str(), GetActions().size());
         DropActionHigherThen(UNIT_ACTION_PRIORITY_IDLE);
     }
-    PushAction(UNIT_ACTION_IDLE);
+    else
+        PushAction(UNIT_ACTION_IDLE);
 }
 
 std::string const UnitStateMgr::GetOwnerStr() 
 {
     return GetOwner()->IsInWorld() ? GetOwner()->GetGuidStr() : "<Uninitialized>"; 
-};
-
-bool ActionInfo::operator < (const ActionInfo& val) const
-{
-    if (priority > val.priority)
-        return true;
-    return false;
 };
 
 bool ActionInfo::operator == (ActionInfo& val)
@@ -649,6 +661,16 @@ bool ActionInfo::operator != (UnitActionPtr _action)
     return (Action() != _action);
 };
 
+ActionInfo& ActionInfo::operator = (const ActionInfo& _action)
+{
+    Id          = _action.Id;
+    action      = _action.action;
+    priority    = _action.priority;
+    restoreable = _action.restoreable;
+    m_flags     = _action.m_flags;
+    return *this;
+}
+
 void ActionInfo::Delete()
 {
     delete this;
@@ -657,18 +679,21 @@ void ActionInfo::Delete()
 void ActionInfo::Initialize(UnitStateMgr* mgr)
 {
     if (HasFlag(ACTION_STATE_FINALIZED))
-        return;
+    {
+        RemoveFlag(ACTION_STATE_INITIALIZED);
+        RemoveFlag(ACTION_STATE_FINALIZED);
+    }
 
-    MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+    //MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
     if (!HasFlag(ACTION_STATE_INITIALIZED) && Action())
     {
-        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s initialize action %s", mgr->GetOwnerStr().c_str(), TypeName());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo::Initialize %s initialize action %s", mgr->GetOwnerStr().c_str(), TypeName());
         Action()->Initialize(*mgr->GetOwner());
         AddFlag(ACTION_STATE_INITIALIZED);
     }
     else if (Action())
     {
-        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s reset action %s", mgr->GetOwnerStr().c_str(), TypeName());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo::Initialize %s reset action %s", mgr->GetOwnerStr().c_str(), TypeName());
         Action()->Reset(*mgr->GetOwner());
         RemoveFlag(ACTION_STATE_INTERRUPTED);
     }
@@ -677,32 +702,34 @@ void ActionInfo::Initialize(UnitStateMgr* mgr)
 
 void ActionInfo::Finalize(UnitStateMgr* mgr)
 {
-    if (!HasFlag(ACTION_STATE_INITIALIZED) || 
+    if (!HasFlag(ACTION_STATE_INITIALIZED) ||
         HasFlag(ACTION_STATE_FINALIZED))
+    {
+        AddFlag(ACTION_STATE_FINALIZED);
         return;
+    }
 
-    MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+    if (HasFlag(ACTION_STATE_ACTIVE))
+        Interrupt(mgr);
+
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo::Finalize %s finalize action %s", mgr->GetOwnerStr().c_str(), TypeName());
+
     AddFlag(ACTION_STATE_FINALIZED);
-    RemoveFlag(ACTION_STATE_ACTIVE);
-
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s finalize action %s", mgr->GetOwnerStr().c_str(), TypeName());
-
     if (Action())
         Action()->Finalize(*mgr->GetOwner());
 }
 
 void ActionInfo::Interrupt(UnitStateMgr* mgr)
 {
-    if (!HasFlag(ACTION_STATE_INITIALIZED) || 
+    if (!HasFlag(ACTION_STATE_INITIALIZED) ||
         HasFlag(ACTION_STATE_FINALIZED) ||
         HasFlag(ACTION_STATE_INTERRUPTED))
         return;
 
-    MAPLOCK_READ(mgr->GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
     AddFlag(ACTION_STATE_INTERRUPTED);
     RemoveFlag(ACTION_STATE_ACTIVE);
 
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s interrupt action %s", mgr->GetOwnerStr().c_str(), TypeName());
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo::Interrupt %s interrupt action %s", mgr->GetOwnerStr().c_str(), TypeName());
 
     if (Action())
         Action()->Interrupt(*mgr->GetOwner());
@@ -710,19 +737,28 @@ void ActionInfo::Interrupt(UnitStateMgr* mgr)
 
 void ActionInfo::Reset(UnitStateMgr* mgr)
 {
+    if (HasFlag(ACTION_STATE_FINALIZED))
+    {
+        RemoveFlag(ACTION_STATE_INITIALIZED);
+        RemoveFlag(ACTION_STATE_FINALIZED);
+        return;
+    }
+
     if (!HasFlag(ACTION_STATE_INITIALIZED))
         return;
 
-    if (!HasFlag(ACTION_STATE_INTERRUPTED) && 
-        HasFlag(ACTION_STATE_ACTIVE))
+    if (HasFlag(ACTION_STATE_ACTIVE))
         Interrupt(mgr);
 
     RemoveFlag(ACTION_STATE_INITIALIZED);
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s reset action %s", mgr->GetOwnerStr().c_str(), TypeName());
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo::Reset %s reset action %s", mgr->GetOwnerStr().c_str(), TypeName());
 }
 
 bool ActionInfo::Update(UnitStateMgr* mgr, uint32 diff)
 {
+    if (HasFlag(ACTION_STATE_FINALIZED))
+        return false;
+
     if (Action() && 
         (!HasFlag(ACTION_STATE_INITIALIZED) ||
         HasFlag(ACTION_STATE_INTERRUPTED)))
@@ -730,7 +766,7 @@ bool ActionInfo::Update(UnitStateMgr* mgr, uint32 diff)
 
     AddFlag(ACTION_STATE_ACTIVE);
 
-    // DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo: %s update action %s", mgr->GetOwnerStr().c_str(), TypeName());
+    // DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "ActionInfo::Update %s update action %s", mgr->GetOwnerStr().c_str(), TypeName());
 
     if (Action())
         return Action()->Update(*mgr->GetOwner(), diff);
