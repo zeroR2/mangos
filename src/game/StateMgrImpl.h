@@ -134,7 +134,6 @@ class UnitAction
     virtual bool IsReachable() const { return true; };
     virtual const char* Name() const { return "<Uninitialized>"; };
     virtual MovementGeneratorType GetMovementGeneratorType() const = 0;
-    virtual void UnitSpeedChanged() {};
 
     /* Returns true to show that state expired and can be finalized. */
     virtual bool Update(Unit &, const uint32& diff) = 0;
