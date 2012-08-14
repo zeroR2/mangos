@@ -398,6 +398,8 @@ UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId, ...)
 
 UnitStateMgr::UnitStateMgr(Unit* owner) : m_owner(owner), m_needReinit(false)
 {
+    m_actions.clear();
+
     for (int32 i = UNIT_ACTION_IDLE; i != UNIT_ACTION_END; ++i)
         m_stateCounter[i] = 0;
 
@@ -550,7 +552,10 @@ void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state)
 
 void UnitStateMgr::PushAction(UnitActionId actionId, UnitActionPtr state, UnitActionPriority priority, eActionType restoreable)
 {
-    m_actionsQueue.push(ActionInfo(actionId, state, priority, restoreable));
+    if (!m_actions.empty())
+        m_actionsQueue.push(ActionInfo(actionId, state, priority, restoreable));
+    else
+        PushAction(ActionInfo(actionId, state, priority, restoreable));
 }
 
 void UnitStateMgr::PushAction(ActionInfo const& action)

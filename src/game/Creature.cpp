@@ -2235,7 +2235,7 @@ uint8 Creature::getRace() const
 
 bool Creature::IsInEvadeMode() const
 {
-    return i_motionMaster.GetCurrentMovementGeneratorType() == HOME_MOTION_TYPE;
+    return IsInUnitState(UNIT_ACTION_HOME);
 }
 
 bool Creature::HasSpell(uint32 spellID)
@@ -2766,4 +2766,47 @@ Unit* Creature::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
     }
 
     return target;
+}
+
+bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    if (m_owner.IsInEvadeMode())
+        return true;
+
+    if (m_owner.SelectHostileTarget(false))
+        return true;
+
+    if (m_owner.isAlive() && m_owner.GetTypeId() == TYPEID_UNIT)
+        m_owner.GetMotionMaster()->MoveTargetedHome();
+
+    switch (m_owner.GetObjectGuid().GetHigh())
+    {
+        case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        {
+            if (((Creature*)&m_owner)->AI())
+                ((Creature*)&m_owner)->AI()->EnterEvadeMode();
+
+            if (InstanceData* mapInstance = m_owner.GetInstanceData())
+                mapInstance->OnCreatureEvade((Creature*)&m_owner);
+            break;
+        }
+        case HIGHGUID_PET:
+        {
+            if (((Pet*)&m_owner)->AI())
+                ((Pet*)&m_owner)->AI()->EnterEvadeMode();
+
+            if (((Pet*)&m_owner)->GetOwner() && ((Pet*)&m_owner)->GetOwner()->GetTypeId() == TYPEID_UNIT)
+            {
+                if (InstanceData* mapInstance = m_owner.GetInstanceData())
+                    mapInstance->OnCreatureEvade((Creature*)&m_owner);
+            }
+            break;
+        }
+        case HIGHGUID_PLAYER:
+        default:
+            sLog.outError("EvadeDelayEvent::Execute try execute for unsupported owner %s!", m_owner.GetObjectGuid().GetString().c_str());
+        break;
+    }
+    return true;
 }
