@@ -547,3 +547,42 @@ UPDATE `creature_template` SET spell1 = 57606, spell2 = 50989 WHERE entry = 2788
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (28366);
 INSERT INTO npc_spellclick_spells (npc_entry, spell_id, quest_start, quest_start_active, quest_end, cast_flags) VALUES
 (28366, 60968, 0, 0, 0, 1);
+
+-- Wintergrasp spell building targets
+DELETE FROM `spell_script_target` WHERE `entry` IN ('56663','56575','56661','61408');
+SET @GUID := 56663;
+INSERT INTO `spell_script_target` VALUES 
+(@GUID,'0','192334'),
+(@GUID,'0','192371'),
+(@GUID,'0','194962'),
+(@GUID,'0','194959'),
+(@GUID,'0','190487'),
+(@GUID,'0','190475');
+
+SET @GUID := 56575;
+INSERT INTO `spell_script_target` VALUES 
+(@GUID,'0','192334'),
+(@GUID,'0','192371'),
+(@GUID,'0','194962'),
+(@GUID,'0','194959'),
+(@GUID,'0','190487'),
+(@GUID,'0','190475');
+
+SET @GUID := 56661;
+INSERT INTO `spell_script_target` VALUES 
+(@GUID,'0','192334'),
+(@GUID,'0','192371'),
+(@GUID,'0','194962'),
+(@GUID,'0','194959'),
+(@GUID,'0','190487'),
+(@GUID,'0','190475');
+
+SET @GUID := 61408;
+INSERT INTO `spell_script_target` VALUES 
+(@GUID,'0','192334'),
+(@GUID,'0','192371'),
+(@GUID,'0','194962'),
+(@GUID,'0','194959'),
+(@GUID,'0','190487'),
+(@GUID,'0','190475');
+

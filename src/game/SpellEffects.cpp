@@ -9474,6 +9474,17 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx));
                     break;
                 }
+                case 56659:                                 //  Build Demolisher (Force)
+                case 56662:                                 //  Build Siege Vehicle (Force) - alliance
+                case 56664:                                 //  Build Catapult (Force)
+                case 61409:                                 //  Build Siege Vehicle (Force) - horde
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    break;
+                }
                 case 57337:                                 // Great Feast
                 {
                     if (!unitTarget)

@@ -510,7 +510,6 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         virtual const char* GetNameForLocaleIdx(int32 /*locale_idx*/) const { return GetName(); }
 
-		float GetDistancePointToPoint(WorldObject* w1,WorldObject* w2);
         float GetDistance( const WorldObject* obj ) const;
         float GetDistance(float x, float y, float z) const;
         float GetDistance2d(const WorldObject* obj) const;
@@ -644,6 +643,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         // WorldState operations
         void UpdateWorldState(uint32 state, uint32 value);
+        uint32 GetWorldState(uint32 state);
 
     protected:
         explicit WorldObject();

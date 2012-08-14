@@ -44,8 +44,6 @@
 #include "SQLStorages.h"
 #include <G3D/Quat.h>
 
-#include "WorldPvP/WorldPvPWG.h"
-
 GameObject::GameObject() : WorldObject(),
     m_goInfo(NULL),
     m_displayInfo(NULL),
@@ -1774,18 +1772,15 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
 
     if (m_health > damage)
     {
-         m_health -= damage;
-         if (pWho)
-		 {		 
-             if (BattleGround *bg = pWho->GetBattleGround())
+        m_health -= damage;
+        if (pWho)
+        {
+            if (BattleGround* bg = pWho->GetBattleGround())
                  bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
-             else if(pWho->GetMapId() == 571 && pWho->GetZoneId() == 4197)
-             {
-                 WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
-                 WorldPvPWG* WG = ((WorldPvPWG*)pWG);
-				 WG->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.destroyedEvent);
-             }				 
-		 }
+            else if(WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
+                pWPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damageEvent, spellId);
+        }
+ 
     }
 
     else
@@ -1804,12 +1799,8 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
-                else if(pWho->GetMapId() == 571 && pWho->GetZoneId() == 4197)
-                {
-                    WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
-                    WorldPvPWG* WG = ((WorldPvPWG*)pWG);
-					WG->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damagedEvent);
-                }					
+                else if(WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
+                    pWPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
             }
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DESTROY state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
@@ -1837,6 +1828,8 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
+                else if(WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
+                    pWPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
             }
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DAMAGE);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DAMAGED state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
@@ -1854,7 +1847,16 @@ void GameObject::Rebuild(Unit* pWho)
     SetDisplayId(GetGOInfo()->displayId);
     m_health = GetMaxHealth();
     GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.rebuildingEvent, pWho, this);
-
+    if (pWho)
+    {
+        if (Player* ppWho = pWho->GetCharmerOrOwnerPlayerOrPlayerItself())
+        {
+            if (BattleGround* bg = ppWho->GetBattleGround())
+                bg->EventPlayerDamageGO(ppWho, this, GetGOInfo()->destructibleBuilding.rebuildingEvent, 0);
+            else if (WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
+                pWPvP->EventPlayerDamageGO(ppWho,this,GetGOInfo()->destructibleBuilding.rebuildingEvent,0);
+        }
+    }
     SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
 
     DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::Rebuild %s gain INTACT state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());

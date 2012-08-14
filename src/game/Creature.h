@@ -717,10 +717,6 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         void SetVirtualItem(VirtualItemSlot slot, uint32 item_id) { SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + slot, item_id); }
 
-		void CreateVehicleWG(Creature* pCreature,uint32 npc_entry);
-		uint32 GetCountVehicleWG(uint32 team);
-		uint32 GetCountMaxVehicleWG(uint32 team);
-		
     protected:
         bool MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* pSpellInfo, uint32 selectFlags) const;
 

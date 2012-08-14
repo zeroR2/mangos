@@ -368,7 +368,7 @@ void WorldPvPWG::Update(uint32 uiDiff)
                   {
                       if(Creature* pCreature = m_Map->GetCreature((*itr)))
                       {
-                          if(pCreature->GetDistancePointToPoint(pCreature,gTeleport1) < 4)
+                          if(pCreature->GetDistance(gTeleport1) < 4.0f)
                                pCreature->NearTeleportTo(5240.45f,2703.42f,409.19f,3.19f);
                       }
                    }
@@ -380,7 +380,7 @@ void WorldPvPWG::Update(uint32 uiDiff)
                   {
                       if(Creature* pCreature = m_Map->GetCreature((*itr)))
                       {
-                          if(pCreature->GetDistancePointToPoint(pCreature,gTeleport2) < 4)
+                          if(pCreature->GetDistance(gTeleport2) < 4.0f)
                              pCreature->NearTeleportTo(5240.83f,2975.32f,409.187f,3.13f);
                       }
                    }
@@ -397,7 +397,7 @@ void WorldPvPWG::Update(uint32 uiDiff)
                   {
                       if(Creature* pCreature = m_Map->GetCreature((*itr)))
                       {
-                          if(pCreature->GetDistancePointToPoint(pCreature,gTeleport1) < 4)
+                          if(pCreature->GetDistance(gTeleport1) < 4.0f)
                              pCreature->NearTeleportTo(5240.45f,2703.42f,409.19f,3.19f);
                       }
                    }
@@ -409,7 +409,7 @@ void WorldPvPWG::Update(uint32 uiDiff)
                   {
                       if(Creature* pCreature = m_Map->GetCreature((*itr)))
                       {
-                          if(pCreature->GetDistancePointToPoint(pCreature,gTeleport2) < 4)
+                          if(pCreature->GetDistance(gTeleport2) < 4.0f)
                              pCreature->NearTeleportTo(5240.83f,2975.32f,409.187f,3.13f);
                       }
                    }
@@ -1233,7 +1233,7 @@ void WorldPvPWG::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
    }
 }
 
-void WorldPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId)
+void WorldPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId)
 {
      switch(target_obj->GetEntry())
      {

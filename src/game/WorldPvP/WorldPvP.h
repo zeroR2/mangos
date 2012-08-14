@@ -105,17 +105,21 @@ class WorldPvP : public ZoneScript
         // Get a Player from the zone
         Player* GetPlayerInZone(bool bOnlyAlive = false, bool bCanBeGamemaster = true);
 
+        // Damage GO - for WG mostly
+        virtual void EventPlayerDamageGO(Player* /*player*/, GameObject* /*target_obj*/, uint32 /*eventId*/, uint32 /*bySpellId*/) {}
+
         // Wrapper for initial (per-script) WorldState filling, once per zone
         void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value);
 
-		Player* GetPlayersAlliance();
-		Player* GetPlayersHorde();
-		uint32 CountPlayersAlliance();
-		uint32 CountPlayersHorde(); 	
+        // WG additions - need move
+        Player* GetPlayersAlliance();
+        Player* GetPlayersHorde();
+        uint32 CountPlayersAlliance();
+        uint32 CountPlayersHorde(); 
 
-		void CompleteQuest(Player *player, uint32 entry);
-		virtual WorldSafeLocsEntry const* GetClosestGraveYardWG(Player* player);
-		
+        void CompleteQuest(Player *player, uint32 entry);
+        virtual WorldSafeLocsEntry const* GetClosestGraveYardWG(Player* player);
+
     protected:
         // Player related stuff
         virtual void HandlePlayerEnterZone(Player* pPlayer);
@@ -129,8 +133,8 @@ class WorldPvP : public ZoneScript
 
         // store the players inside the area depending on the faction
         GuidSet m_sZonePlayers;
-		GuidSet m_sZonePlayersAlliance;
-		GuidSet m_sZonePlayersHorde;
+        GuidSet m_sZonePlayersAlliance;
+        GuidSet m_sZonePlayersHorde;
 
         uint32 m_uiTypeId;
 };

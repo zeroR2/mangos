@@ -279,7 +279,7 @@ class MANGOS_DLL_SPEC WorldPvPWG : public WorldPvP
 
         bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
         void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
-        void EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId);
+        void EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId);
 
         uint32 GetDefender()  { return defender; }
         uint32 GetAttacker()  { return attacker; }
@@ -762,7 +762,8 @@ struct WorldPvPWGGameObjectBuilding
 
 struct WorldPvPGraveYardWG
 {
-    WorldPvPWG *m_WG;
+// Need fully rewrite on usage sObjectMgr.AddGraveYardLink()/SetGraveYardLinkTeam/RemoveGraveYardLink
+    WorldPvPWG* m_WG;
     uint32 m_team;
     uint32 m_id;
     Map* Mmap;
@@ -793,6 +794,9 @@ struct WorldPvPGraveYardWG
 
     void AddSpiritGuide(Creature* pCreature,uint32 team)
     {
+        if (!pCreature)
+            return;
+
         if(!map)
         {
             Mmap = pCreature->GetMap();
@@ -801,9 +805,9 @@ struct WorldPvPGraveYardWG
 
        if(m_team == team)
        {
-           if(m_team == ALLIANCE)
+           if (m_team == ALLIANCE)
               SpiritGuieA = pCreature->GetObjectGuid();
-           else if(m_team = HORDE)
+           else if (m_team = HORDE)
               SpiritGuieH = pCreature->GetObjectGuid();
        }
        else if(m_team != team)
@@ -825,18 +829,22 @@ struct WorldPvPGraveYardWG
 
            if(team == ALLIANCE)
            {
-              if(map)
+              if(map && Mmap)
               {
-                  Mmap->GetCreature(SpiritGuieH)->SetVisibility(VISIBILITY_OFF);
-                  Mmap->GetCreature(SpiritGuieA)->SetVisibility(VISIBILITY_ON);
+                  if (Creature* c1 = Mmap->GetCreature(SpiritGuieH))
+                      c1->SetVisibility(VISIBILITY_OFF);
+                  if (Creature* c2 = Mmap->GetCreature(SpiritGuieA))
+                      c2->SetVisibility(VISIBILITY_ON);
               }
            }
            else if(team = HORDE)
            {
-              if(map)
+              if(map && Mmap)
               {
-                  Mmap->GetCreature(SpiritGuieA)->SetVisibility(VISIBILITY_OFF);
-                  Mmap->GetCreature(SpiritGuieH)->SetVisibility(VISIBILITY_ON);
+                  if (Creature* c1 = Mmap->GetCreature(SpiritGuieA))
+                      c1->SetVisibility(VISIBILITY_OFF);
+                  if (Creature* c2 = Mmap->GetCreature(SpiritGuieH))
+                      c2->SetVisibility(VISIBILITY_ON);
               }
            }
        }
