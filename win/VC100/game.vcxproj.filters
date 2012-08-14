@@ -474,6 +474,9 @@
     <ClCompile Include="..\..\src\game\WorldSocketMgr.cpp">
       <Filter>Server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldStateMgr.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\game\debugcmds.cpp">
       <Filter>Chat Commands</Filter>
     </ClCompile>
@@ -1024,6 +1027,9 @@
       <Filter>Server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\WorldSocketMgr.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldStateMgr.h">
       <Filter>Server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\Language.h">
