@@ -92,7 +92,6 @@ enum eActionType
     ACTION_TYPE_RESTOREABLE    = 1,                   // Action be restored after interrupt (normal type)
     ACTION_TYPE_REPLACEABLE    = 2,                   // Action be restored after interrupt, some attributes 
                                                       // removed only on finalize, not in interrupted state
-    ACTION_TYPE_END,
 };
 
 enum ActionUpdateState

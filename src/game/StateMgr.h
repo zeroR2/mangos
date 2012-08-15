@@ -34,20 +34,15 @@
 class Unit;
 class UnitStateMgr;
 
-class ActionInfo
+struct ActionInfo
 {
-public:
     ActionInfo(UnitActionId _Id, UnitActionPtr _action, UnitActionPriority _priority, bool _restoreable)
         : Id(_Id), action(_action), priority(_priority), restoreable(_restoreable), m_flags(0)
-    {}
-    ActionInfo(ActionInfo const& _action)
-        : Id(_action.Id), action(_action.action), priority(_action.priority), restoreable(_action.restoreable), m_flags(_action.m_flags)
-    {}
-
+    {
+    }
     ~ActionInfo() {};
 
-    ActionInfo& operator = (const ActionInfo& _action);
-
+    bool operator < (const ActionInfo& val) const;
     bool operator == (ActionInfo& val);
     bool operator == (UnitActionPtr _action);
     bool operator != (ActionInfo& val);
@@ -63,9 +58,6 @@ public:
 
     const char* TypeName() const;
 
-    UnitActionId GetId() const             { return Id; };
-    UnitActionPriority GetPriority() const { return priority; };
-
     uint32 const&  GetFlags();
     void           SetFlags(uint32 flags);
     void           AddFlag(ActionUpdateState state) { m_flags |= (1 << state); };
@@ -77,19 +69,9 @@ public:
     UnitActionPriority priority;
     uint32             m_flags;
     bool               restoreable;
-
-    private:
-    // Don't must be created uninitialized
-    ActionInfo() {};
-};
-
-struct ActionsCompare
-{
-    bool operator() (ActionInfo const& a, ActionInfo const& b) const { return a.GetPriority() > b.GetPriority(); };
 };
 
 typedef ACE_Based::LockedMap<UnitActionPriority, ActionInfo> UnitActionStorage;
-typedef std::priority_queue<ActionInfo, std::vector<ActionInfo>, ActionsCompare> UnitActionQueue;
 
 class UnitStateMgr
 {
@@ -111,7 +93,6 @@ public:
     void DropAction(UnitActionId actionId);
     void DropAction(UnitActionId actionId, UnitActionPriority priority);
     void DropAction(UnitActionPriority priority);
-    void DropAction(UnitActionPtr _action);
     void DropActionHigherThen(UnitActionPriority priority);
 
     void DropAllStates();
@@ -120,12 +101,9 @@ public:
     void PushAction(UnitActionId actionId, UnitActionPriority priority);
     void PushAction(UnitActionId actionId, UnitActionPtr state);
     void PushAction(UnitActionId actionId, UnitActionPtr state, UnitActionPriority priority, eActionType restoreable);
-    void PushAction(ActionInfo const& action);
 
     ActionInfo* GetAction(UnitActionPriority priority);
     ActionInfo* GetAction(UnitActionPtr _action);
-
-    UnitActionStorage const& GetActions() { return m_actions; };
 
     UnitActionPtr CurrentAction();
     ActionInfo*   CurrentState();
@@ -141,7 +119,6 @@ public:
 
 private:
     UnitActionStorage m_actions;
-    UnitActionQueue   m_actionsQueue;
     Unit*             m_owner;
     UnitActionPtr     m_oldAction;
     uint32            m_stateCounter[UNIT_ACTION_END];
