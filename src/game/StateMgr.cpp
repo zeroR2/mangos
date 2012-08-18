@@ -402,8 +402,6 @@ UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId, ...)
 
 UnitStateMgr::UnitStateMgr(Unit* owner) : m_owner(owner), m_needReinit(false)
 {
-    m_actions.clear();
-
     for (int32 i = UNIT_ACTION_IDLE; i != UNIT_ACTION_END; ++i)
         m_stateCounter[i] = 0;
 
