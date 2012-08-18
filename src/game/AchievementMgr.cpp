@@ -1098,7 +1098,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                     }
                     case 1871:                  // Experienced Drake Rider (The Oculus)
                     {
-                        VehicleKit* vehicleKit = GetPlayer()->GetVehicle();
+                        VehicleKitPtr vehicleKit = GetPlayer()->GetVehicle();
                         if(!vehicleKit)
                             continue;
                         uint32 DragonEntry = vehicleKit->GetBase()->GetEntry();
