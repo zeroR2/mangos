@@ -119,7 +119,7 @@ public:
     ActionInfo*   CurrentState();
 
     UnitActionId  GetCurrentState()  const { return m_actions.empty() ? UNIT_ACTION_IDLE : m_actions.rbegin()->second.GetId(); };
-    Unit*         GetOwner()         const  { return m_owner; };
+    Unit*         GetOwner()         const { return m_owner; };
 
     std::string const GetOwnerStr();
 
