@@ -54,8 +54,6 @@
 // apply implementation of the singletons
 #include "Policies/SingletonImp.h"
 
-#include "WorldPvP/WorldPvPWG.h"
-
 ObjectGuid CreatureData::GetObjectGuid(uint32 lowguid) const
 {
     // info existence checked at loading

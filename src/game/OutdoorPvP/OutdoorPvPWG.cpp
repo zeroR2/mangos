@@ -23,23 +23,15 @@ INFO :
 - Status : 90%
 */
 
-#include "WorldPvP.h"
-#include "WorldPvPWG.h"
+#include "OutdoorPvP.h"
+#include "OutdoorPvPWG.h"
 
-WorldPvPWG::WorldPvPWG() : WorldPvP()
+OutdoorPvPWG::OutdoorPvPWG() : OutdoorPvP()
 {
-    m_uiTypeId = WORLD_PVP_TYPE_WG;
     InitBattlefield();
 }
 
-bool WorldPvPWG::InitWorldPvPArea()
-{
-    RegisterZone(ZONE_ID_WINTERGRASP);
-
-    return true;
-}
-
-bool WorldPvPWG::InitBattlefield()
+bool OutdoorPvPWG::InitBattlefield()
 {
     m_bIsBattleStarted = false;
     get_map = false;
@@ -68,7 +60,7 @@ bool WorldPvPWG::InitBattlefield()
     return true;
 }
 
-void WorldPvPWG::Install()
+void OutdoorPvPWG::Install()
 {
 
        GraveyardIdsAlliance[0] = GraveyardIdsAlliance[1] = GraveyardIdsAlliance[2] = GraveyardIdsAlliance[3] = GraveyardIdsAlliance[4] = GraveyardIdsAlliance[5] = 0;
@@ -198,7 +190,7 @@ void WorldPvPWG::Install()
 
 }
 
-void WorldPvPWG::UpdateTeleport(GameObject* pGo)
+void OutdoorPvPWG::UpdateTeleport(GameObject* pGo)
 {
     if(GetDefender() == ALLIANCE)
        pGo->SetUInt32Value(GAMEOBJECT_FACTION, GO_FACTION_A);
@@ -206,7 +198,7 @@ void WorldPvPWG::UpdateTeleport(GameObject* pGo)
        pGo->SetUInt32Value(GAMEOBJECT_FACTION, GO_FACTION_H);
 }
 
-void WorldPvPWG::UpdateKeepTurret(Creature* pTurret)
+void OutdoorPvPWG::UpdateKeepTurret(Creature* pTurret)
 {
      if(GetDefender() == ALLIANCE)
         pTurret->setFaction(NPC_FACTION_A);
@@ -214,7 +206,7 @@ void WorldPvPWG::UpdateKeepTurret(Creature* pTurret)
         pTurret->setFaction(NPC_FACTION_H);
 }
 
-void WorldPvPWG::PrepareKeepNpc(Creature* pCreature,uint32 team)
+void OutdoorPvPWG::PrepareKeepNpc(Creature* pCreature,uint32 team)
 {
        if(GetDefender() == team)
        {
@@ -235,7 +227,7 @@ void WorldPvPWG::PrepareKeepNpc(Creature* pCreature,uint32 team)
        }
 }
 
-void WorldPvPWG::PrepareKeepGo(GameObject* pGo,uint32 team)
+void OutdoorPvPWG::PrepareKeepGo(GameObject* pGo,uint32 team)
 {
        if(GetDefender() == team)
        {
@@ -255,7 +247,7 @@ void WorldPvPWG::PrepareKeepGo(GameObject* pGo,uint32 team)
        }
 }
 
-void WorldPvPWG::HandlePlayerEnterZone(Player* pPlayer)
+void OutdoorPvPWG::HandlePlayerEnterZone(Player* pPlayer, bool isMainZone)
 {
     if (pPlayer->getLevel() < 75)
     {
@@ -295,11 +287,18 @@ void WorldPvPWG::HandlePlayerEnterZone(Player* pPlayer)
        }
     }
 
-    WorldPvP::HandlePlayerEnterZone(pPlayer);
+	m_sZonePlayers.insert(pPlayer->GetObjectGuid());
+
+    if(pPlayer->GetTeam() == ALLIANCE)
+        m_sZonePlayersAlliance.insert(pPlayer->GetObjectGuid());
+	else if(pPlayer->GetTeam() == HORDE)
+        m_sZonePlayersHorde.insert(pPlayer->GetObjectGuid());
+
+    OutdoorPvP::HandlePlayerEnterZone(pPlayer,isMainZone);
     UpdateTenacityStack();
 }
 
-void WorldPvPWG::HandlePlayerLeaveZone(Player* pPlayer)
+void OutdoorPvPWG::HandlePlayerLeaveZone(Player* pPlayer, bool isMainZone)
 {
     pPlayer->RemoveAurasDueToSpell(58045);
     pPlayer->RemoveAurasDueToSpell(SPELL_RECRUIT);
@@ -311,11 +310,18 @@ void WorldPvPWG::HandlePlayerLeaveZone(Player* pPlayer)
     pPlayer->RemoveAurasDueToSpell(58730);
     pPlayer->RemoveAurasDueToSpell(SPELL_TOWER_CONTROL);
 
-    WorldPvP::HandlePlayerLeaveZone(pPlayer);
+	m_sZonePlayers.erase(pPlayer->GetObjectGuid());
+
+	if(pPlayer->GetTeam() == ALLIANCE)
+        m_sZonePlayersAlliance.erase(pPlayer->GetObjectGuid());
+	else if(pPlayer->GetTeam() == HORDE)
+        m_sZonePlayersHorde.erase(pPlayer->GetObjectGuid());
+
+    OutdoorPvP::HandlePlayerLeaveZone(pPlayer,isMainZone);
     UpdateTenacityStack();
 }
 
-void WorldPvPWG::Update(uint32 uiDiff)
+void OutdoorPvPWG::Update(uint32 uiDiff)
 {
     if (m_bIsBattleStarted)
     {
@@ -419,7 +425,7 @@ void WorldPvPWG::Update(uint32 uiDiff)
     }
 }
 
-void WorldPvPWG::NewRound(bool titan)
+void OutdoorPvPWG::NewRound(bool titan)
 {
   if(titan)
   {
@@ -627,7 +633,7 @@ void WorldPvPWG::NewRound(bool titan)
     m_Timer = TimeBattle;
 }
 
-void WorldPvPWG::OnCreatureCreate(Creature* pCreature)
+void OutdoorPvPWG::OnCreatureCreate(Creature* pCreature)
 {
     if(!get_map)
     {
@@ -816,7 +822,7 @@ void WorldPvPWG::OnCreatureCreate(Creature* pCreature)
     }
 }
 
-void WorldPvPWG::OnGameObjectCreate(GameObject* pGo)
+void OutdoorPvPWG::OnGameObjectCreate(GameObject* pGo)
 {
     if(!get_map)
     {
@@ -1155,7 +1161,7 @@ void WorldPvPWG::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void WorldPvPWG::OnCreatureDeath(Creature* pCreature)
+void OutdoorPvPWG::OnCreatureDeath(Creature* pCreature)
 {
     switch (pCreature->GetEntry())
     {
@@ -1173,7 +1179,7 @@ void WorldPvPWG::OnCreatureDeath(Creature* pCreature)
 
 }
 
-bool WorldPvPWG::HandleObjectUse(Player* pPlayer, GameObject* pGo)
+bool OutdoorPvPWG::HandleObjectUse(Player* pPlayer, GameObject* pGo)
 {
     switch (pGo->GetEntry())
     {
@@ -1189,7 +1195,7 @@ bool WorldPvPWG::HandleObjectUse(Player* pPlayer, GameObject* pGo)
     return true;
 }
 
-void WorldPvPWG::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
+void OutdoorPvPWG::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
 {
    bool factory = false;
    WorldPvPWGWorkShopData* ws;
@@ -1233,7 +1239,7 @@ void WorldPvPWG::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFactio
    }
 }
 
-void WorldPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId)
+void OutdoorPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId)
 {
      switch(target_obj->GetEntry())
      {
@@ -1438,13 +1444,13 @@ void WorldPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uin
      }
 }
 
-void WorldPvPWG::SetBannerArtKit(GameObject* Go,uint32 uiArtkit)
+void OutdoorPvPWG::SetBannerArtKit(GameObject* Go,uint32 uiArtkit)
 {
    Go->SetGoArtKit(uiArtkit);
    Go->Refresh();
 }
 
-void WorldPvPWG::UpdateCounterVehicle(bool init)
+void OutdoorPvPWG::UpdateCounterVehicle(bool init)
 {
     if (init)
     {
@@ -1468,13 +1474,13 @@ void WorldPvPWG::UpdateCounterVehicle(bool init)
     UpdateVehicleCountWG();
 }
 
-void WorldPvPWG::HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim)
+void OutdoorPvPWG::HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim)
 {
     UpdateAura(pPlayer);
 }
 
 // Others
-void WorldPvPWG::DoCompleteOrIncrementAchievement(uint32 achievement, Player *player)
+void OutdoorPvPWG::DoCompleteOrIncrementAchievement(uint32 achievement, Player *player)
 {
     AchievementEntry const* AE = GetAchievementStore()->LookupEntry(achievement);
 
@@ -1482,7 +1488,7 @@ void WorldPvPWG::DoCompleteOrIncrementAchievement(uint32 achievement, Player *pl
         player->CompletedAchievement(AE);
 }
 
-void WorldPvPWG::CompleOneObjetiveQuest(Player* pPlayer,uint32 id)
+void OutdoorPvPWG::CompleOneObjetiveQuest(Player* pPlayer,uint32 id)
 {
     switch (id)
     {
@@ -1493,7 +1499,7 @@ void WorldPvPWG::CompleOneObjetiveQuest(Player* pPlayer,uint32 id)
     }
 }
 
-void WorldPvPWG::AddDataWhenWin()
+void OutdoorPvPWG::AddDataWhenWin()
 {
     if(GetDefender() == ALLIANCE)
     {
@@ -1520,7 +1526,7 @@ void WorldPvPWG::AddDataWhenWin()
     }
 }
 
-void WorldPvPWG::RecolatePlayers()
+void OutdoorPvPWG::RecolatePlayers()
 {
     if(GetDefender() == ALLIANCE)
     {
@@ -1542,7 +1548,7 @@ void WorldPvPWG::RecolatePlayers()
 }
 
 // World States
-void WorldPvPWG::UpdateVehicleCountWG()
+void OutdoorPvPWG::UpdateVehicleCountWG()
 {
     SendUpdateWorldState(WS_VEHICLE_COUNT_H, VehicleCountH);
     SendUpdateWorldState(WS_VEHICLE_COUNT_MAX_H, VehicleCountMaxH);
@@ -1550,7 +1556,7 @@ void WorldPvPWG::UpdateVehicleCountWG()
     SendUpdateWorldState(WS_VEHICLE_COUNT_MAX_A, VehicleCountMaxA);
 }
 
-void WorldPvPWG::UpdateWSBuilding()
+void OutdoorPvPWG::UpdateWSBuilding()
 {
     for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
     {
@@ -1558,7 +1564,7 @@ void WorldPvPWG::UpdateWSBuilding()
     }
 }
 
-void WorldPvPWG::UpdateWSWorkShop()
+void OutdoorPvPWG::UpdateWSWorkShop()
 {
     for (std::list<WorldPvPWGWorkShopData*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
     {
@@ -1568,7 +1574,7 @@ void WorldPvPWG::UpdateWSWorkShop()
 
 // Auras
 
-void WorldPvPWG::UpdateTenacityStack()
+void OutdoorPvPWG::UpdateTenacityStack()
 {
     uint32 team = TEAM_NONE;
     uint32 allianceNum = CountPlayersAlliance();
@@ -1685,7 +1691,7 @@ void WorldPvPWG::UpdateTenacityStack()
     }
 }
 
-void WorldPvPWG::UpdateAura(Player* pPlayer)
+void OutdoorPvPWG::UpdateAura(Player* pPlayer)
 {
        if(SpellAuraHolderPtr pHolder = pPlayer->GetSpellAuraHolder(SPELL_RECRUIT))
        {
@@ -1709,7 +1715,7 @@ void WorldPvPWG::UpdateAura(Player* pPlayer)
        }
 }
 
-void WorldPvPWG::AddAuraResurrect(Player* pPlayer)
+void OutdoorPvPWG::AddAuraResurrect(Player* pPlayer)
 {
      if (pPlayer->GetTeam() == ALLIANCE && m_tenacityStack > 0 ||
          pPlayer->GetTeam() == HORDE && m_tenacityStack < 0)
@@ -1730,7 +1736,7 @@ void WorldPvPWG::AddAuraResurrect(Player* pPlayer)
 
 // GraveYard System
 
-WorldSafeLocsEntry const* WorldPvPWG::GetClosestGraveYardWG(Player* player)
+WorldSafeLocsEntry const* OutdoorPvPWG::GetClosestGraveYardWG(Player* player)
 {
     WorldSafeLocsEntry const* good_entry = NULL;
 
@@ -1802,7 +1808,7 @@ WorldSafeLocsEntry const* WorldPvPWG::GetClosestGraveYardWG(Player* player)
 
 }
 
-void WorldPvPWG::AddGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
+void OutdoorPvPWG::AddGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
 {
     if(faction == ALLIANCE)
     {
@@ -1840,7 +1846,7 @@ void WorldPvPWG::AddGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
     }
 }
 
-void WorldPvPWG::DeleteGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
+void OutdoorPvPWG::DeleteGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
 {
     uint32 id = gy->GetId();
 
@@ -1882,7 +1888,7 @@ void WorldPvPWG::DeleteGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
 
 // Tower
 
-void WorldPvPWG::AddDamagedTower(uint32 team)
+void OutdoorPvPWG::AddDamagedTower(uint32 team)
 {
     if (team == GetAttacker())
     {
@@ -1894,7 +1900,7 @@ void WorldPvPWG::AddDamagedTower(uint32 team)
     }
 }
 
-void WorldPvPWG::AddBrokenTower(uint32 team, Player* pPlayer)
+void OutdoorPvPWG::AddBrokenTower(uint32 team, Player* pPlayer)
 {
     if (team == GetAttacker())
     {
@@ -1929,7 +1935,7 @@ void WorldPvPWG::AddBrokenTower(uint32 team, Player* pPlayer)
     }
 }
 
-void WorldPvPWG::BrokenWallOrTower(uint32 team,Player* pPlayer)
+void OutdoorPvPWG::BrokenWallOrTower(uint32 team,Player* pPlayer)
 {
     if (team == GetDefender())
     {
@@ -1946,7 +1952,7 @@ void WorldPvPWG::BrokenWallOrTower(uint32 team,Player* pPlayer)
 
 // Vehicles
 
-void WorldPvPWG::CreateVehicle(Creature* pCreature,uint32 npc_entry)
+void OutdoorPvPWG::CreateVehicle(Creature* pCreature,uint32 npc_entry)
 {
   if(pCreature->GetEntry() == NPC_DEMOLISHER_ENGINEER_A)
   {
@@ -2011,7 +2017,7 @@ void WorldPvPWG::CreateVehicle(Creature* pCreature,uint32 npc_entry)
    }
 }
 
-void WorldPvPWG::AddVehicle(Creature* pCreature,uint32 team)
+void OutdoorPvPWG::AddVehicle(Creature* pCreature,uint32 team)
 {
     if(team == ALLIANCE)
     {
@@ -2045,7 +2051,7 @@ void WorldPvPWG::AddVehicle(Creature* pCreature,uint32 team)
     UpdateVehicleCountWG();
 }
 
-void WorldPvPWG::DeleteVehicle(Creature* pCreature,uint32 team)
+void OutdoorPvPWG::DeleteVehicle(Creature* pCreature,uint32 team)
 {
     if(team == ALLIANCE)
         VehicleCountA = VehicleCountA - 1;
@@ -2055,7 +2061,7 @@ void WorldPvPWG::DeleteVehicle(Creature* pCreature,uint32 team)
     UpdateVehicleCountWG();
 }
 
-uint32 WorldPvPWG::GetCountVehicle(uint32 team)
+uint32 OutdoorPvPWG::GetCountVehicle(uint32 team)
 {
     uint32 count = NULL;
 
@@ -2067,7 +2073,7 @@ uint32 WorldPvPWG::GetCountVehicle(uint32 team)
     return count;
 }
 
-uint32 WorldPvPWG::GetCountMaxVehicle(uint32 team)
+uint32 OutdoorPvPWG::GetCountMaxVehicle(uint32 team)
 {
     uint32 count = NULL;
 
@@ -2077,4 +2083,68 @@ uint32 WorldPvPWG::GetCountMaxVehicle(uint32 team)
         count = VehicleCountMaxH;
 
     return count;
+}
+
+// Players
+
+Player* OutdoorPvPWG::GetPlayerInZone()
+{
+    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    {
+        if (!(*itr))
+            continue;
+
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+
+        if (!pPlayer)
+            continue;
+    }
+
+    return NULL;
+}
+
+Player* OutdoorPvPWG::GetPlayersAlliance()
+{
+    Player* pPlayers = NULL;
+
+    for (GuidSet::iterator itr = m_sZonePlayersAlliance.begin(); itr != m_sZonePlayersAlliance.end(); ++itr)
+    {
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+		pPlayers = pPlayer;
+    }
+    
+	return pPlayers;
+}
+
+Player* OutdoorPvPWG::GetPlayersHorde()
+{
+    Player* pPlayers = NULL;
+
+    for (GuidSet::iterator itr = m_sZonePlayersHorde.begin(); itr != m_sZonePlayersHorde.end(); ++itr)
+    {
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+		pPlayers = pPlayer;
+    }
+
+	return pPlayers;
+}
+
+uint32 OutdoorPvPWG::CountPlayersAlliance()
+{
+  uint32 count = 0;
+
+    for (GuidSet::iterator itr = m_sZonePlayersAlliance.begin(); itr != m_sZonePlayersAlliance.end(); ++itr)
+      count = count + 1;
+
+  return count;
+}
+
+uint32 OutdoorPvPWG::CountPlayersHorde()
+{
+  uint32 count = 0;
+
+    for (GuidSet::iterator itr = m_sZonePlayersHorde.begin(); itr != m_sZonePlayersHorde.end(); ++itr)
+       count = count + 1;
+
+  return count;
 }

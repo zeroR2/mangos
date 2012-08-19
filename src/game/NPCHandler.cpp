@@ -34,7 +34,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Chat.h"
-#include "WorldPvP/WorldPvPWG.h"
+#include "OutdoorPvP/OutdoorPvPWG.h"
 
 enum StableResultCode
 {
@@ -457,8 +457,8 @@ void WorldSession::SendSpiritResurrect()
 			
 			if(wintergrasp)
 			{
-               WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
-               WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+               OutdoorPvP* pWG = sOutdoorPvPMgr.GetScript(ZONE_ID_WINTERGRASP);
+               OutdoorPvPWG* WG = ((OutdoorPvPWG*)pWG);
                WG->AddAuraResurrect(_player);
             }				
         }

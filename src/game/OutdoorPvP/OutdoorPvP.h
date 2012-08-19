@@ -95,11 +95,8 @@ class OutdoorPvP
         // Damage GO - for WG mostly
         virtual void EventPlayerDamageGO(Player* /*player*/, GameObject* /*target_obj*/, uint32 /*eventId*/, uint32 /*bySpellId*/) {}
 
-        // WG additions - need move
-        Player* GetPlayersAlliance();
-        Player* GetPlayersHorde();
-        uint32 CountPlayersAlliance();
-        uint32 CountPlayersHorde(); 
+        // send world state update to all players present
+        void SendUpdateWorldState(uint32 field, uint32 value);
 
         void CompleteQuest(Player *player, uint32 entry);
         virtual WorldSafeLocsEntry const* GetClosestGraveYardWG(Player* player);
@@ -115,9 +112,6 @@ class OutdoorPvP
 
         // handle npc/player kill
         virtual void HandlePlayerKillInsideArea(Player* /*killer*/, Unit* /*victim*/) {}
-
-        // send world state update to all players present
-        void SendUpdateWorldState(uint32 field, uint32 value);
 
         // applies buff to a team inside the specific zone
         void BuffTeam(Team team, uint32 spellId, bool remove = false);

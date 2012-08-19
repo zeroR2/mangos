@@ -20,7 +20,7 @@
 #ifndef WORLD_PVP_WG
 #define WORLD_PVP_WG
 
-#include "WorldPvP.h"
+#include "OutdoorPvP.h"
 
 struct WorldPvPWGGameObjectBuilding;
 typedef std::set<WorldPvPWGGameObjectBuilding*> GameObjectBuilding;
@@ -34,7 +34,6 @@ typedef std::set<WorldPvPGraveYardWG*> GraveYard;
 enum
 {
     MAPID_ID_WINTERGRASP                = 571,
-    ZONE_ID_WINTERGRASP                 = 4197,
     // Go factions
     GO_FACTION_A                        = 1732,
     GO_FACTION_H                        = 1735,
@@ -52,6 +51,13 @@ enum
     WS_VEHICLE_COUNT_MAX_A              = 3681,
     WS_DEFENDER_TEAM                    = 3802,
     WS_ATTACKER_TEAM                    = 3803,
+};
+
+enum GameObjectArtKits
+{
+    GO_ARTKIT_BANNER_ALLIANCE               = 2,
+    GO_ARTKIT_BANNER_HORDE                  = 1,
+    GO_ARTKIT_BANNER_NEUTRAL                = 21,
 };
 
 enum GameObjectId
@@ -259,10 +265,10 @@ const VehicleSummonDataWG CoordVehicleSummon[6] = {
     { 530050, 530051, 4359.86f , 2347.38f , 380.103f , 6.12532f },
 };
 
-class MANGOS_DLL_SPEC WorldPvPWG : public WorldPvP
+class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
 {
     public:
-        WorldPvPWG();
+        OutdoorPvPWG();
 
         bool InitWorldPvPArea();
         bool InitBattlefield();
@@ -273,8 +279,8 @@ class MANGOS_DLL_SPEC WorldPvPWG : public WorldPvP
 
         virtual void Update(uint32 uiDiff);
 
-        void HandlePlayerEnterZone(Player* pPlayer);
-        void HandlePlayerLeaveZone(Player* pPlayer);
+        void HandlePlayerEnterZone(Player* pPlayer, bool isMainZone);
+        void HandlePlayerLeaveZone(Player* pPlayer, bool isMainZone);
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
         bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
@@ -328,6 +334,13 @@ class MANGOS_DLL_SPEC WorldPvPWG : public WorldPvP
         uint32 GetCountVehicle(uint32 team);
         uint32 GetCountMaxVehicle(uint32 team);
 
+		//Players
+		Player* GetPlayerInZone();
+		Player* GetPlayersAlliance();
+		Player* GetPlayersHorde();
+		uint32 CountPlayersAlliance();
+		uint32 CountPlayersHorde();
+
     protected:
         uint32 m_Timer; // In second
 
@@ -351,6 +364,10 @@ class MANGOS_DLL_SPEC WorldPvPWG : public WorldPvP
         uint32 VehicleCountH;
         uint32 VehicleCountMaxA;
         uint32 VehicleCountMaxH;
+
+        GuidSet m_sZonePlayers;
+        GuidSet m_sZonePlayersAlliance;
+        GuidSet m_sZonePlayersHorde;
 
         //Timers
         uint32 TimeBattle;
@@ -405,7 +422,7 @@ struct WorldPvPWGGameObjectBuilding
 {
 
     uint32 m_Team;
-    WorldPvPWG *m_WG;
+    OutdoorPvPWG *m_WG;
     uint32 count;
     uint32 m_Type;
     uint32 m_WorldState;
@@ -421,7 +438,7 @@ struct WorldPvPWGGameObjectBuilding
     std::list<ObjectGuid> m_CreatureA;
     std::list<ObjectGuid> m_CreatureH;
 
-    WorldPvPWGGameObjectBuilding(WorldPvPWG *WG)
+    WorldPvPWGGameObjectBuilding(OutdoorPvPWG *WG)
     {
         m_WG = WG;
         m_Team = 0;
@@ -763,7 +780,7 @@ struct WorldPvPWGGameObjectBuilding
 struct WorldPvPGraveYardWG
 {
 // Need fully rewrite on usage sObjectMgr.AddGraveYardLink()/SetGraveYardLinkTeam/RemoveGraveYardLink
-    WorldPvPWG* m_WG;
+    OutdoorPvPWG* m_WG;
     uint32 m_team;
     uint32 m_id;
     Map* Mmap;
@@ -772,7 +789,7 @@ struct WorldPvPGraveYardWG
     ObjectGuid SpiritGuieA;
     ObjectGuid SpiritGuieH;
 
-    WorldPvPGraveYardWG(WorldPvPWG * WG)
+    WorldPvPGraveYardWG(OutdoorPvPWG * WG)
     {
         m_WG = WG;
         m_team = 0;
@@ -859,7 +876,7 @@ struct WorldPvPGraveYardWG
 struct WorldPvPWGWorkShopData
 {
     WorldPvPGraveYardWG* m_GY;
-    WorldPvPWG *m_WG;
+    OutdoorPvPWG *m_WG;
     uint32 m_Type;
     uint32 m_State;
     uint32 m_WorldState;
@@ -874,7 +891,7 @@ struct WorldPvPWGWorkShopData
     std::list<ObjectGuid> m_GameObjectA;
     std::list<ObjectGuid> m_GameObjectH;
 
-    WorldPvPWGWorkShopData(WorldPvPWG * WG)
+    WorldPvPWGWorkShopData(OutdoorPvPWG * WG)
     {
         m_WG = WG;
         m_GY = 0;

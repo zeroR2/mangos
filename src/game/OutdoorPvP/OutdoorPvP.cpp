@@ -33,12 +33,6 @@
  */
 void OutdoorPvP::HandlePlayerEnterZone(Player* player, bool isMainZone)
 {
-    // need move		 
-	if(player->GetTeam() == ALLIANCE)
-        m_sZonePlayersAlliance.insert(player->GetObjectGuid());
-	else if(player->GetTeam() == HORDE)
-        m_sZonePlayersHorde.insert(player->GetObjectGuid());
-
     m_zonePlayers[player->GetObjectGuid()] = isMainZone;
 }
 
@@ -57,14 +51,7 @@ void OutdoorPvP::HandlePlayerLeaveZone(Player* player, bool isMainZone)
             SendRemoveWorldStates(player);
 
         sLog.outDebug("Player %s left an Outdoor PvP zone", player->GetName());
-    }
-	
-	// need move
-	if(player->GetTeam() == ALLIANCE)
-        m_sZonePlayersAlliance.erase(player->GetObjectGuid());
-	else if(player->GetTeam() == HORDE)
-        m_sZonePlayersHorde.erase(player->GetObjectGuid());	
-		
+    }	
 }
 
 /**
@@ -188,57 +175,7 @@ void OutdoorPvP::FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& va
         sWorldStateMgr.FillInitialWorldState(stateId, value, WORLD_STATE_TYPE_ZONE, zoneId);
 }
 
-Player* WorldPvP::GetPlayersAlliance()
-{
-    Player* pPlayers = NULL;
-
-    for (GuidSet::iterator itr = m_sZonePlayersAlliance.begin(); itr != m_sZonePlayersAlliance.end(); ++itr)
-    {
-        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
-		pPlayers = pPlayer;
-    }
-    
-	return pPlayers;
-}
-
-Player* WorldPvP::GetPlayersHorde()
-{
-    Player* pPlayers = NULL;
-
-    for (GuidSet::iterator itr = m_sZonePlayersHorde.begin(); itr != m_sZonePlayersHorde.end(); ++itr)
-    {
-        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
-		pPlayers = pPlayer;
-    }
-
-	return pPlayers;
-}
-
-uint32 WorldPvP::CountPlayersAlliance()
-{
-  uint32 count = 0;
-
-    for (GuidSet::iterator itr = m_sZonePlayersAlliance.begin(); itr != m_sZonePlayersAlliance.end(); ++itr)
-    {
-      count = count + 1;
-    }
-
-  return count;
-}
-
-uint32 WorldPvP::CountPlayersHorde()
-{
-  uint32 count = 0;
-
-    for (GuidSet::iterator itr = m_sZonePlayersHorde.begin(); itr != m_sZonePlayersHorde.end(); ++itr)
-    {
-       count = count + 1;
-    }
-
-  return count;
-}
-
-void WorldPvP::CompleteQuest(Player *player, uint32 entry)
+void OutdoorPvP::CompleteQuest(Player *player, uint32 entry)
 {
     Quest const* pQuest = sObjectMgr.GetQuestTemplate(entry);
 
@@ -305,14 +242,14 @@ void WorldPvP::CompleteQuest(Player *player, uint32 entry)
         player->ModifyMoney(-ReqOrRewMoney);
 }
 
-WorldSafeLocsEntry const* WorldPvP::GetClosestGraveYardWG(Player* player)
+WorldSafeLocsEntry const* OutdoorPvP::GetClosestGraveYardWG(Player* player)
 {
    WorldSafeLocsEntry const* good_entry = NULL;
 
    if(player->GetMapId() == 571 && player->GetZoneId() == 4197)
    {
-      WorldPvP* pWG = sWorldPvPMgr.GetWorldPvPToZoneId(ZONE_ID_WINTERGRASP);
-	  WorldPvPWG* WG = ((WorldPvPWG*)pWG);
+      OutdoorPvP* pWG = sOutdoorPvPMgr.GetScript(ZONE_ID_WINTERGRASP);
+	  OutdoorPvPWG* WG = ((OutdoorPvPWG*)pWG);
 
       good_entry = WG->GetClosestGraveYardWG(player);
    }

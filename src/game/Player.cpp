@@ -64,7 +64,7 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 
-#include "WorldPvP/WorldPvPWG.h"
+#include "OutdoorPvP/OutdoorPvPWG.h"
 
 #include <cmath>
 
@@ -5091,7 +5091,7 @@ void Player::RepopAtGraveyard()
         ClosestGrave = bg->GetClosestGraveYard(this);
 	else if(GetMapId() == 571 && GetZoneId() == 4197)
     {
-		if(WorldPvP* WP = GetWorldPvP())
+		if(OutdoorPvP* WP = sOutdoorPvPMgr.GetScript(ZONE_ID_WINTERGRASP))
            ClosestGrave = WP->GetClosestGraveYardWG(this);   
     }			
     else
