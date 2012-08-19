@@ -16,173 +16,167 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "WorldPvP.h"
-#include "WorldPvPWG.h"
+#include "OutdoorPvP.h"
+#include "../Language.h"
+#include "../World.h"
+#include "../ObjectMgr.h"
+#include "../Object.h"
+#include "../GameObject.h"
+#include "../Player.h"
+#include "OutdoorPvPWG.h"
 
 /**
-   Function that a players to a players set
+   Function that adds a player to the players of the affected outdoor pvp zones
 
-   @param   player to be added to set
+   @param   player to add
+   @param   whether zone is main outdoor pvp zone or a affected zone
  */
-void WorldPvP::HandlePlayerEnterZone(Player* pPlayer)
+void OutdoorPvP::HandlePlayerEnterZone(Player* player, bool isMainZone)
 {
-    if (!pPlayer)
-        return;
+    // need move		 
+	if(player->GetTeam() == ALLIANCE)
+        m_sZonePlayersAlliance.insert(player->GetObjectGuid());
+	else if(player->GetTeam() == HORDE)
+        m_sZonePlayersHorde.insert(player->GetObjectGuid());
 
-	if(pPlayer->GetTeam() == ALLIANCE)
-        m_sZonePlayersAlliance.insert(pPlayer->GetObjectGuid());
-	else if(pPlayer->GetTeam() == HORDE)
-        m_sZonePlayersHorde.insert(pPlayer->GetObjectGuid());
-		
-    m_sZonePlayers.insert(pPlayer->GetObjectGuid());
+    m_zonePlayers[player->GetObjectGuid()] = isMainZone;
 }
 
 /**
-   Function that a players to a players set
+   Function that removes a player from the players of the affected outdoor pvp zones
 
-   @param   player to be removed
+   @param   player to remove
+   @param   whether zone is main outdoor pvp zone or a affected zone
  */
-void WorldPvP::HandlePlayerLeaveZone(Player* pPlayer)
+void OutdoorPvP::HandlePlayerLeaveZone(Player* player, bool isMainZone)
 {
-    if (!pPlayer)
-        return;
-
-    m_sZonePlayers.erase(pPlayer->GetObjectGuid());
-
-	if(pPlayer->GetTeam() == ALLIANCE)
-        m_sZonePlayersAlliance.erase(pPlayer->GetObjectGuid());
-	else if(pPlayer->GetTeam() == HORDE)
-        m_sZonePlayersHorde.erase(pPlayer->GetObjectGuid());
-	
-    sLog.outDebug("Player %s left an outdoorpvp zone", pPlayer->GetName());
-}
-
-/**
-   Function that updates world state for all the players in an outdoor pvp area
-
-   @param   world state it to update
-   @param   value which should update the world state
- */
-void WorldPvP::SendUpdateWorldState(uint32 uiField, uint32 uiValue)
-{
-    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    if (m_zonePlayers.erase(player->GetObjectGuid()))
     {
-        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
-        if (pPlayer)
-            pPlayer->SendUpdateWorldState(uiField, uiValue);
+        // remove the world state information from the player
+        if (isMainZone && !player->GetSession()->PlayerLogout())
+            SendRemoveWorldStates(player);
+
+        sLog.outDebug("Player %s left an Outdoor PvP zone", player->GetName());
+    }
+	
+	// need move
+	if(player->GetTeam() == ALLIANCE)
+        m_sZonePlayersAlliance.erase(player->GetObjectGuid());
+	else if(player->GetTeam() == HORDE)
+        m_sZonePlayersHorde.erase(player->GetObjectGuid());	
+		
+}
+
+/**
+   Function that updates the world state for all the players of the outdoor pvp zone
+
+   @param   world state to update
+   @param   new world state value
+ */
+void OutdoorPvP::SendUpdateWorldState(uint32 field, uint32 value)
+{
+    for (GuidZoneMap::iterator itr = m_zonePlayers.begin(); itr != m_zonePlayers.end(); ++itr)
+    {
+        // only send world state update to main zone
+        if (!itr->second)
+            continue;
+
+        if (Player* player = sObjectMgr.GetPlayer(itr->first))
+            player->SendUpdateWorldState(field, value);
     }
 }
 
 /**
-   Function that handles the player kill in outdoor pvp
+   Function that handles player kills in the main outdoor pvp zones
 
-   @param   player which kills another player
-   @param   player or unit (pet) which is victim
+   @param   player who killed another player
+   @param   victim who was killed
  */
-void WorldPvP::HandlePlayerKill(Player* pKiller, Unit* pVictim)
+void OutdoorPvP::HandlePlayerKill(Player* killer, Unit* victim)
 {
-    if (Group* pGroup = pKiller->GetGroup())
+    if (Group* group = killer->GetGroup())
     {
-        for (GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
         {
-            Player* pGroupGuy = itr->getSource();
+            Player* groupMember = itr->getSource();
 
-            if (!pGroupGuy)
+            if (!groupMember)
                 continue;
 
             // skip if too far away
-            if (!pGroupGuy->IsAtGroupRewardDistance(pVictim))
+            if (!groupMember->IsAtGroupRewardDistance(victim))
                 continue;
 
             // creature kills must be notified, even if not inside objective / not outdoor pvp active
             // player kills only count if active and inside objective
-            if (pGroupGuy->IsWorldPvPActive())
-                HandlePlayerKillInsideArea(pGroupGuy, pVictim);
+            if (groupMember->CanUseOutdoorCapturePoint())
+                HandlePlayerKillInsideArea(groupMember, victim);
         }
     }
     else
     {
         // creature kills must be notified, even if not inside objective / not outdoor pvp active
-        if (pKiller && (pKiller->IsWorldPvPActive()))
-            HandlePlayerKillInsideArea(pKiller, pVictim);
+        if (killer && killer->CanUseOutdoorCapturePoint())
+            HandlePlayerKillInsideArea(killer, victim);
     }
 }
 
-// register this zone as an outdoor pvp script
-void WorldPvP::RegisterZone(uint32 uiZoneId)
+// apply a team buff for the main and affected zones
+void OutdoorPvP::BuffTeam(Team team, uint32 spellId, bool remove /*= false*/)
 {
-    sWorldPvPMgr.AddZone(uiZoneId, this);
-    FillInitialWorldStates(uiZoneId);
-}
-
-// return if has player inside the zone
-bool WorldPvP::HasPlayer(Player* pPlayer) const
-{
-    if (!pPlayer)
-        return false;
-
-    return m_sZonePlayers.find(pPlayer->GetObjectGuid()) != m_sZonePlayers.end();
-}
-
-// lock a capture point
-void WorldPvP::LockCapturePoint(uint32 pointEntry, bool isLocked)
-{
-     sWorldPvPMgr.SetCapturePointLockState(pointEntry, isLocked);
-}
-
-// reset a capture point slider
-void WorldPvP::ResetCapturePoint(uint32 pointEntry, float fValue)
-{
-    sWorldPvPMgr.SetCapturePointSlider(pointEntry, fValue);
-}
-
-// apply a team buff for the specific zone
-void WorldPvP::DoProcessTeamBuff(Team uiTeam, uint32 uiSpellId, bool bRemove)
-{
-    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    for (GuidZoneMap::iterator itr = m_zonePlayers.begin(); itr != m_zonePlayers.end(); ++itr)
     {
-        if (!(*itr))
-            continue;
-
-        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
-
-        if (!pPlayer)
-            continue;
-
-        if (pPlayer->GetTeam() == uiTeam)
+        Player* player = sObjectMgr.GetPlayer(itr->first);
+        if (player && player->GetTeam() == team)
         {
-            if (!bRemove)
-                pPlayer->CastSpell(pPlayer, uiSpellId, true);
+            if (remove)
+                player->RemoveAurasDueToSpell(spellId);
             else
-            {
-                if (pPlayer->HasAura(uiSpellId))
-                    pPlayer->RemoveAurasDueToSpell(uiSpellId);
-            }
+                player->CastSpell(player, spellId, true);
         }
     }
 }
 
-/// Get the first found Player* (with requested properties) in the zone. Can return NULL.
-Player* WorldPvP::GetPlayerInZone(bool bOnlyAlive /*=false*/, bool bCanBeGamemaster /*=true*/)
+uint32 OutdoorPvP::GetBannerArtKit(Team team, uint32 artKitAlliance /*= CAPTURE_ARTKIT_ALLIANCE*/, uint32 artKitHorde /*= CAPTURE_ARTKIT_HORDE*/, uint32 artKitNeutral /*= CAPTURE_ARTKIT_NEUTRAL*/)
 {
-    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    switch (team)
     {
-        if (!(*itr))
-            continue;
-
-        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
-
-        if (!pPlayer)
-            continue;
-
-        if ((!bOnlyAlive || pPlayer->isAlive()) && (bCanBeGamemaster || !pPlayer->isGameMaster()))
-            return pPlayer;
+        case ALLIANCE:
+            return artKitAlliance;
+        case HORDE:
+            return artKitHorde;
+        default:
+            return artKitNeutral;
     }
-
-    return NULL;
 }
 
-void WorldPvP::FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value)
+void OutdoorPvP::SetBannerVisual(const WorldObject* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId)
+{
+    if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))
+        SetBannerVisual(go, artKit, animId);
+}
+
+void OutdoorPvP::SetBannerVisual(GameObject* go, uint32 artKit, uint32 animId)
+{
+    go->SendGameObjectCustomAnim(go->GetObjectGuid(), animId);
+    go->SetGoArtKit(artKit);
+    go->Refresh();
+}
+
+void OutdoorPvP::RespawnGO(const WorldObject* objRef, ObjectGuid goGuid, bool respawn)
+{
+    if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))
+    {
+        go->SetRespawnTime(7 * DAY);
+
+        if (respawn)
+            go->Refresh();
+        else if (go->isSpawned())
+            go->SetLootState(GO_JUST_DEACTIVATED);
+    }
+}
+
+void OutdoorPvP::FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value)
 {
     uint32 stateValue = sWorldStateMgr.GetWorldStateValueFor(UINT32_MAX, UINT32_MAX, zoneId, UINT32_MAX, stateId);
 

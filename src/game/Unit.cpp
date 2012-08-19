@@ -42,7 +42,7 @@
 #include "Vehicle.h"
 #include "BattleGround.h"
 #include "InstanceData.h"
-#include "WorldPvP/WorldPvP.h"
+#include "OutdoorPvP/OutdoorPvP.h"
 #include "MapPersistentStateMgr.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
@@ -1046,10 +1046,6 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
         if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->AI())
             ((Creature*)this)->AI()->KilledUnit(pVictim);
 
-        // Call World pvp scripts for player kill
-        if (pVictim->GetTypeId() == TYPEID_PLAYER && GetTypeId() == TYPEID_PLAYER)
-            sWorldPvPMgr.HandlePlayerKill((Player*)this, pVictim);
-
         // Call AI OwnerKilledUnit (for any current summoned minipet/guardian/protector)
         PetOwnerKilledUnit(pVictim);
 
@@ -1106,10 +1102,10 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
         }
 
         // handle player kill in outdoor pvp
-        if (player_tap && this != pVictim)
+        if (player_tap && pVictim != this)
         {
-            if (WorldPvP* pWorldBg = player_tap->GetWorldPvP())
-                pWorldBg->HandlePlayerKillInsideArea(player_tap, pVictim);
+            if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player_tap->GetCachedZoneId()))
+                outdoorPvP->HandlePlayerKill(player_tap, pVictim);
         }
 
         // battleground things (do this at the end, so the death state flag will be properly set to handle in the bg->handlekill)
@@ -1340,9 +1336,9 @@ void Unit::JustKilledCreature(Creature* victim)
     if (InstanceData* mapInstance = victim->GetInstanceData())
         mapInstance->OnCreatureDeath(victim);
 
-    m_zoneScript = sWorldPvPMgr.GetZoneScript(GetZoneId());
-    if (m_zoneScript)
-        m_zoneScript->OnCreatureDeath(victim);
+    // Notify the outdoor pvp script
+    if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+        outdoorPvP->HandleCreatureDeath(victim);
 
     if (victim->IsLinkingEventTrigger())
         victim->GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DIE, victim);

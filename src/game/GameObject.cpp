@@ -35,8 +35,9 @@
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGround.h"
-#include "WorldPvP/WorldPvPMgr.h"
+#include "OutdoorPvP/OutdoorPvPMgr.h"
 #include "BattleGroundAV.h"
+#include "OutdoorPvP/OutdoorPvP.h"
 #include "Util.h"
 #include "ScriptMgr.h"
 #include "vmap/GameObjectModel.h"
@@ -72,6 +73,12 @@ GameObject::GameObject() : WorldObject(),
 
 GameObject::~GameObject()
 {
+    // store the capture point slider value (for non visual, non locked capture points)
+    // FIXME: this - wrong, need make over WorldStateMgr
+    GameObjectInfo const* goInfo = GetGOInfo();
+    if (goInfo && goInfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT && goInfo->capturePoint.radius && m_lootState == GO_ACTIVATED)
+        sOutdoorPvPMgr.SetCapturePointSlider(GetEntry(), m_captureSlider);
+
     delete m_model;
 }
 
@@ -174,16 +181,15 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     SetGoArtKit(0);                                         // unknown what this is
     SetGoAnimProgress(animprogress);
 
-    //Notify the map's instance data.
-    //Only works if you create the object in it, not if it is moves to that map.
-    //Normally non-players do not teleport to other maps.
+    // Notify the map's instance data.
+    // Only works if you create the object in it, not if it is moves to that map.
+    // Normally non-players do not teleport to other maps.
     if (InstanceData* iData = map->GetInstanceData())
         iData->OnObjectCreate(this);
 
-    // Init and notify the outdoor pvp script
-    SetZoneScript();
-    if (m_zoneScript)
-        m_zoneScript->OnGameObjectCreate(this);
+    // Notify the outdoor pvp script
+    if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+        outdoorPvP->HandleGameObjectCreate(this);
 
     switch (goinfo->type)
     {
@@ -210,6 +216,10 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
             {
                 sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
                 SetCapturePointSlider(CAPTURE_SLIDER_GET_VALUE);
+
+                // set initial data and activate non visual-only capture points
+                // FIXME - need make over WorldStateMgr
+                SetCapturePointSlider(sOutdoorPvPMgr.GetCapturePointSliderValue(goinfo->id));
             }
             break;
         }
@@ -1248,6 +1258,15 @@ void GameObject::Use(Unit* user)
         }
         case GAMEOBJECT_TYPE_GOOBER:                        // 10
         {
+            // Handle OutdoorPvP use cases
+            // Note: this may be also handled by DB spell scripts in the future, when the world state manager is implemented
+            if (user->GetTypeId() == TYPEID_PLAYER)
+            {
+                Player* player = (Player*)user;
+                if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player->GetCachedZoneId()))
+                    outdoorPvP->HandleGameObjectUse(player, this);
+            }
+
             GameObjectInfo const* info = GetGOInfo();
 
             TriggerLinkedGameObject(user);
@@ -1776,11 +1795,10 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
         if (pWho)
         {
             if (BattleGround* bg = pWho->GetBattleGround())
-                 bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
-            else if(WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
-                pWPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damageEvent, spellId);
+                bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
+            else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(pWho->GetCachedZoneId()))
+                outdoorPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damageEvent, spellId);
         }
- 
     }
 
     else
@@ -1799,8 +1817,8 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
-                else if(WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
-                    pWPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
+                else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(pWho->GetCachedZoneId()))
+                    outdoorPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.destroyedEvent, spellId);
             }
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DESTROY state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
@@ -1828,8 +1846,8 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
                     bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
-                else if(WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
-                    pWPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
+                else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(pWho->GetCachedZoneId()))
+                    outdoorPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damagedEvent, spellId);
             }
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DAMAGE);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DAMAGED state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
@@ -1853,8 +1871,8 @@ void GameObject::Rebuild(Unit* pWho)
         {
             if (BattleGround* bg = ppWho->GetBattleGround())
                 bg->EventPlayerDamageGO(ppWho, this, GetGOInfo()->destructibleBuilding.rebuildingEvent, 0);
-            else if (WorldPvP* pWPvP = sWorldPvPMgr.GetWorldPvPToZoneId(GetZoneId()))
-                pWPvP->EventPlayerDamageGO(ppWho,this,GetGOInfo()->destructibleBuilding.rebuildingEvent,0);
+            else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+                outdoorPvP->EventPlayerDamageGO(ppWho,this,GetGOInfo()->destructibleBuilding.rebuildingEvent,0);
         }
     }
     SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
@@ -2331,6 +2349,11 @@ float GameObject::GetDeterminativeSize(bool b_priorityZ) const
     return b_priorityZ ? dz : sqrt(dx*dx + dy*dy +dz*dz);
 }
 
+void GameObject::SetActiveObjectState(bool active)
+{
+    WorldObject::SetActiveObjectState(active);
+}
+
 void GameObject::SetCapturePointSlider(int8 value)
 {
     GameObjectInfo const* info = GetGOInfo();
@@ -2416,12 +2439,20 @@ void GameObject::TickCapturePoint()
         // send capture point leave packet
         sWorldStateMgr.RemoveWorldStateFor(ObjectMgr::GetPlayer(*itr), goInfo->capturePoint.worldState1, GetObjectGuid().GetCounter());
         // player left capture point zone
-        m_UniqueUsers.erase((*itr));
+        m_UniqueUsers.erase(*itr);
     }
 
     // return if there are not enough players capturing the point (works because minSuperiority is always 1)
     if (rangePlayers == 0)
+    {
+        // set to inactive if all players left capture point zone
+        if (m_UniqueUsers.empty())
+            SetActiveObjectState(false);
         return;
+    }
+
+    // prevents unloading gameobject before all players left capture point zone (to prevent m_UniqueUsers not being cleared if grid is set to idle)
+    SetActiveObjectState(true);
 
     // cap speed
     int maxSuperiority = goInfo->capturePoint.maxSuperiority;
@@ -2484,6 +2515,11 @@ void GameObject::TickCapturePoint()
     {
         eventId = goInfo->capturePoint.progressEventID1;
 
+        // handle objective complete
+        if (m_captureState == CAPTURE_STATE_NEUTRAL)
+            if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript((*capturingPlayers.begin())->GetCachedZoneId()))
+                outdoorPvP->HandleObjectiveComplete(eventId, capturingPlayers, progressFaction);
+
         // set capture state to alliance
         m_captureState = CAPTURE_STATE_PROGRESS_ALLIANCE;
     }
@@ -2491,6 +2527,11 @@ void GameObject::TickCapturePoint()
     else if (m_captureState != CAPTURE_STATE_PROGRESS_HORDE && m_captureSlider < CAPTURE_SLIDER_NEUTRAL - neutralPercent * 0.5f && progressFaction == HORDE)
     {
         eventId = goInfo->capturePoint.progressEventID2;
+
+        // handle objective complete
+        if (m_captureState == CAPTURE_STATE_NEUTRAL)
+            if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript((*capturingPlayers.begin())->GetCachedZoneId()))
+                outdoorPvP->HandleObjectiveComplete(eventId, capturingPlayers, progressFaction);
 
         // set capture state to horde
         m_captureState = CAPTURE_STATE_PROGRESS_HORDE;
@@ -2533,11 +2574,15 @@ void GameObject::TickCapturePoint()
             if (player && player->GetTeam() == progressFaction)
                 players.insert(*itr);
         }
-        sWorldPvPMgr.HandleObjectiveComplete(players, eventId);
 
-        // send zone script
-        if (m_zoneScript)
-            m_zoneScript->ProcessEvent(this, eventId, progressFaction);
+        // Notify the outdoor pvp script
+        if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript((*capturingPlayers.begin())->GetCachedZoneId()))
+        {
+            // Allow only certain events to be handled by other script engines
+//            if (outdoorPvP->HandleEvent(eventId, this))
+//                return;
+            outdoorPvP->HandleEvent(eventId, this);
+        }
 
         // Send script event to SD2 and database as well - this can be used for summoning creatures, casting specific spells or spawning GOs
         if (!sScriptMgr.OnProcessEvent(eventId, this, this, true))
