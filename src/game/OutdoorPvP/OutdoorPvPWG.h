@@ -273,9 +273,9 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         bool InitWorldPvPArea();
         bool InitBattlefield();
 
-        void OnCreatureCreate(Creature* pCreature);
-        void OnGameObjectCreate(GameObject* pGo);
-        void OnCreatureDeath(Creature* pCreature);
+        void HandleCreatureCreate(Creature* pCreature);
+        void HandleGameObjectCreate(GameObject* pGo);
+        void HandleCreatureDeath(Creature* pCreature);
 
         virtual void Update(uint32 uiDiff);
 
@@ -283,8 +283,8 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         void HandlePlayerLeaveZone(Player* pPlayer, bool isMainZone);
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
-        bool HandleObjectUse(Player* pPlayer, GameObject* pGo);
-        void ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction);
+        bool HandleGameObjectUse(Player* pPlayer, GameObject* pGo);
+        bool HandleEvent(uint32 uiEventId,GameObject* pGo);
         void EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId);
 
         uint32 GetDefender()  { return defender; }

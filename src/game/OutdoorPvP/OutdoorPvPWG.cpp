@@ -633,7 +633,7 @@ void OutdoorPvPWG::NewRound(bool titan)
     m_Timer = TimeBattle;
 }
 
-void OutdoorPvPWG::OnCreatureCreate(Creature* pCreature)
+void OutdoorPvPWG::HandleCreatureCreate(Creature* pCreature)
 {
     if(!get_map)
     {
@@ -822,7 +822,7 @@ void OutdoorPvPWG::OnCreatureCreate(Creature* pCreature)
     }
 }
 
-void OutdoorPvPWG::OnGameObjectCreate(GameObject* pGo)
+void OutdoorPvPWG::HandleGameObjectCreate(GameObject* pGo)
 {
     if(!get_map)
     {
@@ -1161,7 +1161,7 @@ void OutdoorPvPWG::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void OutdoorPvPWG::OnCreatureDeath(Creature* pCreature)
+void OutdoorPvPWG::HandleCreatureDeath(Creature* pCreature)
 {
     switch (pCreature->GetEntry())
     {
@@ -1179,7 +1179,7 @@ void OutdoorPvPWG::OnCreatureDeath(Creature* pCreature)
 
 }
 
-bool OutdoorPvPWG::HandleObjectUse(Player* pPlayer, GameObject* pGo)
+bool OutdoorPvPWG::HandleGameObjectUse(Player* pPlayer, GameObject* pGo)
 {
     switch (pGo->GetEntry())
     {
@@ -1195,7 +1195,7 @@ bool OutdoorPvPWG::HandleObjectUse(Player* pPlayer, GameObject* pGo)
     return true;
 }
 
-void OutdoorPvPWG::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFaction)
+bool OutdoorPvPWG::HandleEvent(uint32 uiEventId,GameObject* pGo)
 {
    bool factory = false;
    WorldPvPWGWorkShopData* ws;
@@ -1228,15 +1228,19 @@ void OutdoorPvPWG::ProcessEvent(GameObject* pGo, uint32 uiEventId, uint32 uiFact
             case EVENT_FACTORY_SE_PROGRESS_ALLIANCE:
             case EVENT_FACTORY_SW_PROGRESS_ALLIANCE:
                 ws->ChangeControl(ALLIANCE);
+				return true;
                 break;
             case EVENT_FACTORY_NE_PROGRESS_HORDE:
             case EVENT_FACTORY_NW_PROGRESS_HORDE:
             case EVENT_FACTORY_SE_PROGRESS_HORDE:
             case EVENT_FACTORY_SW_PROGRESS_HORDE:
                 ws->ChangeControl(HORDE);
+				return true;
                 break;
         }
    }
+   else
+	   return false;
 }
 
 void OutdoorPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId)
