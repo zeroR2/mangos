@@ -89,6 +89,15 @@ void WorldStateMgr::Update()
 
             if (state->GetRenewTime() < time(NULL) - (time_t)sWorld.getConfig(CONFIG_UINT32_WORLD_STATE_EXPIRETIME))
             {
+                if (state->HasFlag(WORLD_STATE_FLAG_NOT_EXPIREABLE))
+                    continue;
+
+                if (state->HasFlag(WORLD_STATE_FLAG_INITIAL_STATE))
+                {
+                    state->Initialize();
+                    continue;
+                }
+
                 state->RemoveFlag(WORLD_STATE_FLAG_ACTIVE);
                 state->AddFlag(WORLD_STATE_FLAG_DELETED);
             }
@@ -993,6 +1002,16 @@ uint32 WorldStateMgr::GetWorldStateValueFor(WorldObject* object, uint32 stateId)
     return UINT32_MAX;
 };
 
+uint32 WorldStateMgr::GetWorldStateValueFor(uint32 zoneId, uint32 stateId)
+{
+    if (!zoneId || !CheckWorldState(stateId))
+        return UINT32_MAX;
+
+    uint32 mapId = GetMapIdByZoneId(zoneId);
+
+    return GetWorldStateValueFor(mapId, 0, zoneId, 0, stateId);
+};
+
 void WorldStateMgr::SetWorldStateValueFor(Player* player, uint32 stateId, uint32 value)
 {
     if (!player)
@@ -1035,6 +1054,30 @@ void WorldStateMgr::SetWorldStateValueFor(Map* map, uint32 stateId, uint32 value
     }
 
     CreateWorldState(stateId, map->GetInstanceId(), value);
+};
+
+void WorldStateMgr::SetWorldStateValueFor(uint32 zoneId, uint32 stateId, uint32 value)
+{
+    if (!zoneId || !CheckWorldState(stateId))
+        return;
+
+    uint32 mapId = GetMapIdByZoneId(zoneId);
+
+    WorldStateBounds bounds = m_worldState.equal_range(stateId);
+    if (bounds.first != bounds.second)
+    {
+        for (WorldStateMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
+        {
+            if (IsFitToCondition(mapId, 0, zoneId, 0, &itr->second))
+            {
+                if ((&itr->second)->GetValue() != value)
+                    const_cast<WorldState*>(&itr->second)->SetValue(value);
+                return;
+            }
+        }
+    }
+
+    CreateWorldState(stateId, 0, value);
 };
 
 void WorldStateMgr::SetWorldStateValueFor(WorldObject* object, uint32 stateId, uint32 value)
@@ -1429,6 +1472,19 @@ void WorldStateMgr::FillInitialWorldState(uint32 stateId, uint32 value, WorldSta
         );
 }
 
+uint32 WorldStateMgr::GetMapIdByZoneId(uint32 zoneId) const
+{
+    if (zoneId)
+    {
+        for(uint32 i = 1; i < sAreaStore.GetNumRows(); ++i)
+        {
+            if (AreaTableEntry const* areaEntry = sAreaStore.LookupEntry(i))
+                if (areaEntry->zone == zoneId)
+                    return areaEntry->mapid;
+        }
+    }
+    return 451; /*Programmers Isle. possible need assert here.*/
+}
 
 void WorldStateMgr::RemovePendingWorldStateFor(Player* player, uint32 mapId, uint32 instanceId, uint32 zoneId, uint32 areaId)
 {
