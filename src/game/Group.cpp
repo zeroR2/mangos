@@ -489,7 +489,7 @@ void Group::ChangeLeader(ObjectGuid guid)
     if (slot == m_memberSlots.end())
         return;
 
-    sLFGMgr.Leave(this);
+    sLFGMgr.LeaveGroup(this);
 
     _setLeader(guid);
 
@@ -1131,7 +1131,7 @@ void Group::SendUpdate()
         data << (isLFGGroup() ? uint8(citr->roles) : uint8(0)); // roles mask
         if(isLFGGroup())
         {
-            uint32 dungeonID = GetLFGGroupState()->GetDungeon() ? GetLFGGroupState()->GetDungeon()->ID : 0;
+            uint32 dungeonID = GetLFGGroupState()->GetChosenDungeon() ? GetLFGGroupState()->GetChosenDungeon()->ID : 0;
             data << uint8(GetLFGGroupState()->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
             data << uint32(dungeonID);
         }
