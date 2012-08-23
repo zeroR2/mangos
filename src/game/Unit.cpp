@@ -1693,6 +1693,7 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
             {
                 damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
                 damageInfo->damage = SpellCriticalDamageBonus(damageInfo->GetSpellProto(), damageInfo->damage, damageInfo->target);
+
                 // Resilience - reduce crit damage (full or reduced)
                 uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
                                                    damageInfo->damage :
