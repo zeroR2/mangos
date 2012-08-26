@@ -19,4 +19,58 @@
 #ifndef BATTLEFIELD_MGR_H
 #define BATTLEFIELD_MGR_H
 
+#include "Common.h"
+#include "Policies/Singleton.h"
+#include "Timer.h"
+
+enum
+{
+    TIMER_BATTLEFIELD_MGR_UPDATE = MINUTE * IN_MILLISECONDS // 1 minute is enough for us but this might change with wintergrasp support
+};
+
+enum BattleFieldTypes
+{
+    BATTLEFIELD_ID_WG = 0,
+
+    MAX_BATTLEFIELD_ID
+};
+
+enum battleFieldZones
+{
+    ZONE_ID_WINTERGRASP                = 4197,
+};
+
+class Player;
+class BattleField;
+
+class BattleFieldMgr
+{
+    public:
+        BattleFieldMgr();
+        ~BattleFieldMgr();
+
+        // load all outdoor pvp scripts
+        void InitBattleField();
+
+        // called when a player enters an outdoor pvp area
+        void HandlePlayerEnterZone(Player* player, uint32 zoneId);
+
+        // called when player leaves an outdoor pvp area
+        void HandlePlayerLeaveZone(Player* player, uint32 zoneId);
+
+        // return assigned outdoor pvp script
+        BattleField* GetScript(uint32 zoneId);
+
+        void Update(uint32 diff);
+
+    private:
+        // contains all outdoor pvp scripts
+        BattleField* m_scripts[MAX_BATTLEFIELD_ID];
+
+        // update interval
+        ShortIntervalTimer m_updateTimer;
+};
+
+#define sBattleFieldMgr MaNGOS::Singleton<BattleFieldMgr>::Instance()
+
 #endif
