@@ -218,6 +218,13 @@ void Map::DeleteFromWorld(Player* pl)
     delete pl;
 }
 
+void Map::setUnitCell(Creature* obj)
+{
+    CellPair xy_val = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
+    Cell cell(xy_val);
+    obj->SetCurrentCell(cell);
+}
+
 void
 Map::EnsureGridCreated(const GridPair &p)
 {
@@ -461,6 +468,33 @@ bool Map::loaded(const GridPair &p) const
 void Map::Update(const uint32 &t_diff)
 {
     m_dyn_tree.update(t_diff);
+    uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
+
+    BattleGround* bg = this->IsBattleGroundOrArena() ? ((BattleGroundMap*)this)->GetBG() : NULL;
+    while(!i_loadingObjectQueue.empty())
+    {
+        LoadingObjectQueue& loadingObject = i_loadingObjectQueue.front();
+        switch(loadingObject.objectTypeID)
+        {
+            case TYPEID_UNIT:
+            {
+                LoadObjectToGrid<Creature>(loadingObject.guid, loadingObject.grid, bg);
+                break;
+            }
+            case TYPEID_GAMEOBJECT:
+            {
+                LoadObjectToGrid<GameObject>(loadingObject.guid, loadingObject.grid, bg);
+                break;
+            }
+            default:
+                sLog.outError("loadingObject.guid = %u, loadingObject.objectTypeID = %u", loadingObject.guid, loadingObject.objectTypeID);
+                break;
+        }
+
+        i_loadingObjectQueue.pop();
+        if ((WorldTimer::getMSTime() - loadingObjectToGridUpdateTime) > 10) // Only 10ms for loading object in one tick
+            break;
+    }
 
     /// update worldsessions for existing players
     for(m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
