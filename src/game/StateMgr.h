@@ -41,7 +41,7 @@ public:
         : Id(_Id), action(_action), priority(_priority), restoreable(_restoreable), m_flags(0)
     {}
 
-    ~ActionInfo() {};
+    ~ActionInfo() { action = UnitActionPtr(NULL); };
 
     bool operator == (ActionInfo& val);
     bool operator == (UnitActionPtr _action);
@@ -76,10 +76,16 @@ public:
     private:
     // Don't must be created uninitialized
     ActionInfo() {};
-//    ActionInfo(ActionInfo const& _action) {};
+    ActionInfo(ActionInfo const& _action) {};
 };
 
-typedef ACE_Based::LockedMap<UnitActionPriority, ActionInfo> UnitActionStorage;
+struct ActionsCompare
+{
+    bool operator() (ActionInfo const* a, ActionInfo const* b) const { return a->GetPriority() > b->GetPriority(); };
+};
+
+typedef ACE_Based::LockedMap<UnitActionPriority, ActionInfo*> UnitActionStorage;
+typedef std::priority_queue<ActionInfo*, std::vector<ActionInfo*>, ActionsCompare> UnitActionQueue;
 
 class UnitStateMgr
 {
@@ -101,6 +107,7 @@ public:
     void DropAction(UnitActionId actionId);
     void DropAction(UnitActionId actionId, UnitActionPriority priority);
     void DropAction(UnitActionPriority priority);
+    void DropAction(UnitActionPtr _action);
     void DropActionHigherThen(UnitActionPriority priority);
 
     void DropAllStates();
@@ -109,6 +116,7 @@ public:
     void PushAction(UnitActionId actionId, UnitActionPriority priority);
     void PushAction(UnitActionId actionId, UnitActionPtr state);
     void PushAction(UnitActionId actionId, UnitActionPtr state, UnitActionPriority priority, eActionType restoreable);
+    void PushAction(ActionInfo* action);
 
     ActionInfo* GetAction(UnitActionPriority priority);
     ActionInfo* GetAction(UnitActionPtr _action);
@@ -116,9 +124,9 @@ public:
     UnitActionStorage const& GetActions() { return m_actions; };
 
     UnitActionPtr CurrentAction();
-    ActionInfo*   CurrentState();
+    ActionInfo const*   CurrentState();
 
-    UnitActionId  GetCurrentState()  const { return m_actions.empty() ? UNIT_ACTION_IDLE : m_actions.rbegin()->second.GetId(); };
+    UnitActionId  GetCurrentState()  const { return m_actions.empty() ? UNIT_ACTION_IDLE : m_actions.rbegin()->second->GetId(); };
     Unit*         GetOwner()         const { return m_owner; };
 
     std::string const GetOwnerStr();
@@ -129,6 +137,7 @@ public:
 
 private:
     UnitActionStorage m_actions;
+    UnitActionQueue   m_actionsQueue;
     Unit*             m_owner;
     UnitActionPtr     m_oldAction;
     uint32            m_stateCounter[UNIT_ACTION_END];
