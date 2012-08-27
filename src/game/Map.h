@@ -347,27 +347,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
             return i_grids[x][y];
         }
 
-        template<class T> void LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
-        {
-            T* obj = new T;
-            if(!obj->LoadFromDB(guid, this))
-            {
-                delete obj;
-                return;
-            }
-            grid.AddGridObject(obj);
-            setUnitCell(obj);
-
-            obj->SetMap(this);
-            obj->AddToWorld();
-            if (obj->isActiveObject())
-                AddToActive(obj);
-
-            obj->GetViewPoint().Event_AddedToWorld(&grid);
-
-            if (bg)
-                bg->OnObjectDBLoad(obj);
-        }
+        template<class T> void LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg);
         template<class T> void setUnitCell(T* /*obj*/) {}
         void setUnitCell(Creature* obj);
 

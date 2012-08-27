@@ -2308,3 +2308,25 @@ bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
 {
     return m_dyn_tree.contains(mdl);
 }
+
+template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
+{
+    T* obj = new T;
+    if(!obj->LoadFromDB(guid, this))
+    {
+        delete obj;
+        return;
+    }
+    grid.AddGridObject(obj);
+    setUnitCell(obj);
+
+    obj->SetMap(this);
+    obj->AddToWorld();
+    if (obj->isActiveObject())
+        AddToActive(obj);
+
+    obj->GetViewPoint().Event_AddedToWorld(&grid);
+
+    if (bg)
+        bg->OnObjectDBLoad(obj);
+}
