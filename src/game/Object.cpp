@@ -43,77 +43,20 @@
 #include "TemporarySummon.h"
 #include "OutdoorPvP/OutdoorPvPMgr.h"
 #include "movement/packet_builder.h"
-#include "UpdateFieldFlags.h"
-#include "Group.h"
 
 #define TERRAIN_LOS_STEP_DISTANCE   3.0f        // sample distance for terrain LoS
 
-UpdateFieldData::UpdateFieldData(Object const* object, Player* target)
-{
-    m_isSelf = object == target;
-    m_isItemOwner = false;
-    m_hasSpecialInfo = false;
-    m_isPartyMember = false;
-
-    switch(object->GetTypeId())
-    {
-        case TYPEID_ITEM:
-        case TYPEID_CONTAINER:
-            m_flags = ItemUpdateFieldFlags;
-            m_isOwner = m_isItemOwner = ((Item*)object)->GetOwnerGuid() == target->GetObjectGuid();
-            break;
-        case TYPEID_UNIT:
-        case TYPEID_PLAYER:
-        {
-            m_flags = UnitUpdateFieldFlags;
-            m_isOwner = ((Unit*)object)->GetOwnerGuid() == target->GetObjectGuid();
-            m_hasSpecialInfo = ((Unit*)object)->HasAuraTypeWithCaster(SPELL_AURA_EMPATHY, target->GetObjectGuid());
-            if (Player* pPlayer = ((Unit*)object)->GetCharmerOrOwnerPlayerOrPlayerItself())
-                m_isPartyMember = pPlayer->IsInSameGroupWith(target);
-            break;
-        }
-        case TYPEID_GAMEOBJECT:
-            m_flags = GameObjectUpdateFieldFlags;
-            m_isOwner = ((GameObject*)object)->GetOwnerGuid() == target->GetObjectGuid();
-            break;
-        case TYPEID_DYNAMICOBJECT:
-            m_flags = DynamicObjectUpdateFieldFlags;
-            m_isOwner = ((DynamicObject*)object)->GetCasterGuid() == target->GetObjectGuid();
-            break;
-        case TYPEID_CORPSE:
-            m_flags = CorpseUpdateFieldFlags;
-            m_isOwner = ((Corpse*)object)->GetOwnerGuid() == target->GetObjectGuid();
-            break;
-    }
-}
-
-bool UpdateFieldData::IsUpdateFieldVisible(uint16 fieldIndex) const
-{
-    if (m_flags[fieldIndex] == UF_FLAG_NONE)
-        return false;
-
-    if (HasFlags(fieldIndex, UF_FLAG_PUBLIC) ||
-        (HasFlags(fieldIndex, UF_FLAG_PRIVATE) && m_isSelf) ||
-        (HasFlags(fieldIndex, UF_FLAG_OWNER) && m_isOwner) ||
-        (HasFlags(fieldIndex, UF_FLAG_ITEM_OWNER) && m_isItemOwner) ||
-        (HasFlags(fieldIndex, UF_FLAG_PARTY_MEMBER) && m_isPartyMember))
-        return true;
-
-    return false;
-}
-
 Object::Object( )
 {
-    m_objectTypeId        = TYPEID_OBJECT;
-    m_objectType          = TYPEMASK_OBJECT;
+    m_objectTypeId      = TYPEID_OBJECT;
+    m_objectType        = TYPEMASK_OBJECT;
 
-    m_uint32Values        = 0;
+    m_uint32Values      = 0;
     m_uint32Values_mirror = 0;
-    m_valuesCount         = 0;
-    m_fieldNotifyFlags    = UF_FLAG_DYNAMIC;
+    m_valuesCount       = 0;
 
-    m_inWorld             = false;
-    m_objectUpdated       = false;
+    m_inWorld           = false;
+    m_objectUpdated     = false;
 }
 
 Object::~Object( )
@@ -510,6 +453,8 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
             if (((GameObject*)this)->ActivateToQuest(target) || target->isGameMaster())
                 IsActivateToQuest = true;
 
+            updateMask->SetBit(GAMEOBJECT_DYNAMIC);
+        }
         else if (isType(TYPEMASK_UNIT))
         {
             if (((Unit*)this)->HasAuraState(AURA_STATE_CONFLAGRATE))
@@ -525,6 +470,8 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
         {
             if (((GameObject*)this)->ActivateToQuest(target) || target->isGameMaster())
                 IsActivateToQuest = true;
+
+            updateMask->SetBit(GAMEOBJECT_DYNAMIC);
             updateMask->SetBit(GAMEOBJECT_BYTES_1);         // why do we need this here?
         }
         else if (isType(TYPEMASK_UNIT))
@@ -765,8 +712,7 @@ void Object::ClearUpdateMask(bool remove)
 
 bool Object::LoadValues(const char* data)
 {
-    if (!m_uint32Values)
-        _InitValues();
+    if(!m_uint32Values) _InitValues();
 
     Tokens tokens(data, ' ');
 
@@ -781,26 +727,20 @@ bool Object::LoadValues(const char* data)
     return true;
 }
 
-void Object::_SetUpdateBits(UpdateMask* updateMask, Player* target) const
+void Object::_SetUpdateBits(UpdateMask *updateMask, Player* /*target*/) const
 {
-    UpdateFieldData ufd(this, target);
-
-    for (uint16 index = 0; index < m_valuesCount; ++index)
+    for( uint16 index = 0; index < m_valuesCount; ++index )
     {
-        if (ufd.IsUpdateNeeded(index, m_fieldNotifyFlags) ||
-            ((m_uint32Values_mirror[index] != m_uint32Values[index]) && ufd.IsUpdateFieldVisible(index)))
+        if (m_uint32Values_mirror[index]!= m_uint32Values[index])
             updateMask->SetBit(index);
     }
 }
 
-void Object::_SetCreateBits(UpdateMask* updateMask, Player* target) const
+void Object::_SetCreateBits(UpdateMask *updateMask, Player* /*target*/) const
 {
-    UpdateFieldData ufd(this, target);
-
-    for (uint16 index = 0; index < m_valuesCount; ++index)
+    for( uint16 index = 0; index < m_valuesCount; ++index )
     {
-        if (ufd.IsUpdateNeeded(index, m_fieldNotifyFlags) ||
-            ((GetUInt32Value(index)) && ufd.IsUpdateFieldVisible(index)))
+        if (GetUInt32Value(index) != 0)
             updateMask->SetBit(index);
     }
 }

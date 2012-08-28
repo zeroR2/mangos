@@ -122,23 +122,6 @@ class WorldUpdateCounter
         uint32 m_tmStart;
 };
 
-struct UpdateFieldData
-{
-    public:
-        UpdateFieldData(Object const* object, Player* target);
-        bool IsUpdateNeeded(uint16 fieldIndex, uint32 fieldNotifyFlags) const { return HasFlags(fieldIndex, fieldNotifyFlags) || (HasFlags(fieldIndex, UF_FLAG_SPECIAL_INFO) && m_hasSpecialInfo); }
-        bool IsUpdateFieldVisible(uint16 fieldIndex) const;
-    private:
-        inline bool HasFlags(uint16 fieldIndex, uint32 flags) const { return m_flags[fieldIndex] & flags; }
-
-        uint32* m_flags;
-        bool m_isSelf;
-        bool m_isOwner;
-        bool m_isItemOwner;
-        bool m_hasSpecialInfo;
-        bool m_isPartyMember;
-};
-
 class MANGOS_DLL_SPEC Object
 {
     public:

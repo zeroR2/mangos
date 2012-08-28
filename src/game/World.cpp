@@ -1566,6 +1566,7 @@ void World::SetInitialWorldSettings()
 
     ///- Initialize static helper structures
     AIRegistry::Initialize();
+    Player::InitVisibleBits();
 
     ///- Initialize MapManager
     sLog.outString( "Starting Map System" );
@@ -2755,3 +2756,4 @@ bool World::IsDungeonMapIdDisable(uint32 mapId)
 {
     return disabledMapIdForDungeonFinder.find(mapId) != disabledMapIdForDungeonFinder.end();
 }
+

@@ -52,7 +52,6 @@
 #include "movement/MoveSplineInit.h"
 #include "movement/MoveSpline.h"
 #include "CreatureLinkingMgr.h"
-#include "UpdateFieldFlags.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -5889,17 +5888,6 @@ bool Unit::HasAuraType(AuraType auraType) const
     return !GetAurasByType(auraType).empty();
 }
 
-bool Unit::HasAuraTypeWithCaster(AuraType auraType, ObjectGuid casterGuid) const
-{
-    AuraList const& mTotalAuraList = GetAurasByType(auraType);
-    for (AuraList::const_iterator itr = mTotalAuraList.begin(); itr != mTotalAuraList.end(); ++itr)
-    {
-        if ((*itr)->GetCasterGuid() == casterGuid)
-            return true;
-    }
-    return false;
-}
-
 bool Unit::HasNegativeAuraType(AuraType auraType) const
 {
     Unit::AuraList const& auras = GetAurasByType(auraType);
@@ -7090,31 +7078,6 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
             }
         }
     }
-}
-
-void Unit::SetOwnerGuid(ObjectGuid ownerGuid)
-{
-    if (GetOwnerGuid() == ownerGuid)
-        return;
-
-    SetGuidValue(UNIT_FIELD_SUMMONEDBY, ownerGuid);
-    if (!ownerGuid || !ownerGuid.IsPlayer())
-        return;
-
-    // Update owner dependent fields
-    Player* pPlayer = ObjectMgr::GetPlayer(ownerGuid, true);
-    if (!pPlayer || !pPlayer->HaveAtClient(this)) // if player cannot see this unit yet, he will receive needed data with create object
-        return;
-
-    SetFieldNotifyFlag(UF_FLAG_OWNER);
-
-    UpdateData data;
-    WorldPacket packet;
-    BuildValuesUpdateBlockForPlayer(&data, pPlayer);
-    data.BuildPacket(&packet);
-    pPlayer->SendDirectMessage(&packet);
-
-    RemoveFieldNotifyFlag(UF_FLAG_OWNER);
 }
 
 Unit *Unit::GetOwner() const
@@ -10924,7 +10887,7 @@ void Unit::SetLevel(uint32 lvl)
 }
 
 
-uint8 Unit::getRace() const
+uint8 Unit::getRace() const 
 {
     return GetTypeId() == TYPEID_UNIT ?
         ((Creature*)this)->getRace() :
@@ -13829,8 +13792,8 @@ void DamageInfo::Reset(uint32 _damage)
 
 SpellSchoolMask  DamageInfo::SchoolMask() const
 {
-    return GetSpellProto() ?
-        SpellSchoolMask(GetSpellProto()->SchoolMask) :
+    return GetSpellProto() ? 
+        SpellSchoolMask(GetSpellProto()->SchoolMask) : 
         attacker ? attacker->GetMeleeDamageSchoolMask() : SPELL_SCHOOL_MASK_NORMAL;
 };
 

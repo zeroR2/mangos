@@ -25,78 +25,78 @@
 class UpdateMask
 {
     public:
-        UpdateMask() : m_Count(0), m_Blocks(0), m_UpdateMask(0) {}
-        UpdateMask(UpdateMask const& mask) : m_UpdateMask(0) { *this = mask; }
+        UpdateMask( ) : mCount( 0 ), mBlocks( 0 ), mUpdateMask( 0 ) { }
+        UpdateMask( const UpdateMask& mask ) : mUpdateMask( 0 ) { *this = mask; }
 
-        ~UpdateMask()
+        ~UpdateMask( )
         {
-            if (m_UpdateMask)
-                delete[] m_UpdateMask;
+            if(mUpdateMask)
+                delete [] mUpdateMask;
         }
 
-        void SetBit(uint32 index)
+        void SetBit (uint32 index)
         {
-            ((uint8*)m_UpdateMask)[index >> 3] |= 1 << (index & 0x7);
+            ( (uint8 *)mUpdateMask )[ index >> 3 ] |= 1 << ( index & 0x7 );
         }
 
-        void UnsetBit(uint32 index)
+        void UnsetBit (uint32 index)
         {
-            ((uint8*)m_UpdateMask)[index >> 3] &= (0xff ^ (1 << (index & 0x7)));
+            ( (uint8 *)mUpdateMask )[ index >> 3 ] &= (0xff ^ (1 <<  ( index & 0x7 ) ) );
         }
 
-        bool GetBit(uint32 index) const
+        bool GetBit (uint32 index) const
         {
-            return (((uint8*)m_UpdateMask)[index >> 3] & (1 << (index & 0x7))) != 0;
+            return ( ( (uint8 *)mUpdateMask)[ index >> 3 ] & ( 1 << ( index & 0x7 ) )) != 0;
         }
 
-        uint32 GetBlockCount() const { return m_Blocks; }
-        uint32 GetLength() const { return m_Blocks << 2; }
-        uint32 GetCount() const { return m_Count; }
-        uint8* GetMask() { return (uint8*)m_UpdateMask; }
+        uint32 GetBlockCount() const { return mBlocks; }
+        uint32 GetLength() const { return mBlocks << 2; }
+        uint32 GetCount() const { return mCount; }
+        uint8* GetMask() { return (uint8*)mUpdateMask; }
 
-        void SetCount(uint32 valuesCount)
+        void SetCount (uint32 valuesCount)
         {
-            if (m_UpdateMask)
-                delete[] m_UpdateMask;
+            if(mUpdateMask)
+                delete [] mUpdateMask;
 
-            m_Count = valuesCount;
-            m_Blocks = (valuesCount + 31) / 32;
+            mCount = valuesCount;
+            mBlocks = (valuesCount + 31) / 32;
 
-            m_UpdateMask = new uint32[m_Blocks];
-            memset(m_UpdateMask, 0, m_Blocks << 2);
+            mUpdateMask = new uint32[mBlocks];
+            memset(mUpdateMask, 0, mBlocks << 2);
         }
 
         void Clear()
         {
-            if (m_UpdateMask)
-                memset(m_UpdateMask, 0, m_Blocks << 2);
+            if (mUpdateMask)
+                memset(mUpdateMask, 0, mBlocks << 2);
         }
 
-        UpdateMask& operator = (UpdateMask const& mask)
+        UpdateMask& operator = ( const UpdateMask& mask )
         {
-            SetCount(mask.m_Count);
-            memcpy(m_UpdateMask, mask.m_UpdateMask, m_Blocks << 2);
+            SetCount(mask.mCount);
+            memcpy(mUpdateMask, mask.mUpdateMask, mBlocks << 2);
 
             return *this;
         }
 
-        void operator &= (UpdateMask const& mask)
+        void operator &= ( const UpdateMask& mask )
         {
-            MANGOS_ASSERT(mask.m_Count <= m_Count);
-            for (uint32 i = 0; i < m_Blocks; ++i)
-                m_UpdateMask[i] &= mask.m_UpdateMask[i];
+            MANGOS_ASSERT(mask.mCount <= mCount);
+            for (uint32 i = 0; i < mBlocks; ++i)
+                mUpdateMask[i] &= mask.mUpdateMask[i];
         }
 
-        void operator |= (UpdateMask const& mask)
+        void operator |= ( const UpdateMask& mask )
         {
-            MANGOS_ASSERT(mask.m_Count <= m_Count);
-            for (uint32 i = 0; i < m_Blocks; ++i)
-                m_UpdateMask[i] |= mask.m_UpdateMask[i];
+            MANGOS_ASSERT(mask.mCount <= mCount);
+            for (uint32 i = 0; i < mBlocks; ++i)
+                mUpdateMask[i] |= mask.mUpdateMask[i];
         }
 
-        UpdateMask operator & (UpdateMask const& mask) const
+        UpdateMask operator & ( const UpdateMask& mask ) const
         {
-            MANGOS_ASSERT(mask.m_Count <= m_Count);
+            MANGOS_ASSERT(mask.mCount <= mCount);
 
             UpdateMask newmask;
             newmask = *this;
@@ -105,9 +105,9 @@ class UpdateMask
             return newmask;
         }
 
-        UpdateMask operator | (UpdateMask const& mask) const
+        UpdateMask operator | ( const UpdateMask& mask ) const
         {
-            MANGOS_ASSERT(mask.m_Count <= m_Count);
+            MANGOS_ASSERT(mask.mCount <= mCount);
 
             UpdateMask newmask;
             newmask = *this;
@@ -117,9 +117,8 @@ class UpdateMask
         }
 
     private:
-        uint32 m_Count;
-        uint32 m_Blocks;
-        uint32 *m_UpdateMask;
+        uint32 mCount;
+        uint32 mBlocks;
+        uint32 *mUpdateMask;
 };
-
 #endif
