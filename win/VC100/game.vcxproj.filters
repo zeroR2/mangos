@@ -636,9 +636,6 @@
     <ClCompile Include="..\..\src\game\TransportSystem.cpp">
       <Filter>Object</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\UpdateFieldFlags.cpp">
-      <Filter>Object</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\game\AccountMgr.h">
@@ -1224,9 +1221,6 @@
     <ClInclude Include="..\..\src\game\vmap\RegularGrid.h">
       <Filter>vmaps</Filter>
     <ClInclude Include="..\..\src\game\TransportSystem.h">
-      <Filter>Object</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\game\UpdateFieldFlags.h">
       <Filter>Object</Filter>
     </ClInclude>
   </ItemGroup>
