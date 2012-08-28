@@ -21,7 +21,7 @@
 
 #include "Common.h"
 #include "ByteBuffer.h"
-#include "UpdateFields.h"
+#include "UpdateFieldFlags.h"
 #include "UpdateData.h"
 #include "ObjectGuid.h"
 #include "Camera.h"
@@ -122,6 +122,7 @@ class WorldUpdateCounter
         uint32 m_tmStart;
 };
 
+class Object;
 struct UpdateFieldData
 {
     public:
