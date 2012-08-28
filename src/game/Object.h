@@ -122,6 +122,23 @@ class WorldUpdateCounter
         uint32 m_tmStart;
 };
 
+struct UpdateFieldData
+{
+    public:
+        UpdateFieldData(Object const* object, Player* target);
+        bool IsUpdateNeeded(uint16 fieldIndex, uint32 fieldNotifyFlags) const { return HasFlags(fieldIndex, fieldNotifyFlags) || (HasFlags(fieldIndex, UF_FLAG_SPECIAL_INFO) && m_hasSpecialInfo); }
+        bool IsUpdateFieldVisible(uint16 fieldIndex) const;
+    private:
+        inline bool HasFlags(uint16 fieldIndex, uint32 flags) const { return m_flags[fieldIndex] & flags; }
+
+        uint32* m_flags;
+        bool m_isSelf;
+        bool m_isOwner;
+        bool m_isItemOwner;
+        bool m_hasSpecialInfo;
+        bool m_isPartyMember;
+};
+
 class MANGOS_DLL_SPEC Object
 {
     public:
@@ -173,6 +190,9 @@ class MANGOS_DLL_SPEC Object
         virtual void BuildUpdateData(UpdateDataMapType& update_players);
         void MarkForClientUpdate();
         void SendForcedObjectUpdate();
+
+        void SetFieldNotifyFlag(uint16 flag) { m_fieldNotifyFlags |= flag; }
+        void RemoveFieldNotifyFlag(uint16 flag) { m_fieldNotifyFlags &= ~flag; }
 
         void BuildValuesUpdateBlockForPlayer( UpdateData *data, Player *target ) const;
         void BuildOutOfRangeUpdateBlock( UpdateData *data ) const;
@@ -377,9 +397,8 @@ class MANGOS_DLL_SPEC Object
         void _Create(uint32 guidlow, uint32 entry, HighGuid guidhigh) { _Create(ObjectGuid(guidhigh, entry, guidlow)); }
         void _Create(ObjectGuid guid);
 
-        virtual void _SetUpdateBits(UpdateMask *updateMask, Player *target) const;
-
-        virtual void _SetCreateBits(UpdateMask *updateMask, Player *target) const;
+        void _SetUpdateBits(UpdateMask* updateMask, Player* target) const;
+        void _SetCreateBits(UpdateMask* updateMask, Player* target) const;
 
         void BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const;
         void BuildValuesUpdate(uint8 updatetype, ByteBuffer *data, UpdateMask *updateMask, Player *target ) const;
@@ -400,6 +419,7 @@ class MANGOS_DLL_SPEC Object
         uint32 *m_uint32Values_mirror;
 
         uint16 m_valuesCount;
+        uint16 m_fieldNotifyFlags;
 
         bool m_objectUpdated;
 
