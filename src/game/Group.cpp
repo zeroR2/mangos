@@ -37,7 +37,7 @@
 #include "LFGMgr.h"
 #include "UpdateFieldFlags.h"
 
-// Playerbot  	
+// Playerbot
 #include "playerbot/PlayerbotMgr.h"
 
 #define LOOT_ROLL_TIMEOUT  (1*MINUTE*IN_MILLISECONDS)
@@ -396,7 +396,7 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
                     player->BuildValuesUpdateBlockForPlayer(&mdata, member);
                     if (mdata.HasData())
                     {
-                        mdata.BuildPacket(&packet);
+                        mdata.BuildPacket(&mpacket);
                         member->SendDirectMessage(&mpacket);
                     }
                 }
@@ -420,7 +420,7 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
     // Frozen Mod
     BroadcastGroupUpdate();
     // Frozen Mod
-	
+
     if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
     {
         Player* const player = sObjectMgr.GetPlayer(guid);
