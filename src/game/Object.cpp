@@ -509,7 +509,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
         {
             if (((GameObject*)this)->ActivateToQuest(target) || target->isGameMaster())
                 IsActivateToQuest = true;
-        }
+
         else if (isType(TYPEMASK_UNIT))
         {
             if (((Unit*)this)->HasAuraState(AURA_STATE_CONFLAGRATE))

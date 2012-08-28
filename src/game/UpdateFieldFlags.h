@@ -21,7 +21,6 @@
 #define _UPDATEFIELDFLAGS_H
 
 #include "UpdateFields.h"
-#include "Common.h"
 
 enum UpdatefieldFlags
 {
