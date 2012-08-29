@@ -34,9 +34,9 @@
 #include "InstanceData.h"
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
-#include "BattleGround.h"
+#include "BattleGround/BattleGround.h"
+#include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvPMgr.h"
-#include "BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Util.h"
 #include "ScriptMgr.h"
@@ -198,7 +198,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
             m_health = GetMaxHealth();
             // destructible GO's show their "HP" as their animprogress
             SetGoAnimProgress(255);
-            if (goinfo->destructibleBuilding.linkedWorldState > WORLDSTATES_BEGIN)
+            if (WorldStateMgr::CheckWorldState(goinfo->destructibleBuilding.linkedWorldState))
                 sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
             break;
         }
@@ -2365,9 +2365,11 @@ void GameObject::SetCapturePointSlider(int8 value)
     {
         case CAPTURE_SLIDER_ALLIANCE_LOCKED:
             m_captureSlider = CAPTURE_SLIDER_ALLIANCE;
+            SetLootState(GO_JUST_DEACTIVATED);
             break;
         case CAPTURE_SLIDER_HORDE_LOCKED:
             m_captureSlider = CAPTURE_SLIDER_HORDE;
+            SetLootState(GO_JUST_DEACTIVATED);
             break;
         case CAPTURE_SLIDER_GET_VALUE:
             m_captureSlider = (float)sWorldStateMgr.GetWorldStateValueFor(this,info->capturePoint.worldState2);
@@ -2600,7 +2602,7 @@ uint32 GameObject::GetLinkedWorldState(bool stateId)
     {
         case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
         {
-            if (GetGOInfo()->destructibleBuilding.linkedWorldState > WORLDSTATES_BEGIN)
+            if (WorldStateMgr::CheckWorldState(GetGOInfo()->destructibleBuilding.linkedWorldState))
                 return stateId ?
                     GetGOInfo()->destructibleBuilding.linkedWorldState :
                     sWorldStateMgr.GetWorldStateValueFor(this,GetGOInfo()->destructibleBuilding.linkedWorldState);

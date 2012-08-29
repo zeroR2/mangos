@@ -33,7 +33,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "World.h"
-#include "BattleGroundMgr.h"
+#include "BattleGround/BattleGroundMgr.h"
 #include "MapManager.h"
 #include "SocialMgr.h"
 #include "LFGMgr.h"
@@ -523,7 +523,7 @@ void WorldSession::LogoutPlayer(bool Save)
 
         GetPlayer()->InterruptNonMeleeSpells(true);
 
-        if (VehicleKit* vehicle = GetPlayer()->GetVehicle())
+        if (VehicleKitPtr vehicle = GetPlayer()->GetVehicle())
         {
             if (Creature* base = ((Creature*)vehicle->GetBase()))
             {

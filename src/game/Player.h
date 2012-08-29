@@ -35,7 +35,7 @@
 #include "Util.h"                                           // for Tokens typedef
 #include "AchievementMgr.h"
 #include "ReputationMgr.h"
-#include "BattleGround.h"
+#include "BattleGround/BattleGround.h"
 #include "SharedDefines.h"
 #include "LFG.h"
 #include "AntiCheat.h"
@@ -395,14 +395,6 @@ enum RaidGroupError
     ERR_RAID_GROUP_ONLY                 = 2,
     ERR_RAID_GROUP_FULL                 = 3,
     ERR_RAID_GROUP_REQUIREMENTS_UNMATCH = 4
-};
-
-enum PlayerMovementType
-{
-    MOVE_ROOT       = 1,
-    MOVE_UNROOT     = 2,
-    MOVE_WATER_WALK = 3,
-    MOVE_LAND_WALK  = 4
 };
 
 enum DrunkenState
@@ -1940,7 +1932,8 @@ class MANGOS_DLL_SPEC Player : public Unit
             StopMirrorTimer(FIRE_TIMER);
         }
 
-        void SetMovement(PlayerMovementType pType);
+        void SetRoot(bool enable) override;
+        void SetWaterWalk(bool enable) override;
 
         void JoinedChannel(Channel *c);
         void LeftChannel(Channel *c);

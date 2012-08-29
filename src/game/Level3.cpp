@@ -49,7 +49,7 @@
 #include "Mail.h"
 #include "Util.h"
 #include "ItemEnchantmentMgr.h"
-#include "BattleGroundMgr.h"
+#include "BattleGround/BattleGroundMgr.h"
 #include "MapPersistentStateMgr.h"
 #include "InstanceData.h"
 #include "CreatureEventAIMgr.h"
@@ -3939,7 +3939,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
 
         target->CalculateDamageAbsorbAndResist(m_session->GetPlayer(),&damageInfo, false);
 
-        m_session->GetPlayer()->DealDamageMods(target, damageInfo.damage, &damageInfo.absorb);
+        m_session->GetPlayer()->DealDamageMods(&damageInfo);
         m_session->GetPlayer()->DealDamage(target,&damageInfo,false);
         m_session->GetPlayer()->SendAttackStateUpdate(&damageInfo);
         return true;
