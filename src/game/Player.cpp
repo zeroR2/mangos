@@ -21115,10 +21115,9 @@ void Player::SendAurasForTarget(Unit *target)
     Unit::VisibleAuraMap const& visibleAuras = target->GetVisibleAuras();
     for (Unit::VisibleAuraMap::const_iterator itr = visibleAuras.begin(); itr != visibleAuras.end(); ++itr)
     {
-        if (!itr->second || itr->second->IsDeleted())
-            continue;
-
-        itr->second->BuildUpdatePacket(data);
+        SpellAuraHolderConstBounds bounds = target->GetSpellAuraHolderBounds(itr->second);
+        for (SpellAuraHolderMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
+            iter->second->BuildUpdatePacket(data);
     }
 
     GetSession()->SendPacket(&data);

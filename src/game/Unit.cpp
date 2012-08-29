@@ -6068,22 +6068,6 @@ bool Unit::HasAuraOfDifficulty(uint32 spellId) const
     return m_spellAuraHolders.find(spellId) != m_spellAuraHolders.end();
 }
 
-SpellAuraHolderPtr Unit::GetVisibleAura(uint8 slot) const
-{
-    VisibleAuraMap::const_iterator itr = m_visibleAuras.find(slot);
-    if (itr != m_visibleAuras.end() && !itr->second->IsDeleted())
-        return itr->second;
-    return SpellAuraHolderPtr();
-}
-
-void Unit::SetVisibleAura(uint8 slot, SpellAuraHolderPtr holder)
-{
-    if (!holder)
-        m_visibleAuras.erase(slot);
-    else
-        m_visibleAuras[slot] = holder;
-}
-
 void Unit::AddDynObject(DynamicObject* dynObj)
 {
     m_dynObjGUIDs.push_back(dynObj->GetObjectGuid());
