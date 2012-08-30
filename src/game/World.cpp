@@ -856,6 +856,12 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_BOOL_KICK_PLAYER_ON_BAD_PACKET, "Network.KickOnBadPacket", false);
 
+    setConfig(CONFIG_UINT32_BATTLEFIELD_WG_MINPLAERS,                           "BattleField.wintergrasp.MinPlayers", 0);
+    setConfig(CONFIG_UINT32_BATTLEFIELD_WG_MAXPLAERS,                           "BattleField.wintergrasp.MaxPlayers", 0);
+    setConfig(CONFIG_UINT32_BATTLEFIELD_WG_MINLEVEL,                           "BattleField.wintergrasp.MinLevel", 0);
+    setConfig(CONFIG_UINT32_BATTLEFIELD_WG_TIMER_NON_BATTLE,                           "BattleField.wintergrasp.TimerNonBattle", 0);
+    setConfig(CONFIG_UINT32_BATTLEFIELD_WG_TIMER_BATTLE,                           "BattleField.wintergrasp.TimerBattle", 0);
+
     if (int clientCacheId = sConfig.GetIntDefault("ClientCacheVersion", 0))
     {
         // overwrite DB/old value

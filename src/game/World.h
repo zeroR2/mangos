@@ -216,6 +216,11 @@ enum eConfigUInt32Values
     CONFIG_UINT32_VMSS_FREEZEDETECTTIME,
     CONFIG_UINT32_VMSS_FORCEUNLOADDELAY,
     CONFIG_UINT32_WORLD_STATE_EXPIRETIME,
+    CONFIG_UINT32_BATTLEFIELD_WG_MINPLAERS,
+    CONFIG_UINT32_BATTLEFIELD_WG_MAXPLAERS,
+    CONFIG_UINT32_BATTLEFIELD_WG_MINLEVEL,
+    CONFIG_UINT32_BATTLEFIELD_WG_TIMER_NON_BATTLE,
+    CONFIG_UINT32_BATTLEFIELD_WG_TIMER_BATTLE,
     CONFIG_UINT32_VALUE_COUNT
 };
 
@@ -514,8 +519,8 @@ class World
         World();
         ~World();
 
-        void CleanupsBeforeStop();
-
+	void CleanupsBeforeStop();
+	
         WorldSession* FindSession(uint32 id) const;
         void AddSession(WorldSession *s);
         void SendBroadcast();

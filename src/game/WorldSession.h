@@ -873,6 +873,16 @@ class MANGOS_DLL_SPEC WorldSession
         void SendLfgUpdateList(uint32 dungeonID);
         void SendLfgDisabled();
 
+		// Battlefield
+        void SendBattleFieldInvitePlayerToBattle(uint32 BattleId,uint32 ZoneId,uint32 time);
+        void SendBattleFieldInvitePlayerToQueue(uint32 BattleId);
+        void SendBattleFieldQueueInviteResponce(uint32 BattleId,uint32 ZoneId);
+        void SendBattleFieldEntered(uint32 BattleId);
+        void SendBattleFieldLeaveMessage(uint32 BattleId);
+        void HandleBattleFieldQueueInviteResponseOpcode(WorldPacket& recv_data);
+        void HandleBattleFieldEntryInviteResponseOpcode(WorldPacket& recv_data);
+        void HandleBattleFieldExitRequestOpcode(WorldPacket& recv_data);
+
     private:
         // private trade methods
         void moveItems(Item* myItems[], Item* hisItems[]);

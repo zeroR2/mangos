@@ -58,6 +58,16 @@ BattleField* BattleFieldMgr::GetScript(uint32 zoneId)
     }
 }
 
+BattleField* BattleFieldMgr::GetScriptById(uint32 Id)
+{
+    switch (Id)
+    {
+        case BATTLEFIELD_ID_WG:
+            return m_scripts[BATTLEFIELD_ID_WG];
+        default:
+            return NULL;
+    }
+}
 /**
 Function that handles the players which enters a specific zone
 

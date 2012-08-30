@@ -2142,3 +2142,37 @@ VMSS.ForceUnloadDelay = 3000
 ###################################################################################################################
 DuelReset.Enable = 0
 DuelReset.AreaIds = "12,14,4570"
+
+###################################################################################################################
+#    BattleField System
+#    
+#    In Woltk only one battlefield (Wintergrasp) for cata there are 2 battefield (Wintergrasp and tol barad)
+#    
+#    Wintergrasp zone
+#     Config only  for wintergrasp zone
+# 
+#    BattleField.wintergrasp.MinPlayers
+#        Only use for preferably in the queue. IMPORTANT : The battle can be start with mium player or less in each team. blizzlike value : 25
+#
+#    BattleField.wintergrasp.MaxPlayers
+#        maximum players for batle by team. blizzlike value : 120
+#
+#    BattleField.wintergrasp.MinLevel
+#        Min level for playing in battlefield zone. blizzlike value : 75
+#
+#    BattleField.wintergrasp.TimerNonBattle
+#        Timer for round when only zone is controlled by team in second
+         IMPORTANT BattleField.wintergrasp.TimerNonBattle > 120 second. blizzlike value : 9000 ( 2,5 hours)
+#
+#    BattleField.wintergrasp.TimerBattle
+#        Timer for round when the battle is in progress in second. blizzlike value : 9000 ( 2,5 hours)
+#
+###################################################################################################################
+
+BattleField.wintergrasp.MinPlayers = 25 
+BattleField.wintergrasp.MaxPlayers = 120
+BattleField.wintergrasp.MinLevel = 75
+BattleField.wintergrasp.TimerNonBattle = 9000
+BattleField.wintergrasp.TimerBattle = 9000
+
+

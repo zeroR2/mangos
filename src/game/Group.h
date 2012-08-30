@@ -28,6 +28,7 @@
 #include "DBCEnums.h"
 #include "SharedDefines.h"
 #include "LFG.h"
+#include "BattleField/BattleField.h"
 
 #include <map>
 #include <vector>
@@ -266,6 +267,7 @@ class MANGOS_DLL_SPEC Group
         bool IsFull() const { return (m_groupType == GROUPTYPE_NORMAL) ? (m_memberSlots.size() >= MAX_GROUP_SIZE) : (m_memberSlots.size() >= MAX_RAID_SIZE); }
         bool isRaidGroup() const { return m_groupType & GROUPTYPE_RAID; }
         bool isBGGroup()   const { return m_bgGroup != NULL; }
+        bool isBFGroup()   const { return m_bfGroup != NULL; }
         bool IsCreated()   const { return GetMembersCount() > 0; }
         ObjectGuid GetLeaderGuid() const { return m_leaderGuid; }
         const char * GetLeaderName() const { return m_leaderName.c_str(); }
@@ -319,6 +321,8 @@ class MANGOS_DLL_SPEC Group
         void ConvertToRaid();
 
         void SetBattlegroundGroup(BattleGround *bg) { m_bgGroup = bg; }
+        void SetBattleFieldGroup(BattleField *bf) { m_bfGroup = bf; }
+
         GroupJoinBattlegroundResult CanJoinBattleGroundQueue(BattleGround const* bgOrTemplate, BattleGroundQueueTypeId bgQueueTypeId, uint32 MinPlayerCount, uint32 MaxPlayerCount, bool isRated, uint32 arenaSlot);
 
         void ChangeMembersGroup(ObjectGuid guid, uint8 group);
@@ -457,6 +461,7 @@ class MANGOS_DLL_SPEC Group
         uint32              m_Difficulty;                             // contains both dungeon (first byte) and raid (second byte) difficultyes of player. bytes 2,3 not used.
 
         BattleGround*       m_bgGroup;
+        BattleField*        m_bfGroup;
         ObjectGuid          m_targetIcons[TARGET_ICON_COUNT];
         LootMethod          m_lootMethod;
         ItemQualities       m_lootThreshold;

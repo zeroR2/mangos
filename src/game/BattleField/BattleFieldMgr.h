@@ -49,22 +49,23 @@ class BattleFieldMgr
         BattleFieldMgr();
         ~BattleFieldMgr();
 
-        // load all outdoor pvp scripts
+        // load all BattleField scripts
         void InitBattleField();
 
-        // called when a player enters an outdoor pvp area
+        // called when a player enters an battlefield area
         void HandlePlayerEnterZone(Player* player, uint32 zoneId);
 
-        // called when player leaves an outdoor pvp area
+        // called when player leaves an battlefield area
         void HandlePlayerLeaveZone(Player* player, uint32 zoneId);
 
-        // return assigned outdoor pvp script
+        // return assigned battlefield script
         BattleField* GetScript(uint32 zoneId);
+        BattleField* GetScriptById(uint32 Id);
 
         void Update(uint32 diff);
 
     private:
-        // contains all outdoor pvp scripts
+        // contains all battlefield scripts
         BattleField* m_scripts[MAX_BATTLEFIELD_ID];
 
         // update interval

@@ -23,6 +23,7 @@
 #include "../ObjectGuid.h"
 #include "../SharedDefines.h"
 #include "BattleFieldMgr.h"
+#include "../Group.h"
 
 class Player;
 class WorldPacket;
@@ -30,13 +31,14 @@ class Creature;
 class GameObject;
 class Unit;
 class WorldObject;
+class Group;
 
 class BattleField
 {
     friend class BattleFieldMgr;
 
     public:
-        BattleField() {}
+        BattleField();
         ~BattleField() {}
 
         // called when the zone is initialized
@@ -52,6 +54,9 @@ class BattleField
         virtual void HandleCreatureCreate(Creature* /*creature*/) {}
         virtual void HandleGameObjectCreate(GameObject* /*go*/) {}
 
+        virtual void EnterToBallte(Player* /*player*/) {}
+        virtual void LeaveToBallte(Player* /*player*/) {}
+
         // Called on creature death
         virtual void HandleCreatureDeath(Creature* /*creature*/) {}
 
@@ -65,7 +70,7 @@ class BattleField
         virtual bool HandleDropFlag(Player* /*player*/, uint32 /*spellId*/) { return false; }
 
         // update - called by the OutdoorPvPMgr
-        virtual void Update(uint32 /*diff*/) {}
+        virtual void Update(uint32 /*diff*/);
 
         // handle npc/player kill
         void HandlePlayerKill(Player* killer, Unit* victim);
@@ -79,14 +84,21 @@ class BattleField
         // remove world states
         virtual void SendRemoveWorldStates(Player* /*player*/) {}
 
-        // invite void
+        // invite system
         void InvitePlayerToQueue(Player* player);
-        void InvitePlayerToWar(Player* player);
+        void InvitePlayerToBattle(Player* player);
+        void AcceptInvitePlayerToQueue(Player* player);
+        void AcceptInvitePlayerToBattle(Player* player);
+        void InviteQueuePlayerToBattle();
 
-        uint32 GetTimer() {return m_timer;}
+        void KickFromBattleField(Player* player,uint32 spellid);
 
-        team GetDefender() {return m_defenderTeam;}
-        team GetAttack() {return m_attackTeam;}
+        bool InProgressBattle() {return ProgressBattle;}
+
+        uint32 GetDefender() {return m_defenderTeam;}
+        uint32 GetAttack() {return m_attackTeam;}
+
+        uint32 GetZone() {return m_ZoneId;}
 
     protected:
 
@@ -104,17 +116,57 @@ class BattleField
         // invite zone players to queue. it use before start battle
         void InviteZonePlayersToQueue();
 
-        // value for timer worldstates in seconds.
-        uint32 m_timer;
+        // If it is true battle is in progress
+        bool ProgressBattle;
 
-        team m_defenderTeam;
-        team m_attackTeam;
+        void StartTheBattle();
+        void EndTheBattle();
+
+        bool CanStratBattle;
+        bool finishNonBattle;
+        bool finishBattle;
+
+        // Group system
+        void AddGroup(Player* player);
+        Group* m_group[2];
+
+        // data
+        uint32 m_BattleFieldId;
+        uint32 m_ZoneId;
+        uint32 m_MapId;
+
+        uint32 m_timerinviteZonePlayerToQueue; // Called 1 minute before start the battle. Define in BattleField.cpp
+
+        uint32 m_TimeAcceptInvite; // Use for send invited text_box in seconds. Define in BattleField.cpp
+
+        // Start enter Queue player to battle when it is in progress
+        bool canentermoreplayer;
+        uint32 timerentermoreplayer; // 1 minute
+
+        // value for timer worldstates in seconds. Get they from config in zone script
+        uint32 m_timerNonBattle;
+        uint32 m_timerBattle;
+
+        uint32 m_defenderTeam;
+        uint32 m_attackTeam;
+
+        // minimum and maximum players by team, they set in config for specific zone
+        uint32 m_mimPlayers; // Only use for preferably in the queue. IMPORTANT : The battle can be start with mium player or less in each team
+        uint32 m_maxPlayers;
+
+        // minimum level for entering zone, it set in config for specific zone
+        uint32 m_minLevel;
+
+        // Kick position,it set in zone script. If spell is 0 use the KickPosition
+        WorldLocation KickPosition;
+        uint32 m_spellKick;
 
          // store the players inside the area
         GuidSet m_zonePlayers;
-        GuidSet m_queuePlayers;
-        GuidSet m_warPlayers[2];
-        GuidSet m_invitedPlayers;
+        GuidSet m_queuePreferencePlayers[2];
+        GuidSet m_queuePlayers[2];
+        GuidSet m_invitedPlayers[2];
+        GuidSet m_battlePlayers[2];
 };
 
 #endif
