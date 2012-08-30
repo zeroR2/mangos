@@ -66,9 +66,6 @@ void OutdoorPvPMgr::InitOutdoorPvP()
     LOAD_OPVP_ZONE(NA);
     LOAD_OPVP_ZONE(GH);
 
-// currently disabled, be enabled after finish development phase
-//    LOAD_OPVP_ZONE(WG);
-
     sLog.outString();
     sLog.outString(">> Loaded %u Outdoor PvP zones", counter);
 }
@@ -91,8 +88,6 @@ OutdoorPvP* OutdoorPvPMgr::GetScript(uint32 zoneId)
             return m_scripts[OPVP_ID_NA];
         case ZONE_ID_GRIZZLY_HILLS:
             return m_scripts[OPVP_ID_GH];
-        case ZONE_ID_WINTERGRASP:
-            return m_scripts[OPVP_ID_WG];
         default:
             return NULL;
     }
@@ -125,8 +120,6 @@ OutdoorPvP* OutdoorPvPMgr::GetScriptOfAffectedZone(uint32 zoneId)
         case ZONE_ID_SETHEKK_HALLS:
         case ZONE_ID_MANA_TOMBS:
             return m_scripts[OPVP_ID_TF];
-        case ZONE_ID_WINTERGRASP:
-            return m_scripts[OPVP_ID_WG];
         default:
             return NULL;
     }
@@ -219,8 +212,6 @@ uint32 OutdoorPvPMgr::GetZoneOfAffectedScript(OutdoorPvP const* script) const
             return ZONE_ID_NAGRAND;
         case OPVP_ID_GH:
             return ZONE_ID_GRIZZLY_HILLS;
-        case OPVP_ID_WG:
-            return ZONE_ID_WINTERGRASP;
 
         case MAX_OPVP_ID:
         default:

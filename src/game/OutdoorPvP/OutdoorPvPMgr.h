@@ -37,7 +37,6 @@ enum OutdoorPvPTypes
     OPVP_ID_TF,
     OPVP_ID_NA,
     OPVP_ID_GH,
-    OPVP_ID_WG,
 
     MAX_OPVP_ID
 };
@@ -75,8 +74,6 @@ enum OutdoorPvPZones
     ZONE_ID_NAGRAND                 = 3518,
 
     ZONE_ID_GRIZZLY_HILLS           = 394,
-
-    ZONE_ID_WINTERGRASP             = 4197,
 
     ZONE_ID_ERROR                   = 0,
 };
