@@ -1753,6 +1753,7 @@ void LFGMgr::Teleport(Player* pPlayer, bool out, bool fromOpcode /*= false*/)
 
 void LFGMgr::CleanupRoleChecks()
 {
+    ReadGuard Guard(GetLock());
     for (LFGQueueInfoMap::const_iterator infoMapitr = m_queueInfoMap.begin(); infoMapitr != m_queueInfoMap.end(); ++infoMapitr)
     {
         // LFGDungeonEntry const* dungeon = infoMapitr->first;
@@ -2194,6 +2195,7 @@ void LFGMgr::SetGroupRoles(Group* pGroup, GuidSet const* players)
 
 void LFGMgr::TryCompleteGroups()
 {
+    ReadGuard Guard(GetLock());
     bool isGroupCompleted = false;  // we make only one group for iterations! not more!
     for (LFGQueueInfoMap::const_iterator itr = m_queueInfoMap.begin(); itr != m_queueInfoMap.end(); ++itr)
     {
@@ -2323,6 +2325,7 @@ void LFGMgr::CompleteGroup(Group* pGroup, GuidSet players, LFGDungeonEntry const
 
 bool LFGMgr::TryCreateGroup()
 {
+    ReadGuard Guard(GetLock());
     bool groupCreated = false;
     for (LFGQueueInfoMap::const_iterator infoMapitr = m_queueInfoMap.begin(); infoMapitr != m_queueInfoMap.end(); ++infoMapitr)
     {
@@ -2409,6 +2412,7 @@ bool LFGMgr::TryCreateGroup()
 
 void LFGMgr::UpdateQueueStatus()
 {
+    WriteGuard Guard(GetLock());
     for (LFGQueueInfoMap::iterator infoMapitr = m_queueInfoMap.begin(); infoMapitr != m_queueInfoMap.end(); ++infoMapitr)
     {
         LFGDungeonEntry const* dungeon = infoMapitr->first;
@@ -2485,6 +2489,7 @@ void LFGMgr::UpdateQueueStatus()
 
 void LFGMgr::SendStatistic()
 {
+    ReadGuard Guard(GetLock());
     for (LFGQueueInfoMap::const_iterator infoMapitr = m_queueInfoMap.begin(); infoMapitr != m_queueInfoMap.end(); ++infoMapitr)
     {
         LFGDungeonEntry const* dungeon = infoMapitr->first;
@@ -2542,6 +2547,7 @@ void LFGMgr::SendStatistic()
 
 void LFGMgr::UpdateLFRGroups()
 {
+    ReadGuard Guard(GetLock());
     for (LFGQueueInfoMap::const_iterator infoMapitr = m_queueInfoMap.begin(); infoMapitr != m_queueInfoMap.end(); ++infoMapitr)
     {
         LFGDungeonEntry const* dungeon = infoMapitr->first;
