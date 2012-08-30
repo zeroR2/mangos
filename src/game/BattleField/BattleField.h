@@ -113,9 +113,6 @@ class BattleField
         void SetBannerVisual(const WorldObject* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId);
         void SetBannerVisual(GameObject* go, uint32 artKit, uint32 animId);
 
-        // invite zone players to queue. it use before start battle
-        void InviteZonePlayersToQueue();
-
         // If it is true battle is in progress
         bool ProgressBattle;
 

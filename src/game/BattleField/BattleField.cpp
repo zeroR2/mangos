@@ -176,6 +176,24 @@ void BattleField::EndTheBattle()
 
 }
 
+void BattleField::SendUpdateWorldState(uint32 field, uint32 value)
+{
+    sWorldStateMgr.SetWorldStateValueFor(m_ZoneId, field, value);
+}
+
+void BattleField::SetBannerVisual(const WorldObject* objRef, ObjectGuid goGuid, uint32 artKit, uint32 animId)
+{
+    if (GameObject* go = objRef->GetMap()->GetGameObject(goGuid))
+        SetBannerVisual(go, artKit, animId);
+}
+
+void BattleField::SetBannerVisual(GameObject* go, uint32 artKit, uint32 animId)
+{
+    go->SendGameObjectCustomAnim(go->GetObjectGuid(), animId);
+    go->SetGoArtKit(artKit);
+    go->Refresh();
+}
+
 // Kick player from zone by spell or position
 
 void BattleField::KickFromBattleField(Player* player,uint32 spellid)
