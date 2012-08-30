@@ -21115,7 +21115,7 @@ void Player::SendAurasForTarget(Unit *target)
     Unit::VisibleAuraMap const& visibleAuras = target->GetVisibleAuras();
     for (Unit::VisibleAuraMap::const_iterator itr = visibleAuras.begin(); itr != visibleAuras.end(); ++itr)
     {
-        if (!itr->second || itr->second->IsDeleted())
+        if (!itr->second)
             continue;
 
         itr->second->BuildUpdatePacket(data);

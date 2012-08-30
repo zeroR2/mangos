@@ -6071,7 +6071,7 @@ bool Unit::HasAuraOfDifficulty(uint32 spellId) const
 SpellAuraHolderPtr Unit::GetVisibleAura(uint8 slot) const
 {
     VisibleAuraMap::const_iterator itr = m_visibleAuras.find(slot);
-    if (itr != m_visibleAuras.end() && !itr->second->IsDeleted())
+    if (itr != m_visibleAuras.end())
         return itr->second;
     return SpellAuraHolderPtr();
 }
