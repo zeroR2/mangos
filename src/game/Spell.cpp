@@ -347,6 +347,30 @@ void SpellCastTargets::ReadAdditionalData(ByteBuffer& data)
     }
 }
 
+bool SpellCastTargets::HasLocation() const
+{
+    if (m_targetMask & TARGET_FLAG_DEST_LOCATION)
+    {
+        if (fabs(m_destX) > M_NULL_F || fabs(m_destY) > M_NULL_F || fabs(m_destZ) > M_NULL_F)
+            return true;
+    }
+    if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
+    {
+        if (fabs(m_srcX) > M_NULL_F || fabs(m_srcY) > M_NULL_F || fabs(m_srcZ) > M_NULL_F)
+            return true;
+    }
+    return false;
+};
+
+void SpellCastTargets::GetLocation(float& x, float& y, float& z) const
+{
+    if (m_targetMask & TARGET_FLAG_DEST_LOCATION)
+        getDestination(x,y,z);
+    else if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
+        getSource(x,y,z);
+    // Possible need substitution for another cases
+}
+
 Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid originalCasterGUID, SpellEntry const* triggeredBy )
 {
     MANGOS_ASSERT( caster != NULL && info != NULL );
@@ -2236,23 +2260,16 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             if (targetMode == TARGET_AREAEFFECT_GO_AROUND_SOURCE)
             {
                 if (m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
-                {
-                    x = m_targets.m_srcX;
-                    y = m_targets.m_srcY;
-                    z = m_targets.m_srcZ;
-                }
+                    m_targets.getSource(x, y, z);
                 else
                     m_caster->GetPosition(x, y, z);
             }
             else if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
             {
-                x = m_targets.m_destX;
-                y = m_targets.m_destY;
-                z = m_targets.m_destZ;
+                m_targets.getDestination(x, y, z);
             }
             else
                 m_caster->GetPosition(x, y, z);
-
 
             // It may be possible to fill targets for some spell effects
             // automatically (SPELL_EFFECT_WMO_REPAIR(88) for example) but
