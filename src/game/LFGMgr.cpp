@@ -1025,14 +1025,14 @@ void LFGMgr::SendLFGRewards(Group* pGroup)
     pGroup->GetLFGGroupState()->SetState(LFG_STATE_FINISHED_DUNGEON);
     pGroup->GetLFGGroupState()->SetStatus(LFG_STATUS_SAVED);
 
-    LFGDungeonEntry const* dungeon = *pGroup->GetLFGGroupState()->GetDungeons()->begin();
+    LFGDungeonEntry const* pRealdungeon = pGroup->GetLFGGroupState()->GetDungeon();
 
-    if (!dungeon)
+    if (!pRealdungeon)
     {
         DEBUG_LOG("LFGMgr::SendLFGReward: group %u - but no realdungeon", pGroup->GetObjectGuid().GetCounter());
         return;
     }
-    else  if (dungeon->type != LFG_TYPE_RANDOM_DUNGEON)
+    else  if (pRealdungeon->type != LFG_TYPE_RANDOM_DUNGEON)
     {
         DEBUG_LOG("LFGMgr::SendLFGReward: group %u dungeon %u is not random (%u)", pGroup->GetObjectGuid().GetCounter(), pRealdungeon->ID, pRealdungeon->type);
         return;
@@ -1042,7 +1042,7 @@ void LFGMgr::SendLFGRewards(Group* pGroup)
     {
         Player* pGroupMember = itr->getSource();
         if (pGroupMember && pGroupMember->IsInWorld())
-            SendLFGReward(pGroupMember, dungeon);
+            SendLFGReward(pGroupMember, pRealdungeon);
     }
 }
 
