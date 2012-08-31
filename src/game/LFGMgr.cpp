@@ -745,7 +745,7 @@ LFGLockStatusType LFGMgr::GetGroupLockStatus(Group* group, LFGDungeonEntry const
     return LFG_LOCKSTATUS_OK;
 }
 
-LFGDungeonSet LFGMgr::GetRandomDungeonsAndWorldEventsForPlayer(Player* pPlayer)
+LFGDungeonSet LFGMgr::GetRandomDungeonsForPlayer(Player* pPlayer)
 {
     LFGDungeonSet list;
 
@@ -753,12 +753,7 @@ LFGDungeonSet LFGMgr::GetRandomDungeonsAndWorldEventsForPlayer(Player* pPlayer)
     {
         if (LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(i))
         {
-            if (dungeon->grouptype == LFG_GROUP_TYPE_WORLD_EVENTS &&
-                GetPlayerLockStatus(pPlayer, dungeon) == LFG_LOCKSTATUS_OK &&
-                LFGMgr::CheckWorldEvent(dungeon))
-                list.insert(dungeon);
-
-            if (LFGMgr::IsRandomDungeon(dungeon) &&
+            if (dungeon->type == LFG_TYPE_RANDOM_DUNGEON &&
                 GetPlayerLockStatus(pPlayer, dungeon) == LFG_LOCKSTATUS_OK)
                 list.insert(dungeon);
         }
@@ -918,7 +913,7 @@ void LFGMgr::SendLFGRewards(Group* pGroup)
         DEBUG_LOG("LFGMgr::SendLFGReward: group %u - but no chosen dungeon", pGroup->GetObjectGuid().GetCounter());
         return;
     }
-    else  if (!LFGMgr::IsRandomDungeon(pDeclaredDungeon))
+    else  if (LFGType(pDeclaredDungeon->type) != LFG_TYPE_RANDOM_DUNGEON)
     {
         DEBUG_LOG("LFGMgr::SendLFGReward: group %u dungeon %u is not random (%u)", pGroup->GetObjectGuid().GetCounter(), pDeclaredDungeon->ID, pDeclaredDungeon->type);
         return;
@@ -1175,7 +1170,7 @@ void LFGMgr::UpdateProposal(uint32 ID, ObjectGuid guid, bool accept)
         chosenDungeon = pGroup->GetLFGGroupState()->GetChosenDungeon();
     else
     {
-        if (LFGMgr::IsRandomDungeon(pProposal->GetDungeon()))
+        if (IsRandomDungeon(pProposal->GetDungeon()))
         {
             GuidSet tmpSet;
             if (pGroup)
@@ -2769,24 +2764,6 @@ bool LFGMgr::IsRandomDungeon(LFGDungeonEntry const* dungeon)
         return false;
 
     return dungeon->type == LFG_TYPE_RANDOM_DUNGEON;
-}
-
-bool LFGMgr::CheckWorldEvent(LFGDungeonEntry const* dungeon)
-{
-    switch (dungeon->ID)
-    {
-        case 288:                   // Apothecary Hummel <Crown Chemical Co.>
-            return sGameEventMgr.IsActiveHoliday(HOLIDAY_LOVE_IS_IN_THE_AIR);
-        case 287:                   // Coren Direbrew
-            return sGameEventMgr.IsActiveHoliday(HOLIDAY_BREWFEST);
-        case 286:                   // Ahune <The Frost Lord>
-            return sGameEventMgr.IsActiveHoliday(HOLIDAY_FIRE_FESTIVAL);
-        case 285:                   // Headless Horseman
-            return sGameEventMgr.IsActiveHoliday(HOLIDAY_HALLOWS_END);
-        default:
-            break;
-    }
-    return false;
 }
 
 bool LFGMgr::HasIgnoreState(Player* pPlayer, ObjectGuid checkTarget)

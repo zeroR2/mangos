@@ -213,7 +213,7 @@ void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket &/*recv_data
 
     DEBUG_LOG("CMSG_LFD_PLAYER_LOCK_INFO_REQUEST %u ", GetPlayer()->GetObjectGuid().GetCounter());
 
-    LFGDungeonSet randomlist = sLFGMgr.GetRandomDungeonsAndWorldEventsForPlayer(GetPlayer());
+    LFGDungeonSet randomlist = sLFGMgr.GetRandomDungeonsForPlayer(GetPlayer());
     LFGLockStatusMap const lockSet = *GetPlayer()->GetLFGPlayerState()->GetLockMap();
 
     uint32 rsize = randomlist.size();
