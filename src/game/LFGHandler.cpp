@@ -912,14 +912,7 @@ void WorldSession::SendLfgPlayerReward(LFGDungeonEntry const* dungeon, const LFG
         return;
     }
 
-    LFGDungeonEntry const* realdungeon = NULL;
-    if (GetPlayer()->GetGroup())
-        realdungeon = GetPlayer()->GetGroup()->GetLFGGroupState()->GetDungeon();
-    else
-    {
-        DEBUG_LOG("SendLfgPlayerReward %u failed - no Group", GetPlayer()->GetObjectGuid().GetCounter());
-        return;
-    }
+    LFGDungeonEntry const* realdungeon = GetPlayer()->GetLFGPlayerState()->GetDungeon();
 
     if (!dungeon || !realdungeon || !reward || !qRew)
         return;
