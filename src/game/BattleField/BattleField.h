@@ -54,8 +54,8 @@ class BattleField
         virtual void HandleCreatureCreate(Creature* /*creature*/) {}
         virtual void HandleGameObjectCreate(GameObject* /*go*/) {}
 
-        virtual void EnterToBallte(Player* /*player*/) {}
-        virtual void LeaveToBallte(Player* /*player*/) {}
+        virtual void EnterToBattle(Player* /*player*/) {}
+        virtual void LeaveToBattle(Player* /*player*/) {}
 
         // Called on creature death
         virtual void HandleCreatureDeath(Creature* /*creature*/) {}
@@ -89,6 +89,7 @@ class BattleField
         void InvitePlayerToBattle(Player* player);
         void AcceptInvitePlayerToQueue(Player* player);
         void AcceptInvitePlayerToBattle(Player* player);
+	void CancelInvitePlayerToBattle(Player* player);
         void InviteQueuePlayerToBattle();
 
         void KickFromBattleField(Player* player,uint32 spellid);

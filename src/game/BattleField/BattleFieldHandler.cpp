@@ -113,6 +113,8 @@ void WorldSession::HandleBattleFieldEntryInviteResponseOpcode(WorldPacket &recv_
 
     if(Accepted)
         Bf->AcceptInvitePlayerToBattle(_player);
+    else
+        Bf->CancelInvitePlayerToBattle(_player);
 }
 
 void WorldSession::HandleBattleFieldExitRequestOpcode(WorldPacket &recv_data)

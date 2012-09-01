@@ -135,14 +135,12 @@ void BattleField::StartTheBattle()
            InvitePlayerToBattle(pPlayer);
      }
    }
-
-   m_queuePreferencePlayers[0].clear();
-   m_queuePreferencePlayers[1].clear();
-
 }
 
 void BattleField::EndTheBattle()
 {
+    m_queuePreferencePlayers[0].clear();
+    m_queuePreferencePlayers[1].clear();  
     m_queuePlayers[0].clear();
     m_queuePlayers[1].clear();
 
@@ -167,7 +165,7 @@ void BattleField::EndTheBattle()
            }
 
            if (BattleField* script = sBattleFieldMgr.GetScript(m_ZoneId))
-               script->LeaveToBallte(pPlayer);
+               script->LeaveToBattle(pPlayer);
 
            pPlayer = NULL;
        }
@@ -289,10 +287,15 @@ void BattleField::AcceptInvitePlayerToBattle(Player* player)
       AddGroup(player);
 
       if (BattleField* script = sBattleFieldMgr.GetScript(m_ZoneId))
-        script->EnterToBallte(player);
+        script->EnterToBattle(player);
 
 }
 
+void BattleField::CancelInvitePlayerToBattle(Player* player)
+{
+     if(m_invitedPlayers[GetTeamIndex(player->GetTeam())].count(player->GetObjectGuid()))
+        m_invitedPlayers[GetTeamIndex(player->GetTeam())].erase(player->GetObjectGuid());
+}
 
 // Group System
 
