@@ -19,6 +19,7 @@
 #include "BattleField.h"
 #include "../Player.h"
 #include "../ObjectMgr.h"
+#include "../Group.h"
 
 BattleField::BattleField()
 {

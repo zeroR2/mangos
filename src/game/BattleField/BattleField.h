@@ -19,11 +19,10 @@
 #ifndef BATTLEFIELD_H
 #define BATTLEFIELD_H
 
-#include "Common.h"
+#include "../Object.h"
 #include "../ObjectGuid.h"
 #include "../SharedDefines.h"
 #include "BattleFieldMgr.h"
-#include "../Group.h"
 
 class Player;
 class WorldPacket;
@@ -89,7 +88,7 @@ class BattleField
         void InvitePlayerToBattle(Player* player);
         void AcceptInvitePlayerToQueue(Player* player);
         void AcceptInvitePlayerToBattle(Player* player);
-	void CancelInvitePlayerToBattle(Player* player);
+        void CancelInvitePlayerToBattle(Player* player);
         void InviteQueuePlayerToBattle();
 
         void KickFromBattleField(Player* player,uint32 spellid);
