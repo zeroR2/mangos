@@ -12865,6 +12865,7 @@ void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed, bool gen
     MaNGOS::NormalizeMapCoord(y);
 
     GetMotionMaster()->MoveWithSpeed(x, y, z, speed, generatePath, forceDestination);
+    SetFallInformation(0,z);
 }
 
 void Unit::MonsterMoveToDestination(float x, float y, float z, float o, float speed, float height, bool isKnockBack, Unit* target)
@@ -12878,6 +12879,7 @@ void Unit::MonsterMoveToDestination(float x, float y, float z, float o, float sp
         InterruptNonMeleeSpells(false);
     }
 
+    SetFallInformation(0,z);
     GetMotionMaster()->MoveToDestination(x, y, z, o, target, speed, height, 0);
 }
 
@@ -13153,6 +13155,7 @@ void Unit::KnockBackWithAngle(float angle, float horizontalSpeed, float vertical
 {
     if (GetTypeId() == TYPEID_PLAYER)
     {
+        SetFallInformation(0, GetPositionZ());
         ((Player*)this)->GetAntiCheat()->SetImmune(uint32((3 * verticalSpeed / Movement::gravity) * 1000));
         ((Player*)this)->GetSession()->SendKnockBack(angle, horizontalSpeed, verticalSpeed);
     }
@@ -13171,6 +13174,7 @@ void Unit::KnockBackWithAngle(float angle, float horizontalSpeed, float vertical
         float fy = oy + dis * vsin;
         float fz = oz;
 
+        SetFallInformation(0, fz);
         MonsterMoveToDestination(fx,fy,fz,GetOrientation(),horizontalSpeed,max_height, true);
     }
 }
