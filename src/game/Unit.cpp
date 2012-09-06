@@ -6891,20 +6891,21 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
     return true;
 }
 
-void Unit::AttackedBy(Unit *attacker)
+void Unit::AttackedBy(Unit* attacker)
 {
     if (IsFriendlyTo(attacker) || attacker->IsFriendlyTo(this))
         return;
 
-    // trigger AI reaction
-    if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->AI())
+    if (!isInCombat() || !getVictim())
     {
-        ((Creature*)this)->AI()->AttackedBy(attacker);
+        // trigger AI reaction
+        if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->AI())
+            ((Creature*)this)->AI()->AttackedBy(attacker);
     }
 
     if (!isInCombat())
     {
-        if (GetTypeId() == TYPEID_UNIT  && !GetObjectGuid().IsPet())
+        if (CanHaveThreatList())
             AddThreat(attacker);
 
         if (Player* attackedPlayer = GetCharmerOrOwnerPlayerOrPlayerItself())
@@ -6916,11 +6917,8 @@ void Unit::AttackedBy(Unit *attacker)
 
         SetInCombatWith(attacker);
         attacker->SetInCombatWith(this);
-    }
 
-    // do not pet reaction for self inflicted damage (like environmental)
-    if (attacker == this)
-        return;
+    }
 
     // trigger pet AI reaction
     if (attacker->IsHostileTo(this))
@@ -6933,6 +6931,8 @@ void Unit::AttackedBy(Unit *attacker)
                     _pet->AttackedBy(attacker);
         }
     }
+
+    // Place reaction on attacks in combat state here
 }
 
 bool Unit::AttackStop(bool targetSwitch /*=false*/)
@@ -9482,7 +9482,7 @@ void Unit::ClearInCombat()
 
 bool Unit::isTargetableForAttack(bool inverseAlive /*=false*/) const
 {
-    if (GetTypeId()==TYPEID_PLAYER && ((Player *)this)->isGameMaster())
+    if (GetTypeId() == TYPEID_PLAYER && ((Player*)this)->isGameMaster())
         return false;
 
     if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE))
