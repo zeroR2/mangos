@@ -9859,6 +9859,13 @@ bool Unit::canDetectInvisibilityOf(Unit const* u) const
 
 void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
 {
+    bool isPlayerPet = false;
+    if (GetTypeId() == TYPEID_UNIT)
+    {
+        Creature* pCreature = (Creature*)this;
+        if ((pCreature->IsPet() && pCreature->GetOwnerGuid().IsPlayer()))
+            isPlayerPet = true;
+    }
     // not in combat pet have same speed as owner
     switch(mtype)
     {
@@ -9888,7 +9895,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
             break;
         case MOVE_RUN:
         {
-            if (GetTypeId() == TYPEID_UNIT)
+            if (GetTypeId() == TYPEID_UNIT && !isPlayerPet)
                 ratio *= ((Creature*)this)->GetCreatureInfo()->speed_run;
 
             if (IsMounted()) // Use on mount auras
@@ -10000,7 +10007,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
             speed = min_speed;
     }
 
-    if (GetTypeId() == TYPEID_UNIT)
+    if (GetTypeId() == TYPEID_UNIT && !isPlayerPet)
     {
         switch(mtype)
         {
@@ -11773,7 +11780,7 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
             else
                 SendPetAIReaction();
         }
-/*
+
         if (unit_target && owner && !owner->IsFriendlyTo(unit_target) && !HasAuraType(SPELL_AURA_MOD_POSSESS))
         {
             // This is true if pet has no target or has target but targets differs.
@@ -11788,7 +11795,7 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
                     pet->AI()->AttackStart(unit_target);
             }
         }
-*/
+
         spell->prepare(&tmpTargets, triggeredByAura);
     }
     else if (pet)
