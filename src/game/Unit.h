@@ -1690,7 +1690,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         bool isCharmed() const { return !GetCharmerGuid().IsEmpty(); }
 
-        CharmInfo* GetCharmInfo()       { return m_charmInfo; }
+        CharmInfo* GetCharmInfo() { return m_charmInfo; }
         uint8  GetCharmState(CharmStateType type) const { return m_charmInfo ? m_charmInfo->GetState(type) : 0; };
         CharmInfo* InitCharmInfo(Unit* charm);
 
@@ -1932,7 +1932,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         SpellAuraHolderMap&       GetSpellAuraHolderMap()       { return m_spellAuraHolders; }
         SpellAuraHolderMap const& GetSpellAuraHolderMap() const { return m_spellAuraHolders; }
-        AuraList           const& GetAurasByType(AuraType type) const  { return m_modAuras[type]; }
+        AuraList           const& GetAurasByType(AuraType type) const { return m_modAuras[type]; }
         AuraList&                 GetAurasByType(AuraType type) { return m_modAuras[type]; }
         void ApplyAuraProcTriggerDamage(Aura* aura, bool apply);
 
@@ -2176,7 +2176,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void _ExitVehicle();
 
         void ChangeSeat(int8 seatId, bool next = true);
-        VehicleKitPtr GetVehicle()    const { return m_pVehicle; }
+        VehicleKitPtr GetVehicle() const { return m_pVehicle; }
         VehicleKitPtr GetVehicleKit() const { return m_pVehicleKit; }
         void RemoveVehicleKit();
 
@@ -2242,8 +2242,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         Transport* m_transport;
 
         VehicleInfo* m_vehicleInfo;
-        VehicleKitPtr  m_pVehicleKit;
-        VehicleKitPtr  m_pVehicle;
+        VehicleKitPtr m_pVehicleKit;
+        VehicleKitPtr m_pVehicle;
 
         void DisableSpline();
         bool m_isCreatureLinkingTrigger;

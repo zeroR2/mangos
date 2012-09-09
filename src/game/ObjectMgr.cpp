@@ -5990,9 +5990,9 @@ void ObjectMgr::LoadAreaTriggerTeleports()
 /*
  * Searches for the areatrigger which teleports players out of the given map (only direct to continent)
  */
-AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
+AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 mapId) const
 {
-    const MapEntry *mapEntry = sMapStore.LookupEntry(map_id);
+    const MapEntry* mapEntry = sMapStore.LookupEntry(mapId);
     if (!mapEntry || mapEntry->ghost_entrance_map < 0)
         return NULL;
 
@@ -6016,14 +6016,14 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 map_id) const
 /**
  * Searches for the areatrigger which teleports players to the given map
  */
-AreaTrigger const* ObjectMgr::GetMapEntranceTrigger(uint32 Map) const
+AreaTrigger const* ObjectMgr::GetMapEntranceTrigger(uint32 mapId) const
 {
     AreaTrigger const* compareTrigger = NULL;
     MapEntry const* mEntry = sMapStore.LookupEntry(Map);
 
     for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)
     {
-        if(itr->second.target_mapId == Map)
+        if (itr->second.target_mapId == mapId)
         {
             if (mEntry->Instanceable())
             {
