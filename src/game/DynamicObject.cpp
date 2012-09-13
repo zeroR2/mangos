@@ -43,8 +43,7 @@ void DynamicObject::AddToWorld()
     ///- Register the dynamicObject for guid lookup
     if (!IsInWorld())
     {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().insert<DynamicObject>(GetObjectGuid(), (DynamicObject*)this);
+        GetMap()->InsertObject((WorldObject*)this);
     }
 
     Object::AddToWorld();
@@ -55,8 +54,7 @@ void DynamicObject::RemoveFromWorld()
     ///- Remove the dynamicObject from the accessor
     if (IsInWorld())
     {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().erase<DynamicObject>(GetObjectGuid(), (DynamicObject*)NULL);
+        GetMap()->EraseObject(GetObjectGuid());
         GetViewPoint().Event_RemovedFromWorld();
     }
 
