@@ -2496,6 +2496,9 @@ bool SpellMgr::IsTargetMatchedWithCreatureType(SpellEntry const* pSpellInfo, Uni
 {
     uint32 spellCreatureTargetMask = pSpellInfo->TargetCreatureType;
 
+    if (IsSpellWithCasterSourceTargetsOnly(pSpellInfo))
+        return true;
+
     // Curse of Doom: not find another way to fix spell target check :/
     if (pSpellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && pSpellInfo->Category == 1179)
     {
