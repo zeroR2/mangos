@@ -44,11 +44,11 @@ struct AchievementEntry
     uint32    ID;                                           // 0        m_ID
     uint32    factionFlag;                                  // 1        m_faction -1=all, 0=horde, 1=alliance
     uint32    mapID;                                        // 2        m_instance_id -1=none
-    //uint32 parentAchievement;                             // 3        m_supercedes its Achievement parent (can`t start while parent uncomplete, use its Criteria if don`t have own, use its progress on begin)
-    char *name[16];                                         // 4-19     m_title_lang
-    //uint32 name_flags;                                    // 20 string flags
-    //char *description[16];                                // 21-36    m_description_lang
-    //uint32 desc_flags;                                    // 37 string flags
+    // uint32 parentAchievement;                            // 3        m_supercedes its Achievement parent (can`t start while parent uncomplete, use its Criteria if don`t have own, use its progress on begin)
+    char* name[16];                                         // 4-19     m_title_lang
+    // uint32 name_flags;                                   // 20 string flags
+    // char *description[16];                               // 21-36    m_description_lang
+    // uint32 desc_flags;                                   // 37 string flags
     uint32    categoryId;                                   // 38       m_category
     uint32    points;                                       // 39       m_points
     //uint32 OrderInCategory;                               // 40       m_ui_order
@@ -2098,7 +2098,7 @@ struct SpellEntry
 
     bool IsFitToFamilyMask(uint64 familyFlags, uint32 familyFlags2 = 0) const
     {
-        return SpellFamilyFlags.IsFitToFamilyMask(familyFlags, familyFlags2);
+        return GetSpellFamilyFlags().IsFitToFamilyMask(familyFlags, familyFlags2);
     }
 
     bool IsFitToFamily(SpellFamily family, uint64 familyFlags, uint32 familyFlags2 = 0) const
@@ -2108,7 +2108,7 @@ struct SpellEntry
 
     bool IsFitToFamilyMask(ClassFamilyMask const& mask) const
     {
-        return SpellFamilyFlags.IsFitToFamilyMask(mask);
+        return GetSpellFamilyFlags().IsFitToFamilyMask(mask);
     }
 
     bool IsFitToFamily(SpellFamily family, ClassFamilyMask const& mask) const
@@ -2120,61 +2120,61 @@ struct SpellEntry
     template <SpellFamily family, CFM_ARGS_1>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_1>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_1>();
     }
 
     template <SpellFamily family, CFM_ARGS_2>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_2>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_2>();
     }
 
     template <SpellFamily family, CFM_ARGS_3>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_3>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_3>();
     }
 
     template <SpellFamily family, CFM_ARGS_4>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_4>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_4>();
     }
 
     template <SpellFamily family, CFM_ARGS_5>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_5>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_5>();
     }
 
     template <SpellFamily family, CFM_ARGS_6>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_6>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_6>();
     }
 
     template <SpellFamily family, CFM_ARGS_7>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_7>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_7>();
     }
 
     template <SpellFamily family, CFM_ARGS_8>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_8>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_8>();
     }
 
     template <SpellFamily family, CFM_ARGS_9>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_9>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_9>();
     }
 
     template <SpellFamily family, CFM_ARGS_10>
     bool IsFitToFamily() const
     {
-        return SpellFamily(SpellFamilyName) == family && SpellFamilyFlags.test<CFM_VALUES_10>();
+        return SpellFamily(SpellFamilyName) == family && GetSpellFamilyFlags().test<CFM_VALUES_10>();
     }
 
     inline bool HasAttribute(SpellAttributes attribute) const { return Attributes & attribute; }
@@ -2195,6 +2195,7 @@ struct SpellEntry
     inline uint32 GetEffectImplicitTargetBByIndex(SpellEffectIndex j) const { return EffectImplicitTargetB[j];};
     inline uint32 GetEffectApplyAuraNameByIndex(SpellEffectIndex j) const   { return EffectApplyAuraName[j];};
     inline uint32 GetEffectMiscValue(SpellEffectIndex j) const              { return EffectMiscValue[j];};
+    inline ClassFamilyMask GetSpellFamilyFlags() const                      { return SpellFamilyFlags; };
 
     SpellEffectEntry const* GetSpellEffect(SpellEffectIndex j) const;
 
@@ -2206,7 +2207,6 @@ struct SpellEntry
         template<typename T>
         bool IsFitToFamilyMask(SpellFamily family, T t) const;
 };
-
 
 // A few fields which are required for automated convertion
 // NOTE that these fields are count by _skipping_ the fields that are unused!

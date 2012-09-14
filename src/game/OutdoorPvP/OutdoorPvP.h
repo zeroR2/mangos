@@ -53,7 +53,7 @@ class OutdoorPvP
 
     public:
         OutdoorPvP() {}
-        ~OutdoorPvP() {}
+        virtual ~OutdoorPvP() {}
 
         // called when the zone is initialized
         virtual void FillInitialWorldStates(uint32 zoneId) {}
@@ -86,8 +86,8 @@ class OutdoorPvP
         // update - called by the OutdoorPvPMgr
         virtual void Update(uint32 /*diff*/) {}
 
-        // handle npc/player kill
-        void HandlePlayerKill(Player* killer, Unit* victim);
+        // Handle player kill
+        void HandlePlayerKill(Player* killer, Player* victim);
 
         // Wrapper for initial (per-script) WorldState filling, once per zone
         void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32 value);
@@ -111,7 +111,7 @@ class OutdoorPvP
         virtual void SendRemoveWorldStates(Player* /*player*/) {}
 
         // handle npc/player kill
-        virtual void HandlePlayerKillInsideArea(Player* /*killer*/, Unit* /*victim*/) {}
+        virtual void HandlePlayerKillInsideArea(Player* /*killer*/) {}
 
         // applies buff to a team inside the specific zone
         void BuffTeam(Team team, uint32 spellId, bool remove = false);

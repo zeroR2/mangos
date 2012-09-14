@@ -383,8 +383,6 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 //== Player ====================================================
 
-UpdateMask Player::updateVisualBits;
-
 Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m_achievementMgr(this), m_reputationMgr(this)
 {
     m_speakTime = 0;
@@ -593,7 +591,7 @@ Player::~Player ()
     //m_social = NULL;
 
     // Clear chache need only if player true loaded, not in broken state
-    if (!GetObjectGuid().IsEmpty())
+    if (m_uint32Values && !GetObjectGuid().IsEmpty())
         sAccountMgr.ClearPlayerDataCache(GetObjectGuid());
 
     // Note: buy back item already deleted from DB when player was saved
@@ -975,10 +973,6 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
 {
     if(!isAlive() || isGameMaster())
         return 0;
-
-    // Absorb, resist some environmental damage type
-    uint32 absorb = 0;
-    uint32 resist = 0;
 
     //16455 lava, 16456 slime
     uint32 spellID = 0;
@@ -4076,125 +4070,6 @@ Mail* Player::GetMail(uint32 id)
     return NULL;
 }
 
-void Player::_SetCreateBits(UpdateMask *updateMask, Player *target) const
-{
-    if (target == this)
-    {
-        Object::_SetCreateBits(updateMask, target);
-    }
-    else
-    {
-        for(uint16 index = 0; index < m_valuesCount; index++)
-        {
-            if (GetUInt32Value(index) != 0 && updateVisualBits.GetBit(index))
-                updateMask->SetBit(index);
-        }
-    }
-}
-
-void Player::_SetUpdateBits(UpdateMask *updateMask, Player *target) const
-{
-    if (target == this)
-    {
-        Object::_SetUpdateBits(updateMask, target);
-    }
-    else
-    {
-        Object::_SetUpdateBits(updateMask, target);
-        *updateMask &= updateVisualBits;
-    }
-}
-
-void Player::InitVisibleBits()
-{
-    updateVisualBits.SetCount(PLAYER_END);
-
-    updateVisualBits.SetBit(OBJECT_FIELD_GUID);
-    updateVisualBits.SetBit(OBJECT_FIELD_TYPE);
-    updateVisualBits.SetBit(OBJECT_FIELD_ENTRY);
-    updateVisualBits.SetBit(OBJECT_FIELD_SCALE_X);
-    updateVisualBits.SetBit(UNIT_FIELD_CHARM + 0);
-    updateVisualBits.SetBit(UNIT_FIELD_CHARM + 1);
-    updateVisualBits.SetBit(UNIT_FIELD_SUMMON + 0);
-    updateVisualBits.SetBit(UNIT_FIELD_SUMMON + 1);
-    updateVisualBits.SetBit(UNIT_FIELD_CHARMEDBY + 0);
-    updateVisualBits.SetBit(UNIT_FIELD_CHARMEDBY + 1);
-    updateVisualBits.SetBit(UNIT_FIELD_TARGET + 0);
-    updateVisualBits.SetBit(UNIT_FIELD_TARGET + 1);
-    updateVisualBits.SetBit(UNIT_FIELD_CHANNEL_OBJECT + 0);
-    updateVisualBits.SetBit(UNIT_FIELD_CHANNEL_OBJECT + 1);
-    updateVisualBits.SetBit(UNIT_FIELD_BYTES_0);
-    updateVisualBits.SetBit(UNIT_FIELD_HEALTH);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER1);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER2);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER3);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER4);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER5);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER6);
-    updateVisualBits.SetBit(UNIT_FIELD_POWER7);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXHEALTH);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER1);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER2);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER3);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER4);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER5);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER6);
-    updateVisualBits.SetBit(UNIT_FIELD_MAXPOWER7);
-    updateVisualBits.SetBit(UNIT_FIELD_LEVEL);
-    updateVisualBits.SetBit(UNIT_FIELD_FACTIONTEMPLATE);
-    updateVisualBits.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID + 0);
-    updateVisualBits.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID + 1);
-    updateVisualBits.SetBit(UNIT_VIRTUAL_ITEM_SLOT_ID + 2);
-    updateVisualBits.SetBit(UNIT_FIELD_FLAGS);
-    updateVisualBits.SetBit(UNIT_FIELD_FLAGS_2);
-    updateVisualBits.SetBit(UNIT_FIELD_AURASTATE);
-    updateVisualBits.SetBit(UNIT_FIELD_BASEATTACKTIME + 0);
-    updateVisualBits.SetBit(UNIT_FIELD_BASEATTACKTIME + 1);
-    updateVisualBits.SetBit(UNIT_FIELD_BOUNDINGRADIUS);
-    updateVisualBits.SetBit(UNIT_FIELD_COMBATREACH);
-    updateVisualBits.SetBit(UNIT_FIELD_DISPLAYID);
-    updateVisualBits.SetBit(UNIT_FIELD_NATIVEDISPLAYID);
-    updateVisualBits.SetBit(UNIT_FIELD_MOUNTDISPLAYID);
-    updateVisualBits.SetBit(UNIT_FIELD_BYTES_1);
-    updateVisualBits.SetBit(UNIT_FIELD_PETNUMBER);
-    updateVisualBits.SetBit(UNIT_FIELD_PET_NAME_TIMESTAMP);
-    updateVisualBits.SetBit(UNIT_DYNAMIC_FLAGS);
-    updateVisualBits.SetBit(UNIT_CHANNEL_SPELL);
-    updateVisualBits.SetBit(UNIT_MOD_CAST_SPEED);
-    updateVisualBits.SetBit(UNIT_FIELD_BASE_MANA);
-    updateVisualBits.SetBit(UNIT_FIELD_BYTES_2);
-    updateVisualBits.SetBit(UNIT_FIELD_HOVERHEIGHT);
-
-    updateVisualBits.SetBit(PLAYER_DUEL_ARBITER + 0);
-    updateVisualBits.SetBit(PLAYER_DUEL_ARBITER + 1);
-    updateVisualBits.SetBit(PLAYER_FLAGS);
-    updateVisualBits.SetBit(PLAYER_GUILDID);
-    updateVisualBits.SetBit(PLAYER_GUILDRANK);
-    updateVisualBits.SetBit(PLAYER_BYTES);
-    updateVisualBits.SetBit(PLAYER_BYTES_2);
-    updateVisualBits.SetBit(PLAYER_BYTES_3);
-    updateVisualBits.SetBit(PLAYER_DUEL_TEAM);
-    updateVisualBits.SetBit(PLAYER_GUILD_TIMESTAMP);
-    updateVisualBits.SetBit(UNIT_NPC_FLAGS);
-
-    // PLAYER_QUEST_LOG_x also visible bit on official (but only on party/raid)...
-    for(uint16 i = PLAYER_QUEST_LOG_1_1; i < PLAYER_QUEST_LOG_25_2; i += MAX_QUEST_OFFSET)
-        updateVisualBits.SetBit(i);
-
-    // Players visible items are not inventory stuff
-    for(uint16 i = 0; i < EQUIPMENT_SLOT_END; ++i)
-    {
-        uint32 offset = i * 2;
-
-        // item entry
-        updateVisualBits.SetBit(PLAYER_VISIBLE_ITEM_1_ENTRYID + offset);
-        // enchant
-        updateVisualBits.SetBit(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + offset);
-    }
-
-    updateVisualBits.SetBit(PLAYER_CHOSEN_TITLE);
-}
-
 void Player::BuildCreateUpdateBlockForPlayer( UpdateData *data, Player *target ) const
 {
     if (target == this)
@@ -7169,16 +7044,18 @@ void Player::UpdateArea(uint32 newArea)
 
 bool Player::IsOutdoorPvPActive()
 {
-    return CanUseOutdoorCapturePoint();
+    return CanUseCapturePoint();
 }
 
-bool Player::CanUseOutdoorCapturePoint()
+bool Player::CanUseCapturePoint()
 {
-    return CanUseCapturePoint() &&
-        (IsPvP() || sWorld.IsPvPRealm()) &&
-        !HasMovementFlag(MOVEFLAG_FLYING) &&
-        !IsTaxiFlying() &&
-        !isGameMaster();
+    return isAlive() &&                                     // living
+           !HasStealthAura() &&                             // not stealthed
+           !HasInvisibilityAura() &&                        // visible
+           (IsPvP() || sWorld.IsPvPRealm()) &&
+           !HasMovementFlag(MOVEFLAG_FLYING) &&
+           !IsTaxiFlying() &&
+           !isGameMaster();
 }
 
 void Player::UpdateZone(uint32 newZone, uint32 newArea)
@@ -11343,7 +11220,6 @@ Item* Player::StoreItem( ItemPosCountVec const& dest, Item* pItem, bool update )
         return NULL;
 
     Item* lastItem = pItem;
-    uint32 entry = pItem->GetEntry();
 
     for(ItemPosCountVec::const_iterator itr = dest.begin(); itr != dest.end(); )
     {
@@ -13747,32 +13623,33 @@ uint32 Player::GetGossipTextId(uint32 menuId, WorldObject* pSource)
     if (!menuId)
         return textId;
 
-    GossipMenusMapBounds pMenuBounds = sObjectMgr.GetGossipMenusMapBounds(menuId);
+    uint32 scriptId = 0;
+    uint32 lastConditionId = 0;
 
+    GossipMenusMapBounds pMenuBounds = sObjectMgr.GetGossipMenusMapBounds(menuId);
     for (GossipMenusMap::const_iterator itr = pMenuBounds.first; itr != pMenuBounds.second; ++itr)
     {
-        if (itr->second.conditionId && sObjectMgr.IsPlayerMeetToNEWCondition(this, itr->second.conditionId))
+        // Take the text that has the highest conditionId of all fitting
+        // TODO: Simplify logic to (!itr->second.conditionId && !lastConditionId) || <lineBelow>)
+        if (itr->second.conditionId > lastConditionId && sObjectMgr.IsPlayerMeetToNEWCondition(this, itr->second.conditionId))
         {
+            lastConditionId = itr->second.conditionId;
             textId = itr->second.text_id;
-
-            // Start related script
-            if (itr->second.script_id)
-                GetMap()->ScriptsStart(sGossipScripts, itr->second.script_id, this, pSource);
-            break;
+            scriptId = itr->second.script_id;
         }
-        else if (!itr->second.conditionId)
-    {
-        if (sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_1) && sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_2))
+        else if (!itr->second.conditionId && !lastConditionId)
         {
-            textId = itr->second.text_id;
-
-            // Start related script
-            if (itr->second.script_id)
-                GetMap()->ScriptsStart(sGossipScripts, itr->second.script_id, this, pSource);
-            break;
+            if (sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_1) && sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_2))
+            {
+                textId = itr->second.text_id;
+                scriptId = itr->second.script_id;
+            }
         }
     }
-    }
+
+    // Start related script
+    if (scriptId)
+        GetMap()->ScriptsStart(sGossipScripts, scriptId, this, pSource);
 
     return textId;
 }
@@ -16016,7 +15893,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
 
     // player bounded instance saves loaded in _LoadBoundInstances, group versions at group loading
     DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(savedLocation.mapid);
-    Map* targetMap = sMapMgr.FindMap(savedLocation.mapid, state ? state->GetInstanceId() : 0);
+//    Map* targetMap = sMapMgr.FindMap(savedLocation.mapid, state ? state->GetInstanceId() : 0);
 
     if (m_bgData.bgInstanceID)                              //saved in BattleGround
     {
@@ -19354,7 +19231,7 @@ void Player::AddSpellMod(Aura* aura, bool apply)
     Modifier const* mod = aura->GetModifier();
     uint16 Opcode= (mod->m_auraname == SPELL_AURA_ADD_FLAT_MODIFIER) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
 
-    for(int eff = 0; eff < 96; ++eff)
+    for (uint8 eff = 0; eff < 96; ++eff)
     {
         if (aura->GetAuraSpellClassMask().test(eff))
         {
@@ -19367,7 +19244,10 @@ void Player::AddSpellMod(Aura* aura, bool apply)
                 if ((*itr)->GetModifier()->m_auraname == mod->m_auraname && ((*itr)->GetAuraSpellClassMask().test(eff)))
                     val += (*itr)->GetModifier()->m_amount;
             }
-            val += apply ? mod->m_amount : -(mod->m_amount);
+
+            // Not need manually remove m_amount from total value - his already removed from calculation due to removed from SpellAuraHolder (IsEmpty() method)
+            val += apply ? mod->m_amount : 0;
+
             WorldPacket data(Opcode, (1+1+4));
             data << uint8(eff);
             data << uint8(mod->m_miscvalue);
@@ -21019,18 +20899,8 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
 
 void Player::SendTransferAborted(uint32 mapid, uint8 reason, uint8 arg)
 {
-    WorldPacket data(SMSG_TRANSFER_ABORTED, 4+2);
-    data << uint32(mapid);
-    data << uint8(reason);                                  // transfer abort reason
-    switch(reason)
-    {
-        case TRANSFER_ABORT_INSUF_EXPAN_LVL:
-        case TRANSFER_ABORT_DIFFICULTY:
-        case TRANSFER_ABORT_UNIQUE_MESSAGE:
-            data << uint8(arg);
-            break;
-    }
-    GetSession()->SendPacket(&data);
+    if (GetSession())
+        GetSession()->SendTransferAborted(mapid, reason, arg);
 }
 
 void Player::SendInstanceResetWarning( uint32 mapid, Difficulty difficulty, uint32 time )
@@ -21243,9 +21113,10 @@ void Player::SendAurasForTarget(Unit *target)
     Unit::VisibleAuraMap const& visibleAuras = target->GetVisibleAuras();
     for (Unit::VisibleAuraMap::const_iterator itr = visibleAuras.begin(); itr != visibleAuras.end(); ++itr)
     {
-        SpellAuraHolderConstBounds bounds = target->GetSpellAuraHolderBounds(itr->second);
-        for (SpellAuraHolderMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
-            iter->second->BuildUpdatePacket(data);
+        if (!itr->second)
+            continue;
+
+        itr->second->BuildUpdatePacket(data);
     }
 
     GetSession()->SendPacket(&data);
@@ -22273,13 +22144,6 @@ bool Player::CanUseBattleGroundObject()
             !HasInvisibilityAura() &&                       // visible
             !isTotalImmune() &&                             // vulnerable (not immune)
             !HasAura(SPELL_RECENTLY_DROPPED_FLAG, EFFECT_INDEX_0));
-}
-
-bool Player::CanUseCapturePoint()
-{
-    return (isAlive() &&                                    // living
-            !HasStealthAura() &&                            // not stealthed
-            !HasInvisibilityAura());                        // visible
 }
 
 uint32 Player::GetBarberShopCost(uint8 newhairstyle, uint8 newhaircolor, uint8 newfacialhair, uint8 newskintone)
@@ -23907,9 +23771,9 @@ void Player::SendDuelCountdown(uint32 counter)
     GetSession()->SendPacket(&data);
 }
 
-bool Player::IsImmuneToSpell(SpellEntry const* spellInfo) const
+bool Player::IsImmuneToSpell(SpellEntry const* spellInfo, bool isFriendly) const
 {
-    return Unit::IsImmuneToSpell(spellInfo);
+    return Unit::IsImmuneToSpell(spellInfo, isFriendly);
 }
 
 bool Player::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const
@@ -24182,16 +24046,16 @@ void Player::LoadAccountLinkedState()
         if (referredAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS))
             sLog.outError("Player:RAF:Warning: loaded %u referred accounts instead of %u for player %s",referredAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS),GetObjectGuid().GetString().c_str());
         else
-            DEBUG_LOG("Player:RAF: loaded %u referred accounts for player %u",referredAccounts->size(),GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Player:RAF: loaded %u referred accounts for player %s",referredAccounts->size(),GetObjectGuid().GetString().c_str());
     }
 
     RafLinkedList const* referalAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
     if (referalAccounts)
     {
         if (referalAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS))
-            sLog.outError("Player:RAF:Warning: loaded %u referal accounts instead of %u for player %u",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
+            sLog.outError("Player:RAF:Warning: loaded %u referal accounts instead of %u for player %s",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
         else
-            DEBUG_LOG("Player:RAF: loaded %u referal accounts for player %u",referalAccounts->size(),GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Player:RAF: loaded %u referal accounts for player %s",referalAccounts->size(),GetObjectGuid().GetString().c_str());
     }
 }
 
@@ -24479,7 +24343,7 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
         case AREA_LOCKSTATUS_QUEST_NOT_COMPLETED:
             if(at->target_mapId == 269)
             {
-                GetSession()->SendAreaTriggerMessage("%s", at->requiredFailedText.c_str());
+                GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(LANG_TELEREQ_QUEST_BLACK_MORASS));
                 return false;
             }
             // No break here!

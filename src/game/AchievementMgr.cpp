@@ -37,12 +37,12 @@
 #include "Language.h"
 #include "MapManager.h"
 #include "BattleGround/BattleGround.h"
-#include "BattleGroundAB.h"
-#include "BattleGroundAV.h"
-#include "BattleGroundEY.h"
-#include "BattleGroundIC.h"
-#include "BattleGroundSA.h"
-#include "BattleGroundWS.h"
+#include "BattleGround/BattleGroundAB.h"
+#include "BattleGround/BattleGroundAV.h"
+#include "BattleGround/BattleGroundEY.h"
+#include "BattleGround/BattleGroundIC.h"
+#include "BattleGround/BattleGroundSA.h"
+#include "BattleGround/BattleGroundWS.h"
 #include "Map.h"
 #include "InstanceData.h"
 #include "DBCStructure.h"
@@ -1026,7 +1026,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                         case 156:                           // AB, win while controlling all 5 flags (all nodes)
                         case 784:                           // EY, win while holding 4 bases (all nodes)
                         {
-                            if (!bg->IsAllNodesConrolledByTeam(GetPlayer()->GetTeam()))
+                            if (!bg->IsAllNodesControlledByTeam(GetPlayer()->GetTeam()))
                                 continue;
                             break;
                         }
@@ -2385,7 +2385,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                         {
                             case 211:                    // EY, capture flag while controling all 4 bases
                             {
-                                if (!bg->IsAllNodesConrolledByTeam(GetPlayer()->GetTeam()))
+                                if (!bg->IsAllNodesControlledByTeam(GetPlayer()->GetTeam()))
                                     continue;
                                 break;
                             }

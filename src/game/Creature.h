@@ -512,7 +512,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         bool IsOutOfThreatArea(Unit* pVictim) const;
         void FillGuidsListFromThreatList(GuidVector& guids, uint32 maxamount = 0);
 
-        bool IsImmuneToSpell(SpellEntry const* spellInfo) const;
+        bool IsImmuneToSpell(SpellEntry const* spellInfo, bool isFriendly) const;
         // redefine Unit::IsImmuneToSpell
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const;
         // redefine Unit::IsImmuneToSpellEffect
@@ -537,7 +537,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         uint8 getRace() const;
 
-        bool IsInEvadeMode() const;
+        bool IsInEvadeMode() const override;
 
         bool AIM_Initialize();
 
@@ -553,7 +553,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
             return (getLevel() / 2 + uint32(GetStat(STAT_STRENGTH) / 20));
         }
 
-        SpellSchoolMask GetMeleeDamageSchoolMask() const { return m_meleeDamageSchoolMask; }
+        SpellSchoolMask GetMeleeDamageSchoolMask() const override { return m_meleeDamageSchoolMask; }
         void SetMeleeDamageSchool(SpellSchools school) { m_meleeDamageSchoolMask = SpellSchoolMask(1 << school); }
 
         void _AddCreatureSpellCooldown(uint32 spell_id, time_t end_time);
@@ -771,53 +771,6 @@ class MANGOS_DLL_SPEC Creature : public Unit
     private:
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
-};
-
-class AssistDelayEvent : public BasicEvent
-{
-    public:
-        AssistDelayEvent(ObjectGuid victim, Unit& owner, std::list<Creature*> const& assistants);
-
-        bool Execute(uint64 e_time, uint32 p_time);
-    private:
-        AssistDelayEvent();
-
-        ObjectGuid m_victimGuid;
-        GuidVector m_assistantGuids;
-        Unit&      m_owner;
-};
-
-class ForcedDespawnDelayEvent : public BasicEvent
-{
-    public:
-        ForcedDespawnDelayEvent(Creature& owner) : BasicEvent(), m_owner(owner) { }
-        bool Execute(uint64 e_time, uint32 p_time);
-
-    private:
-        Creature& m_owner;
-};
-
-class AttackResumeEvent : public BasicEvent
-{
-    public:
-        AttackResumeEvent(Unit& owner) : BasicEvent(), m_owner(owner), b_force(false) {};
-        AttackResumeEvent(Unit& owner, bool force) : m_owner(owner), b_force(force) {};
-        bool Execute(uint64 e_time, uint32 p_time);
-    private:
-        AttackResumeEvent();
-        Unit&   m_owner;
-        bool    b_force;
-};
-
-class EvadeDelayEvent : public BasicEvent
-{
-    public:
-        EvadeDelayEvent(Unit& owner, bool force = false) : BasicEvent(), m_owner(owner), b_force(force) {};
-        bool Execute(uint64 e_time, uint32 p_time);
-    private:
-        EvadeDelayEvent();
-        Unit&   m_owner;
-        bool    b_force;
 };
 
 #endif
