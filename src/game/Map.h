@@ -216,7 +216,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         // can't be NULL for loaded map
         MapPersistentState* GetPersistentState() const;
 
-        void AddObjectToRemoveList(WorldObject *obj);
+        void AddObjectToRemoveList(WorldObject *obj, bool immediateCleanup = false);
         void RemoveObjectFromRemoveList(WorldObject* obj);
 
         void UpdateObjectVisibility(WorldObject* obj, Cell cell, CellPair cellpair);
@@ -253,8 +253,13 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
         WorldObject* GetWorldObject(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
 
-        typedef TypeUnorderedMapContainer<AllMapStoredObjectTypes, ObjectGuid> MapStoredObjectTypesContainer;
-        MapStoredObjectTypesContainer& GetObjectsStore() { return m_objectsStore; }
+        // Container maked without any locks (for faster search), need make external locks!
+        typedef UNORDERED_MAP<ObjectGuid, WorldObject*> MapStoredObjectTypesContainer;
+        MapStoredObjectTypesContainer const& GetObjectsStore() { return m_objectsStore; }
+        void InsertObject(WorldObject* object);
+        void EraseObject(WorldObject* object);
+        void EraseObject(ObjectGuid guid);
+        WorldObject* FindObject(ObjectGuid guid);
 
         void AddUpdateObject(Object *obj)
         {
