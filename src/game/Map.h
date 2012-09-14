@@ -253,13 +253,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
         WorldObject* GetWorldObject(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
 
-        // Container maked without any locks (for faster search), need make external locks!
-        typedef UNORDERED_MAP<ObjectGuid, WorldObject*> MapStoredObjectTypesContainer;
-        MapStoredObjectTypesContainer const& GetObjectsStore() { return m_objectsStore; }
-        void InsertObject(WorldObject* object);
-        void EraseObject(WorldObject* object);
-        void EraseObject(ObjectGuid guid);
-        WorldObject* FindObject(ObjectGuid guid);
+        typedef TypeUnorderedMapContainer<AllMapStoredObjectTypes, ObjectGuid> MapStoredObjectTypesContainer;
+        MapStoredObjectTypesContainer& GetObjectsStore() { return m_objectsStore; }
 
         void AddUpdateObject(Object *obj)
         {

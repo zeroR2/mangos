@@ -86,7 +86,8 @@ void GameObject::AddToWorld()
     ///- Register the gameobject for guid lookup
     if(!IsInWorld())
     {
-        GetMap()->InsertObject((WorldObject*)this);
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+        GetMap()->GetObjectsStore().insert<GameObject>(GetObjectGuid(), (GameObject*)this);
     }
 
     if (m_model)
@@ -121,8 +122,11 @@ void GameObject::RemoveFromWorld()
             }
         }
 
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+
+        GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)NULL);
+
         EnableCollision(false);
-        GetMap()->EraseObject(GetObjectGuid());
     }
 
     if (m_model)

@@ -168,21 +168,20 @@ void Creature::AddToWorld()
     ///- Register the creature for guid lookup
     if (!IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
     {
-        GetMap()->InsertObject((WorldObject*)this);
-        Unit::AddToWorld();
-        if (GetVehicleKit())
-            GetVehicleKit()->Reset();
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+        GetMap()->GetObjectsStore().insert<Creature>(GetObjectGuid(), (Creature*)this);
     }
-    else if (!IsInWorld() && GetObjectGuid().IsPet())
+
+    if (IsInWorld() && GetObjectGuid().IsPet())
     {
         DEBUG_LOG("Creature::AddToWorld called, but creature (guid %u) is pet! Crush possible later.", GetObjectGuid().GetCounter());
         ((Pet*)this)->AddToWorld();
     }
-    else if (!IsInWorld())
-    {
-        sLog.outError("Creature::AddToWorld unhandled unit type (guid %s)! Not added to world.", GetObjectGuid() ? GetObjectGuid().GetString().c_str() : "<none>");
-        return;
-    }
+    else
+        Unit::AddToWorld();
+
+    if (GetVehicleKit())
+        GetVehicleKit()->Reset();
 }
 
 void Creature::RemoveFromWorld()
@@ -190,19 +189,17 @@ void Creature::RemoveFromWorld()
     ///- Remove the creature from the accessor
     if (IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
     {
-        GetMap()->EraseObject(GetObjectGuid());
-        Unit::RemoveFromWorld();
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+        GetMap()->GetObjectsStore().erase<Creature>(GetObjectGuid(), (Creature*)NULL);
     }
-    else if (IsInWorld() && GetObjectGuid().IsPet())
+
+    if (IsInWorld() && GetObjectGuid().IsPet())
     {
         DEBUG_LOG("Creature::RemoveFromWorld called, but creature (guid %u) is pet! Crush possible later.", GetObjectGuid().GetCounter());
         ((Pet*)this)->RemoveFromWorld();
     }
-    else if (IsInWorld())
-    {
-        sLog.outError("Creature::RemoveFromWorld unhandled unit type (guid %s)!", GetObjectGuid() ? GetObjectGuid().GetString().c_str() : "<none>");
-        GetMap()->EraseObject(GetObjectGuid());
-    }
+    else
+        Unit::RemoveFromWorld();
 }
 
 void Creature::RemoveCorpse()
