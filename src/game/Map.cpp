@@ -1053,7 +1053,7 @@ inline void Map::setNGrid(NGridType *grid, uint32 x, uint32 y)
 
 void Map::AddObjectToRemoveList(WorldObject *obj)
 {
-    MANGOS_ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
+    MANGOS_ASSERT(obj->GetMapId()==GetId() && obj->GetInstanceId()==GetInstanceId());
 
     obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
 
