@@ -8198,7 +8198,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         }
         // Voracious Appetite && Cannibalize && Carrion Feeder additional check
         case 20577:
-        case 52749:
+        case 52748:
         case 54044:
         {
             if (m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
