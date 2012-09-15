@@ -1094,26 +1094,6 @@ void WorldObject::_Create(ObjectGuid guid, uint32 phaseMask)
     m_phaseMask = phaseMask;
 }
 
-void WorldObject::AddToWorld()
-{
-    MANGOS_ASSERT(m_currMap);
-    if (!IsInWorld())
-    {
-        GetMap()->InsertObject(this);
-        Object::AddToWorld();
-    }
-}
-
-void WorldObject::RemoveFromWorld()
-{
-    MANGOS_ASSERT(m_currMap);
-    if (IsInWorld())
-    {
-        GetMap()->EraseObject(GetObjectGuid());
-        Object::RemoveFromWorld();
-    }
-}
-
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
 {
     return GetMap() ? GetMap()->GetLock(_lockType) : sWorld.GetLock(_lockType);
