@@ -244,23 +244,8 @@ template<class T>
 void
 ObjectGridUnloader::Visit(GridRefManager<T> &m)
 {
-    // remove all cross-reference before deleting
-    for(typename GridRefManager<T>::iterator iter=m.begin(); iter != m.end(); ++iter)
-        iter->getSource()->CleanupsBeforeDelete();
-
-    while(!m.isEmpty())
-    {
-        T *obj = m.getFirst()->getSource();
-        // if option set then object already saved at this moment
-        if(!sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
-            obj->SaveRespawnTime();
-        ///- object must be out of world before delete
-        obj->RemoveFromWorld();
-        ///- Prevent double remove
-        obj->RemoveObjectFromRemoveList();
-        ///- object will get delinked from the manager when deleted
-        delete obj;
-    }
+    for(typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
+        iter->getSource()->AddObjectToRemoveList();
 }
 
 void

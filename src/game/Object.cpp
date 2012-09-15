@@ -1085,13 +1085,34 @@ WorldObject::WorldObject()
 
 void WorldObject::CleanupsBeforeDelete()
 {
-    RemoveFromWorld();
+    // cleaned objects must be removed from world (and map) by separate method call
+    // RemoveFromWorld();
 }
 
 void WorldObject::_Create(ObjectGuid guid, uint32 phaseMask)
 {
     Object::_Create(guid);
     m_phaseMask = phaseMask;
+}
+
+void WorldObject::AddToWorld()
+{
+    MANGOS_ASSERT(m_currMap);
+    if (!IsInWorld())
+    {
+        GetMap()->InsertObject(this);
+        Object::AddToWorld();
+    }
+}
+
+void WorldObject::RemoveFromWorld()
+{
+    MANGOS_ASSERT(m_currMap);
+    if (IsInWorld())
+    {
+        GetMap()->EraseObject(GetObjectGuid());
+        Object::RemoveFromWorld();
+    }
 }
 
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
