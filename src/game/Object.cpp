@@ -122,13 +122,13 @@ Object::~Object( )
     if (IsInWorld())
     {
         ///- Do NOT call RemoveFromWorld here, if the object is a player it will crash
-        sLog.outError("Object::~Object (GUID: %u TypeId: %u) deleted but still in world!!", GetGUIDLow(), GetTypeId());
+        sLog.outError("Object::~Object (%s type %u) deleted but still in world!!", GetObjectGuid() ? GetObjectGuid().GetString().c_str() : "<none>", GetTypeId());
         MANGOS_ASSERT(false);
     }
 
     if (m_objectUpdated)
     {
-        sLog.outError("Object::~Object (GUID: %u TypeId: %u) deleted but still have updated status!!", GetGUIDLow(), GetTypeId());
+        sLog.outError("Object::~Object ((%s type %u) deleted but still have updated status!!", GetObjectGuid() ? GetObjectGuid().GetString().c_str() : "<none>", GetTypeId());
         MANGOS_ASSERT(false);
     }
 
@@ -1083,15 +1083,37 @@ WorldObject::WorldObject()
 {
 }
 
-void WorldObject::CleanupsBeforeDelete()
+void WorldObject::CleanupsBeforeDelete(bool force)
 {
-    RemoveFromWorld();
+    // cleaned objects must be removed from world (and map) by separate method call
+    if (force)
+        RemoveFromWorld();
 }
 
 void WorldObject::_Create(ObjectGuid guid, uint32 phaseMask)
 {
     Object::_Create(guid);
     m_phaseMask = phaseMask;
+}
+
+void WorldObject::AddToWorld()
+{
+    MANGOS_ASSERT(m_currMap);
+    if (!IsInWorld())
+    {
+        GetMap()->InsertObject(this);
+        Object::AddToWorld();
+    }
+}
+
+void WorldObject::RemoveFromWorld()
+{
+    MANGOS_ASSERT(m_currMap);
+    if (IsInWorld())
+    {
+        Object::RemoveFromWorld();
+        GetMap()->EraseObject(GetObjectGuid());
+    }
 }
 
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
