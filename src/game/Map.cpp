@@ -639,7 +639,7 @@ void Map::Remove(Player *player, bool remove)
 
     sLFGMgr.OnPlayerLeaveMap(player, this);
 
-    if (remove)
+    if(remove)
         player->CleanupsBeforeDelete();
     else
         player->RemoveFromWorld();
@@ -654,10 +654,10 @@ void Map::Remove(Player *player, bool remove)
         m_mapRefIter = m_mapRefIter->nocheck_prev();
     player->GetMapRef().unlink();
     CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
-    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
+    if(p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
         // invalid coordinates
-        if (remove)
+        if( remove )
             DeleteFromWorld(player);
         else
             player->TeleportToHomebind();
@@ -674,7 +674,7 @@ void Map::Remove(Player *player, bool remove)
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Remove player %s from grid[%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
-    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
+    NGridType *grid = getNGrid(cell.GridX(), cell.GridY());
     MANGOS_ASSERT(grid != NULL);
 
     RemoveFromGrid(player,grid,cell);
@@ -728,7 +728,7 @@ Map::Remove(T *obj, bool remove)
         if(!sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
             obj->SaveRespawnTime();
 
-        obj->RemoveFromWorld();
+        ((Object*)obj)->RemoveFromWorld();
         obj->ResetMap();
         // Note: In case resurrectable corpse and pet its removed from global lists in own destructor
         delete obj;
@@ -1051,12 +1051,11 @@ inline void Map::setNGrid(NGridType *grid, uint32 x, uint32 y)
     i_grids[x][y] = grid;
 }
 
-void Map::AddObjectToRemoveList(WorldObject* obj, bool immediateCleanup)
+void Map::AddObjectToRemoveList(WorldObject *obj)
 {
-    MANGOS_ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
+    MANGOS_ASSERT(obj->GetMapId()==GetId() && obj->GetInstanceId()==GetInstanceId());
 
-    if (immediateCleanup)
-        obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
+    obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
 
     i_objectsToRemove.insert(obj);
     //DEBUG_LOG("Object (GUID: %u TypeId: %u ) added to removing list.",obj->GetGUIDLow(),obj->GetTypeId());
@@ -1757,49 +1756,6 @@ void Map::ScriptsProcess()
 }
 
 /**
- * Function inserts any object in MapObjectStore
- *
- * @param guid must be WorldObject*
- */
-void Map::InsertObject(WorldObject* object)
-{
-    if (!object)
-        return;
-
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
-    m_objectsStore.insert(MapStoredObjectTypesContainer::value_type(object->GetObjectGuid(), object));
-}
-
-void Map::EraseObject(WorldObject* object)
-{
-    if (!object)
-        return;
-
-    EraseObject(object->GetObjectGuid());
-}
-
-void Map::EraseObject(ObjectGuid guid)
-{
-    if (guid.IsEmpty())
-        return;
-
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
-    m_objectsStore.erase(guid);
-}
-
-WorldObject* Map::FindObject(ObjectGuid guid)
-{
-    if (guid.IsEmpty())
-        return NULL;
-
-    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
-    MapStoredObjectTypesContainer::iterator itr = m_objectsStore.find(guid);
-    return (itr == m_objectsStore.end()) ? NULL : itr->second;
-}
-
-
-
-/**
  * Function return player that in world at CURRENT map
  *
  * Note: This is function preferred if you sure that need player only placed at specific map
@@ -1820,7 +1776,8 @@ Player* Map::GetPlayer(ObjectGuid guid)
  */
 Creature* Map::GetCreature(ObjectGuid guid)
 {
-    return (Creature*)FindObject(guid);
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    return m_objectsStore.find<Creature>(guid, (Creature*)NULL);
 }
 
 /**
@@ -1830,7 +1787,8 @@ Creature* Map::GetCreature(ObjectGuid guid)
  */
 Pet* Map::GetPet(ObjectGuid guid)
 {
-    return (Pet*)FindObject(guid);
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    return m_objectsStore.find<Pet>(guid, (Pet*)NULL);
 }
 
 /**
@@ -1853,15 +1811,14 @@ Corpse* Map::GetCorpse(ObjectGuid guid)
  */
 Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
 {
-    switch (guid.GetHigh())
+    switch(guid.GetHigh())
     {
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
-        case HIGHGUID_PET:
-            return (Creature*)FindObject(guid);
-        default:
-            break;
+        case HIGHGUID_VEHICLE:      return GetCreature(guid);
+        case HIGHGUID_PET:          return GetPet(guid);
+        default:                    break;
     }
+
     return NULL;
 }
 
@@ -1872,7 +1829,8 @@ Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
  */
 GameObject* Map::GetGameObject(ObjectGuid guid)
 {
-    return (GameObject*)FindObject(guid);
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    return m_objectsStore.find<GameObject>(guid, (GameObject*)NULL);
 }
 
 /**
@@ -1882,7 +1840,8 @@ GameObject* Map::GetGameObject(ObjectGuid guid)
  */
 DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
 {
-    return (DynamicObject*)FindObject(guid);
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    return m_objectsStore.find<DynamicObject>(guid, (DynamicObject*)NULL);
 }
 
 /**
@@ -1908,13 +1867,12 @@ WorldObject* Map::GetWorldObject(ObjectGuid guid)
 {
     switch(guid.GetHigh())
     {
-        case HIGHGUID_PLAYER:
-        case HIGHGUID_GAMEOBJECT:
+        case HIGHGUID_PLAYER:       return GetPlayer(guid);
+        case HIGHGUID_GAMEOBJECT:   return GetGameObject(guid);
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
-        case HIGHGUID_PET:
-        case HIGHGUID_DYNAMICOBJECT:
-            return FindObject(guid);
+        case HIGHGUID_VEHICLE:      return GetCreature(guid);
+        case HIGHGUID_PET:          return GetPet(guid);
+        case HIGHGUID_DYNAMICOBJECT:return GetDynamicObject(guid);
         case HIGHGUID_CORPSE:
         {
             // corpse special case, it can be not in world
@@ -1923,8 +1881,7 @@ WorldObject* Map::GetWorldObject(ObjectGuid guid)
         }
         case HIGHGUID_MO_TRANSPORT:
         case HIGHGUID_TRANSPORT:
-        default:
-            break;
+        default:                    break;
     }
 
     return NULL;
