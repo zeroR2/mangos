@@ -11215,7 +11215,7 @@ uint32 Unit::GetCreatePowers( Powers power ) const
 
 void Unit::AddToWorld()
 {
-    WorldObject::AddToWorld();
+    Object::AddToWorld();
     ScheduleAINotify(0);
 }
 
@@ -11238,14 +11238,11 @@ void Unit::RemoveFromWorld()
         GetViewPoint().Event_RemovedFromWorld();
     }
 
-    WorldObject::RemoveFromWorld();
+    Object::RemoveFromWorld();
 }
 
-void Unit::CleanupsBeforeDelete(bool force)
+void Unit::CleanupsBeforeDelete()
 {
-    if (!IsInWorld() && !force)
-        return;
-
     if (m_uint32Values)                                      // only for fully created object
     {
         if (GetVehicle())
@@ -11254,18 +11251,18 @@ void Unit::CleanupsBeforeDelete(bool force)
             RemoveVehicleKit();
         InterruptNonMeleeSpells(true);
         KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList
-        CombatStop();
+        if (IsInWorld())
+            CombatStop();
         ClearComboPointHolders();
-        if (CanHaveThreatList())
-            DeleteThreatList();
-        if (GetTypeId() == TYPEID_PLAYER)
+        DeleteThreatList();
+        if (GetTypeId()==TYPEID_PLAYER)
             getHostileRefManager().setOnlineOfflineState(false);
         else
             getHostileRefManager().deleteReferences();
         RemoveAllAuras(AURA_REMOVE_BY_DELETE);
         GetUnitStateMgr().InitDefaults(false);
     }
-    WorldObject::CleanupsBeforeDelete(force);
+    WorldObject::CleanupsBeforeDelete();
 }
 
 CharmInfo* Unit::InitCharmInfo(Unit *charm)

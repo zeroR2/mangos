@@ -528,9 +528,6 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         void _Create(ObjectGuid guid, uint32 phaseMask);
 
-        void AddToWorld();
-        void RemoveFromWorld();
-
         TransportInfo* GetTransportInfo() const { return m_transportInfo; }
         bool IsBoarded() const { return m_transportInfo != NULL; }
         void SetTransportInfo(TransportInfo* transportInfo) { m_transportInfo = transportInfo; }
@@ -639,7 +636,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         bool isInFront(WorldObject const* target,float distance, float arc = M_PI) const;
         bool isInBack(WorldObject const* target, float distance, float arc = M_PI) const;
 
-        virtual void CleanupsBeforeDelete(bool force = false);                   // used in destructor or explicitly before mass creature delete to remove cross-references to already deleted units
+        virtual void CleanupsBeforeDelete();                // used in destructor or explicitly before mass creature delete to remove cross-references to already deleted units
 
         virtual void SendMessageToSet(WorldPacket *data, bool self);
         virtual void SendMessageToSetInRange(WorldPacket *data, float dist, bool self);
