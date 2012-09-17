@@ -16720,6 +16720,7 @@ void Player::_LoadInventory(QueryResult *result, uint32 timediff)
                         looters.insert(atol(*itr));
                     item->SetSoulboundTradeable(&looters, this, true);
                     m_itemSoulboundTradeable.push_back(item);
+                    delete result;
                 }
             }
 
