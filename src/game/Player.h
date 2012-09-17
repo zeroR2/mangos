@@ -1052,7 +1052,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         explicit Player (WorldSession *session);
         ~Player ();
 
-        void CleanupsBeforeDelete();
+        void CleanupsBeforeDelete(bool force = false);
 
         void AddToWorld();
         void RemoveFromWorld();
