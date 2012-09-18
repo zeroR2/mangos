@@ -33,12 +33,51 @@
 
 // Event processor
 
+WorldObjectEventProcessor::WorldObjectEventProcessor()
+{
+    //m_time = WorldTimer::getMSTime();
+    m_events.clear();
+}
+
 void WorldObjectEventProcessor::Update(uint32 p_time, bool force)
 {
     if (force)
         RenewEvents();
 
-    EventProcessor::Update(p_time);
+    // uncomment this for use default timer update procedure
+    //EventProcessor::Update(p_time);
+    //return;
+
+    // update time
+    m_time += p_time;
+
+    // main event loop
+    for (EventList::iterator i = m_events.begin(); i != m_events.end();)
+    {
+        if (i->first > m_time && !i->second->to_Abort)
+        {
+            ++i;
+            continue;
+        }
+
+        // get and remove event from queue
+        BasicEvent* Event = i->second;
+        m_events.erase(i++);
+
+        if (!Event->to_Abort)
+        {
+            if (Event->Execute(m_time, p_time))
+            {
+                // completely destroy event if it is not re-added
+                delete Event;
+            }
+        }
+        else
+        {
+            Event->Abort(m_time);
+            delete Event;
+        }
+    }
 }
 
 void WorldObjectEventProcessor::KillAllEvents(bool force)
@@ -48,6 +87,7 @@ void WorldObjectEventProcessor::KillAllEvents(bool force)
 
     EventProcessor::KillAllEvents(force);
 }
+
 
 void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 {
