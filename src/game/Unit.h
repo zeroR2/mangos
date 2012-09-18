@@ -1261,7 +1261,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         typedef std::multimap<uint32 /*spellId*/, SpellAuraHolderPtr> SpellAuraHolderMap;
         typedef std::pair<SpellAuraHolderMap::iterator, SpellAuraHolderMap::iterator> SpellAuraHolderBounds;
         typedef std::pair<SpellAuraHolderMap::const_iterator, SpellAuraHolderMap::const_iterator> SpellAuraHolderConstBounds;
-        typedef std::set<SpellAuraHolderPtr> SpellAuraHolderSet;
+        typedef std::queue<SpellAuraHolderPtr> SpellAuraHolderQueue;
         typedef ACE_Based::LockedVector<AuraPair> AuraList;
         typedef std::list<DiminishingReturn> Diminishing;
         typedef std::set<ObjectGuid> ComboPointHolderSet;
@@ -2203,7 +2203,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         DeathState m_deathState;
 
         SpellAuraHolderMap m_spellAuraHolders;
-        SpellAuraHolderSet m_deletedHolders;
+        SpellAuraHolderQueue m_deletedHolders;
 
         // Store Auras for which the target must be tracked
         TrackedAuraTargetMap m_trackedAuraTargets[MAX_TRACKED_AURA_TYPES];
