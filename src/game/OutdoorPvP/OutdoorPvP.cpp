@@ -51,7 +51,7 @@ void OutdoorPvP::HandlePlayerLeaveZone(Player* player, bool isMainZone)
         //    SendRemoveWorldStates(player);
 
         sLog.outDebug("Player %s left an Outdoor PvP zone", player->GetName());
-    }	
+    }
 }
 
 /**
@@ -226,19 +226,4 @@ void OutdoorPvP::CompleteQuest(Player *player, uint32 entry)
     int32 ReqOrRewMoney = pQuest->GetRewOrReqMoney();
     if (ReqOrRewMoney < 0)
         player->ModifyMoney(-ReqOrRewMoney);
-}
-
-WorldSafeLocsEntry const* OutdoorPvP::GetClosestGraveYardWG(Player* player)
-{
-   WorldSafeLocsEntry const* good_entry = NULL;
-
-   if(player->GetMapId() == 571 && player->GetZoneId() == 4197)
-   {
-      OutdoorPvP* pWG = sOutdoorPvPMgr.GetScript(ZONE_ID_WINTERGRASP);
-	  OutdoorPvPWG* WG = ((OutdoorPvPWG*)pWG);
-
-      good_entry = WG->GetClosestGraveYardWG(player);
-   }
-    
-   return good_entry;
 }

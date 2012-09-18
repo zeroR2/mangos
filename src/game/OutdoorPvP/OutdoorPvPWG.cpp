@@ -16,15 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*
-INFO :
-- Author : Softbest
-- Not work : Text, configs, spells and some small details
-- Status : 90%
-*/
-
 #include "OutdoorPvP.h"
 #include "OutdoorPvPWG.h"
+#include "../ObjectMgr.h"
+#include "../Vehicle.h"
 
 OutdoorPvPWG::OutdoorPvPWG() : OutdoorPvP()
 {
@@ -63,26 +58,20 @@ bool OutdoorPvPWG::InitBattlefield()
 void OutdoorPvPWG::Install()
 {
 
-       GraveyardIdsAlliance[0] = GraveyardIdsAlliance[1] = GraveyardIdsAlliance[2] = GraveyardIdsAlliance[3] = GraveyardIdsAlliance[4] = GraveyardIdsAlliance[5] = 0;
-       GraveyardIdsHorde[0] = GraveyardIdsHorde[1] = GraveyardIdsHorde[2] = GraveyardIdsHorde[3] = GraveyardIdsHorde[4] = GraveyardIdsHorde[5] = 0;
-       gyAllAlliance  = 0;
-       gyAllHorde = 0;
        // GraveYard
        // Alliance
        if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
        {
-         gy->Init(1332,ALLIANCE);
+         gy->Init(GRAVEYARD_ID_ALLIANCE,ALLIANCE);
          gyAlliance = gy;
-         gyAllAlliance = gyAllAlliance + 1;
-         GraveyardIdsAlliance[gyAllAlliance - 1] = gyAlliance->GetId();
+         sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_ALLIANCE, ZONE_ID_WINTERGRASP, ALLIANCE);
        }
        // Horde
        if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
        {
-         gy->Init(1331,HORDE);
+         gy->Init(GRAVEYARD_ID_HORDE,HORDE);
          gyHorde = gy;
-         gyAllHorde = gyAllHorde + 1;
-         GraveyardIdsHorde[gyAllHorde - 1] = gyHorde->GetId();
+         sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_HORDE, ZONE_ID_WINTERGRASP, HORDE);
        }
 
        //Keep and towers
@@ -95,19 +84,17 @@ void OutdoorPvPWG::Install()
        }
 
        // Keep GraveYard
-           if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
+        if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
         {
-          gy->Init(1285,GetDefender());
+          gy->Init(GRAVEYARD_ID_KEEP,GetDefender());
           gyBuilding = gy;
           switch(GetDefender())
           {
             case ALLIANCE:
-              gyAllAlliance  = gyAllAlliance + 1;
-              GraveyardIdsAlliance[gyAllAlliance - 1] = gy->GetId();
+              sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
               break;
             case HORDE:
-              gyAllHorde = gyAllHorde + 1;
-              GraveyardIdsHorde[gyAllHorde - 1] = gy->GetId();
+              sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
               break;
           }
         }
@@ -124,19 +111,7 @@ void OutdoorPvPWG::Install()
             gy->Init(WGWorkShopDataBase[i].GraveYardId,GetAttacker());
             ws->SetGraveYard(gy);
             if(ws->GetType() < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
-            {
-              switch(GetAttacker())
-              {
-                case ALLIANCE:
-                     gyAllAlliance = gyAllAlliance + 1;
-                     GraveyardIdsAlliance[gyAllAlliance - 1] = gy->GetId();
-                    break;
-                case HORDE:
-                     gyAllHorde = gyAllHorde + 1;
-                     GraveyardIdsHorde[gyAllHorde - 1] = gy->GetId();
-                    break;
-              }
-            }
+              sObjectMgr.SetGraveYardLinkTeam(gy->GetId(), ZONE_ID_WINTERGRASP, TEAM_INVALID);
             switch(ws->GetType())
             {
               case WORLD_PVP_WG_WORKSHOP_NE:
@@ -244,6 +219,27 @@ void OutdoorPvPWG::PrepareKeepGo(GameObject* pGo,uint32 team)
               m_KeepGameObjectH.push_back(pGo->GetObjectGuid());
           else if(GetDefender() == HORDE)
               m_KeepGameObjectA.push_back(pGo->GetObjectGuid());
+       }
+}
+
+void OutdoorPvPWG::PrepareOutKeepNpc(Creature* pCreature,uint32 team)
+{
+       if(GetDefender() == team)
+       {
+          if(GetDefender() == ALLIANCE)
+              OutKeepCreatureA.push_back(pCreature->GetObjectGuid());
+          else if(GetDefender() == HORDE)
+              OutKeepCreatureH.push_back(pCreature->GetObjectGuid());
+
+           pCreature->setFaction(35);
+           pCreature->SetVisibility(VISIBILITY_OFF);
+       }
+       else if(GetDefender() != team)
+       {
+          if(GetDefender() == ALLIANCE)
+              OutKeepCreatureH.push_back(pCreature->GetObjectGuid());
+          else if(GetDefender() == HORDE)
+              OutKeepCreatureA.push_back(pCreature->GetObjectGuid());
        }
 }
 
@@ -490,10 +486,8 @@ void OutdoorPvPWG::NewRound(bool titan)
                pGo->SetPhaseMask(100,true);
         }
 
-        gyBuilding->ChangeTeam(ALLIANCE);
-        DeleteGraveYardWG(gyBuilding,HORDE);
-        AddGraveYardWG(gyBuilding,ALLIANCE);
-
+        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
+        sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
     }
     else if(GetDefender() == HORDE)
     {
@@ -528,9 +522,8 @@ void OutdoorPvPWG::NewRound(bool titan)
                pGo->SetPhaseMask(100,true);
         }
 
-        gyBuilding->ChangeTeam(HORDE);
-        DeleteGraveYardWG(gyBuilding,ALLIANCE);
-        AddGraveYardWG(gyBuilding,HORDE);
+        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
+        sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
     }
 
     for (std::list<ObjectGuid>::iterator itr = TeleportGameObject.begin(); itr != TeleportGameObject.end(); ++itr)
@@ -703,7 +696,10 @@ void OutdoorPvPWG::HandleCreatureCreate(Creature* pCreature)
        case NPC_SIEGE_MASTER_STOUTHANDLE:
        case NPC_ANCHORITE_TESSA:
        case NPC_SENIOR_DEMOLITIONIST_LEGOSO:
-           PrepareKeepNpc(pCreature,ALLIANCE);
+           if(pCreature->GetGUIDLow() >= 531430 && pCreature->GetGUIDLow() < 531530)
+            PrepareOutKeepNpc(pCreature,ALLIANCE);
+           else
+            PrepareKeepNpc(pCreature,ALLIANCE);
            break;
        case NPC_VIERON_BLAZEFEATHER:
        case NPC_HOODOO_MASTER_FU_JIN:
@@ -713,7 +709,10 @@ void OutdoorPvPWG::HandleCreatureCreate(Creature* pCreature)
        case NPC_SIEGESMITH_STRONGHOOF:
        case NPC_PRIMALIST_MULFORT:
        case NPC_LIEUTENANT_MURP:
-           PrepareKeepNpc(pCreature,HORDE);
+           if(pCreature->GetGUIDLow() >= 531530 && pCreature->GetGUIDLow() < 531630)
+            PrepareOutKeepNpc(pCreature,HORDE);
+           else
+            PrepareKeepNpc(pCreature,HORDE);
            break;
        case NPC_TURRER:
             if(pCreature->GetGUIDLow() < 530000)
@@ -834,132 +833,45 @@ void OutdoorPvPWG::HandleGameObjectCreate(GameObject* pGo)
     {
     //Wall and tower
        case 190219:
-           gBandT[0] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190220:
-           gBandT[1] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191795:
-           gBandT[2] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191796:
-           gBandT[3] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191799:
-           gBandT[4] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191800:
-           gBandT[5] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191801:
-           gBandT[6] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191802:
-           gBandT[7] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191803:
-           gBandT[8] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191804:
-           gBandT[9] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191806:
-           gBandT[10] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191807:
-           gBandT[11] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191808:
-           gBandT[12] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191809:
-           gBandT[13] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190369:
-           gBandT[14] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190370:
-           gBandT[15] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190371:
-           gBandT[16] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190372:
-           gBandT[17] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190374:
-           gBandT[18] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190376:
-           gBandT[19] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190221:
-           gBandT[20] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190373:
-           gBandT[21] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190377:
-           gBandT[22] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190378:
-           gBandT[23] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191797:
-           gBandT[24] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191798:
-           gBandT[25] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191805:
-           gBandT[26] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190356:
-           gBandT[27] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190357:
-           gBandT[28] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190358:
-           gBandT[29] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 190375:
-           gBandT[30] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
-           break;
        case 191810:
-           gBandT[31] = pGo->GetObjectGuid();
-           pGo->Rebuild(GetPlayerInZone());
+            if(uint8 i = GetCountBuildingAndTowers(pGo->GetEntry()))
+            {
+               if(i != -1)
+               {
+                   gBandT[i] = pGo->GetObjectGuid();
+                   pGo->Rebuild(GetPlayerInZone());
+               }
+            }
            break;
     // Keep GameObject
        case 192269:
@@ -1738,158 +1650,6 @@ void OutdoorPvPWG::AddAuraResurrect(Player* pPlayer)
      }
 }
 
-// GraveYard System
-
-WorldSafeLocsEntry const* OutdoorPvPWG::GetClosestGraveYardWG(Player* player)
-{
-    WorldSafeLocsEntry const* good_entry = NULL;
-
-    if(player->GetTeam() == ALLIANCE)
-    {
-      std::vector<uint8> nodes;
-      for (uint8 i = 0; i < 6; ++i)
-            nodes.push_back(i);
-
-      // If so, select the closest node to place ghost on
-      if (!nodes.empty())
-      {
-          float plr_x = player->GetPositionX();
-          float plr_y = player->GetPositionY();
-
-          float mindist = 99999999999999999999.0f;
-          for (uint8 i = 0; i < nodes.size(); ++i)
-          {
-              if(GraveyardIdsAlliance[nodes[i]] != 0)
-              {
-                WorldSafeLocsEntry const*entry = sWorldSafeLocsStore.LookupEntry( GraveyardIdsAlliance[nodes[i]] );
-                  if (!entry)
-                      continue;
-                float dist = (entry->x - plr_x)*(entry->x - plr_x)+(entry->y - plr_y)*(entry->y - plr_y);
-                if (mindist > dist)
-                {
-                   mindist = dist;
-                   good_entry = entry;
-                }
-              }
-          }
-          nodes.clear();
-      }
-    }
-    else if(player->GetTeam() == HORDE)
-    {
-      std::vector<uint8> nodes;
-      for (uint8 i = 0; i < 6; ++i)
-            nodes.push_back(i);
-
-      // If so, select the closest node to place ghost on
-      if (!nodes.empty())
-      {
-          float plr_x = player->GetPositionX();
-          float plr_y = player->GetPositionY();
-
-          float mindist = 999999.0f;
-          for (uint8 i = 0; i < nodes.size(); ++i)
-          {
-              if(GraveyardIdsHorde[nodes[i]] != 0)
-              {
-                WorldSafeLocsEntry const*entry = sWorldSafeLocsStore.LookupEntry( GraveyardIdsHorde[nodes[i]] );
-                  if (!entry)
-                      continue;
-                float dist = (entry->x - plr_x)*(entry->x - plr_x)+(entry->y - plr_y)*(entry->y - plr_y);
-                if (mindist > dist)
-                {
-                   mindist = dist;
-                   good_entry = entry;
-                }
-              }
-          }
-          nodes.clear();
-      }
-
-    }
-
-    return good_entry;
-
-}
-
-void OutdoorPvPWG::AddGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
-{
-    if(faction == ALLIANCE)
-    {
-        uint8 pos = 0;
-        bool con = false;
-
-        for (uint8 i = 0; i < 6; ++i)
-        {
-            if(GraveyardIdsAlliance[i] == 0 && !con)
-            {
-                pos = i;
-                con = true;
-            }
-        }
-
-        GraveyardIdsAlliance[pos] = gy->GetId();
-        gyAllAlliance = gyAllAlliance + 1;
-    }
-    else if(faction == HORDE)
-    {
-        uint8 pos = 0;
-        bool con = false;
-
-        for (uint8 i = 0; i < 6; ++i)
-        {
-            if(GraveyardIdsHorde[i] == 0 && !con)
-            {
-                pos = i;
-                con = true;
-            }
-        }
-
-        GraveyardIdsHorde[pos] = gy->GetId();
-        gyAllHorde = gyAllHorde + 1;
-    }
-}
-
-void OutdoorPvPWG::DeleteGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction)
-{
-    uint32 id = gy->GetId();
-
-    if(faction == ALLIANCE)
-    {
-        uint8 pos = 0;
-        bool con = false;
-
-        for (uint8 i = 0; i < 6; ++i)
-        {
-            if(GraveyardIdsAlliance[i] == id && !con)
-            {
-                pos = i;
-                con = true;
-            }
-        }
-
-        GraveyardIdsAlliance[pos] = 0;
-        gyAllAlliance = gyAllAlliance - 1;
-    }
-    else if(faction == HORDE)
-    {
-        uint8 pos = 0;
-        bool con = false;
-
-        for (uint8 i = 0; i < 6; ++i)
-        {
-            if(GraveyardIdsHorde[i] == id && !con)
-            {
-                pos = i;
-                con = true;
-            }
-        }
-
-        GraveyardIdsHorde[pos] = 0;
-        gyAllHorde = gyAllHorde -1;
-    }
-}
-
 // Tower
 
 void OutdoorPvPWG::AddDamagedTower(uint32 team)
@@ -2028,7 +1788,7 @@ void OutdoorPvPWG::AddVehicle(Creature* pCreature,uint32 team)
         pCreature->setFaction(NPC_FACTION_A);
         if(pCreature->GetEntry() == 28312)
         {
-            if(VehicleKit* veh = pCreature->GetVehicleKit())
+            if(VehicleKitPtr veh = pCreature->GetVehicleKit())
             {
                 pCreature->GetVehicleKit()->RemoveAllPassengers();
                 pCreature->GetVehicleKit()->InstallAllAccessories(pCreature->GetEntry());
@@ -2042,7 +1802,7 @@ void OutdoorPvPWG::AddVehicle(Creature* pCreature,uint32 team)
         pCreature->setFaction(NPC_FACTION_H);
         if(pCreature->GetEntry() == 32627)
         {
-            if(VehicleKit* veh = pCreature->GetVehicleKit())
+            if(VehicleKitPtr veh = pCreature->GetVehicleKit())
             {
                 pCreature->GetVehicleKit()->RemoveAllPassengers();
                 pCreature->GetVehicleKit()->InstallAllAccessories(pCreature->GetEntry());
@@ -2063,30 +1823,6 @@ void OutdoorPvPWG::DeleteVehicle(Creature* pCreature,uint32 team)
         VehicleCountH = VehicleCountH - 1;
 
     UpdateVehicleCountWG();
-}
-
-uint32 OutdoorPvPWG::GetCountVehicle(uint32 team)
-{
-    uint32 count = NULL;
-
-    if(team == ALLIANCE)
-        count = VehicleCountA;
-    else if(team == HORDE)
-        count = VehicleCountH;
-
-    return count;
-}
-
-uint32 OutdoorPvPWG::GetCountMaxVehicle(uint32 team)
-{
-    uint32 count = NULL;
-
-    if(team == ALLIANCE)
-        count = VehicleCountMaxA;
-    else if(team == HORDE)
-        count = VehicleCountMaxH;
-
-    return count;
 }
 
 // Players
@@ -2116,7 +1852,7 @@ Player* OutdoorPvPWG::GetPlayersAlliance()
         Player* pPlayer = sObjectMgr.GetPlayer(*itr);
 		pPlayers = pPlayer;
     }
-    
+
 	return pPlayers;
 }
 
@@ -2151,4 +1887,19 @@ uint32 OutdoorPvPWG::CountPlayersHorde()
        count = count + 1;
 
   return count;
+}
+
+uint8 OutdoorPvPWG::GetCountBuildingAndTowers(uint32 id)
+{
+
+    uint8 data = -1;
+
+    for (uint8 i = 0; i < WG_MAX_OBJ; i++)
+    {
+        if(WGGameObjectBuillding[i].entry == id)
+          data = i;
+    }
+
+    return data;
+
 }

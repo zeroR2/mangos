@@ -64,8 +64,6 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 
-#include "OutdoorPvP/OutdoorPvPWG.h"
-
 #include <cmath>
 
 // Playerbot mod:
@@ -4962,11 +4960,6 @@ void Player::RepopAtGraveyard()
     // Special handle for battleground maps
     if ( BattleGround *bg = GetBattleGround() )
         ClosestGrave = bg->GetClosestGraveYard(this);
-	else if(GetMapId() == 571 && GetZoneId() == 4197)
-    {
-		if(OutdoorPvP* WP = sOutdoorPvPMgr.GetScript(ZONE_ID_WINTERGRASP))
-           ClosestGrave = WP->GetClosestGraveYardWG(this);   
-    }			
     else
         ClosestGrave = sObjectMgr.GetClosestGraveYard( GetPositionX(), GetPositionY(), GetPositionZ(), GetMapId(), GetTeam() );
 
@@ -6690,7 +6683,7 @@ void Player::UpdateHonorFields()
         uint32 victim_rank = 0;
 
         //this may consume a lot of cpu cycles.
-        //You can use this sql query: "SELECT max( totalKills ) FROM characters" to get the max totalKills 
+        //You can use this sql query: "SELECT max( totalKills ) FROM characters" to get the max totalKills
         //of yours players and edit this condition to:  "if (HonorKills < 15 || HonorKills > max(totalKills)+1)) return;"
         //don't forget to replace max(totalKills) with the result of query
         if (HonorKills < 15)

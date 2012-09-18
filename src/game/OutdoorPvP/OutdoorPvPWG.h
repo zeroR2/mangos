@@ -20,7 +20,10 @@
 #ifndef WORLD_PVP_WG
 #define WORLD_PVP_WG
 
-#include "OutdoorPvP.h"
+#include "../Player.h"
+#include "../Creature.h"
+#include "../GameObject.h"
+#include "../ObjectMgr.h"
 
 struct WorldPvPWGGameObjectBuilding;
 typedef std::set<WorldPvPWGGameObjectBuilding*> GameObjectBuilding;
@@ -34,6 +37,10 @@ typedef std::set<WorldPvPGraveYardWG*> GraveYard;
 enum
 {
     MAPID_ID_WINTERGRASP                = 571,
+    // GraveYard
+    GRAVEYARD_ID_ALLIANCE               = 1332,
+    GRAVEYARD_ID_HORDE                  = 1331,
+    GRAVEYARD_ID_KEEP                   = 1285,
     // Go factions
     GO_FACTION_A                        = 1732,
     GO_FACTION_H                        = 1735,
@@ -300,6 +307,7 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         ObjectGuid gBandT[32];
 
         bool CanUseRelic;
+        uint8 GetCountBuildingAndTowers(uint32 id);
 
         //World states
         void UpdateVehicleCountWG();
@@ -310,11 +318,6 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         void UpdateAura(Player* pPlayer);
         void UpdateTenacityStack();
         void AddAuraResurrect(Player* pPlayer);
-
-        //GraveYard System
-        virtual WorldSafeLocsEntry const* GetClosestGraveYardWG(Player* player);
-        void AddGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction);
-        void DeleteGraveYardWG(WorldPvPGraveYardWG* gy,uint32 faction);
 
         //Towers
         void AddDamagedTower(uint32 team);
@@ -331,8 +334,6 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         void CreateVehicle(Creature* pCreature,uint32 npc_entry);
         void AddVehicle(Creature* pCreature,uint32 team);
         void DeleteVehicle(Creature* pCreature,uint32 team);
-        uint32 GetCountVehicle(uint32 team);
-        uint32 GetCountMaxVehicle(uint32 team);
 
 		//Players
 		Player* GetPlayerInZone();
@@ -355,6 +356,7 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         void UpdateKeepTurret(Creature* pTurret);
         void PrepareKeepNpc(Creature* pCreature,uint32 team);
         void PrepareKeepGo(GameObject* pGo,uint32 team);
+        void PrepareOutKeepNpc(Creature* pCreature,uint32 team);
         bool get_map;
         Map* m_Map;
         void NewRound(bool titan); //if titan = true the attackers win
@@ -381,6 +383,8 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         std::list<ObjectGuid> KeepCreatureH;
         std::list<ObjectGuid> m_KeepGameObjectA;
         std::list<ObjectGuid> m_KeepGameObjectH;
+        std::list<ObjectGuid> OutKeepCreatureA;
+        std::list<ObjectGuid> OutKeepCreatureH;
         std::list<ObjectGuid> TeleportGameObject;
         std::list<ObjectGuid> TurretCreature;
         std::list<ObjectGuid> m_vehicleA;
@@ -388,10 +392,6 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
 
 
         //Graveyard
-        uint32 gyAllAlliance;
-        uint32 gyAllHorde;
-        uint32 GraveyardIdsAlliance[6];
-        uint32 GraveyardIdsHorde[6];
         WorldPvPGraveYardWG* gyNe;
         WorldPvPGraveYardWG* gyNw;
         WorldPvPGraveYardWG* gySe;
@@ -423,7 +423,7 @@ struct WorldPvPWGGameObjectBuilding
 
     uint32 m_Team;
     OutdoorPvPWG *m_WG;
-    uint32 count;
+    uint8 count;
     uint32 m_Type;
     uint32 m_WorldState;
     uint32 m_State;
@@ -695,7 +695,7 @@ struct WorldPvPWGGameObjectBuilding
     void RebuildGo()
     {
         if(Mmap->GetGameObject(m_WG->gBandT[count]))
-           Mmap->GetGameObject(m_WG->gBandT[count])->Rebuild(m_WG->GetPlayerInZone());
+           Mmap->GetGameObject(m_WG->gBandT[count])->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
     }
 
     void AddTurret(Creature* pTurret)
@@ -779,7 +779,6 @@ struct WorldPvPWGGameObjectBuilding
 
 struct WorldPvPGraveYardWG
 {
-// Need fully rewrite on usage sObjectMgr.AddGraveYardLink()/SetGraveYardLinkTeam/RemoveGraveYardLink
     OutdoorPvPWG* m_WG;
     uint32 m_team;
     uint32 m_id;
@@ -1039,7 +1038,7 @@ struct WorldPvPWGWorkShopData
            }
 
           if(GameObject* pGo =  Mmap->GetGameObject(m_WG->gBuilding[number]))
-             pGo->Rebuild(m_WG->GetPlayerInZone());
+             pGo->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
         }
 
     }
@@ -1093,7 +1092,7 @@ struct WorldPvPWGWorkShopData
                           m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_ALLIANCE);
 
                       if(GameObject* pGo =  Mmap->GetGameObject(m_WG->gBuilding[number]))
-                         pGo->Rebuild(m_WG->GetPlayerInZone());
+                         pGo->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
                     }
 
                     m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
@@ -1102,8 +1101,8 @@ struct WorldPvPWGWorkShopData
                     if(m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
                     {
                       m_GY->ChangeTeam(m_TeamControl);
-                      m_WG->DeleteGraveYardWG(m_GY,HORDE);
-                      m_WG->AddGraveYardWG(m_GY,ALLIANCE);
+                      sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, HORDE);
+                      sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, ALLIANCE);
                     }
                   }
                   else
@@ -1155,7 +1154,7 @@ struct WorldPvPWGWorkShopData
                           m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_HORDE);
 
                       if(GameObject* pGo =  Mmap->GetGameObject(m_WG->gBuilding[number]))
-                         pGo->Rebuild(m_WG->GetPlayerInZone());
+                         pGo->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
                     }
 
 
@@ -1165,8 +1164,8 @@ struct WorldPvPWGWorkShopData
                     if(m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
                     {
                       m_GY->ChangeTeam(m_TeamControl);
-                      m_WG->DeleteGraveYardWG(m_GY,HORDE);
-                      m_WG->AddGraveYardWG(m_GY,ALLIANCE);
+                      sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, ALLIANCE);
+                      sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, HORDE);
                     }
                   }
                   else

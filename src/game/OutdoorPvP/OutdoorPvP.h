@@ -95,12 +95,13 @@ class OutdoorPvP
         // Damage GO - for WG mostly
         virtual void EventPlayerDamageGO(Player* /*player*/, GameObject* /*target_obj*/, uint32 /*eventId*/, uint32 /*bySpellId*/) {}
 
+        virtual void AddAuraResurrect(Player* /*pPlayer*/) {}
+
         // send world state update to all players present
         void SendUpdateWorldState(uint32 field, uint32 value);
 
         void CompleteQuest(Player *player, uint32 entry);
-        virtual WorldSafeLocsEntry const* GetClosestGraveYardWG(Player* player);
-		
+
     protected:
 
         // Player related stuff
@@ -128,9 +129,9 @@ class OutdoorPvP
 
         // store the players inside the area
         GuidZoneMap m_zonePlayers;
-		
+
         GuidSet m_sZonePlayersAlliance;
-        GuidSet m_sZonePlayersHorde;		
+        GuidSet m_sZonePlayersHorde;
 };
 
 #endif

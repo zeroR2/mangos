@@ -34,7 +34,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Chat.h"
-#include "OutdoorPvP/OutdoorPvPWG.h"
+#include "OutdoorPvP/OutdoorPvP.h"
 
 enum StableResultCode
 {
@@ -439,11 +439,11 @@ void WorldSession::SendSpiritResurrect()
         WorldSafeLocsEntry const *ghostGrave = sObjectMgr.GetClosestGraveYard(
             _player->GetPositionX(), _player->GetPositionY(), _player->GetPositionZ(), _player->GetMapId(), _player->GetTeam());
 
-		bool wintergrasp = false;
+        bool wintergrasp = false;
 
-		if(_player->GetMapId() == 571 && _player->GetZoneId() == 4197)
-            wintergrasp = true;
-			
+        if(_player->GetMapId() == 571 && _player->GetZoneId() == 4197)
+           wintergrasp = true;
+
         if(corpseGrave != ghostGrave && !wintergrasp)
             _player->TeleportTo(corpseGrave->map_id, corpseGrave->x, corpseGrave->y, corpseGrave->z, _player->GetOrientation());
         // or update at original position
@@ -451,13 +451,12 @@ void WorldSession::SendSpiritResurrect()
         {
             _player->GetCamera().UpdateVisibilityForOwner();
             _player->UpdateObjectVisibility();
-			
-			if(wintergrasp)
-			{
-               OutdoorPvP* pWG = sOutdoorPvPMgr.GetScript(ZONE_ID_WINTERGRASP);
-               OutdoorPvPWG* WG = ((OutdoorPvPWG*)pWG);
-               WG->AddAuraResurrect(_player);
-            }				
+
+            if(wintergrasp)
+            {
+               if(OutdoorPvP* pWG = sOutdoorPvPMgr.GetScript(4197))
+                    pWG->AddAuraResurrect(_player);
+            }
         }
     }
     // or update at original position

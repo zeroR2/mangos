@@ -132,6 +132,27 @@ REPLACE INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `positio
 (@GUIDCREKEEP2 + 36,@NPC_GUARD_H,'571','1','1','5307.11','2616.00','409.09','5.35','180','0','0','11001','0','0','0'),
 (@GUIDCREKEEP2 + 37,@NPC_GUARD_H,'571','1','1','5316.77','2619.43','409.02','5.36','180','0','0','11001','0','0','0');
 
+-- Out keep
+SET @GUIDCREOUTKEEP = 531430; 
+SET @GUIDCREOUTKEEP2 = @GUIDCREOUTKEEP + 100; 
+REPLACE INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position_x`, `position_y`, `position_z`, `orientation`, `spawntimesecs`, `spawndist`, `currentwaypoint`, `curhealth`, `curmana`, `DeathState`, `MovementType`) VALUES
+-- Alliance
+(@GUIDCREOUTKEEP,@NPC_BOWYER_RANDOLPH,'571','1','1','5100.07', '2168.89', '365.77', '1.97','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP + 1,@NPC_SORCERESS_KAYLANA,'571','1','1','5081.70', '2173.73', '365.87', '0.85','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP + 2,@NPC_COMMANDER_ZANNETH,'571','1','1','5078.28', '2183.70', '365.02', '1.46','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP + 3,@NPC_TACTICAL_OFFICER_AHBRAMIS,'571','1','1','5088.49', '2188.18', '365.64', '5.25','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP + 4,@NPC_SIEGE_MASTER_STOUTHANDLE,'571','1','1','5095.67', '2193.28', '365.92', '4.93','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP + 5,@NPC_ANCHORITE_TESSA,'571','1','1','5088.61', '2167.66', '365.68', '0.68','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP + 6,@NPC_SENIOR_DEMOLITIONIST_LEGOSO,'571','1','1','5080.40', '2199.00', '359.48', '2.96','180','0','0','11001','0','0','0'),
+-- Horde
+(@GUIDCREOUTKEEP2,@NPC_VIERON_BLAZEFEATHER,'571','1','1','5032.04', '3681.79', '362.98', '4.21','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP2 + 1,@NPC_HOODOO_MASTER_FU_JIN,'571','1','1','5020.71', '3626.19', '360.15', '4.64','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP2 + 2,@NPC_COMMANDER_DARDOSH,'571','1','1','4994.85', '3660.51', '359.15', '2.26','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP2 + 3,@NPC_TACTICAL_OFFICER_KILRATH,'571','1','1','5015.46','3677.11','362.97','6.00','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP2 + 4,@NPC_SIEGESMITH_STRONGHOOF,'571','1','1','5031.12', '3663.77', '363.50','3.11','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP2 + 5,@NPC_PRIMALIST_MULFORT,'571','1','1','5042.74', '3675.82', '363.06', '3.35','180','0','0','11001','0','0','0'),
+(@GUIDCREOUTKEEP2 + 6,@NPC_LIEUTENANT_MURP,'571','1','1','5014.45', '3640.87', '361.39', '3.28','180','0','0','11001','0','0','0');
+
 -- Keep GameObject 
 SET @GUIDGOKEEP = 531000;
 SET @GUIDGOKEEP2 = @GUIDGOKEEP + 200; 
@@ -238,7 +259,6 @@ VALUES
 -- Towers creature 
 SET @GUIDCRETOWERS = 531400;
 SET @GUIDCRETOWERS2 = @GUIDCRETOWERS + 100;
-
 REPLACE INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position_x`, `position_y`, `position_z`, `orientation`, `spawntimesecs`, `spawndist`, `currentwaypoint`, `curhealth`, `curmana`, `DeathState`, `MovementType`) VALUES
 -- Alliance
 -- 190356
@@ -406,7 +426,7 @@ INSERT INTO `gameobject` (`guid`,`id`, `map`, `spawnMask`, `phaseMask`, `positio
 (@GUIDBAWS + 2,'194959','571','1','1','4398.076660','2356.503662','376.190491','0.525406','0','0','0','1','300','255','1'),
 (@GUIDBAWS + 3,'194962','571','1','1','4390.776367','3304.094482','372.429077','6.097023','0','0','0','1','300','255','1');
 
--- WorkShops reatures
+-- WorkShops creatures
 SET @GUIDCREWS = 530040;
 SET @GUIDCREWS2 = @GUIDCREWS + 100;
 SET @NPC_DEMOLISHER_ENGINEER_A = 30499;
