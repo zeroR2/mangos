@@ -596,10 +596,7 @@ Player::~Player ()
     for(int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
         if (m_items[i])
-        {
-            m_items[i]->RemoveFromWorld();
             delete m_items[i];
-        }
     }
     CleanupChannels();
 
@@ -608,13 +605,7 @@ Player::~Player ()
         delete *itr;
 
     for (ItemMap::const_iterator iter = mMitems.begin(); iter != mMitems.end(); ++iter)
-    {
-        if (!iter->second)
-            continue;
-
-        iter->second->RemoveFromWorld();
         delete iter->second;                                //if item is duplicated... then server may crash ... but that item should be deallocated
-    }
 
     delete PlayerTalkClass;
 
@@ -650,7 +641,7 @@ Player::~Player ()
 
 }
 
-void Player::CleanupsBeforeDelete(bool force)
+void Player::CleanupsBeforeDelete()
 {
     if (m_uint32Values)                                      // only for fully created Object
     {
@@ -661,7 +652,7 @@ void Player::CleanupsBeforeDelete(bool force)
     // notify zone scripts for player logout
     sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
 
-    Unit::CleanupsBeforeDelete(force);
+    Unit::CleanupsBeforeDelete();
 }
 
 bool Player::Create( uint32 guidlow, const std::string& name, uint8 race, uint8 class_, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 /*outfitId */)

@@ -1406,13 +1406,3 @@ bool Item::HasTriggeredByAuraSpell(SpellEntry const* spellInfo) const
     }
     return false;
 }
-
-void Item::AddToWorld()
-{
-    Object::AddToWorld();
-}
-
-void Item::RemoveFromWorld()
-{
-    Object::RemoveFromWorld();
-}
