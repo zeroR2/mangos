@@ -4307,15 +4307,11 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     PSendSysMessage(LANG_NPCINFO_POSITION, float(target->GetPositionX()), float(target->GetPositionY()), float(target->GetPositionZ()));
 
     if (target->SD2AIName())
-        PSendSysMessage("ScriptName: %s", target->GetScriptName().c_str());
-    else if (target->HasAIName())
-        PSendSysMessage("AI name: %s", target->GetAIName().c_str());
+    PSendSysMessage("ScriptName: %s", target->GetScriptName().c_str());
+    if (target->HasAIName())
+    PSendSysMessage("Event_AI: %s", target->GetAIName().c_str());
 
-    PSendSysMessage("Phasemask %u, has %u active events, %u SpellAuraHolders, %u unit states",
-        phaseMask,
-        target->GetEvents()->size(),
-        target->GetSpellAuraHolderMap().size(),
-        target->GetUnitStateMgr().GetActions().size());
+    PSendSysMessage("phaseMask: %u", phaseMask);
 
     if ((npcflags & UNIT_NPC_FLAG_VENDOR))
     {
@@ -4325,7 +4321,6 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     {
         SendSysMessage(LANG_NPCINFO_TRAINER);
     }
-
 
     ShowNpcOrGoSpawnInformation<Creature>(target->GetGUIDLow());
     return true;
