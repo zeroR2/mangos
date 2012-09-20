@@ -281,6 +281,9 @@ class MANGOS_DLL_SPEC Item : public Object
 
         virtual bool Create(uint32 guidlow, uint32 itemid, Player const* owner);
 
+        void AddToWorld();
+        void RemoveFromWorld();
+
         ItemPrototype const* GetProto() const;
 
         ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(ITEM_FIELD_OWNER); }
@@ -382,8 +385,8 @@ class MANGOS_DLL_SPEC Item : public Object
         bool IsPotion() const { return GetProto()->IsPotion(); }
         bool IsConjuredConsumable() const { return GetProto()->IsConjuredConsumable(); }
 
-        void AddToClientUpdateList();
-        void RemoveFromClientUpdateList();
+        void AddToClientUpdateList() override;
+        void RemoveFromClientUpdateList() override;
         void BuildUpdateData(UpdateDataMapType& update_players);
 
         // Item Refunding system
