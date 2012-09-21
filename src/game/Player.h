@@ -1052,7 +1052,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         explicit Player (WorldSession *session);
         ~Player ();
 
-        void CleanupsBeforeDelete(bool force = false);
+        void CleanupsBeforeDelete();
 
         void AddToWorld();
         void RemoveFromWorld();
@@ -2452,18 +2452,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         // Return collision height sent to client
         float GetCollisionHeight(bool mounted);
 
-        // Parent objects (items currently) update system
-        Object* GetDependentObject(ObjectGuid const& guid) override;
-        virtual GuidSet const* GetObjectsUpdateQueue() override { return &i_objectsToClientUpdate; };
-        void AddUpdateObject(ObjectGuid const& guid) override
-        {
-            i_objectsToClientUpdate.insert(guid);
-        }
-        void RemoveUpdateObject(ObjectGuid const& guid) override
-        {
-            i_objectsToClientUpdate.erase(guid);
-        }
-
     protected:
 
         uint32 m_contestedPvPTimer;
@@ -2697,9 +2685,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         DeclinedName *m_declinedname;
         Runes *m_runes;
         EquipmentSets m_EquipmentSets;
-
-        // Parent objects (items currently) update system
-        GuidSet i_objectsToClientUpdate;
 
         // Refer-A-Friend
         ObjectGuid m_curGrantLevelGiverGuid;

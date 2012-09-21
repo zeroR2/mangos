@@ -87,7 +87,7 @@ class MANGOS_DLL_SPEC ViewPoint
         GridType* m_grid;
 
         void Attach(Camera* c) { m_cameras.push_back(c); }
-        void Detach(Camera* c) { if (hasViewers()) m_cameras.remove(c); }
+        void Detach(Camera* c) { m_cameras.remove(c); }
 
         void CameraCall(void (Camera::*handler)())
         {
