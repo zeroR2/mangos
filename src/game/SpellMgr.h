@@ -356,7 +356,7 @@ inline bool IsSpellWithCasterSourceTargetsOnly(SpellEntry const* spellInfo)
     return true;
 }
 
-inline bool IsTargetExplicitRequres(uint32 target)
+inline bool IsTargetExplicitRequired(uint32 target)
 {
     switch (target)
     {
@@ -395,12 +395,12 @@ inline bool IsEffectRequiresTarget(SpellEntry const* spellInfo, SpellEffectIndex
 
         case SPELL_EFFECT_SEND_EVENT:
         default:
-            return IsTargetExplicitRequres(spellInfo->EffectImplicitTargetA[i]) || IsTargetExplicitRequres(spellInfo->EffectImplicitTargetB[i]);
+            return IsTargetExplicitRequired(spellInfo->EffectImplicitTargetA[i]) || IsTargetExplicitRequired(spellInfo->EffectImplicitTargetB[i]);
     }
     return true;
 }
 
-inline bool IsSpellRequresTarget(SpellEntry const* spellInfo)
+inline bool IsSpellRequiresTarget(SpellEntry const* spellInfo)
 {
     for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
         if (IsEffectRequiresTarget(spellInfo, SpellEffectIndex(i)))
