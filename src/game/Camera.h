@@ -21,6 +21,7 @@
 
 #include "Common.h"
 #include "GridDefines.h"
+#include "LockedVector.h"
 
 class ViewPoint;
 class WorldObject;
@@ -81,7 +82,7 @@ class MANGOS_DLL_SPEC ViewPoint
 {
         friend class Camera;
 
-        typedef std::list<Camera*> CameraList;
+        typedef ACE_Based::LockedVector<Camera*> CameraList;
 
         CameraList m_cameras;
         GridType* m_grid;
