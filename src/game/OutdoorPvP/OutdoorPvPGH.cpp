@@ -25,6 +25,7 @@
 OutdoorPvPGH::OutdoorPvPGH() : OutdoorPvP(),
     m_zoneOwner(TEAM_NONE)
 {
+    SetBattleField(false);
 }
 
 void OutdoorPvPGH::HandleCreatureCreate(Creature* creature)

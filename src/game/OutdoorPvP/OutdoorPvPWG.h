@@ -25,14 +25,14 @@
 #include "../GameObject.h"
 #include "../ObjectMgr.h"
 
-struct WorldPvPWGGameObjectBuilding;
-typedef std::set<WorldPvPWGGameObjectBuilding*> GameObjectBuilding;
+struct OutdoorPvPGameObjectBuildingWG;
+typedef std::set<OutdoorPvPGameObjectBuildingWG*> GameObjectBuilding;
 
-struct WorldPvPWGWorkShopData;
-typedef std::set<WorldPvPWGWorkShopData*> WorkShop;
+struct OutdoorPvPWorkShopWG;
+typedef std::set<OutdoorPvPWorkShopWG*> WorkShop;
 
-struct WorldPvPGraveYardWG;
-typedef std::set<WorldPvPGraveYardWG*> GraveYard;
+struct OutdoorPvPGraveYardWG;
+typedef std::set<OutdoorPvPGraveYardWG*> GraveYard;
 
 enum
 {
@@ -41,6 +41,8 @@ enum
     GRAVEYARD_ID_ALLIANCE               = 1332,
     GRAVEYARD_ID_HORDE                  = 1331,
     GRAVEYARD_ID_KEEP                   = 1285,
+    // Factions
+    NEUTRAL_FACTION                     = 35,
     // Go factions
     GO_FACTION_A                        = 1732,
     GO_FACTION_H                        = 1735,
@@ -277,14 +279,13 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
     public:
         OutdoorPvPWG();
 
-        bool InitWorldPvPArea();
-        bool InitBattlefield();
+        bool InitBattlefield(); // Init BattleField zone
 
         void HandleCreatureCreate(Creature* pCreature);
         void HandleGameObjectCreate(GameObject* pGo);
         void HandleCreatureDeath(Creature* pCreature);
 
-        virtual void Update(uint32 uiDiff);
+        void Update(uint32 uiDiff);
 
         void HandlePlayerEnterZone(Player* pPlayer, bool isMainZone);
         void HandlePlayerLeaveZone(Player* pPlayer, bool isMainZone);
@@ -294,24 +295,24 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         bool HandleEvent(uint32 uiEventId,GameObject* pGo);
         void EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId);
 
-        uint32 GetDefender()  { return defender; }
-        uint32 GetAttacker()  { return attacker; }
-        bool m_bIsWarTime() { return m_bIsBattleStarted; }
-        uint32 GetTimer() const { return m_Timer; };
+        uint32 GetDefender()  { return defender; } // Get Defender team
+        uint32 GetAttacker()  { return attacker; } // Get Attack team
 
         void SetBannerArtKit(GameObject* Go,uint32 uiArtkit);
         void UpdateCounterVehicle(bool init);
 
-        ObjectGuid gBanner[4];
-        ObjectGuid gBuilding[6];
-        ObjectGuid gBandT[32];
+        // GameObjects
+        ObjectGuid gBanner[4]; // Save work shop banners
+        ObjectGuid gBuilding[6]; // Save work shop building
+        ObjectGuid gBandT[32]; // Save keep buildings, keep towers and south towers
+        uint8 GetCountBuildingAndTowers(uint32 id); // Get count or number for gBandT variable
 
         bool CanUseRelic;
-        uint8 GetCountBuildingAndTowers(uint32 id);
 
         //World states
+        void UpdateMainWS(bool status);
+        void UpdateTeamWS(uint32 team);
         void UpdateVehicleCountWG();
-        void UpdateWSBuilding();
         void UpdateWSWorkShop();
 
         //Auras
@@ -343,23 +344,29 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
 		uint32 CountPlayersHorde();
 
     protected:
-        uint32 m_Timer; // In second
+        uint32 m_Timer; // In second, use in timer for updating the world state timer and controling timer phase
 
     private:
-        bool activate;
-        uint32 defender;
-        uint32 attacker;
-        bool m_bIsBattleStarted;
+        // config
+        bool activate; // check if it is active or not
+        uint32 startdefenderteam; // Get the team which strat denfend the keep
+        bool Changeteamifdisable; // If BattleFIeld isn't inactive, use it for check if change control team zone by timer
 
-        void Install();
-        void UpdateTeleport(GameObject* pGo);
-        void UpdateKeepTurret(Creature* pTurret);
-        void PrepareKeepNpc(Creature* pCreature,uint32 team);
-        void PrepareKeepGo(GameObject* pGo,uint32 team);
-        void PrepareOutKeepNpc(Creature* pCreature,uint32 team);
-        bool get_map;
-        Map* m_Map;
-        void NewRound(bool titan); //if titan = true the attackers win
+        bool m_bIsBattleStarted; // Use for start the world state timer in battle phase
+        uint32 defender; // save defender team
+        uint32 attacker; // save attack team
+
+        void Install(); //Prepare GraveYard, buildings, towers, WorkShop and others for inting the zone
+        void UpdateTeleport(GameObject* pGo); // Update faction
+        void UpdateKeepTurret(Creature* pTurret); // Update faction
+        void PrepareKeepNpc(Creature* pCreature,uint32 team); // Save in variable and hiding if it's nesessary
+        void PrepareKeepGo(GameObject* pGo,uint32 team); // Save in variable and hiding if it's nesessary
+        void PrepareOutKeepNpc(Creature* pCreature,uint32 team); // Save in variable and hiding if it's nesessary
+        bool get_map; // Use for checking get m_Map
+        Map* m_Map; // Save variable Map
+        void ChangeControlZone(); // Use only when Changeteamifdisable = true fro changing control zone
+        void StartBattle(); // Start the battle
+        void EndBattle(bool titan); // End the battle
 
         uint32 m_tenacityStack;
         uint32 VehicleCountA;
@@ -372,8 +379,10 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         GuidSet m_sZonePlayersHorde;
 
         //Timers
-        uint32 TimeBattle;
-        uint32 UpdateTimer;
+        uint32 TimeChangeControl; // Save time for changing control
+        uint32 TimeBattle; // Save time for battle phase
+        uint32 TimeControl; // Save time for control phase
+        uint32 UpdateTimer; // varible for update world states
 
         //OjectGuid GameObjects and Creatures
         ObjectGuid Relic;
@@ -390,43 +399,38 @@ class MANGOS_DLL_SPEC OutdoorPvPWG : public OutdoorPvP
         std::list<ObjectGuid> m_vehicleA;
         std::list<ObjectGuid> m_vehicleH;
 
-
         //Graveyard
-        WorldPvPGraveYardWG* gyNe;
-        WorldPvPGraveYardWG* gyNw;
-        WorldPvPGraveYardWG* gySe;
-        WorldPvPGraveYardWG* gySw;
-        WorldPvPGraveYardWG* gyBuilding;
-        WorldPvPGraveYardWG* gyAlliance;
-        WorldPvPGraveYardWG* gyHorde;
+        OutdoorPvPGraveYardWG* gyNe;
+        OutdoorPvPGraveYardWG* gyNw;
+        OutdoorPvPGraveYardWG* gySe;
+        OutdoorPvPGraveYardWG* gySw;
+        OutdoorPvPGraveYardWG* gyBuilding;
 
         //Keep and towers
         GameObjectBuilding BuildingsInZone;
-        WorldPvPWGGameObjectBuilding* Building[32];
+        OutdoorPvPGameObjectBuildingWG* Building[32];
         uint32 DamageTowerAtt;
         uint32 DamageTowerDef;
         uint32 DestroyTowerAtt;
         uint32 DestroyTowerDef;
 
         //WorkShop
-        std::list<WorldPvPWGWorkShopData*>WorkShopList;
-        WorldPvPWGWorkShopData* wsNe;
-        WorldPvPWGWorkShopData* wsNw;
-        WorldPvPWGWorkShopData* wsSe;
-        WorldPvPWGWorkShopData* wsSw;
-        WorldPvPWGWorkShopData* wsKe;
-        WorldPvPWGWorkShopData* wsKw;
+        std::list<OutdoorPvPWorkShopWG*>WorkShopList;
+        OutdoorPvPWorkShopWG* wsNe;
+        OutdoorPvPWorkShopWG* wsNw;
+        OutdoorPvPWorkShopWG* wsSe;
+        OutdoorPvPWorkShopWG* wsSw;
+        OutdoorPvPWorkShopWG* wsKe;
+        OutdoorPvPWorkShopWG* wsKw;
 };
 
-struct WorldPvPWGGameObjectBuilding
+struct OutdoorPvPGameObjectBuildingWG
 {
 
     uint32 m_Team;
     OutdoorPvPWG *m_WG;
     uint8 count;
     uint32 m_Type;
-    uint32 m_WorldState;
-    uint32 m_State;
     uint32 m_TextId;
     uint32 TowerCount;
     Map* Mmap;
@@ -438,30 +442,64 @@ struct WorldPvPWGGameObjectBuilding
     std::list<ObjectGuid> m_CreatureA;
     std::list<ObjectGuid> m_CreatureH;
 
-    WorldPvPWGGameObjectBuilding(OutdoorPvPWG *WG)
+    OutdoorPvPGameObjectBuildingWG(OutdoorPvPWG *WG)
     {
         m_WG = WG;
         m_Team = 0;
         count = 0;
         TowerCount = 0;
         m_Type = 0;
-        m_WorldState = 0;
-        m_State = 0;
         m_TextId = 0;
         Mmap = 0;
         map = false;
     }
 
+    void StartBattle()
+    {
+      RebuildGo();
+      Mmap->GetGameObject(m_WG->gBandT[count])->SetTeam(Team(m_Team));
+
+      //Only towers
+      UpdateTurret(true);
+      UpdateCreature(true);
+      UpdateGameObject(true);
+    }
+
+    void EndBattle(bool changeteam)
+    {
+        RebuildGo();
+
+        if(changeteam)
+        {
+          switch (m_Type)
+          {
+            case WORLD_PVP_WG_OBJECTTYPE_KEEP_TOWER:
+            case WORLD_PVP_WG_OBJECTTYPE_DOOR_LAST:
+            case WORLD_PVP_WG_OBJECTTYPE_DOOR:
+            case WORLD_PVP_WG_OBJECTTYPE_WALL:
+                m_Team = m_WG->GetDefender();
+                break;
+            case WORLD_PVP_WG_OBJECTTYPE_TOWER:
+                m_Team = m_WG->GetAttacker();
+                break;
+            default:
+                m_Team = TEAM_NONE;
+                break;
+          }
+        }
+
+      if(map)
+        Mmap->GetGameObject(m_WG->gBandT[count])->SetTeam(Team(m_Team));
+
+      //Only towers
+      UpdateTurret(false);
+      UpdateCreature(false);
+      UpdateGameObject(false);
+
+    }
+
     void Damaged()
     {
-
-        if(m_Team == ALLIANCE)
-            m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_DAMAGE;
-        else if(m_Team == HORDE)
-            m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_DAMAGE;
-
-        m_WG->SendUpdateWorldState(m_WorldState, m_State);
-
         if (m_Type == WORLD_PVP_WG_OBJECTTYPE_KEEP_TOWER)
             m_WG->AddDamagedTower(m_WG->GetDefender());
         else if (m_Type == WORLD_PVP_WG_OBJECTTYPE_TOWER)
@@ -470,13 +508,6 @@ struct WorldPvPWGGameObjectBuilding
 
     void Destroyed(Player* pPlayer)
     {
-        if(m_Team == ALLIANCE)
-            m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_DESTROY;
-        else if(m_Team == HORDE)
-            m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_DESTROY;
-
-        m_WG->SendUpdateWorldState(m_WorldState, m_State);
-
         switch (m_Type)
         {
             case WORLD_PVP_WG_OBJECTTYPE_TOWER:
@@ -491,163 +522,11 @@ struct WorldPvPWGGameObjectBuilding
         m_WG->BrokenWallOrTower(m_Team,pPlayer);
     }
 
-    void Rebuild()
-    {
-      if(m_Team == ALLIANCE)
-      {
-            if(m_State != WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT)
-                m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
-      }
-      else
-      {
-            if(m_State != WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT)
-               m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
-      }
-
-      m_WG->SendUpdateWorldState(m_WorldState, m_State);
-
-      if(map)
-        RebuildGo();
-
-        if(TowerCount > 0)
-        {
-            if(m_Team == ALLIANCE)
-            {
-               for (std::list<ObjectGuid>::iterator itr = m_CreatureA.begin(); itr != m_CreatureA.end(); ++itr)
-               {
-                  if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                     pCreature->Respawn();
-               }
-            }
-            else if(m_Team == HORDE)
-            {
-               for (std::list<ObjectGuid>::iterator itr = m_CreatureH.begin(); itr != m_CreatureH.end(); ++itr)
-               {
-                  if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                     pCreature->Respawn();
-               }
-            }
-
-
-           for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
-           {
-               if(Creature* pTurret = Mmap->GetCreature((*itr)))
-                   pTurret->Respawn();
-           }
-        }
-    }
-
-    void ChangeTeam(uint32 team)
-    {
-        if(team != m_Team)
-        {
-            m_Team = team;
-
-            if(team == ALLIANCE)
-            {
-              if(m_State != WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT)
-                 m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
-            }
-            else if(team == HORDE)
-            {
-              if(m_State != WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT)
-                  m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
-            }
-
-            if(map)
-               Rebuild();
-
-            if(TowerCount > 0)
-            {
-                if(team == ALLIANCE)
-                {
-                   for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
-                   {
-                     if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                         pCreature->setFaction(NPC_FACTION_A);
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_CreatureH.begin(); itr != m_CreatureH.end(); ++itr)
-                   {
-                     if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                     {
-                        pCreature->setFaction(35);
-                        pCreature->SetVisibility(VISIBILITY_OFF);
-                     }
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_CreatureA.begin(); itr != m_CreatureA.end(); ++itr)
-                   {
-                     if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                     {
-                        pCreature->Respawn();
-                        pCreature->setFaction(NPC_FACTION_A);
-                        pCreature->SetVisibility(VISIBILITY_ON);
-                     }
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
-                   {
-                       if(GameObject* pGo = Mmap->GetGameObject((*itr)))
-                          pGo->SetPhaseMask(1,true);
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
-                   {
-                       if(GameObject* pGo = Mmap->GetGameObject((*itr)))
-                          pGo->SetPhaseMask(100,true);
-                   }
-                }
-                else if(team == HORDE)
-                {
-                   for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
-                   {
-                     if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                         pCreature->setFaction(NPC_FACTION_H);
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_CreatureA.begin(); itr != m_CreatureA.end(); ++itr)
-                   {
-                     if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                     {
-                        pCreature->setFaction(35);
-                        pCreature->SetVisibility(VISIBILITY_OFF);
-                     }
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_CreatureH.begin(); itr != m_CreatureH.end(); ++itr)
-                   {
-                     if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                     {
-                        pCreature->Respawn();
-                        pCreature->setFaction(NPC_FACTION_H);
-                        pCreature->SetVisibility(VISIBILITY_ON);
-                     }
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
-                   {
-                       if(GameObject* pGo = Mmap->GetGameObject((*itr)))
-                          pGo->SetPhaseMask(1,true);
-                   }
-
-                   for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
-                   {
-                       if(GameObject* pGo = Mmap->GetGameObject((*itr)))
-                          pGo->SetPhaseMask(100,true);
-                   }
-                }
-            }
-        }
-    }
-
-    void Init(uint32 i, uint32 type, uint32 worldstate, uint32 textid)
+    void Init(uint32 i, uint32 type, uint32 textid)
     {
         count = i;
 
         m_Type = type;
-
-        m_WorldState = worldstate;
 
         m_TextId = textid;
 
@@ -667,17 +546,6 @@ struct WorldPvPWGGameObjectBuilding
                 break;
         }
 
-        switch(m_Team)
-        {
-           case ALLIANCE:
-                m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
-                break;
-           case HORDE:
-                m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
-                break;
-
-        }
-
         switch (count)
         {
             case 27:
@@ -694,7 +562,7 @@ struct WorldPvPWGGameObjectBuilding
 
     void RebuildGo()
     {
-        if(Mmap->GetGameObject(m_WG->gBandT[count]))
+        if(map)
            Mmap->GetGameObject(m_WG->gBandT[count])->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
     }
 
@@ -708,10 +576,8 @@ struct WorldPvPWGGameObjectBuilding
 
         if(TowerCount > 0)
         {
-            if(m_Team == ALLIANCE)
-               pTurret->setFaction(NPC_FACTION_A);
-            else if(m_Team == HORDE)
-               pTurret->setFaction(NPC_FACTION_H);
+            pTurret->setFaction(35);
+            pTurret->SetVisibility(VISIBILITY_OFF);
 
             TurretCreature.push_back(pTurret->GetObjectGuid());
         }
@@ -727,23 +593,13 @@ struct WorldPvPWGGameObjectBuilding
 
         if(TowerCount > 0)
         {
-            if(m_Team == team)
-            {
                 if(m_Team == ALLIANCE)
                    m_CreatureA.push_back(pCreature->GetObjectGuid());
                 else if(m_Team == HORDE)
                    m_CreatureH.push_back(pCreature->GetObjectGuid());
-            }
-            else if(m_Team != team)
-            {
+
                 pCreature->setFaction(35);
                 pCreature->SetVisibility(VISIBILITY_OFF);
-
-                if(m_Team == ALLIANCE)
-                   m_CreatureH.push_back(pCreature->GetObjectGuid());
-                else if(m_Team == HORDE)
-                   m_CreatureA.push_back(pCreature->GetObjectGuid());
-            }
         }
     }
 
@@ -757,27 +613,171 @@ struct WorldPvPWGGameObjectBuilding
 
         if(TowerCount > 0)
         {
-            if(m_Team == team)
-            {
-                if(m_Team == ALLIANCE)
-                   m_GameObjectA.push_back(pGo->GetObjectGuid());
-                else if(m_Team == HORDE)
-                   m_GameObjectH.push_back(pGo->GetObjectGuid());
-            }
-            else if(m_Team != team)
-            {
                 pGo->SetPhaseMask(100,true);
 
                 if(m_Team == ALLIANCE)
                    m_GameObjectH.push_back(pGo->GetObjectGuid());
                 else if(m_Team == HORDE)
                    m_GameObjectA.push_back(pGo->GetObjectGuid());
-            }
         }
+    }
+
+    void UpdateTurret(bool activate) // Only for towers
+    {
+        if(TowerCount == 0)
+           return;
+
+        if(activate)
+        {
+           for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
+           {
+               if(Creature* pTurret = Mmap->GetCreature((*itr)))
+               {
+                 pTurret->Respawn();
+                 pTurret->SetVisibility(VISIBILITY_ON);
+
+                 if(m_Team == ALLIANCE)
+                     pTurret->setFaction(NPC_FACTION_A);
+                 else if(m_Team == HORDE)
+                     pTurret->setFaction(NPC_FACTION_H);
+               }
+           }
+        }
+        else
+        {
+           for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
+           {
+               if(Creature* pTurret = Mmap->GetCreature((*itr)))
+               {
+                 pTurret->Respawn();
+                 pTurret->setFaction(35);
+                 pTurret->SetVisibility(VISIBILITY_OFF);
+               }
+           }
+        }
+
+    }
+
+    void UpdateCreature(bool activate)
+    {
+        if(TowerCount == 0)
+           return;
+
+        if(m_Team == ALLIANCE)
+        {
+           for (std::list<ObjectGuid>::iterator itr = m_CreatureA.begin(); itr != m_CreatureA.end(); ++itr)
+           {
+               if(Creature* pCreature = Mmap->GetCreature((*itr)))
+               {
+                   if(activate)
+                   {
+                       pCreature->Respawn();
+                       pCreature->SetVisibility(VISIBILITY_ON);
+                   }
+                   else
+                   {
+                       pCreature->Respawn();
+                       pCreature->setFaction(35);
+                       pCreature->SetVisibility(VISIBILITY_OFF);
+                   }
+               }
+           }
+
+           for (std::list<ObjectGuid>::iterator itr = m_CreatureH.begin(); itr != m_CreatureH.end(); ++itr)
+           {
+               if(Creature* pCreature = Mmap->GetCreature((*itr)))
+               {
+                       pCreature->Respawn();
+                       pCreature->setFaction(35);
+                       pCreature->SetVisibility(VISIBILITY_OFF);
+               }
+           }
+
+        }
+        else if(m_Team == HORDE)
+        {
+           for (std::list<ObjectGuid>::iterator itr = m_CreatureH.begin(); itr != m_CreatureH.end(); ++itr)
+           {
+               if(Creature* pCreature = Mmap->GetCreature((*itr)))
+               {
+                   if(activate)
+                   {
+                       pCreature->Respawn();
+                       pCreature->SetVisibility(VISIBILITY_ON);
+                   }
+                   else
+                   {
+                       pCreature->Respawn();
+                       pCreature->setFaction(35);
+                       pCreature->SetVisibility(VISIBILITY_OFF);
+                   }
+               }
+           }
+
+           for (std::list<ObjectGuid>::iterator itr = m_CreatureA.begin(); itr != m_CreatureA.end(); ++itr)
+           {
+               if(Creature* pCreature = Mmap->GetCreature((*itr)))
+               {
+                       pCreature->Respawn();
+                       pCreature->setFaction(35);
+                       pCreature->SetVisibility(VISIBILITY_OFF);
+               }
+           }
+        }
+    }
+
+    void UpdateGameObject(bool activate)
+    {
+        if(m_Team == ALLIANCE)
+           return;
+
+        if(m_Team == ALLIANCE)
+        {
+           for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
+           {
+               if(GameObject* pGo = Mmap->GetGameObject((*itr)))
+               {
+                   if(activate)
+                       pGo->SetPhaseMask(1,true);
+                   else
+                      pGo->SetPhaseMask(100,true);
+               }
+           }
+
+           for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
+           {
+               if(GameObject* pGo = Mmap->GetGameObject((*itr)))
+               {
+                  pGo->SetPhaseMask(100,true);
+               }
+           }
+        }
+        else
+        {
+           for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
+           {
+               if(GameObject* pGo = Mmap->GetGameObject((*itr)))
+               {
+                   if(activate)
+                       pGo->SetPhaseMask(1,true);
+                   else
+                      pGo->SetPhaseMask(100,true);
+               }
+           }
+
+           for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
+           {
+               if(GameObject* pGo = Mmap->GetGameObject((*itr)))
+               {
+                  pGo->SetPhaseMask(100,true);
+               }
+           }
+        }
+
     }
 };
 
-struct WorldPvPGraveYardWG
+struct OutdoorPvPGraveYardWG
 {
     OutdoorPvPWG* m_WG;
     uint32 m_team;
@@ -788,13 +788,15 @@ struct WorldPvPGraveYardWG
     ObjectGuid SpiritGuieA;
     ObjectGuid SpiritGuieH;
 
-    WorldPvPGraveYardWG(OutdoorPvPWG * WG)
+    OutdoorPvPGraveYardWG(OutdoorPvPWG * WG)
     {
         m_WG = WG;
         m_team = 0;
         m_id = 0;
         Mmap = 0;
         map = false;
+        SpiritGuieA.Clear();
+        SpiritGuieH.Clear();
     }
 
     void Init(uint32 id,uint32 team)
@@ -819,50 +821,49 @@ struct WorldPvPGraveYardWG
             map = true;
         }
 
-       if(m_team == team)
-       {
-           if (m_team == ALLIANCE)
-              SpiritGuieA = pCreature->GetObjectGuid();
-           else if (m_team = HORDE)
-              SpiritGuieH = pCreature->GetObjectGuid();
-       }
-       else if(m_team != team)
-       {
-           pCreature->SetVisibility(VISIBILITY_OFF);
+        if (m_team == ALLIANCE)
+            SpiritGuieA = pCreature->GetObjectGuid();
+        else if (m_team = HORDE)
+            SpiritGuieH = pCreature->GetObjectGuid();
 
-           if(m_team == ALLIANCE)
-              SpiritGuieH = pCreature->GetObjectGuid();
-           else if(m_team = HORDE)
-              SpiritGuieA = pCreature->GetObjectGuid();
-       }
+        if(m_id == GRAVEYARD_ID_KEEP)
+        {
+           if(SpiritGuieA != NULL && SpiritGuieH == NULL)
+              Start();
+        }
+
+        pCreature->SetVisibility(VISIBILITY_OFF);
     }
 
-    void ChangeTeam(uint32 team)
+    void Start()
     {
-       if(m_team != team)
-       {
-         m_team = team;
+        if(m_team == ALLIANCE)
+        {
+            Mmap->GetCreature(SpiritGuieA)->SetVisibility(VISIBILITY_ON);
+        }
+        else
+        {
+            Mmap->GetCreature(SpiritGuieH)->SetVisibility(VISIBILITY_ON);
+        }
+    }
 
-           if(team == ALLIANCE)
-           {
-              if(map && Mmap)
-              {
-                  if (Creature* c1 = Mmap->GetCreature(SpiritGuieH))
-                      c1->SetVisibility(VISIBILITY_OFF);
-                  if (Creature* c2 = Mmap->GetCreature(SpiritGuieA))
-                      c2->SetVisibility(VISIBILITY_ON);
-              }
-           }
-           else if(team = HORDE)
-           {
-              if(map && Mmap)
-              {
-                  if (Creature* c1 = Mmap->GetCreature(SpiritGuieA))
-                      c1->SetVisibility(VISIBILITY_OFF);
-                  if (Creature* c2 = Mmap->GetCreature(SpiritGuieH))
-                      c2->SetVisibility(VISIBILITY_ON);
-              }
-           }
+    void End(bool changeteam)
+    {
+        if(m_team == ALLIANCE)
+        {
+            Mmap->GetCreature(SpiritGuieA)->SetVisibility(VISIBILITY_OFF);
+        }
+        else
+        {
+            Mmap->GetCreature(SpiritGuieH)->SetVisibility(VISIBILITY_OFF);
+        }
+
+       if(changeteam)
+       {
+           if(m_team == ALLIANCE)
+             m_team == HORDE;
+           else if(m_team == HORDE)
+             m_team == ALLIANCE;
        }
     }
 
@@ -872,9 +873,9 @@ struct WorldPvPGraveYardWG
     }
 };
 
-struct WorldPvPWGWorkShopData
+struct OutdoorPvPWorkShopWG
 {
-    WorldPvPGraveYardWG* m_GY;
+    OutdoorPvPGraveYardWG* m_GY;
     OutdoorPvPWG *m_WG;
     uint32 m_Type;
     uint32 m_State;
@@ -890,7 +891,7 @@ struct WorldPvPWGWorkShopData
     std::list<ObjectGuid> m_GameObjectA;
     std::list<ObjectGuid> m_GameObjectH;
 
-    WorldPvPWGWorkShopData(OutdoorPvPWG * WG)
+    OutdoorPvPWorkShopWG(OutdoorPvPWG * WG)
     {
         m_WG = WG;
         m_GY = 0;
@@ -909,7 +910,7 @@ struct WorldPvPWGWorkShopData
        return m_Type;
     }
 
-    void SetGraveYard(WorldPvPGraveYardWG* GY)
+    void SetGraveYard(OutdoorPvPGraveYardWG* GY)
     {
       m_GY = GY;
     }
@@ -922,23 +923,13 @@ struct WorldPvPWGWorkShopData
            map = true;
         }
 
-        if(m_TeamControl == team)
-        {
-            if(m_TeamControl == ALLIANCE)
-              m_CreatureA.push_back(pCreature->GetObjectGuid());
-            else if(m_TeamControl == HORDE)
-              m_CreatureH.push_back(pCreature->GetObjectGuid());
-        }
-        else if(m_TeamControl != team)
-        {
-             pCreature->setFaction(35);
-             pCreature->SetVisibility(VISIBILITY_OFF);
+        if(m_TeamControl == ALLIANCE)
+           m_CreatureA.push_back(pCreature->GetObjectGuid());
+        else if(m_TeamControl == HORDE)
+           m_CreatureH.push_back(pCreature->GetObjectGuid());
 
-            if(m_TeamControl == ALLIANCE)
-              m_CreatureH.push_back(pCreature->GetObjectGuid());
-            else if(m_TeamControl == HORDE)
-              m_CreatureA.push_back(pCreature->GetObjectGuid());
-        }
+        pCreature->setFaction(35);
+        pCreature->SetVisibility(VISIBILITY_OFF);
     }
 
     void AddGameObject(GameObject* pGo, uint32 team)
@@ -949,22 +940,12 @@ struct WorldPvPWGWorkShopData
            map = true;
         }
 
-        if(m_TeamControl == team)
-        {
-            if(m_TeamControl == ALLIANCE)
-              m_GameObjectA.push_back(pGo->GetObjectGuid());
-            else if(m_TeamControl == HORDE)
-              m_GameObjectH.push_back(pGo->GetObjectGuid());
-        }
-        else if(m_TeamControl != team)
-        {
-            pGo->SetPhaseMask(100,true);
+        if(m_TeamControl == ALLIANCE)
+            m_GameObjectH.push_back(pGo->GetObjectGuid());
+        else if(m_TeamControl == HORDE)
+           m_GameObjectA.push_back(pGo->GetObjectGuid());
 
-            if(m_TeamControl == ALLIANCE)
-              m_GameObjectH.push_back(pGo->GetObjectGuid());
-            else if(m_TeamControl == HORDE)
-              m_GameObjectA.push_back(pGo->GetObjectGuid());
-        }
+        pGo->SetPhaseMask(100,true);
     }
 
     void Init(uint8 n,uint32 worldstate, uint32 type, uint32 text)
@@ -973,40 +954,52 @@ struct WorldPvPWGWorkShopData
         m_WorldState = worldstate;
         m_Type = type;
         m_TextId = text;
+        m_State = WORLD_PVP_WG_OBJECTSTATE_NEUTRAL_INTACT;
 
          if(m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
-         {
              m_TeamControl = m_WG->GetAttacker();
-             switch(m_TeamControl)
-             {
-                case ALLIANCE:
-                    m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
-                    m_WG->SendUpdateWorldState(m_WorldState, m_State);
-                    break;
-                case HORDE:
-                    m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
-                    m_WG->SendUpdateWorldState(m_WorldState, m_State);
-                    break;
-             }
-         }
          else
-         {
              m_TeamControl = m_WG->GetDefender();
-             switch(m_TeamControl)
-             {
-                case ALLIANCE:
-                    m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
-                    m_WG->SendUpdateWorldState(m_WorldState, m_State);
-                    break;
-                case HORDE:
-                    m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
-                    m_WG->SendUpdateWorldState(m_WorldState, m_State);
-                    break;
-             }
-         }
     }
 
-    void Rebuild()
+    void StartBattle()
+    {
+        switch(m_TeamControl)
+        {
+            case ALLIANCE:
+                m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
+                break;
+            case HORDE:
+                m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
+                break;
+        }
+
+        m_WG->SendUpdateWorldState(m_WorldState, m_State);
+        Rebuild(true);
+
+        if(m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
+        {
+           m_GY->Start();
+           sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, Team(m_TeamControl));
+        }
+    }
+
+    void EndBattle(bool changeteam)
+    {
+        if(changeteam)
+        {
+            if(m_TeamControl == ALLIANCE)
+               m_TeamControl = HORDE;
+            else if(m_TeamControl = ALLIANCE)
+               m_TeamControl = ALLIANCE;
+        }
+
+        m_State = WORLD_PVP_WG_OBJECTSTATE_NEUTRAL_INTACT;
+        ChangeControl(m_TeamControl,true);
+
+    }
+
+    void Rebuild(bool activate)
     {
 
         if(m_TeamControl == ALLIANCE)
@@ -1014,16 +1007,52 @@ struct WorldPvPWGWorkShopData
            for (std::list<ObjectGuid>::iterator itr = m_CreatureA.begin(); itr != m_CreatureA.end(); ++itr)
            {
              if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                pCreature->Respawn();
+             {
+                 pCreature->Respawn();
+                 if(!activate)
+                 {
+                     pCreature->setFaction(35);
+                     pCreature->SetVisibility(VISIBILITY_OFF);
+                 }
+             }
            }
+
+            for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
+            {
+               if(GameObject* pGo = Mmap->GetGameObject((*itr)))
+               {
+                   if(activate)
+                     pGo->SetPhaseMask(1,true);
+                   else
+                     pGo->SetPhaseMask(100,true);
+               }
+            }
         }
         else if(m_TeamControl == HORDE)
         {
            for (std::list<ObjectGuid>::iterator itr = m_CreatureH.begin(); itr != m_CreatureH.end(); ++itr)
            {
              if(Creature* pCreature = Mmap->GetCreature((*itr)))
-                pCreature->Respawn();
+             {
+                 pCreature->Respawn();
+                 if(!activate)
+                 {
+                     pCreature->setFaction(35);
+                     pCreature->SetVisibility(VISIBILITY_OFF);
+                 }
+             }
            }
+
+            for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
+            {
+               if(GameObject* pGo = Mmap->GetGameObject((*itr)))
+               {
+                   if(activate)
+                     pGo->SetPhaseMask(1,true);
+                   else
+                     pGo->SetPhaseMask(100,true);
+               }
+            }
         }
 
         if(map)
@@ -1031,19 +1060,29 @@ struct WorldPvPWGWorkShopData
            if(GameObject* gBanner = Mmap->GetGameObject(m_WG->gBanner[number]))
            {
               gBanner->Respawn();
-              if(m_TeamControl == ALLIANCE)
-                 m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_ALLIANCE);
+              if(activate)
+              {
+                if(m_TeamControl == ALLIANCE)
+                  m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_ALLIANCE);
+                else
+                  m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_HORDE);
+              }
               else
-                 m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_HORDE);
+               m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_NEUTRAL);
            }
 
           if(GameObject* pGo =  Mmap->GetGameObject(m_WG->gBuilding[number]))
              pGo->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
         }
 
+        if(!activate && m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
+        {
+            m_GY->End(false);
+            sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, Team(m_TeamControl));
+        }
     }
 
-    void ChangeControl(uint32 team)
+    void ChangeControl(uint32 team, bool endbattle)
     {
         switch (team)
         {
@@ -1058,6 +1097,7 @@ struct WorldPvPWGWorkShopData
                        {
                           if(Creature* pCreature = Mmap->GetCreature((*itr)))
                           {
+                              pCreature->Respawn();
                               pCreature->setFaction(35);
                               pCreature->SetVisibility(VISIBILITY_OFF);
                           }
@@ -1067,46 +1107,66 @@ struct WorldPvPWGWorkShopData
                        {
                           if(Creature* pCreature = Mmap->GetCreature((*itr)))
                           {
-                             pCreature->SetVisibility(VISIBILITY_ON);
-                             pCreature->setFaction(NPC_FACTION_A);
+                             pCreature->Respawn();
+                             if(endbattle)
+                             {
+                               pCreature->setFaction(35);
+                               pCreature->SetVisibility(VISIBILITY_OFF);
+                             }
                           }
                        }
 
                        for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
                        {
                           if(GameObject* pGo = Mmap->GetGameObject((*itr)))
-                          {
                              pGo->SetPhaseMask(100,true);
-                          }
                        }
 
                        for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
                        {
                           if(GameObject* pGo = Mmap->GetGameObject((*itr)))
                           {
-                             pGo->SetPhaseMask(1,true);
+                              if(endbattle)
+                                 pGo->SetPhaseMask(100,true);
+                              else
+                                 pGo->SetPhaseMask(1,true);
                           }
+
                        }
 
                       if(GameObject* gBanner = Mmap->GetGameObject(m_WG->gBanner[number]))
-                          m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_ALLIANCE);
+                      {
+                          if(endbattle)
+                             m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_NEUTRAL);
+                          else
+                             m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_ALLIANCE);
+
+                      }
+
 
                       if(GameObject* pGo =  Mmap->GetGameObject(m_WG->gBuilding[number]))
                          pGo->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
                     }
 
-                    m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
-                    m_WG->SendUpdateWorldState(m_WorldState, m_State);
+                    if(!endbattle)
+                    {
+                      m_State = WORLD_PVP_WG_OBJECTSTATE_ALLIANCE_INTACT;
+                      m_WG->SendUpdateWorldState(m_WorldState, m_State);
+                    }
 
                     if(m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
                     {
-                      m_GY->ChangeTeam(m_TeamControl);
-                      sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, HORDE);
-                      sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, ALLIANCE);
+                        m_GY->End(true);
+                        sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, HORDE);
+                        if(!endbattle)
+                        {
+                          m_GY->Start();
+                          sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, ALLIANCE);
+                        }
                     }
                   }
-                  else
-                    Rebuild();
+                  else if(endbattle)
+                    Rebuild(false);
                   break;
             case HORDE:
                   if(m_TeamControl != HORDE)
@@ -1119,8 +1179,9 @@ struct WorldPvPWGWorkShopData
                        {
                           if(Creature* pCreature = Mmap->GetCreature((*itr)))
                           {
-                              pCreature->setFaction(35);
-                              pCreature->SetVisibility(VISIBILITY_OFF);
+                             pCreature->Respawn();
+                             pCreature->setFaction(35);
+                             pCreature->SetVisibility(VISIBILITY_OFF);
                           }
                        }
 
@@ -1128,52 +1189,70 @@ struct WorldPvPWGWorkShopData
                        {
                           if(Creature* pCreature = Mmap->GetCreature((*itr)))
                           {
-                             pCreature->SetVisibility(VISIBILITY_ON);
-                             pCreature->setFaction(NPC_FACTION_H);
+                             pCreature->Respawn();
+                             if(endbattle)
+                             {
+                               pCreature->setFaction(35);
+                               pCreature->SetVisibility(VISIBILITY_OFF);
+                             }
                           }
                        }
 
                        for (std::list<ObjectGuid>::iterator itr = m_GameObjectA.begin(); itr != m_GameObjectA.end(); ++itr)
                        {
                           if(GameObject* pGo = Mmap->GetGameObject((*itr)))
-                          {
                              pGo->SetPhaseMask(100,true);
-                          }
                        }
 
                        for (std::list<ObjectGuid>::iterator itr = m_GameObjectH.begin(); itr != m_GameObjectH.end(); ++itr)
                        {
                           if(GameObject* pGo = Mmap->GetGameObject((*itr)))
                           {
-                             pGo->SetPhaseMask(1,true);
+                              if(endbattle)
+                               pGo->SetPhaseMask(100,true);
+                              else
+                               pGo->SetPhaseMask(1,true);
                           }
+
                        }
 
 
                       if(GameObject* gBanner = Mmap->GetGameObject(m_WG->gBanner[number]))
-                          m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_HORDE);
+                      {
+                          if(endbattle)
+                            m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_NEUTRAL);
+                          else
+                            m_WG->SetBannerArtKit(gBanner,GO_ARTKIT_BANNER_HORDE);
+                      }
+
 
                       if(GameObject* pGo =  Mmap->GetGameObject(m_WG->gBuilding[number]))
                          pGo->Rebuild(((Unit*)m_WG->GetPlayerInZone()));
                     }
 
-
+                    if(!endbattle)
+                    {
                       m_State = WORLD_PVP_WG_OBJECTSTATE_HORDE_INTACT;
                       m_WG->SendUpdateWorldState(m_WorldState, m_State);
+                    }
 
                     if(m_Type < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
                     {
-                      m_GY->ChangeTeam(m_TeamControl);
-                      sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, ALLIANCE);
-                      sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, HORDE);
+                        m_GY->End(true);
+                        sObjectMgr.RemoveGraveYardLink(m_GY->GetId(), ZONE_ID_WINTERGRASP, ALLIANCE);
+                        if(!endbattle)
+                        {
+                          m_GY->Start();
+                          sObjectMgr.SetGraveYardLinkTeam(m_GY->GetId(), ZONE_ID_WINTERGRASP, HORDE);
+                        }
                     }
                   }
-                  else
-                    Rebuild();
+                  else if(endbattle)
+                    Rebuild(false);
                   break;
         }
-            m_WG->UpdateCounterVehicle(false);
     }
 
 };
+
 #endif

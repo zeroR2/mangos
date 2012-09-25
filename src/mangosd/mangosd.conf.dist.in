@@ -1806,7 +1806,6 @@ Arena.RemoveAurasWithDurationLess = 30
 #    OutdoorPvp.TFEnabled               #Enable Terokkar Forest  Outdoor pvp
 #    OutdoorPvp.NAEnabled               #Enable Halaa (Nagrand) Outdoor pvp
 #    OutdoorPvp.GHEnabled               #Enable Venture Bay (Grizzly Hills) Outdoor pvp
-#    OutdoorPvp.WGEnabled               #Enable WinterGrasp Outdoor pvp
 #        Default: 1 (enable)
 #                 0 (disable)
 #
@@ -1819,7 +1818,49 @@ OutdoorPvp.ZMEnabled = 1
 OutdoorPvp.TFEnabled = 1
 OutdoorPvp.NAEnabled = 1
 OutdoorPvp.GHEnabled = 1
+
+###################################################################################################################
+# OUTDOOR PVP WINTERGRASP CONFIG
+#
+#    OutdoorPvp.WGEnabled               #Enable WinterGrasp Outdoor pvp
+#        Default: 1 (enable)
+#                 0 (disable)
+#
+#    OutdoorPvp.WGStartDefenderTeam     #Select team ehich start the control zone
+#        Default: 2
+#        0 - Alliance
+#        1 - Horde
+#        2 - random
+#
+#  Only if OutdoorPvp.WGEnabled = 0
+#
+#    OutdoorPvp.WGChangeTeamControl     #Select if change control zone by time 
+#        Default:0
+#        1 - Enable
+#        0 - Disable
+#
+#    OutdoorPvp.WGTimeForChangeControl  #Time in seconds for change control zone 
+#        Default:0
+#
+#  Only if OutdoorPvp.WGEnabled = 1
+#
+#    OutdoorPvp.WGTimeControlZone      #Time in seconds for control zone phase 
+#        Default:3600 NOT BLIZZLIKE (2:30 = 9000)
+#
+#    OutdoorPvp.WGTimeBattle           #Time in seconds for battle phase
+#        Default:3600 NOT BLIZZLIKE (2:30 = 9000)
+#
+#
+###################################################################################################################
+
 OutdoorPvp.WGEnabled = 0
+OutdoorPvp.WGStartDefenderTeam = 0
+
+OutdoorPvp.WGChangeTeamControl = 1
+OutdoorPvp.WGTimeForChangeControl = 3600
+
+OutdoorPvp.WGTimeControlZone = 3600
+OutdoorPvp.WGTimeBattle = 1800
 
 ###################################################################################################################
 # NETWORK CONFIG

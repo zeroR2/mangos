@@ -102,6 +102,11 @@ class OutdoorPvP
 
         void CompleteQuest(Player *player, uint32 entry);
 
+        //Battlefield
+        void SetBattleField(bool set) {isBattleField = set; }
+        void SetBattleStatus(bool status) {BattleStatus = status; }
+        bool GetBattleStatus() {return BattleStatus; }
+
     protected:
 
         // Player related stuff
@@ -126,6 +131,10 @@ class OutdoorPvP
 
         // Handle gameobject spawn / despawn
         void RespawnGO(const WorldObject* objRef, ObjectGuid goGuid, bool respawn);
+
+        // Battlefield
+        bool isBattleField;
+        bool BattleStatus; // If it is trueit is battle phase else it is control phase
 
         // store the players inside the area
         GuidZoneMap m_zonePlayers;

@@ -28,6 +28,8 @@ OutdoorPvPHP::OutdoorPvPHP() : OutdoorPvP(),
     m_towersAlliance(0),
     m_towersHorde(0)
 {
+    SetBattleField(false);
+
     m_towerWorldState[0] = WORLD_STATE_HP_OVERLOOK_NEUTRAL;
     m_towerWorldState[1] = WORLD_STATE_HP_STADIUM_NEUTRAL;
     m_towerWorldState[2] = WORLD_STATE_HP_BROKEN_HILL_NEUTRAL;

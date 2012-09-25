@@ -33,6 +33,8 @@ OutdoorPvPTF::OutdoorPvPTF() : OutdoorPvP(),
     m_towersAlliance(0),
     m_towersHorde(0)
 {
+    SetBattleField(false);
+
     m_towerWorldState[0] = WORLD_STATE_TF_WEST_TOWER_NEUTRAL;
     m_towerWorldState[1] = WORLD_STATE_TF_NORTH_TOWER_NEUTRAL;
     m_towerWorldState[2] = WORLD_STATE_TF_EAST_TOWER_NEUTRAL;

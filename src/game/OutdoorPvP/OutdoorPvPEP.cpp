@@ -29,6 +29,8 @@ OutdoorPvPEP::OutdoorPvPEP() : OutdoorPvP(),
     m_towersAlliance(0),
     m_towersHorde(0)
 {
+    SetBattleField(false);
+
     // FIXME - need read data from worlstates
     m_towerWorldState[0] = WORLD_STATE_EP_NORTHPASS_NEUTRAL;
     m_towerWorldState[1] = WORLD_STATE_EP_CROWNGUARD_NEUTRAL;

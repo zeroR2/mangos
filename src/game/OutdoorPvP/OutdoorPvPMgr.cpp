@@ -36,7 +36,7 @@ INSTANTIATE_SINGLETON_1(OutdoorPvPMgr);
 OutdoorPvPMgr::OutdoorPvPMgr()
 {
     m_updateTimer.SetInterval(TIMER_OPVP_MGR_UPDATE);
-    // warning - unsafe place. 
+    // warning - unsafe place.
     memset(&m_scripts, 0, sizeof(m_scripts));
 }
 
@@ -66,7 +66,9 @@ void OutdoorPvPMgr::InitOutdoorPvP()
     LOAD_OPVP_ZONE(TF);
     LOAD_OPVP_ZONE(NA);
     LOAD_OPVP_ZONE(GH);
-    LOAD_OPVP_ZONE(WG);
+
+    m_scripts[OPVP_ID_WG] = new OutdoorPvPWG();
+    ++counter;
 
     sLog.outString();
     sLog.outString(">> Loaded %u Outdoor PvP zones", counter);

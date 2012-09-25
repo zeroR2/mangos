@@ -31,24 +31,51 @@ bool OutdoorPvPWG::InitBattlefield()
     m_bIsBattleStarted = false;
     get_map = false;
 
-    activate = true; //get from config in the future
+    // config
+    activate = sWorld.getConfig(CONFIG_BOOL_OUTDOORPVP_WG_ENABLED);
+    startdefenderteam = sWorld.getConfig(CONFIG_UNIT32_OPVP_WG_START_DEFENDER_TEAM);
+    Changeteamifdisable = sWorld.getConfig(CONFIG_BOOL_OUTDOORPVP_WG_DISABLE_CHANGE_TEAM);
+    TimeChangeControl = sWorld.getConfig(CONFIG_UNIT32_OPVP_WG_DISABLE_CHANGE_TEAM_TIMER);
+    TimeControl = sWorld.getConfig(CONFIG_UNIT32_OPVP_WG_CONTROL_PHASE_TIMER);
+    TimeBattle = sWorld.getConfig(CONFIG_UNIT32_OPVP_WG_BATTLE_PHASE_TIMER);
 
     if(activate)
-    {
-        SendUpdateWorldState(WS_BATTLE_ACTIVE_POS,1);
-        SendUpdateWorldState(WS_BATTLE_ACTIVE_NEG,0);
-    }
+       SetBattleField(true); // Active BattleField system
     else
+       SetBattleField(false); // Disable BattleField system
+
+    switch(startdefenderteam)
     {
-        SendUpdateWorldState(WS_BATTLE_ACTIVE_POS,0);
-        SendUpdateWorldState(WS_BATTLE_ACTIVE_NEG,1);
+        case 0:
+           defender = ALLIANCE;
+           break;
+        case 1:
+           defender = HORDE;
+           break;
+        case 2:
+           defender = urand(0, 1) ? ALLIANCE : HORDE;
+           break;
     }
 
-    defender = ALLIANCE; //get from config in the future
     if(defender == ALLIANCE)
       attacker = HORDE;
     else if(defender == HORDE)
       attacker = ALLIANCE;
+
+    UpdateTeamWS(GetDefender());
+
+    UpdateTimer = 0;  //Init when the phase is inited
+
+    // Variables use in battle phase
+    DamageTowerAtt = 0;
+    DamageTowerDef = 0;
+    DestroyTowerAtt = 0;
+    DestroyTowerDef = 0;
+    m_tenacityStack = 0;
+
+    // when the server start , the initial phase is control
+    SetBattleStatus(false);
+    UpdateMainWS(false);
 
     Install();
 
@@ -57,34 +84,23 @@ bool OutdoorPvPWG::InitBattlefield()
 
 void OutdoorPvPWG::Install()
 {
-
        // GraveYard
        // Alliance
-       if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
-       {
-         gy->Init(GRAVEYARD_ID_ALLIANCE,ALLIANCE);
-         gyAlliance = gy;
-         sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_ALLIANCE, ZONE_ID_WINTERGRASP, ALLIANCE);
-       }
+       sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_ALLIANCE, ZONE_ID_WINTERGRASP, ALLIANCE);
        // Horde
-       if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
-       {
-         gy->Init(GRAVEYARD_ID_HORDE,HORDE);
-         gyHorde = gy;
-         sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_HORDE, ZONE_ID_WINTERGRASP, HORDE);
-       }
+       sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_HORDE, ZONE_ID_WINTERGRASP, HORDE);
 
        //Keep and towers
        for (uint8 i = 0; i < WG_MAX_OBJ; i++)
        {
-          WorldPvPWGGameObjectBuilding *b = new WorldPvPWGGameObjectBuilding(this);
-          b->Init(i, WGGameObjectBuillding[i].type, WGGameObjectBuillding[i].WorldState, WGGameObjectBuillding[i].textid);
+          OutdoorPvPGameObjectBuildingWG *b = new OutdoorPvPGameObjectBuildingWG(this);
+          b->Init(i, WGGameObjectBuillding[i].type, WGGameObjectBuillding[i].textid);
           BuildingsInZone.insert(b);
           Building[i] = b;
        }
 
        // Keep GraveYard
-        if(WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this))
+        if(OutdoorPvPGraveYardWG* gy = new OutdoorPvPGraveYardWG(this))
         {
           gy->Init(GRAVEYARD_ID_KEEP,GetDefender());
           gyBuilding = gy;
@@ -102,16 +118,16 @@ void OutdoorPvPWG::Install()
        // WorkShops
        for (uint8 i = 0; i < WG_MAX_WORKSHOP; i++)
        {
-          WorldPvPWGWorkShopData *ws = new WorldPvPWGWorkShopData(this);
+          OutdoorPvPWorkShopWG *ws = new OutdoorPvPWorkShopWG(this);
           ws->Init(i,WGWorkShopDataBase[i].worldstate, WGWorkShopDataBase[i].type, WGWorkShopDataBase[i].textid);
           WorkShopList.push_back(ws);
           if(WGWorkShopDataBase[i].GraveYardId != 0)
           {
-            WorldPvPGraveYardWG* gy = new WorldPvPGraveYardWG(this);
-            gy->Init(WGWorkShopDataBase[i].GraveYardId,GetAttacker());
+            OutdoorPvPGraveYardWG* gy = new OutdoorPvPGraveYardWG(this);
+            gy->Init(WGWorkShopDataBase[i].GraveYardId,TEAM_INVALID);
             ws->SetGraveYard(gy);
-            if(ws->GetType() < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
-              sObjectMgr.SetGraveYardLinkTeam(gy->GetId(), ZONE_ID_WINTERGRASP, TEAM_INVALID);
+            //if(ws->GetType() < WORLD_PVP_WG_WORKSHOP_KEEP_WEST)
+              //sObjectMgr.SetGraveYardLinkTeam(gy->GetId(), ZONE_ID_WINTERGRASP, TEAM_INVALID);
             switch(ws->GetType())
             {
               case WORLD_PVP_WG_WORKSHOP_NE:
@@ -151,18 +167,20 @@ void OutdoorPvPWG::Install()
             }
        }
 
-       CanUseRelic = false;
-       DamageTowerAtt = 0;
-       DamageTowerDef = 0;
-       DestroyTowerAtt = 0;
-       DestroyTowerDef = 0;
-       m_tenacityStack = 0;
-       m_bIsBattleStarted = true;
-       TimeBattle = 500;
-       m_Timer = TimeBattle;
-       UpdateTimer = 1000;
-       UpdateCounterVehicle(true);
-
+       if(activate)
+       {
+           m_Timer = TimeControl;
+           UpdateTimer = 1000;
+       }
+       else if (!activate)
+       {
+           if(Changeteamifdisable)
+           {
+               m_Timer = TimeChangeControl;
+               UpdateTimer = 1000;
+               m_bIsBattleStarted = true;
+           }
+       }
 }
 
 void OutdoorPvPWG::UpdateTeleport(GameObject* pGo)
@@ -192,7 +210,7 @@ void OutdoorPvPWG::PrepareKeepNpc(Creature* pCreature,uint32 team)
        }
        else if(GetDefender() != team)
        {
-           pCreature->setFaction(35);
+           pCreature->setFaction(NEUTRAL_FACTION);
            pCreature->SetVisibility(VISIBILITY_OFF);
 
           if(GetDefender() == ALLIANCE)
@@ -231,7 +249,7 @@ void OutdoorPvPWG::PrepareOutKeepNpc(Creature* pCreature,uint32 team)
           else if(GetDefender() == HORDE)
               OutKeepCreatureH.push_back(pCreature->GetObjectGuid());
 
-           pCreature->setFaction(35);
+           pCreature->setFaction(NEUTRAL_FACTION);
            pCreature->SetVisibility(VISIBILITY_OFF);
        }
        else if(GetDefender() != team)
@@ -240,9 +258,12 @@ void OutdoorPvPWG::PrepareOutKeepNpc(Creature* pCreature,uint32 team)
               OutKeepCreatureH.push_back(pCreature->GetObjectGuid());
           else if(GetDefender() == HORDE)
               OutKeepCreatureA.push_back(pCreature->GetObjectGuid());
+
+         // Need remove quest flag
+
        }
 }
-
+//
 void OutdoorPvPWG::HandlePlayerEnterZone(Player* pPlayer, bool isMainZone)
 {
     if (pPlayer->getLevel() < 75)
@@ -293,7 +314,7 @@ void OutdoorPvPWG::HandlePlayerEnterZone(Player* pPlayer, bool isMainZone)
     OutdoorPvP::HandlePlayerEnterZone(pPlayer,isMainZone);
     UpdateTenacityStack();
 }
-
+//
 void OutdoorPvPWG::HandlePlayerLeaveZone(Player* pPlayer, bool isMainZone)
 {
     pPlayer->RemoveAurasDueToSpell(58045);
@@ -319,6 +340,58 @@ void OutdoorPvPWG::HandlePlayerLeaveZone(Player* pPlayer, bool isMainZone)
 
 void OutdoorPvPWG::Update(uint32 uiDiff)
 {
+
+    // Save map in GameObjectBuildings
+    for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
+    {
+        if((*itr)->map == false && get_map)
+        {
+              (*itr)->Mmap = m_Map;
+              (*itr)->map = true;
+        }
+    }
+
+   // Control phase
+   if(!GetBattleStatus())
+   {
+       if(!activate && Changeteamifdisable)
+       {
+          UpdateTeamWS(GetDefender());
+         if(m_bIsBattleStarted)
+         {
+          if (UpdateTimer < uiDiff)
+          {
+            m_Timer = m_Timer - 1;
+            SendUpdateWorldState(WS_CLOCK_1,m_Timer + time(NULL));
+            if(m_Timer > 0)
+               UpdateTimer = 1000;
+          }
+          else
+             UpdateTimer -= uiDiff;
+
+           if(m_Timer == 0)
+             ChangeControlZone();
+          }
+       }
+       else if(activate)
+       {
+          if (UpdateTimer < uiDiff)
+          {
+            m_Timer = m_Timer - 1;
+            SendUpdateWorldState(WS_CLOCK_1,m_Timer + time(NULL));
+            if(m_Timer > 0)
+               UpdateTimer = 1000;
+          }
+          else
+             UpdateTimer -= uiDiff;
+
+         if(m_Timer == 0)
+            StartBattle();
+       }
+   }
+   //Phase Battle
+   else if(GetBattleStatus())
+   {
     if (m_bIsBattleStarted)
     {
         if (UpdateTimer < uiDiff)
@@ -332,32 +405,12 @@ void OutdoorPvPWG::Update(uint32 uiDiff)
             UpdateTimer -= uiDiff;
 
         if(m_Timer == 0)
-          NewRound(false);
-
-        for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
-        {
-           if((*itr)->map == false && get_map)
-           {
-              (*itr)->Mmap = m_Map;
-              (*itr)->map = true;
-           }
-        }
+          EndBattle(false);
 
         //Update World states
         UpdateVehicleCountWG();
-        UpdateWSBuilding();
         UpdateWSWorkShop();
-
-        if(activate)
-        {
-           SendUpdateWorldState(WS_BATTLE_ACTIVE_POS,1);
-           SendUpdateWorldState(WS_BATTLE_ACTIVE_NEG,0);
-        }
-        else
-        {
-           SendUpdateWorldState(WS_BATTLE_ACTIVE_POS,0);
-           SendUpdateWorldState(WS_BATTLE_ACTIVE_NEG,1);
-        }
+        UpdateMainWS(true);
 
         // Vehicle Teleports
         if(GetDefender() == ALLIANCE)
@@ -419,46 +472,230 @@ void OutdoorPvPWG::Update(uint32 uiDiff)
             }
         }
     }
+   }
 }
 
-void OutdoorPvPWG::NewRound(bool titan)
+void OutdoorPvPWG::ChangeControlZone()
 {
-  if(titan)
-  {
     if(GetDefender() == ALLIANCE)
     {
         defender = HORDE;
         attacker = ALLIANCE;
-        SendUpdateWorldState(WS_DEFENDER_TEAM,1);
-        SendUpdateWorldState(WS_ATTACKER_TEAM,0);
     }
-    else if (GetDefender() == HORDE)
+    else
     {
         defender = ALLIANCE;
         attacker = HORDE;
-        SendUpdateWorldState(WS_DEFENDER_TEAM,0);
-        SendUpdateWorldState(WS_ATTACKER_TEAM,1);
     }
 
-    for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
+    UpdateTeamWS(defender);
+
+    for (uint8 i = 0; i < WG_MAX_OBJ; i++)
     {
-        (*itr)->ChangeTeam(GetDefender());
+      if(GameObject* pGo = m_Map->GetGameObject(gBandT[i]))
+      {
+         if(i != 27 || i !=28 || i != 29)
+            pGo->SetTeam(Team(GetDefender()));
+      }
     }
-
-    Building[27]->ChangeTeam(GetAttacker());
-    Building[28]->ChangeTeam(GetAttacker());
-    Building[29]->ChangeTeam(GetAttacker());
-
-    wsKe->ChangeControl(GetDefender());
-    wsKw->ChangeControl(GetDefender());
-
 
     if(GetDefender() == ALLIANCE)
+    {
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureA.begin(); itr != KeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               pCreature->SetVisibility(VISIBILITY_ON);
+            }
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureH.begin(); itr != KeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->setFaction(NEUTRAL_FACTION);
+               pCreature->SetVisibility(VISIBILITY_OFF);
+            }
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureA.begin(); itr != OutKeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->setFaction(NEUTRAL_FACTION);
+               pCreature->SetVisibility(VISIBILITY_OFF);
+            }
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureH.begin(); itr != OutKeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               pCreature->SetVisibility(VISIBILITY_ON);
+               // Need remove quest flag
+            }
+        }
+
+    }
+    else if(GetDefender() == HORDE)
     {
         for (std::list<ObjectGuid>::iterator itr = KeepCreatureH.begin(); itr != KeepCreatureH.end(); ++itr)
         {
             if(Creature* pCreature = m_Map->GetCreature((*itr)))
             {
+               pCreature->Respawn();
+               pCreature->SetVisibility(VISIBILITY_ON);
+            }
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureA.begin(); itr != KeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->setFaction(NEUTRAL_FACTION);
+               pCreature->SetVisibility(VISIBILITY_OFF);
+            }
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureH.begin(); itr != OutKeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->setFaction(NEUTRAL_FACTION);
+               pCreature->SetVisibility(VISIBILITY_OFF);
+            }
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureA.begin(); itr != OutKeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               pCreature->SetVisibility(VISIBILITY_ON);
+               // Need remove quest flag
+            }
+        }
+    }
+
+    m_Timer = TimeChangeControl;
+    UpdateTimer = 1000;
+
+}
+
+void OutdoorPvPWG::StartBattle()
+{
+    UpdateMainWS(true);
+    UpdateTeamWS(GetDefender());
+
+    for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
+    {
+        (*itr)->StartBattle();
+    }
+
+    if(GetDefender() == ALLIANCE)
+    {
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureA.begin(); itr != KeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+               pCreature->Respawn();
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureH.begin(); itr != OutKeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               // Need remove quest flag
+            }
+        }
+    }
+    else if(GetDefender() == HORDE)
+    {
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureH.begin(); itr != KeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+               pCreature->Respawn();
+        }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureA.begin(); itr != OutKeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               // Need remove quest flag
+            }
+        }
+    }
+
+    for (std::list<OutdoorPvPWorkShopWG*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
+    {
+        (*itr)->StartBattle();
+    }
+
+     DamageTowerAtt = 0;
+    DamageTowerDef = 0;
+    DestroyTowerAtt = 0;
+    DestroyTowerDef = 0;
+    m_tenacityStack = 0;
+
+    UpdateCounterVehicle(true);
+
+    m_Timer = TimeBattle;
+    UpdateTimer = 1000;
+}
+
+void OutdoorPvPWG::EndBattle(bool titan)
+{
+    UpdateMainWS(false);
+
+    // Change team in variables main script
+    if(titan)
+    {
+      if(GetDefender() == ALLIANCE)
+      {
+        defender = HORDE;
+        attacker = ALLIANCE;
+      }
+      else if (GetDefender() == HORDE)
+      {
+        defender = ALLIANCE;
+        attacker = HORDE;
+      }
+    }
+
+    // Update team World States
+    UpdateTeamWS(GetDefender());
+
+    for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
+    {
+        (*itr)->EndBattle(titan);
+    }
+
+    if(titan)
+    {
+          gyBuilding->End(true);
+          gyBuilding->Start();
+          switch(GetDefender())
+          {
+            case ALLIANCE:
+              sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
+              sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
+              break;
+            case HORDE:
+              sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
+              sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
+              break;
+          }
+
+      if(GetDefender() == ALLIANCE)
+      {
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureH.begin(); itr != KeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
                pCreature->setFaction(35);
                pCreature->SetVisibility(VISIBILITY_OFF);
             }
@@ -469,7 +706,6 @@ void OutdoorPvPWG::NewRound(bool titan)
             if(Creature* pCreature = m_Map->GetCreature((*itr)))
             {
                pCreature->Respawn();
-               pCreature->setFaction(NPC_FACTION_A);
                pCreature->SetVisibility(VISIBILITY_ON);
             }
         }
@@ -486,26 +722,46 @@ void OutdoorPvPWG::NewRound(bool titan)
                pGo->SetPhaseMask(100,true);
         }
 
-        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
-        sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
-    }
-    else if(GetDefender() == HORDE)
-    {
-        for (std::list<ObjectGuid>::iterator itr = KeepCreatureA.begin(); itr != KeepCreatureA.end(); ++itr)
+        //
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureA.begin(); itr != OutKeepCreatureA.end(); ++itr)
         {
             if(Creature* pCreature = m_Map->GetCreature((*itr)))
             {
+               pCreature->Respawn();
                pCreature->setFaction(35);
                pCreature->SetVisibility(VISIBILITY_OFF);
             }
         }
+
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureH.begin(); itr != OutKeepCreatureH.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               pCreature->SetVisibility(VISIBILITY_ON);
+               // remove quest flag
+            }
+        }
+
+      }
+      else if(GetDefender() == HORDE)
+      {
+        for (std::list<ObjectGuid>::iterator itr = KeepCreatureA.begin(); itr != KeepCreatureA.end(); ++itr)
+        {
+            if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
+               pCreature->Respawn();
+               pCreature->setFaction(35);
+               pCreature->SetVisibility(VISIBILITY_OFF);
+            }
+        }
+
 
         for (std::list<ObjectGuid>::iterator itr = KeepCreatureH.begin(); itr != KeepCreatureH.end(); ++itr)
         {
             if(Creature* pCreature = m_Map->GetCreature((*itr)))
             {
                pCreature->Respawn();
-               pCreature->setFaction(NPC_FACTION_H);
                pCreature->SetVisibility(VISIBILITY_ON);
             }
         }
@@ -522,108 +778,45 @@ void OutdoorPvPWG::NewRound(bool titan)
                pGo->SetPhaseMask(100,true);
         }
 
-        sObjectMgr.RemoveGraveYardLink(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, ALLIANCE);
-        sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_KEEP, ZONE_ID_WINTERGRASP, HORDE);
-    }
-
-    for (std::list<ObjectGuid>::iterator itr = TeleportGameObject.begin(); itr != TeleportGameObject.end(); ++itr)
-    {
-            if(GameObject* pGo = m_Map->GetGameObject((*itr)))
-               UpdateTeleport(pGo);
-    }
-
-    for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
-    {
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureH.begin(); itr != OutKeepCreatureH.end(); ++itr)
+        {
             if(Creature* pCreature = m_Map->GetCreature((*itr)))
             {
                pCreature->Respawn();
-               UpdateKeepTurret(pCreature);
+               pCreature->setFaction(35);
+               pCreature->SetVisibility(VISIBILITY_OFF);
             }
-    }
+        }
 
-    wsNe->ChangeControl(GetAttacker());
-    wsNw->ChangeControl(GetAttacker());
-    wsSe->ChangeControl(GetAttacker());
-    wsSw->ChangeControl(GetAttacker());
-
-    for (std::list<ObjectGuid>::iterator itr = m_vehicleA.begin(); itr != m_vehicleA.end(); ++itr)
-    {
-            if(Creature* pCreature = m_Map->GetCreature((*itr)))
-               pCreature->ForcedDespawn();
-    }
-
-    for (std::list<ObjectGuid>::iterator itr = m_vehicleH.begin(); itr != m_vehicleH.end(); ++itr)
-    {
-            if(Creature* pCreature = m_Map->GetCreature((*itr)))
-               pCreature->ForcedDespawn();
-    }
-
-    CanUseRelic = false;
-
-    VehicleCountH = 0;
-    VehicleCountA = 0;
-    UpdateVehicleCountWG();
-
-  }
-  else if(!titan)
-  {
-    for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
-    {
-        (*itr)->Rebuild();
-    }
-
-    if(GetDefender() == ALLIANCE)
-    {
-        for (std::list<ObjectGuid>::iterator itr = KeepCreatureA.begin(); itr != KeepCreatureA.end(); ++itr)
+        for (std::list<ObjectGuid>::iterator itr = OutKeepCreatureA.begin(); itr != OutKeepCreatureA.end(); ++itr)
         {
             if(Creature* pCreature = m_Map->GetCreature((*itr)))
+            {
                pCreature->Respawn();
+               pCreature->SetVisibility(VISIBILITY_ON);
+               // remove quest flag
+            }
         }
+      }
     }
-    else if(GetDefender() == HORDE)
+
+
+    bool newteam = false;
+
+    if(titan)
+        newteam = true;
+
+    for (std::list<OutdoorPvPWorkShopWG*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
     {
-        for (std::list<ObjectGuid>::iterator itr = KeepCreatureH.begin(); itr != KeepCreatureH.end(); ++itr)
-        {
-            if(Creature* pCreature = m_Map->GetCreature((*itr)))
-               pCreature->Respawn();
-        }
+        (*itr)->EndBattle(newteam);
     }
-
-    for (std::list<ObjectGuid>::iterator itr = TurretCreature.begin(); itr != TurretCreature.end(); ++itr)
-    {
-            if(Creature* pCreature = m_Map->GetCreature((*itr)))
-               pCreature->Respawn();
-    }
-
-    wsNe->ChangeControl(GetAttacker());
-    wsNw->ChangeControl(GetAttacker());
-    wsSe->ChangeControl(GetAttacker());
-    wsSw->ChangeControl(GetAttacker());
-
-    for (std::list<ObjectGuid>::iterator itr = m_vehicleA.begin(); itr != m_vehicleA.end(); ++itr)
-    {
-            if(Creature* pCreature = m_Map->GetCreature((*itr)))
-               pCreature->ForcedDespawn();
-    }
-
-    for (std::list<ObjectGuid>::iterator itr = m_vehicleH.begin(); itr != m_vehicleH.end(); ++itr)
-    {
-            if(Creature* pCreature = m_Map->GetCreature((*itr)))
-               pCreature->ForcedDespawn();
-    }
-
-    CanUseRelic = false;
-
-    VehicleCountH = 0;
-    VehicleCountA = 0;
-    UpdateVehicleCountWG();
-
-   }
 
     AddDataWhenWin();
     RecolatePlayers();
 
-    m_Timer = TimeBattle;
+    m_Timer = TimeControl;
+    UpdateTimer = 1000;
+
 }
 
 void OutdoorPvPWG::HandleCreatureCreate(Creature* pCreature)
@@ -870,6 +1063,8 @@ void OutdoorPvPWG::HandleGameObjectCreate(GameObject* pGo)
                {
                    gBandT[i] = pGo->GetObjectGuid();
                    pGo->Rebuild(GetPlayerInZone());
+                   if(i != 27 || i !=28 || i != 29)
+                      pGo->SetTeam(Team(GetDefender()));
                }
             }
            break;
@@ -985,31 +1180,19 @@ void OutdoorPvPWG::HandleGameObjectCreate(GameObject* pGo)
     // Go WS
        case GO_FACTORY_BANNER_NE:
            gBanner[0] = pGo->GetObjectGuid();
-           if(GetAttacker() == ALLIANCE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_ALLIANCE);
-           else if(GetAttacker() == HORDE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_HORDE);
+           pGo->SetPhaseMask(100,true);
            break;
        case GO_FACTORY_BANNER_NW:
            gBanner[1] = pGo->GetObjectGuid();
-           if(GetAttacker() == ALLIANCE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_ALLIANCE);
-           else if(GetAttacker() == HORDE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_HORDE);
+           pGo->SetPhaseMask(100,true);
            break;
        case GO_FACTORY_BANNER_SE:
            gBanner[2] = pGo->GetObjectGuid();
-           if(GetAttacker() == ALLIANCE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_ALLIANCE);
-           else if(GetAttacker() == HORDE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_HORDE);
+           pGo->SetPhaseMask(100,true);
            break;
        case GO_FACTORY_BANNER_SW:
            gBanner[3] = pGo->GetObjectGuid();
-           if(GetAttacker() == ALLIANCE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_ALLIANCE);
-           else if(GetAttacker() == HORDE)
-              pGo->SetGoArtKit(GO_ARTKIT_BANNER_HORDE);
+           pGo->SetPhaseMask(100,true);
            break;
        case GO_BUILDING_NE:
            gBuilding[0] = pGo->GetObjectGuid();
@@ -1096,10 +1279,10 @@ bool OutdoorPvPWG::HandleGameObjectUse(Player* pPlayer, GameObject* pGo)
     switch (pGo->GetEntry())
     {
        case GO_TITAN_RELIC:
-           if (pPlayer->GetTeam() == GetAttacker())
+           if (pPlayer->GetTeam() == GetAttacker() && GetBattleStatus())
            {
             if (CanUseRelic)
-              NewRound(true);
+              EndBattle(true);
            }
            break;
     }
@@ -1109,8 +1292,11 @@ bool OutdoorPvPWG::HandleGameObjectUse(Player* pPlayer, GameObject* pGo)
 
 bool OutdoorPvPWG::HandleEvent(uint32 uiEventId,GameObject* pGo)
 {
+   if(!GetBattleStatus())
+      return false;
+
    bool factory = false;
-   WorldPvPWGWorkShopData* ws;
+   OutdoorPvPWorkShopWG* ws;
    switch(pGo->GetEntry())
    {
        case GO_FACTORY_BANNER_NE:
@@ -1139,14 +1325,14 @@ bool OutdoorPvPWG::HandleEvent(uint32 uiEventId,GameObject* pGo)
             case EVENT_FACTORY_NW_PROGRESS_ALLIANCE:
             case EVENT_FACTORY_SE_PROGRESS_ALLIANCE:
             case EVENT_FACTORY_SW_PROGRESS_ALLIANCE:
-                ws->ChangeControl(ALLIANCE);
+                ws->ChangeControl(ALLIANCE,false);
 				return true;
                 break;
             case EVENT_FACTORY_NE_PROGRESS_HORDE:
             case EVENT_FACTORY_NW_PROGRESS_HORDE:
             case EVENT_FACTORY_SE_PROGRESS_HORDE:
             case EVENT_FACTORY_SW_PROGRESS_HORDE:
-                ws->ChangeControl(HORDE);
+                ws->ChangeControl(HORDE,false);
 				return true;
                 break;
         }
@@ -1157,6 +1343,9 @@ bool OutdoorPvPWG::HandleEvent(uint32 uiEventId,GameObject* pGo)
 
 void OutdoorPvPWG::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 spellId)
 {
+     if(!GetBattleStatus())
+       return;
+
      switch(target_obj->GetEntry())
      {
        //Wall
@@ -1376,9 +1565,9 @@ void OutdoorPvPWG::UpdateCounterVehicle(bool init)
     VehicleCountMaxH = 0;
     VehicleCountMaxA = 0;
 
-    for (std::list<WorldPvPWGWorkShopData*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
+    for (std::list<OutdoorPvPWorkShopWG*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
     {
-        if (WorldPvPWGWorkShopData * workshop = (*itr))
+        if (OutdoorPvPWorkShopWG * workshop = (*itr))
         {
             if (workshop->m_TeamControl == ALLIANCE)
                 VehicleCountMaxA = VehicleCountMaxA + 4;
@@ -1398,6 +1587,9 @@ void OutdoorPvPWG::HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim)
 // Others
 void OutdoorPvPWG::DoCompleteOrIncrementAchievement(uint32 achievement, Player *player)
 {
+    if(!GetBattleStatus())
+       return;
+
     AchievementEntry const* AE = GetAchievementStore()->LookupEntry(achievement);
 
     if (player)
@@ -1406,6 +1598,9 @@ void OutdoorPvPWG::DoCompleteOrIncrementAchievement(uint32 achievement, Player *
 
 void OutdoorPvPWG::CompleOneObjetiveQuest(Player* pPlayer,uint32 id)
 {
+    if(!GetBattleStatus())
+       return;
+
     switch (id)
     {
         case 13222:
@@ -1464,6 +1659,35 @@ void OutdoorPvPWG::RecolatePlayers()
 }
 
 // World States
+
+void OutdoorPvPWG::UpdateMainWS(bool status)
+{
+    if(status)
+    {
+        SendUpdateWorldState(WS_BATTLE_ACTIVE_POS,1);
+        SendUpdateWorldState(WS_BATTLE_ACTIVE_NEG,0);
+    }
+    else
+    {
+        SendUpdateWorldState(WS_BATTLE_ACTIVE_POS,0);
+        SendUpdateWorldState(WS_BATTLE_ACTIVE_NEG,1);
+    }
+}
+
+void OutdoorPvPWG::UpdateTeamWS(uint32 team)
+{
+    if(team == ALLIANCE)
+    {
+      SendUpdateWorldState(WS_DEFENDER_TEAM,0);
+      SendUpdateWorldState(WS_ATTACKER_TEAM,1);
+    }
+    else
+    {
+      SendUpdateWorldState(WS_DEFENDER_TEAM,1);
+      SendUpdateWorldState(WS_ATTACKER_TEAM,0);
+    }
+}
+
 void OutdoorPvPWG::UpdateVehicleCountWG()
 {
     SendUpdateWorldState(WS_VEHICLE_COUNT_H, VehicleCountH);
@@ -1472,17 +1696,9 @@ void OutdoorPvPWG::UpdateVehicleCountWG()
     SendUpdateWorldState(WS_VEHICLE_COUNT_MAX_A, VehicleCountMaxA);
 }
 
-void OutdoorPvPWG::UpdateWSBuilding()
-{
-    for (GameObjectBuilding::const_iterator itr = BuildingsInZone.begin(); itr != BuildingsInZone.end(); ++itr)
-    {
-        SendUpdateWorldState((*itr)->m_WorldState,(*itr)->m_State);
-    }
-}
-
 void OutdoorPvPWG::UpdateWSWorkShop()
 {
-    for (std::list<WorldPvPWGWorkShopData*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
+    for (std::list<OutdoorPvPWorkShopWG*>::iterator itr = WorkShopList.begin(); itr != WorkShopList.end(); ++itr)
     {
         SendUpdateWorldState((*itr)->m_WorldState,(*itr)->m_State);
     }

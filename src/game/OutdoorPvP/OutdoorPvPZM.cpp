@@ -33,6 +33,8 @@ OutdoorPvPZM::OutdoorPvPZM() : OutdoorPvP(),
     m_towersAlliance(0),
     m_towersHorde(0)
 {
+    SetBattleField(false);
+
     // init world states
     // FIXME- wrong, need read data from WorldStates
     m_towerWorldState[0] = WORLD_STATE_ZM_BEACON_EAST_UI_NEUTRAL;

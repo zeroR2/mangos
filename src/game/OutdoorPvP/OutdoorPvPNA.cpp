@@ -33,6 +33,8 @@ OutdoorPvPNA::OutdoorPvPNA() : OutdoorPvP(),
     m_guardsLeft(0),
     m_isUnderSiege(false)
 {
+    SetBattleField(false);
+
     // initially set graveyard owner to neither faction
     sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_HALAA, GRAVEYARD_ZONE_ID_HALAA, TEAM_INVALID);
 

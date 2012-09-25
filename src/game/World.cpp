@@ -857,7 +857,14 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_OUTDOORPVP_TF_ENABLED,                       "OutdoorPvp.TFEnabled", true);
     setConfig(CONFIG_BOOL_OUTDOORPVP_NA_ENABLED,                       "OutdoorPvp.NAEnabled", true);
     setConfig(CONFIG_BOOL_OUTDOORPVP_GH_ENABLED,                       "OutdoorPvp.GHEnabled", true);
+
     setConfig(CONFIG_BOOL_OUTDOORPVP_WG_ENABLED,                       "OutdoorPvp.WGEnabled", true);
+    setConfig(CONFIG_UNIT32_OPVP_WG_START_DEFENDER_TEAM,               "OutdoorPvp.WGStartDefenderTeam", 2);
+    setConfig(CONFIG_BOOL_OUTDOORPVP_WG_DISABLE_CHANGE_TEAM,           "OutdoorPvp.WGChangeTeamControl",false);
+    setConfig(CONFIG_UNIT32_OPVP_WG_DISABLE_CHANGE_TEAM_TIMER,         "OutdoorPvp.WGTimeForChangeControl", 0);
+    setConfig(CONFIG_UNIT32_OPVP_WG_CONTROL_PHASE_TIMER,               "OutdoorPvp.WGTimeControlZone", 3600);
+    setConfig(CONFIG_UNIT32_OPVP_WG_BATTLE_PHASE_TIMER,                "OutdoorPvp.WGTimeBattle", 3600);
+
 
     setConfig(CONFIG_BOOL_OFFHAND_CHECK_AT_TALENTS_RESET, "OffhandCheckAtTalentsReset", false);
 
