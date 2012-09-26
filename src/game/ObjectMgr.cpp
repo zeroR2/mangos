@@ -184,6 +184,12 @@ ObjectMgr::~ObjectMgr()
 
     for (CacheTrainerSpellMap::iterator itr = m_mCacheTrainerSpellMap.begin(); itr != m_mCacheTrainerSpellMap.end(); ++itr)
         itr->second.Clear();
+
+    for (PetScalingDataMap::iterator itr = m_PetScalingData.begin(); itr != m_PetScalingData.end(); ++itr)
+        delete itr->second;
+
+    for (DungeonEncounterMap::iterator itr = m_DungeonEncounters.begin(); itr != m_DungeonEncounters.end(); ++itr)
+        delete itr->second;
 }
 
 Group* ObjectMgr::GetGroupById(uint32 id) const
@@ -4870,7 +4876,12 @@ void ObjectMgr::LoadPageTextLocales()
 
 void ObjectMgr::LoadInstanceEncounters()
 {
-    m_DungeonEncounters.clear();         // need for reload case
+    if (!m_DungeonEncounters.empty())         // need for reload case
+    {
+        for (DungeonEncounterMap::iterator itr = m_DungeonEncounters.begin(); itr != m_DungeonEncounters.end(); ++itr)
+            delete itr->second;
+        m_DungeonEncounters.clear();
+    }
 
     QueryResult* result = WorldDatabase.Query("SELECT entry, creditType, creditEntry, lastEncounterDungeon FROM instance_encounters");
 

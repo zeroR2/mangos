@@ -61,7 +61,7 @@ void CreatureEventAI::GetAIInformation(ChatHandler& reader)
     reader.PSendSysMessage(LANG_NPC_EVENTAI_COMBAT, reader.GetOnOffStr(m_MeleeEnabled));
 }
 
-CreatureEventAI::CreatureEventAI(Creature* c) : CreatureAI(c)
+CreatureEventAI::CreatureEventAI(Creature* c) : CreatureAI(c), m_EventUpdateTime(EVENT_UPDATE_TIME)
 {
     // Need make copy for filter unneeded steps and safe in case table reload
     CreatureEventAI_Event_Map::const_iterator creatureEventsItr = sEventAIMgr.GetCreatureEventAIMap().find(m_creature->GetEntry());
@@ -146,7 +146,7 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
     // Check event conditions based on the event type, also reset events
     switch (event.event_type)
     {
-        case EVENT_T_TIMER:
+        case EVENT_T_TIMER_IN_COMBAT:
             if (!m_creature->isInCombat())
                 return false;
 
@@ -157,6 +157,10 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
             if (m_creature->isInCombat() || m_creature->IsInEvadeMode())
                 return false;
 
+            // Repeat Timers
+            pHolder.UpdateRepeatTimer(m_creature, event.timer.repeatMin, event.timer.repeatMax);
+            break;
+        case EVENT_T_TIMER_GENERIC:
             // Repeat Timers
             pHolder.UpdateRepeatTimer(m_creature, event.timer.repeatMin, event.timer.repeatMax);
             break;
@@ -868,6 +872,14 @@ void CreatureEventAI::JustRespawned()
     if (m_bEmptyList)
         return;
 
+    // Reset generic timer
+    for (CreatureEventAIList::iterator i = m_CreatureEventAIList.begin(); i != m_CreatureEventAIList.end(); ++i)
+    {
+        if (i->Event.event_type == EVENT_T_TIMER_GENERIC)
+            if (i->UpdateRepeatTimer(m_creature, i->Event.timer.initialMin, i->Event.timer.initialMax))
+                i->Enabled = true;
+    }
+
     // Handle Spawned Events
     for (CreatureEventAIList::iterator i = m_CreatureEventAIList.begin(); i != m_CreatureEventAIList.end(); ++i)
         if (SpawnedEventConditionsCheck((*i).Event))
@@ -927,6 +939,9 @@ void CreatureEventAI::EnterEvadeMode()
     m_creature->RemoveAllAuras();
     m_creature->DeleteThreatList();
     m_creature->CombatStop(true);
+
+    if (m_creature->isAlive())
+        m_creature->GetMotionMaster()->MoveTargetedHome();
 
     m_creature->SetLootRecipient(NULL);
 
@@ -1029,7 +1044,7 @@ void CreatureEventAI::EnterCombat(Unit* enemy)
                     ProcessEvent(*i, enemy);
                     break;
                     // Reset all in combat timers
-                case EVENT_T_TIMER:
+                case EVENT_T_TIMER_IN_COMBAT:
                     if ((*i).UpdateRepeatTimer(m_creature, event.timer.initialMin, event.timer.initialMax))
                         (*i).Enabled = true;
                     break;
@@ -1170,9 +1185,10 @@ void CreatureEventAI::UpdateAI(const uint32 diff)
                 switch ((*i).Event.event_type)
                 {
                     case EVENT_T_TIMER_OOC:
+                    case EVENT_T_TIMER_GENERIC:
                         ProcessEvent(*i);
                         break;
-                    case EVENT_T_TIMER:
+                    case EVENT_T_TIMER_IN_COMBAT:
                     case EVENT_T_MANA:
                     case EVENT_T_HP:
                     case EVENT_T_TARGET_HP:

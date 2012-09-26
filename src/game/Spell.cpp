@@ -770,7 +770,7 @@ void Spell::FillTargetMap()
                 }
             }
         }
-
+        GuidList currentTargets;
         for (UnitList::iterator itr = tmpUnitLists[effToIndex[i]].begin(); itr != tmpUnitLists[effToIndex[i]].end();)
         {
             if (!CheckTarget(*itr, SpellEffectIndex(i)))
@@ -779,13 +779,16 @@ void Spell::FillTargetMap()
                 continue;
             }
             else
+            {
+                currentTargets.push_back((*itr)->GetObjectGuid());
                 ++itr;
+            }
         }
 
-        if (!tmpUnitLists[effToIndex[i]].empty())
+        if (!currentTargets.empty())
         {
-            for (UnitList::const_iterator iunit = tmpUnitLists[effToIndex[i]].begin(); iunit != tmpUnitLists[effToIndex[i]].end(); ++iunit)
-                AddUnitTarget((*iunit), SpellEffectIndex(i));
+            for (GuidList::const_iterator iguid = currentTargets.begin(); iguid != currentTargets.end(); ++iguid)
+                AddTarget((*iguid), SpellEffectIndex(i));
         }
     }
 }
@@ -1025,13 +1028,50 @@ this piece of code make delayed stun and other effects for charge-like spells. s
         target.reflectResult = SPELL_MISS_NONE;
 
     // Add target to list
+    // valgrind says, that memleak here. need research...
     m_UniqueTargetInfo.push_back(target);
 }
 
-void Spell::AddUnitTarget(ObjectGuid unitGuid, SpellEffectIndex effIndex)
+void Spell::AddTarget(ObjectGuid targetGuid, SpellEffectIndex effIndex)
 {
-    if (Unit* unit = m_caster->GetObjectGuid() == unitGuid ? m_caster : ObjectAccessor::GetUnit(*m_caster, unitGuid))
-        AddUnitTarget(unit, effIndex);
+    if (targetGuid.IsEmpty())
+        return;
+
+    switch(targetGuid.GetHigh())
+    {
+        case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        case HIGHGUID_PET:
+        case HIGHGUID_PLAYER:
+        {
+            // Only for speedup (may be removed later)
+            if (m_caster->GetObjectGuid() == targetGuid)
+                AddUnitTarget(m_caster, effIndex);
+            else if (Unit* unit = m_caster->GetMap()->GetUnit(targetGuid))
+                AddUnitTarget(unit, effIndex);
+            break;
+        }
+        case HIGHGUID_GAMEOBJECT:
+        case HIGHGUID_TRANSPORT:
+        case HIGHGUID_DYNAMICOBJECT:
+        case HIGHGUID_MO_TRANSPORT:
+        {
+            if (GameObject* object = m_caster->GetMap()->GetGameObject(targetGuid))
+                AddGOTarget(object, effIndex);
+            break;
+        }
+        case HIGHGUID_CORPSE:
+        case HIGHGUID_ITEM:
+        {
+            sLog.outError("Spell::AddTarget currently this type of targets (%s) supported by another way!", targetGuid.GetString().c_str());
+            break;
+        }
+        HIGHGUID_INSTANCE:
+        HIGHGUID_GROUP:  
+        default:
+            sLog.outError("Spell::AddTarget unhandled type of spell target (%s)!", targetGuid.GetString().c_str());
+            break;
+    }
 }
 
 void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
@@ -1091,12 +1131,6 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
 
     // Add target to list
     m_UniqueGOTargetInfo.push_back(target);
-}
-
-void Spell::AddGOTarget(ObjectGuid goGuid, SpellEffectIndex effIndex)
-{
-    if (GameObject* go = m_caster->GetMap()->GetGameObject(goGuid))
-        AddGOTarget(go, effIndex);
 }
 
 void Spell::AddItemTarget(Item* pitem, SpellEffectIndex effIndex)
@@ -1501,8 +1535,6 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         m_spellAuraHolder->setDiminishGroup(m_diminishGroup);
         m_spellAuraHolder->SetInUse(true);
     }
-    else
-        m_spellAuraHolder = SpellAuraHolderPtr(NULL);
 
     for(int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
     {
@@ -1543,12 +1575,6 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
 
             unit->AddSpellAuraHolder(m_spellAuraHolder);
             m_spellAuraHolder->SetInUse(false);
-        }
-        else
-        {
-            m_spellAuraHolder->SetInUse(false);
-            if (!unit->AddSpellAuraHolderToRemoveList(m_spellAuraHolder))
-                DEBUG_LOG("Spell::DoSpellHitOnUnit cannot insert SpellAuraHolder (spell %u) to remove list!", m_spellAuraHolder ? m_spellAuraHolder->GetId() : 0);
         }
     }
 }
@@ -2153,10 +2179,19 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     targetUnitMap.resize(unMaxTargets);
                 }
             }
-            else if (m_spellInfo->Id == 30843)              // Enfeeble (do not target current victim)
+            else
             {
-                if (Unit* pVictim = m_caster->getVictim())
-                    targetUnitMap.remove(pVictim);
+                switch (m_spellInfo->Id)
+                {
+                    case 30843:                                             // Enfeeble
+                    case 37676:                                             // Insidious Whisper
+                    case 38028:                                             // Watery Grave
+                        if (Unit* pVictim = m_caster->getVictim())
+                            targetUnitMap.remove(pVictim);
+                        break;
+                    default:
+                        break;
+                }
             }
             break;
         }
@@ -2590,6 +2625,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 case 3879: pushType = PUSH_IN_BACK;     break;
                 case 7441: pushType = PUSH_IN_FRONT_15; break;
+                case 8669: pushType = PUSH_IN_FRONT_15; break;
             }
             FillAreaTargets(targetUnitMap, radius, pushType, SPELL_TARGETS_AOE_DAMAGE);
             break;
@@ -2997,19 +3033,11 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 case SPELL_EFFECT_DUMMY:
                 {
-                    // Voracious Appetite && Cannibalize && Carrion Feeder additional check
-                    if (m_spellInfo->HasAttribute(SPELL_ATTR_ABILITY)
-                        && m_spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET)
-                        && m_spellInfo->TargetCreatureType != CREATURE_TYPEMASK_NONE)
-                    {
-                        if (m_targets.getUnitTarget() != m_caster)
-                            targetUnitMap.push_back(m_targets.getUnitTarget());
-                    }
-                    else if (m_targets.getUnitTarget())
+                    if (m_targets.getUnitTarget())
                         targetUnitMap.push_back(m_targets.getUnitTarget());
 
                     // Add AoE target-mask to self, if no target-dest provided already
-                    if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) == 0)
+                    if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
                         m_targets.setDestination(m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ());
                     break;
                 }
@@ -3220,8 +3248,7 @@ void Spell::prepare(SpellCastTargets const* targets, Aura const* triggeredByAura
         m_triggeredByAuraSpell  = triggeredByAura->GetSpellProto();
 
     // create and add update event for this spell
-    SpellEvent* Event = new SpellEvent(this);
-    m_caster->AddEvent(Event, 1);
+    m_caster->AddEvent(new SpellEvent(this), 1);
 
     //Prevent casting at cast another spell (ServerSide check)
     if (m_caster->IsNonMeleeSpellCasted(false, true, true) && m_cast_count)
@@ -5830,10 +5857,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_TOTEMS;
                 }
                 // Voracious Appetite && Cannibalize && Carrion Feeder
-                else if (strict /*only in first check!*/
-                    && m_spellInfo->HasAttribute(SPELL_ATTR_ABILITY)
-                    && m_spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET)
-                    && m_spellInfo->TargetCreatureType != CREATURE_TYPEMASK_NONE)
+                else if (m_UniqueTargetInfo.empty() /*only in first check!*/
+                    && (m_spellInfo->Id == 20577 || m_spellInfo->Id == 52749 || m_spellInfo->Id == 54044))
                 {
                     m_targets.setUnitTarget(NULL);
                     WorldObject* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck>(m_spellInfo->TargetCreatureType);
@@ -5851,7 +5876,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                                         m_targets.setUnitTarget((Unit*)owner);
                                 break;
                             default:
-                                break;
+                                return SPELL_FAILED_NO_EDIBLE_CORPSES;
                         }
                     }
                     if (!m_targets.getUnitTarget())
@@ -6772,15 +6797,17 @@ SpellCastResult Spell::CheckCasterAuras() const
 SpellCastResult Spell::CheckCastTargets() const
 {
 
+    if (!IsSpellRequiresTarget(m_spellInfo) || IsSpellWithCasterSourceTargetsOnly(m_spellInfo))
+        return SPELL_CAST_OK;
+
     // Spell without any target
-    if (!IsSpellWithCasterSourceTargetsOnly(m_spellInfo) &&
-        !m_targets.HasLocation() &&
+    if ( !m_targets.HasLocation() &&
         m_UniqueTargetInfo.empty() &&
         m_UniqueGOTargetInfo.empty() &&
         m_UniqueItemInfo.empty())
         return SPELL_FAILED_BAD_TARGETS;
 
-    // check by target mask - NY currently
+    // recheck by target mask - NY currently
     /*
     if (m_targets.m_targetMask & (TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_SRC_LOCATION))
         if (!m_targets.HasLocation())
@@ -7783,11 +7810,7 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff )
                 return false;
             break;
         case SPELL_EFFECT_DUMMY:
-            if (!m_spellInfo->HasAttribute(SPELL_ATTR_ABILITY)
-                || !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET)
-                || m_spellInfo->TargetCreatureType == CREATURE_TYPEMASK_NONE)
-            break;                                          // Cannibalize-like spell bundle
-            /* no break - fall through*/
+            break;
         case SPELL_EFFECT_RESURRECT_NEW:
             // player far away, maybe his corpse near?
             if (target != m_caster && !target->IsVisibleTargetForSpell(m_caster, m_spellInfo))
@@ -8206,6 +8229,17 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 64804:
         {
             FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            break;
+        }
+        // Voracious Appetite && Cannibalize && Carrion Feeder additional check
+        case 20577:
+        case 52748:
+        case 54044:
+        {
+            if (m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
+                targetUnitMap.push_back(m_targets.getUnitTarget());
+            else
+                targetUnitMap.clear();
             break;
         }
         case 28374: // Decimate - Gluth encounter

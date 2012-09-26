@@ -854,7 +854,8 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
                     {
                         SpellEntry const* shareSpell = (*itr)->GetSpellProto();
                         int32 shareDamage = int32(damageInfo->damage * (*itr)->GetModifier()->m_amount / 100.0f);
-                        linkedDamageList.push_back(DamageInfo(this, shareTarget, spellProto, shareDamage));
+                        //linkedDamageList.push_back(DamageInfo(this, shareTarget, spellProto, shareDamage));
+                        linkedDamageList.push_back(DamageInfo(this, shareTarget, shareSpell, shareDamage));
                         DamageInfo* sharedDamageInfo   = &linkedDamageList.back();
                         DealDamageMods(sharedDamageInfo);
                         sharedDamageInfo->cleanDamage  = shareDamage;
@@ -1463,7 +1464,7 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const *spellInfo, bool triggered, 
         }
     }
 
-    Spell *spell = new Spell(this, spellInfo, triggered, originalCaster, triggeredBy);
+    Spell* spell = new Spell(this, spellInfo, triggered, originalCaster, triggeredBy);
 
     SpellCastTargets targets;
     targets.setUnitTarget( Victim );
@@ -4756,7 +4757,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
         return false;
     }
 
-    SpellAuraHolderSet holdersToRemove;
+    SpellAuraHolderQueue holdersToRemove;
     SpellAuraHolderPtr holderToStackAdd;
     // passive and persistent auras can stack with themselves any number of times
     if ((!holder->IsPassive() && !holder->IsPersistent()) || holder->IsAreaAura())
@@ -4832,8 +4833,7 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
                 // only one holder per caster on same target
                 if (iter->second->GetCasterGuid() == holder->GetCasterGuid())
                 {
-                    if (holdersToRemove.find(iter->second) == holdersToRemove.end())
-                        holdersToRemove.insert(iter->second);
+                    holdersToRemove.push(iter->second);
                     break;
                 }
             }
@@ -4841,16 +4841,18 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
             // stacking of holders from different casters
             // some holders stack, but their auras dont (i.e. only strongest aura effect works)
             if (!SpellMgr::IsStackableSpellAuraHolder(aurSpellInfo))
-                if (holdersToRemove.find(iter->second) == holdersToRemove.end())
-                    holdersToRemove.insert(iter->second);
+                holdersToRemove.push(iter->second);
         }
     }
 
     if (!holdersToRemove.empty())
     {
-        for(std::set<SpellAuraHolderPtr>::const_iterator i = holdersToRemove.begin(); i != holdersToRemove.end(); ++i)
-            if ((*i) && !(*i)->IsDeleted())
-                RemoveSpellAuraHolder((*i),AURA_REMOVE_BY_STACK);
+        while (!holdersToRemove.empty())
+        {
+            if (holdersToRemove.front() && !holdersToRemove.front()->IsDeleted())
+                RemoveSpellAuraHolder(holdersToRemove.front(),AURA_REMOVE_BY_STACK);
+            holdersToRemove.pop();
+        }
     }
     else if (holderToStackAdd)
     {
@@ -5597,14 +5599,10 @@ void Unit::RemoveNotOwnSingleTargetAuras(uint32 newPhase)
 
 void Unit::RemoveSpellAuraHolder(SpellAuraHolderPtr holder, AuraRemoveMode mode)
 {
-    if (!holder || holder->IsDeleted())
-        return;
-
-    holder->SetDeleted();
-
     if (!AddSpellAuraHolderToRemoveList(holder))
     {
-        DEBUG_LOG("Unit::RemoveSpellAuraHolder cannot insert SpellAuraHolder (spell %u) to remove list!", holder ? holder->GetId() : 0);
+        sLog.outError("Unit::RemoveSpellAuraHolder cannot insert SpellAuraHolder (spell %u) to remove list!", holder ? holder->GetId() : 0);
+        return;
     }
 
     holder->SetRemoveMode(mode);
@@ -5814,21 +5812,24 @@ void Unit::HandleArenaPreparation(bool apply)
 
 bool Unit::RemoveSpellsCausingAuraByCaster(AuraType auraType, ObjectGuid casterGuid, AuraRemoveMode mode)
 {
-    SpellAuraHolderSet toRemoveHolders;
+    SpellAuraHolderQueue holdersToRemove;
     AuraList const& auras = GetAurasByType(auraType);
     for (AuraList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
     {
         if (iter->IsEmpty() || (*iter)->GetHolder()->GetCasterGuid() != casterGuid)
             continue;
-        toRemoveHolders.insert(iter->GetHolder());
+        holdersToRemove.push(iter->GetHolder());
     }
 
-    if (toRemoveHolders.empty())
+    if (holdersToRemove.empty())
         return false;
 
-    for (SpellAuraHolderSet::iterator i = toRemoveHolders.begin(); i != toRemoveHolders.end(); ++i)
-        RemoveSpellAuraHolder(*i, mode);
-
+    while (!holdersToRemove.empty())
+    {
+        if (holdersToRemove.front() && !holdersToRemove.front()->IsDeleted())
+            RemoveSpellAuraHolder(holdersToRemove.front(), mode);
+        holdersToRemove.pop();
+    }
     return true;
 }
 
@@ -13333,41 +13334,23 @@ void Unit::CleanupDeletedHolders(bool force)
     if (m_deletedHolders.empty())
         return;
 
-    for (SpellAuraHolderSet::const_iterator iter = m_deletedHolders.begin(); iter != m_deletedHolders.end(); ++iter)
+    while (!m_deletedHolders.empty())
     {
-        if ((*iter) && !(*iter)->IsEmptyHolder())
-            (*iter)->CleanupsBeforeDelete();
-    }
-
-    if (force)
-        m_deletedHolders.clear();
-    else if (!m_deletedHolders.empty())
-    {
-        for (SpellAuraHolderSet::iterator iter = m_deletedHolders.begin(); iter != m_deletedHolders.end();)
+        if (m_deletedHolders.front())
         {
-            if ((*iter) && (!(*iter)->IsInUse() || GetTypeId() != TYPEID_PLAYER))
-            {
-                m_deletedHolders.erase(*iter);
-                iter = m_deletedHolders.begin();
-            }
-            else
-                ++iter;
+            m_deletedHolders.front()->CleanupsBeforeDelete();
         }
+        m_deletedHolders.pop();
     }
 }
 
 bool Unit::AddSpellAuraHolderToRemoveList(SpellAuraHolderPtr holder)
 {
-    if (!holder)
+    if (!holder || holder->IsDeleted())
         return false;
 
-    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_AURAS);
     holder->SetDeleted();
-
-    if (m_deletedHolders.find(holder) != m_deletedHolders.end())
-        return false;
-
-    m_deletedHolders.insert(holder);
+    m_deletedHolders.push(holder);
     return true;
 };
 

@@ -4670,7 +4670,8 @@ void Spell::EffectClearQuest(SpellEffectIndex eff_idx)
     }
 
     player->SetQuestStatus(quest_id, QUEST_STATUS_NONE);
-    player->getQuestStatusMap()[quest_id].m_rewarded = false;
+    if (QuestStatusData* data = player->GetQuestStatusData(quest_id))
+        data->m_rewarded = false;
 }
 
 void Spell::EffectForceCast(SpellEffectIndex eff_idx)
@@ -8421,6 +8422,22 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         m_caster->CastCustomSpell(unitTarget, 28375, &damage, NULL, NULL, true);
                     return;
                 }
+                case 28526:                                 // Icebolt (Naxxramas: Sapphiron)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    if (unitTarget->GetTypeId() == TYPEID_UNIT)
+                    {
+                        Creature* pCreature = (Creature*)unitTarget;
+                        if (pCreature && pCreature->AI())
+                        {
+                            if (Unit* pTarget = pCreature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0, uint32(0), SELECT_FLAG_PLAYER))
+                                pCreature->CastSpell(pTarget, 28522, true);
+                        }
+                    }
+                    return;
+                }
                 case 28560:                                 // Summon Blizzard
                 {
                     if (!unitTarget)
@@ -8541,6 +8558,14 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         m_caster->GetNearPoint(m_caster, x, y, z, 0, 5.0f, M_PI_F*.5f*i + M_PI_F*.25f);
                         m_caster->SummonCreature(21002, x, y, z, 0, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 30000);
                     }
+                    return;
+                }
+                case 37431:                                 // Spout
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, urand(0, 1) ? 37429 : 37430, true);
                     return;
                 }
                 case 38358:                                 // Tidal Surge

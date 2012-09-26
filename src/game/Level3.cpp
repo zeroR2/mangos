@@ -4307,11 +4307,15 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     PSendSysMessage(LANG_NPCINFO_POSITION, float(target->GetPositionX()), float(target->GetPositionY()), float(target->GetPositionZ()));
 
     if (target->SD2AIName())
-    PSendSysMessage("ScriptName: %s", target->GetScriptName().c_str());
-    if (target->HasAIName())
-    PSendSysMessage("Event_AI: %s", target->GetAIName().c_str());
+        PSendSysMessage("ScriptName: %s", target->GetScriptName().c_str());
+    else if (target->HasAIName())
+        PSendSysMessage("AI name: %s", target->GetAIName().c_str());
 
-    PSendSysMessage("phaseMask: %u", phaseMask);
+    PSendSysMessage("Phasemask %u, has %u active events, %u SpellAuraHolders, %u unit states",
+        phaseMask,
+        target->GetEvents()->size(),
+        target->GetSpellAuraHolderMap().size(),
+        target->GetUnitStateMgr().GetActions().size());
 
     if ((npcflags & UNIT_NPC_FLAG_VENDOR))
     {
@@ -4321,6 +4325,7 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     {
         SendSysMessage(LANG_NPCINFO_TRAINER);
     }
+
 
     ShowNpcOrGoSpawnInformation<Creature>(target->GetGUIDLow());
     return true;
@@ -5450,7 +5455,8 @@ bool ChatHandler::HandleQuestRemoveCommand(char* args)
     player->SetQuestStatus(entry, QUEST_STATUS_NONE);
 
     // reset rewarded for restart repeatable quest
-    player->getQuestStatusMap()[entry].m_rewarded = false;
+    if (QuestStatusData* data = player->GetQuestStatusData(entry))
+        data->m_rewarded = false;
 
     SendSysMessage(LANG_COMMAND_QUEST_REMOVED);
     return true;

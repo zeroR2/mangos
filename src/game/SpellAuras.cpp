@@ -594,8 +594,7 @@ Aura* SpellAuraHolder::CreateAura(AuraClassType type, SpellEffectIndex eff, int3
 
 SpellAuraHolderPtr CreateSpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem)
 {
-     SpellAuraHolder* holder = new SpellAuraHolder(spellproto, target, caster, castItem);
-     SpellAuraHolderPtr holderPtr = SpellAuraHolderPtr(holder);
+     SpellAuraHolderPtr holderPtr = SpellAuraHolderPtr(new SpellAuraHolder(spellproto, target, caster, castItem));
      return holderPtr;
 }
 
@@ -1511,7 +1510,7 @@ void Aura::TriggerSpell()
                         else
                             newAngle -= M_PI_F/40;
 
-                        MapManager::NormalizeOrientation(newAngle);
+                        newAngle = MapManager::NormalizeOrientation(newAngle);
 
                         target->SetFacingTo(newAngle);
 
@@ -1762,10 +1761,23 @@ void Aura::TriggerSpell()
 //                    case 37125: break;
 //                    // Arcane Flurry
 //                    case 37268: break;
-//                    // Spout
-//                    case 37429: break;
-//                    // Spout
-//                    case 37430: break;
+                    case 37429:                             // Spout (left)
+                    case 37430:                             // Spout (right)
+                    {
+                        float newAngle = target->GetOrientation();
+
+                        if (auraId == 37429)
+                            newAngle += 2*M_PI_F/100;
+                        else
+                            newAngle -= 2*M_PI_F/100;
+
+                        newAngle = MapManager::NormalizeOrientation(newAngle);
+
+                        target->SetFacingTo(newAngle);
+
+                        target->CastSpell(target, 37433, true);
+                        return;
+                    }
 //                    // Karazhan - Chess NPC AI, Snapshot timer
 //                    case 37440: break;
 //                    // Karazhan - Chess NPC AI, action timer
@@ -9718,7 +9730,7 @@ void Aura::PeriodicDummyTick()
                     // Sweep around
                     float newAngle = target->GetOrientation() + (spell->Id == 68875 ? 0.09f : 2*M_PI_F - 0.09f);
 
-                    MapManager::NormalizeOrientation(newAngle);
+                    newAngle = MapManager::NormalizeOrientation(newAngle);
 
                     target->SetFacingTo(newAngle);
 
@@ -10543,7 +10555,7 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
     }
 }
 
-void SpellAuraHolder::AddAura(Aura aura, SpellEffectIndex index)
+void SpellAuraHolder::AddAura(Aura const& aura, SpellEffectIndex index)
 {
     if (/*Aura* _aura = */GetAuraByEffectIndex(index))
     {
@@ -10560,7 +10572,7 @@ void SpellAuraHolder::AddAura(Aura aura, SpellEffectIndex index)
         }
     }
 
-    m_aurasStorage.insert(std::make_pair(index,aura));
+    m_aurasStorage.insert(AuraStorage::value_type(index,aura));
     m_auraFlags |= (1 << index);
 }
 
