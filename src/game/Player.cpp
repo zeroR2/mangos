@@ -1814,10 +1814,14 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
+
+        // try preload grid, targeted for teleport
+        GetMap()->PreloadGrid(x, y);
+
         //setup delayed teleport flag
         //if teleport spell is casted in Unit::Update() func
         //then we need to delay it until update process will be finished
-        if (SetDelayedTeleportFlagIfCan())
+        if (SetDelayedTeleportFlagIfCan() || !GetMap()->GetLoadingObjectsQueue().empty())
         {
             SetSemaphoreTeleportNear(true);
             //lets save teleport destination for player
@@ -1870,10 +1874,18 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         {
             //lets reset near teleport flag if it wasn't reset during chained teleports
             SetSemaphoreTeleportNear(false);
+
+            // try create map before trying teleport on this map
+            if (!map)
+                map = sMapMgr.CreateMap(mapid, this);
+
+            // try preload grid, targeted for teleport
+            map->PreloadGrid(x, y);
+
             //setup delayed teleport flag
             //if teleport spell is casted in Unit::Update() func
             //then we need to delay it until update process will be finished
-            if (SetDelayedTeleportFlagIfCan())
+            if (SetDelayedTeleportFlagIfCan() || !map->GetLoadingObjectsQueue().empty())
             {
                 SetSemaphoreTeleportFar(true);
                 //lets save teleport destination for player
