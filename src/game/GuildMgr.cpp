@@ -142,10 +142,6 @@ void GuildMgr::LoadGuilds()
         {
             newGuild->Disband();
             delete newGuild;
-            delete result;
-            delete guildRanksResult;
-            delete guildMembersResult;
-            delete guildBankTabRightsResult;
             continue;
         }
 
