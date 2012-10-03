@@ -1814,18 +1814,14 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
-
-        // try preload grid, targeted for teleport
-        GetMap()->PreloadGrid(x, y);
-
         //setup delayed teleport flag
         //if teleport spell is casted in Unit::Update() func
         //then we need to delay it until update process will be finished
-        if (SetDelayedTeleportFlagIfCan() || !GetMap()->GetLoadingObjectsQueue().empty())
+        if (SetDelayedTeleportFlagIfCan())
         {
             SetSemaphoreTeleportNear(true);
             //lets save teleport destination for player
-            m_teleport_dest = WorldLocation(x, y, z, orientation, mapid, GetInstanceId(), realmID);
+            m_teleport_dest = WorldLocation(mapid, x, y, z, orientation);
             m_teleport_options = options;
             return true;
         }
@@ -1841,7 +1837,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             CombatStop();
 
         // this will be used instead of the current location in SaveToDB
-        m_teleport_dest = WorldLocation(mapid, x, y, z, orientation, GetInstanceId(), realmID);
+        m_teleport_dest = WorldLocation(mapid, x, y, z, orientation);
         SetFallInformation(0, z);
 
         // code for finish transfer called in WorldSession::HandleMovementOpcodes()
@@ -1869,34 +1865,19 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         // If the map is not created, assume it is possible to enter it.
         // It will be created in the WorldPortAck.
         DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(mapid);
-        Map* map = sMapMgr.FindMap(mapid, state ? state->GetInstanceId() : 0);
+        Map *map = sMapMgr.FindMap(mapid, state ? state->GetInstanceId() : 0);
         if (!map ||  map->CanEnter(this))
         {
             //lets reset near teleport flag if it wasn't reset during chained teleports
             SetSemaphoreTeleportNear(false);
-
-            // try create map before trying teleport on this map
-            if (!map)
-            {
-                if (IsBeingTeleportedFar())
-                    map = sMapMgr.FindMap(m_teleport_dest.mapid, m_teleport_dest.instance);
-                else
-                    map = sMapMgr.CreateMap(mapid, this);
-
-                MANGOS_ASSERT(map);
-            }
-
-            // try preload grid, targeted for teleport
-            map->PreloadGrid(x, y);
-
             //setup delayed teleport flag
             //if teleport spell is casted in Unit::Update() func
             //then we need to delay it until update process will be finished
-            if (SetDelayedTeleportFlagIfCan() || !map->GetLoadingObjectsQueue().empty())
+            if (SetDelayedTeleportFlagIfCan())
             {
                 SetSemaphoreTeleportFar(true);
                 //lets save teleport destination for player
-                m_teleport_dest = WorldLocation(x, y, z, orientation, mapid, map->GetInstanceId(), realmID);
+                m_teleport_dest = WorldLocation(mapid, x, y, z, orientation);
                 m_teleport_options = options;
                 return true;
             }
