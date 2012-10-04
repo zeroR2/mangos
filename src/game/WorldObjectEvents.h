@@ -22,12 +22,10 @@
 #include "Utilities/EventProcessor.h"
 #include "ObjectGuid.h"
 #include "SharedDefines.h"
-#include "WorldLocation.h"
 
 class Spell;
 class Unit;
 class Creature;
-struct WorldLocation;
 
 enum WorldObjectEventType
 {
@@ -156,20 +154,6 @@ class EvadeDelayEvent : public BasicEvent
         EvadeDelayEvent();
         Unit&   m_owner;
         bool    b_force;
-};
-
-// Player events
-class TeleportDelayEvent : public BasicEvent
-{
-    public:
-        explicit TeleportDelayEvent(Player& owner, WorldLocation const& _location, uint32 _options)
-            : BasicEvent(WORLDOBJECT_EVENT_TYPE_UNIQUE), m_owner(owner), m_location(_location), m_options(_options) {};
-        bool Execute(uint64 e_time, uint32 p_time);
-    private:
-        TeleportDelayEvent();
-        Player&         m_owner;
-        WorldLocation   m_location;
-        uint32          m_options;
 };
 
 // BattleGround events
