@@ -1229,9 +1229,6 @@ void WorldSession::HandleRealmSplitOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleFarSightOpcode( WorldPacket & recv_data )
 {
-    DEBUG_LOG("WORLD: CMSG_FAR_SIGHT");
-    //recv_data.hexlike();
-
     uint8 op;
     recv_data >> op;
 
@@ -1242,12 +1239,12 @@ void WorldSession::HandleFarSightOpcode( WorldPacket & recv_data )
     switch(op)
     {
         case 0:
-            DEBUG_LOG("Removed FarSight from %s", _player->GetGuidStr().c_str());
-            _player->GetCamera().ResetView(false);
+            DEBUG_LOG("WorldSession: CMSG_FAR_SIGHT removed FarSight from %s", _player->GetGuidStr().c_str());
+            _player->GetCamera()->ResetView(false);
             break;
         case 1:
-            DEBUG_LOG("Added FarSight %s to %s", _player->GetFarSightGuid().GetString().c_str(), _player->GetGuidStr().c_str());
-            _player->GetCamera().SetView(obj, false);
+            DEBUG_LOG("WorldSession: CMSG_FAR_SIGHT added FarSight %s to %s", _player->GetFarSightGuid().GetString().c_str(), _player->GetGuidStr().c_str());
+            _player->GetCamera()->SetView(obj, false);
             break;
     }
 }
