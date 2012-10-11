@@ -23,7 +23,7 @@
 #include "Errors.h"
 #include "Player.h"
 
-Camera::Camera(Player& player) : m_owner(player), m_source(&player)
+Camera::Camera(Player* pl) : m_owner(*pl), m_source(pl)
 {
     m_source->GetViewPoint().Attach(this);
 }
@@ -31,10 +31,10 @@ Camera::Camera(Player& player) : m_owner(player), m_source(&player)
 Camera::~Camera()
 {
     // view of camera should be already reseted to owner (RemoveFromWorld -> Event_RemovedFromWorld -> ResetView)
-    MANGOS_ASSERT(GetBody() == (WorldObject*)GetOwner());
+    MANGOS_ASSERT(m_source == &m_owner);
 
     // for symmetry with constructor and way to make viewpoint's list empty
-    GetBody()->GetViewPoint().Detach(this);
+    m_source->GetViewPoint().Detach(this);
 }
 
 void Camera::ReceivePacket(WorldPacket* data)
@@ -46,7 +46,7 @@ void Camera::UpdateForCurrentViewPoint()
 {
     m_gridRef.unlink();
 
-    if (GridType* grid = GetBody()->GetViewPoint().m_grid)
+    if (GridType* grid = m_source->GetViewPoint().m_grid)
         grid->AddWorldObject(this);
 
     UpdateVisibilityForOwner();
@@ -56,7 +56,7 @@ void Camera::SetView(WorldObject* obj, bool update_far_sight_field /*= true*/)
 {
     MANGOS_ASSERT(obj);
 
-    if (GetBody() == obj)
+    if (m_source == obj)
         return;
 
     if (!m_owner.IsInMap(obj))
@@ -72,43 +72,37 @@ void Camera::SetView(WorldObject* obj, bool update_far_sight_field /*= true*/)
     }
 
     // detach and deregister from active objects if there are no more reasons to be active
-    if (GetBody())
-    {
-        GetBody()->GetViewPoint().Detach(this);
-        if (!GetBody()->isActiveObject())
-            GetBody()->GetMap()->RemoveFromActive(GetBody());
-    }
+    m_source->GetViewPoint().Detach(this);
+    if (!m_source->isActiveObject())
+        m_source->GetMap()->RemoveFromActive(m_source);
 
     m_source = obj;
 
-    if (!GetBody()->isActiveObject())
-        GetBody()->GetMap()->AddToActive(GetBody());
+    if (!m_source->isActiveObject())
+        m_source->GetMap()->AddToActive(m_source);
 
-    GetBody()->GetViewPoint().Attach(this);
+    m_source->GetViewPoint().Attach(this);
 
     if (update_far_sight_field)
-        m_owner.SetGuidValue(PLAYER_FARSIGHT, (GetBody() == &m_owner ? ObjectGuid() : GetBody()->GetObjectGuid()));
+        m_owner.SetGuidValue(PLAYER_FARSIGHT, (m_source == &m_owner ? ObjectGuid() : m_source->GetObjectGuid()));
 
     UpdateForCurrentViewPoint();
 }
 
 void Camera::Event_ViewPointVisibilityChanged()
 {
-    if (!m_owner.HaveAtClient(GetBody()))
+    if (!m_owner.HaveAtClient(m_source))
         ResetView();
 }
 
 void Camera::ResetView(bool update_far_sight_field /*= true*/)
 {
-    if ((WorldObject*)GetOwner() == GetBody())
-        return;
-
     SetView(&m_owner, update_far_sight_field);
 }
 
 void Camera::Event_AddedToWorld()
 {
-    GridType* grid = GetBody()->GetViewPoint().m_grid;
+    GridType* grid = m_source->GetViewPoint().m_grid;
     MANGOS_ASSERT(grid);
     grid->AddWorldObject(this);
 
@@ -117,7 +111,7 @@ void Camera::Event_AddedToWorld()
 
 void Camera::Event_RemovedFromWorld()
 {
-    if (GetBody() == &m_owner)
+    if (m_source == &m_owner)
     {
         m_gridRef.unlink();
         return;
@@ -129,18 +123,18 @@ void Camera::Event_RemovedFromWorld()
 void Camera::Event_Moved()
 {
     m_gridRef.unlink();
-    GetBody()->GetViewPoint().m_grid->AddWorldObject(this);
+    m_source->GetViewPoint().m_grid->AddWorldObject(this);
 }
 
 void Camera::UpdateVisibilityOf(WorldObject* target)
 {
-    m_owner.UpdateVisibilityOf(GetBody(), target);
+    m_owner.UpdateVisibilityOf(m_source, target);
 }
 
 template<class T>
 void Camera::UpdateVisibilityOf(T* target, UpdateData& data, std::set<WorldObject*>& vis)
 {
-    m_owner.template UpdateVisibilityOf<T>(GetBody(), target, data, vis);
+    m_owner.template UpdateVisibilityOf<T>(m_source, target, data, vis);
 }
 
 template void Camera::UpdateVisibilityOf(Player*        , UpdateData& , std::set<WorldObject*>&);
@@ -151,17 +145,9 @@ template void Camera::UpdateVisibilityOf(DynamicObject* , UpdateData& , std::set
 
 void Camera::UpdateVisibilityForOwner()
 {
-    if (!GetBody() || !GetBody()->IsInWorld())
-        return;
-
     MaNGOS::VisibleNotifier notifier(*this);
-    Cell::VisitAllObjects(GetBody(), notifier, GetBody()->GetMap()->GetVisibilityDistance(GetBody()), false);
+    Cell::VisitAllObjects(m_source, notifier, m_source->GetMap()->GetVisibilityDistance(), false);
     notifier.Notify();
-}
-
-WorldObject* Camera::GetBody()
-{
-    return m_source;
 }
 
 //////////////////
@@ -173,16 +159,4 @@ ViewPoint::~ViewPoint()
         sLog.outError("ViewPoint destructor called, but some cameras referenced to it");
         m_cameras.clear();
     }
-}
-
-void ViewPoint::Attach(Camera* camera) 
-{
-    MAPLOCK_READ(GetBody(),MAP_LOCK_TYPE_DEFAULT);
-    m_cameras.insert(camera);
-}
-
-void ViewPoint::Detach(Camera* camera) 
-{
-    MAPLOCK_READ(GetBody(),MAP_LOCK_TYPE_DEFAULT);
-    m_cameras.erase(camera);
 }

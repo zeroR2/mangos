@@ -3846,9 +3846,9 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     Totem* totem = target->GetTotem(TOTEM_SLOT_AIR);
 
                     if (totem && apply)
-                        ((Player*)target)->SetViewPoint(totem);
+                        ((Player*)target)->GetCamera().SetView(totem);
                     else
-                        ((Player*)target)->SetViewPoint(NULL);
+                        ((Player*)target)->GetCamera().ResetView();
 
                     return;
                 }
@@ -4730,14 +4730,14 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
 void Aura::HandleBindSight(bool apply, bool /*Real*/)
 {
     Unit* caster = GetCaster();
-
     if(!caster || caster->GetTypeId() != TYPEID_PLAYER)
         return;
 
+    Camera& camera = ((Player*)caster)->GetCamera();
     if (apply)
-        ((Player*)caster)->SetViewPoint(GetTarget());
+        camera.SetView(GetTarget());
     else
-        ((Player*)caster)->SetViewPoint(NULL);
+        camera.ResetView();
 }
 
 void Aura::HandleFarSight(bool apply, bool /*Real*/)
@@ -4746,10 +4746,11 @@ void Aura::HandleFarSight(bool apply, bool /*Real*/)
     if(!caster || caster->GetTypeId() != TYPEID_PLAYER)
         return;
 
+    Camera& camera = ((Player*)caster)->GetCamera();
     if (apply)
-        ((Player*)caster)->SetViewPoint(GetTarget());
+        camera.SetView(GetTarget());
     else
-        ((Player*)caster)->SetViewPoint(NULL);
+        camera.ResetView();
 }
 
 void Aura::HandleAuraTrackCreatures(bool apply, bool /*Real*/)
@@ -4813,8 +4814,9 @@ void Aura::HandleModPossess(bool apply, bool Real)
         return;
 
     Player* p_caster = (Player*)caster;
+    Camera& camera = p_caster->GetCamera();
 
-    if (apply)
+    if ( apply )
     {
         target->addUnitState(UNIT_STAT_CONTROLLED);
 
@@ -4824,7 +4826,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         // target should became visible at SetView call(if not visible before):
         // otherwise client\p_caster will ignore packets from the target(SetClientControl for example)
-        p_caster->SetViewPoint(target);
+        camera.SetView(target);
 
         p_caster->SetCharm(target);
         p_caster->SetClientControl(target, 1);
@@ -4862,7 +4864,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
-        p_caster->SetViewPoint(NULL);
+        camera.ResetView();
 
         p_caster->RemovePetActionBar();
 
@@ -4913,7 +4915,9 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
         return;
 
     Pet* pet = (Pet*)target;
+
     Player* p_caster = (Player*)caster;
+    Camera& camera = p_caster->GetCamera();
 
     if (apply)
     {
@@ -4921,7 +4925,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
 
         // target should became visible at SetView call(if not visible before):
         // otherwise client\p_caster will ignore packets from the target(SetClientControl for example)
-        p_caster->SetViewPoint(pet);
+        camera.SetView(pet);
 
         p_caster->SetCharm(pet);
         p_caster->SetClientControl(pet, 1);
@@ -4940,7 +4944,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
-        p_caster->SetViewPoint(NULL);
+        camera.ResetView();
 
         // on delete only do caster related effects
         if (m_removeMode == AURA_REMOVE_BY_DELETE)
@@ -5480,7 +5484,7 @@ void Aura::HandleInvisibilityDetect(bool apply, bool Real)
             target->m_detectInvisibilityMask |= (1 << (*itr)->GetModifier()->m_miscvalue);
     }
     if (Real && target->GetTypeId()==TYPEID_PLAYER)
-        ((Player*)target)->GetCamera()->UpdateVisibilityForOwner();
+        ((Player*)target)->GetCamera().UpdateVisibilityForOwner();
 }
 
 void Aura::HandleDetectAmore(bool apply, bool /*real*/)
