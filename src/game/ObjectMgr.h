@@ -425,7 +425,7 @@ struct WeatherZoneChances
     WeatherSeasonChances data[WEATHER_SEASONS];
 };
 
-struct DungeonEncounter
+/*struct DungeonEncounter
 {
     DungeonEncounter(DungeonEncounterEntry const* _dbcEntry, EncounterCreditType _creditType, uint32 _creditEntry, uint32 _lastEncounterDungeon)
         : dbcEntry(_dbcEntry), creditType(_creditType), creditEntry(_creditEntry), lastEncounterDungeon(_lastEncounterDungeon) { }
@@ -436,7 +436,7 @@ struct DungeonEncounter
 };
 
 typedef std::multimap<uint32, DungeonEncounter const*> DungeonEncounterMap;
-typedef std::pair<DungeonEncounterMap::const_iterator, DungeonEncounterMap::const_iterator> DungeonEncounterMapBounds;
+typedef std::pair<DungeonEncounterMap::const_iterator, DungeonEncounterMap::const_iterator> DungeonEncounterMapBounds;*/
 
 struct GraveYardData
 {
@@ -1132,7 +1132,7 @@ class ObjectMgr
             return m_ItemRequiredTarget.equal_range(uiItemEntry);
         }
 
-        DungeonEncounterMapBounds GetDungeonEncounterBounds(uint32 creditEntry) const
+        /*DungeonEncounterMapBounds GetDungeonEncounterBounds(uint32 creditEntry) const
         {
             return m_DungeonEncounters.equal_range(creditEntry);
         }
@@ -1140,7 +1140,7 @@ class ObjectMgr
         DungeonEncounterMap const* GetDungeonEncounters()
         {
             return &m_DungeonEncounters;
-        }
+        }*/
 
         GossipMenusMapBounds GetGossipMenusMapBounds(uint32 uiMenuId) const
         {
@@ -1317,7 +1317,7 @@ class ObjectMgr
         MangosStringLocaleMap mMangosStringLocaleMap;
         GossipMenuItemsLocaleMap mGossipMenuItemsLocaleMap;
         PointOfInterestLocaleMap mPointOfInterestLocaleMap;
-        DungeonEncounterMap m_DungeonEncounters;
+        //DungeonEncounterMap m_DungeonEncounters;
 
         CreatureModelRaceMap    m_mCreatureModelRaceMap;
 

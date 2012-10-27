@@ -970,7 +970,7 @@ bool ChatHandler::HandleModifyTalentCommand(char* args)
             return false;
 
         ((Player*)target)->SetFreeTalentPoints(tp);
-        ((Player*)target)->SendTalentsInfoData(false);
+        ((Player*)target)->SendTalentsInfoData();
         return true;
     }
     else if (((Creature*)target)->IsPet())
@@ -982,8 +982,6 @@ bool ChatHandler::HandleModifyTalentCommand(char* args)
             if (HasLowerSecurity((Player*)owner))
                 return false;
 
-            ((Pet*)target)->SetFreeTalentPoints(tp);
-            ((Player*)owner)->SendTalentsInfoData(true);
             return true;
         }
     }

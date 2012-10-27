@@ -4994,7 +4994,7 @@ bool PlayerbotAI::Talent(Creature* trainer)
         return false;
     }
 
-    m_bot->SendTalentsInfoData(false);
+    m_bot->SendTalentsInfoData();
     trainer->CastSpell(m_bot, 14867, true);                  //spell: "Untalent Visual Effect"
     return true;
 }
@@ -5706,7 +5706,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     rank = itr->second;
 
                     m_bot->LearnTalent(talentid, ++rank);
-                    m_bot->SendTalentsInfoData(false);
+                    m_bot->SendTalentsInfoData();
                     InspectUpdate();
                 }
                 m_bot->MakeTalentGlyphLink(out);

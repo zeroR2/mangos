@@ -1363,7 +1363,7 @@ bool ChatHandler::HandleUnLearnCommand(char* args)
         SendSysMessage(LANG_FORGET_SPELL);
 
     if (GetTalentSpellCost(spell_id))
-        target->SendTalentsInfoData(false);
+        target->SendTalentsInfoData();
 
     return true;
 }
@@ -2166,87 +2166,9 @@ bool ChatHandler::HandleLearnAllMyTalentsCommand(char* /*args*/)
         player->learnSpellHighRank(spellid);
     }
 
-    player->SendTalentsInfoData(false);
+    player->SendTalentsInfoData();
 
     SendSysMessage(LANG_COMMAND_LEARN_CLASS_TALENTS);
-    return true;
-}
-
-bool ChatHandler::HandleLearnAllMyPetTalentsCommand(char* /*args*/)
-{
-    Player* player = m_session->GetPlayer();
-
-    Pet* pet = player->GetPet();
-    if (!pet)
-    {
-        SendSysMessage(LANG_NO_PET_FOUND);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    CreatureInfo const* ci = pet->GetCreatureInfo();
-    if (!ci)
-    {
-        SendSysMessage(LANG_WRONG_PET_TYPE);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    CreatureFamilyEntry const* pet_family = sCreatureFamilyStore.LookupEntry(ci->family);
-    if (!pet_family)
-    {
-        SendSysMessage(LANG_WRONG_PET_TYPE);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (pet_family->petTalentType < 0)                      // not hunter pet
-    {
-        SendSysMessage(LANG_WRONG_PET_TYPE);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
-    {
-        TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
-        if (!talentInfo)
-            continue;
-
-        TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
-        if (!talentTabInfo)
-            continue;
-
-        // prevent learn talent for different family (cheating)
-        if (((1 << pet_family->petTalentType) & talentTabInfo->petTalentMask) == 0)
-            continue;
-
-        // search highest talent rank
-        uint32 spellid = 0;
-
-        for (int rank = MAX_TALENT_RANK - 1; rank >= 0; --rank)
-        {
-            if (talentInfo->RankID[rank] != 0)
-            {
-                spellid = talentInfo->RankID[rank];
-                break;
-            }
-        }
-
-        if (!spellid)                                       // ??? none spells in talent
-            continue;
-
-        SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid);
-        if (!spellInfo || !SpellMgr::IsSpellValid(spellInfo, m_session->GetPlayer(), false))
-            continue;
-
-        // learn highest rank of talent and learn all non-talent spell ranks (recursive by tree)
-        pet->learnSpellHighRank(spellid);
-    }
-
-    player->SendTalentsInfoData(true);
-
-    SendSysMessage(LANG_COMMAND_LEARN_PET_TALENTS);
     return true;
 }
 
@@ -2318,7 +2240,7 @@ bool ChatHandler::HandleLearnCommand(char* args)
 
     uint32 first_spell = sSpellMgr.GetFirstSpellInChain(spell);
     if (GetTalentSpellCost(first_spell))
-        targetPlayer->SendTalentsInfoData(false);
+        targetPlayer->SendTalentsInfoData();
 
     return true;
 }
@@ -4818,16 +4740,12 @@ bool ChatHandler::HandleResetSpecsCommand(char* args)
     if (target)
     {
         target->resetTalents(true, true);
-        target->SendTalentsInfoData(false);
+        target->SendTalentsInfoData();
 
         ChatHandler(target).SendSysMessage(LANG_RESET_TALENTS);
         if (!m_session || m_session->GetPlayer() != target)
             PSendSysMessage(LANG_RESET_TALENTS_ONLINE, GetNameLink(target).c_str());
 
-        Pet* pet = target->GetPet();
-        Pet::resetTalentsForAllPetsOf(target, pet);
-        if (pet)
-            target->SendTalentsInfoData(true);
         return true;
     }
     else if (target_guid)
@@ -4857,9 +4775,6 @@ bool ChatHandler::HandleResetTalentsCommand(char* args)
             Unit* owner = creature->GetOwner();
             if (owner && owner->GetTypeId() == TYPEID_PLAYER && ((Pet*)creature)->IsPermanentPetFor((Player*)owner))
             {
-                ((Pet*)creature)->resetTalents();
-                ((Player*)owner)->SendTalentsInfoData(true);
-
                 ChatHandler((Player*)owner).SendSysMessage(LANG_RESET_PET_TALENTS);
                 if (!m_session || m_session->GetPlayer() != ((Player*)owner))
                     PSendSysMessage(LANG_RESET_PET_TALENTS_ONLINE, GetNameLink((Player*)owner).c_str());
@@ -4875,15 +4790,11 @@ bool ChatHandler::HandleResetTalentsCommand(char* args)
     if (target)
     {
         target->resetTalents(true);
-        target->SendTalentsInfoData(false);
+        target->SendTalentsInfoData();
         ChatHandler(target).SendSysMessage(LANG_RESET_TALENTS);
         if (!m_session || m_session->GetPlayer() != target)
             PSendSysMessage(LANG_RESET_TALENTS_ONLINE, GetNameLink(target).c_str());
 
-        Pet* pet = target->GetPet();
-        Pet::resetTalentsForAllPetsOf(target, pet);
-        if (pet)
-            target->SendTalentsInfoData(true);
         return true;
     }
 

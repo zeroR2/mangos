@@ -85,18 +85,8 @@ inline float GetSpellRadius(SpellRadiusEntry const *radius) { return (radius ? r
 uint32 GetSpellCastTime(SpellEntry const* spellInfo, Spell const* spell = NULL);
 uint32 GetSpellCastTimeForBonus( SpellEntry const *spellProto, DamageEffectType damagetype );
 float CalculateDefaultCoefficient(SpellEntry const *spellProto, DamageEffectType const damagetype);
-inline float GetSpellMinRange(SpellRangeEntry const *range, bool friendly = false)
-{
-    if(!range)
-        return 0;
-    return (friendly ? range->minRangeFriendly : range->minRange);
-}
-inline float GetSpellMaxRange(SpellRangeEntry const *range, bool friendly = false)
-{
-    if(!range)
-        return 0;
-    return (friendly ? range->maxRangeFriendly : range->maxRange);
-}
+inline float GetSpellMinRange(SpellRangeEntry const *range) { return (range ? range->minRange : 0); }
+inline float GetSpellMaxRange(SpellRangeEntry const *range) { return (range ? range->maxRange : 0); }
 inline uint32 GetSpellRecoveryTime(SpellEntry const *spellInfo) { return spellInfo->RecoveryTime > spellInfo->CategoryRecoveryTime ? spellInfo->RecoveryTime : spellInfo->CategoryRecoveryTime; }
 int32 GetSpellDuration(SpellEntry const *spellInfo);
 int32 GetSpellMaxDuration(SpellEntry const *spellInfo);
@@ -205,7 +195,7 @@ inline bool IsElementalShield(SpellEntry const *spellInfo)
         (spellInfo->GetSpellFamilyFlags().test<CF_SHAMAN_LIGHTNING_SHIELD, CF_SHAMAN_WATER_SHIELD, CF_SHAMAN_EARTH_SHIELD>() || spellInfo->Id == 23552);
 }
 
-inline bool IsExplicitDiscoverySpell(SpellEntry const *spellInfo)
+/*inline bool IsExplicitDiscoverySpell(SpellEntry const *spellInfo)
 {
     return (((spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_RANDOM_ITEM
         || spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_ITEM_2)
@@ -219,7 +209,7 @@ inline bool IsLootCraftingSpell(SpellEntry const *spellInfo)
         // different random cards from Inscription (121==Virtuoso Inking Set category) r without explicit item
         (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_ITEM_2 &&
         (spellInfo->TotemCategory[0] != 0 || spellInfo->EffectItemType[0]==0)));
-}
+}*/
 
 int32 CompareAuraRanks(uint32 spellId_1, uint32 spellId_2);
 
@@ -581,7 +571,7 @@ inline bool NeedsComboPoints(SpellEntry const* spellInfo)
 
 inline SpellSchoolMask GetSpellSchoolMask(SpellEntry const* spellInfo)
 {
-    return spellInfo ? SpellSchoolMask(spellInfo->SchoolMask) : SPELL_SCHOOL_MASK_NORMAL;
+    return spellInfo ? GetSchoolMask(spellInfo->School) : SPELL_SCHOOL_MASK_NORMAL;
 }
 
 inline uint32 GetSpellMechanicMask(SpellEntry const* spellInfo, uint32 effectMask)

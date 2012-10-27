@@ -11150,36 +11150,6 @@ void Spell::EffectActivateObject(SpellEffectIndex eff_idx)
     gameObjTarget->GetMap()->ScriptCommandStart(activateCommand, delay_secs, m_caster, gameObjTarget);
 }
 
-void Spell::EffectApplyGlyph(SpellEffectIndex eff_idx)
-{
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    Player *player = (Player*)m_caster;
-
-    // apply new one
-    if (uint32 glyph = m_spellInfo->EffectMiscValue[eff_idx])
-    {
-        if (GlyphPropertiesEntry const *gp = sGlyphPropertiesStore.LookupEntry(glyph))
-        {
-            if (GlyphSlotEntry const *gs = sGlyphSlotStore.LookupEntry(player->GetGlyphSlot(m_glyphIndex)))
-            {
-                if (gp->TypeFlags != gs->TypeFlags)
-                {
-                    SendCastResult(SPELL_FAILED_INVALID_GLYPH);
-                    return;                                 // glyph slot mismatch
-                }
-            }
-
-            // remove old glyph
-            player->ApplyGlyph(m_glyphIndex, false);
-            player->SetGlyph(m_glyphIndex, glyph);
-            player->ApplyGlyph(m_glyphIndex, true);
-            player->SendTalentsInfoData(false);
-        }
-    }
-}
-
 void Spell::DoSummonTotem(SpellEffectIndex eff_idx, uint8 slot_dbc)
 {
     // DBC store slots starting from 1, with no slot 0 value)

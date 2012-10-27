@@ -360,6 +360,40 @@ enum DrunkenState
 
 #define MAX_DRUNKEN   4
 
+enum TYPE_OF_HONOR
+{
+    HONORABLE_KILL    = 1,
+    DISHONORABLE_KILL = 2,
+    BONUS_HONOR_UNIT  = 3,
+    QUEST             = 4,
+    OTHER             = 5
+};
+
+struct HonorData
+{
+    uint8 victimType;
+    uint32 victimID;
+    float contributionPoints;
+    uint32 date;
+    uint8 type;
+    uint8 state;
+};
+
+typedef std::list<HonorData> HonorMap;
+
+#define HONOR_RANK_COUNT 20
+
+/* State of honor in Honor Map
+* HK_NEW - new honor field, not stored in DB, it adds to DB in Player::_SaveHonor() and changes state to HK_UNCHANGED
+* HK_UNCHANGED - stored kills in DB
+*/
+
+enum HonorState
+{
+    HK_NEW = 0,
+    HK_UNCHANGED = 1
+};
+
 enum PlayerFlags
 {
     PLAYER_FLAGS_NONE                   = 0x00000000,
@@ -1574,10 +1608,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 resetTalentsCost() const;
         void InitTalentForLevel();
         void BuildPlayerTalentsInfoData(WorldPacket *data);
-        void BuildPetTalentsInfoData(WorldPacket *data);
-        void SendTalentsInfoData(bool pet);
+        void SendTalentsInfoData();
         void LearnTalent(uint32 talentId, uint32 talentRank);
-        void LearnPetTalent(ObjectGuid petGuid, uint32 talentId, uint32 talentRank);
 
         uint32 CalculateTalentsPoints() const;
 
@@ -2651,7 +2683,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_lastFallTime;
         float  m_lastFallZ;
 
-        //LiquidTypeEntry const* m_lastLiquid;
+        LiquidTypeEntry const* m_lastLiquid;
 
         int32 m_MirrorTimer[MAX_TIMERS];
         uint8 m_MirrorTimerFlags;

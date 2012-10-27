@@ -547,7 +547,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     m_contestedPvPTimer = 0;
 
     m_declinedname = NULL;
-    m_runes = NULL;
 
     m_lastFallTime = 0;
     m_lastFallZ = 0;
@@ -610,7 +609,6 @@ Player::~Player ()
             itr->second.state->RemovePlayer(this);
 
     delete m_declinedname;
-    delete m_runes;
     delete m_anticheat;
     delete m_LFGState;
     delete m_camera;
@@ -2754,7 +2752,7 @@ void Player::InitTalentForLevel()
     UpdateFreeTalentPoints();
 
     if (!GetSession()->PlayerLoading())
-        SendTalentsInfoData(false);                         // update at client
+        SendTalentsInfoData();                         // update at client
 }
 
 void Player::InitStatsForLevel(bool reapplyMods)
@@ -5211,20 +5209,6 @@ float Player::GetRatingBonusValue(CombatRating cr) const
     return float(GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr)) * GetRatingMultiplier(cr);
 }
 
-float Player::GetExpertiseDodgeOrParryReduction(WeaponAttackType attType) const
-{
-    switch (attType)
-    {
-        case BASE_ATTACK:
-            return GetUInt32Value(PLAYER_EXPERTISE) / 4.0f;
-        case OFF_ATTACK:
-            return GetUInt32Value(PLAYER_OFFHAND_EXPERTISE) / 4.0f;
-        default:
-            break;
-    }
-    return 0.0f;
-}
-
 float Player::OCTRegenHPPerSpirit()
 {
     uint32 level = getLevel();
@@ -5785,8 +5769,8 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                          SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
                          if (!pEnchant)
                              continue;
-                         if (pEnchant->requiredSkill != id)
-                             continue;
+                         //if (pEnchant->requiredSkill != id)
+                         //    continue;
                          ApplyEnchantment(pItem, EnchantmentSlot(slot), false);
                     }
                 }
@@ -5813,8 +5797,8 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                          SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
                          if (!pEnchant)
                              continue;
-                         if (pEnchant->requiredSkill != id)
-                             continue;
+                         //if (pEnchant->requiredSkill != id)
+                         //    continue;
                          ApplyEnchantment(pItem, EnchantmentSlot(slot), true);
                     }
                 }
@@ -5837,8 +5821,8 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                          SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
                          if (!pEnchant)
                              continue;
-                         if (pEnchant->requiredSkill != id)
-                             continue;
+                         //if (pEnchant->requiredSkill != id)
+                         //    continue;
                          ApplyEnchantment(pItem, EnchantmentSlot(slot), false);
                     }
                 }
@@ -6769,7 +6753,7 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize)
         Creature *cVictim = (Creature *)uVictim;
         if (cVictim->IsCivilian() && !IsHonorOrXPTarget(cVictim))
         {
-            rank_points = ANATHEMA::Honor::DishonorableKillPoints(getLevel());
+            rank_points = MaNGOS::Honor::DishonorableKillPoints(getLevel());
             SetRankPoints(GetRankPoints() - rank_points);
             if(GetRankPoints() < -2500.0)
                 SetRankPoints(-2500.0);
@@ -6793,7 +6777,7 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize)
 
         if (IsHonorOrXPTarget(pVictim))
         {
-            AddHonor(ANATHEMA::Honor::HonorableKillPoints(this, pVictim, groupsize), HONORABLE_KILL, pVictim);
+            AddHonor(MaNGOS::Honor::HonorableKillPoints(this, pVictim, groupsize), HONORABLE_KILL, pVictim);
             return true;
         }
     }
@@ -8772,9 +8756,6 @@ void Player::SendPetSkillWipeConfirm()
         sLog.outError("WorldSession::HandlePetUnlearnOpcode: %s is considered pet-like but doesn't have a charminfo!", pet->GetGuidStr().c_str());
         return;
     }
-    pet->resetTalents();
-    SendTalentsInfoData(true);
-
 }
 
 /*********************************************************/
@@ -11373,16 +11354,32 @@ void Player::QuickEquipItem(uint16 pos, Item *pItem)
 
 void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
 {
-    if (pItem)
+    if(pItem)
     {
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * 2), pItem->GetEntry());
-        SetUInt16Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 0, pItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
-        SetUInt16Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 1, pItem->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT));
+        SetGuidValue(PLAYER_VISIBLE_ITEM_1_CREATOR + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetGuidValue(ITEM_FIELD_CREATOR));
+
+        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (slot * MAX_VISIBLE_ITEM_OFFSET);
+        SetUInt32Value(VisibleBase + 0, pItem->GetEntry());
+
+        for(int i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; ++i)
+            SetUInt32Value(VisibleBase + 1 + i, pItem->GetEnchantmentId(EnchantmentSlot(i)));
+
+        // Use SetInt16Value to prevent set high part to FFFF for negative value
+        SetInt16Value( PLAYER_VISIBLE_ITEM_1_PROPERTIES + (slot * MAX_VISIBLE_ITEM_OFFSET), 0, pItem->GetItemRandomPropertyId());
+        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetItemSuffixFactor());
     }
     else
     {
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + (slot * 2), 0);
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * 2), 0);
+        SetGuidValue(PLAYER_VISIBLE_ITEM_1_CREATOR + (slot * MAX_VISIBLE_ITEM_OFFSET), ObjectGuid());
+
+        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (slot * MAX_VISIBLE_ITEM_OFFSET);
+        SetUInt32Value(VisibleBase + 0, 0);
+
+        for(int i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; ++i)
+            SetUInt32Value(VisibleBase + 1 + i, 0);
+
+        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 0 + (slot * MAX_VISIBLE_ITEM_OFFSET), 0);
+        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), 0);
     }
 }
 
@@ -14141,13 +14138,6 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     if (uint32 honor = pQuest->CalculateRewardHonor(getLevel()))
         RewardHonor(NULL, 0, honor);
 
-    // title reward
-    if (pQuest->GetCharTitleId())
-    {
-        if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(pQuest->GetCharTitleId()))
-            SetTitle(titleEntry);
-    }
-
     if (pQuest->GetBonusTalents())
     {
         m_questRewardTalentCount += pQuest->GetBonusTalents();
@@ -15525,11 +15515,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     SetUInt32Value(PLAYER_XP, fields[7].GetUInt32());
 
     _LoadIntoDataField(fields[60].GetString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE);
-    _LoadIntoDataField(fields[63].GetString(), PLAYER__FIELD_KNOWN_TITLES, KNOWN_TITLES_SIZE*2);
+    //_LoadIntoDataField(fields[63].GetString(), PLAYER__FIELD_KNOWN_TITLES, KNOWN_TITLES_SIZE*2);
 
     InitDisplayIds();                                       // model, scale and model data
 
-    SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);
+    //SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);
 
     uint32 money = fields[8].GetUInt32();
     if (money > MAX_MONEY_AMOUNT)
@@ -15545,8 +15535,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     SetUInt32Value(PLAYER_FLAGS, fields[11].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[48].GetInt32());
-
-    SetUInt64Value(PLAYER_FIELD_KNOWN_CURRENCIES, fields[47].GetUInt64());
 
     SetUInt32Value(PLAYER_AMMO_ID, fields[62].GetUInt32());
 
@@ -20417,7 +20405,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
     // SMSG_SET_PCT_SPELL_MODIFIER
     // SMSG_SET_FLAT_SPELL_MODIFIER
 
-    SendTalentsInfoData(false);
+    SendTalentsInfoData();
 
     data.Initialize(SMSG_INSTANCE_DIFFICULTY, 4+4);
     data << uint32(GetMap()->GetDifficulty());
@@ -22290,148 +22278,6 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
     DETAIL_LOG("TalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
 }
 
-void Player::LearnPetTalent(ObjectGuid petGuid, uint32 talentId, uint32 talentRank)
-{
-    Pet *pet = GetPet();
-    if (!pet)
-        return;
-
-    if (petGuid != pet->GetObjectGuid())
-        return;
-
-    uint32 CurTalentPoints = pet->GetFreeTalentPoints();
-
-    if (CurTalentPoints == 0)
-        return;
-
-    if (talentRank >= MAX_PET_TALENT_RANK)
-        return;
-
-    TalentEntry const *talentInfo = sTalentStore.LookupEntry(talentId);
-
-    if (!talentInfo)
-        return;
-
-    TalentTabEntry const *talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
-
-    if (!talentTabInfo)
-        return;
-
-    CreatureInfo const *ci = pet->GetCreatureInfo();
-
-    if (!ci)
-        return;
-
-    CreatureFamilyEntry const *pet_family = sCreatureFamilyStore.LookupEntry(ci->family);
-
-    if (!pet_family)
-        return;
-
-    if (pet_family->petTalentType < 0)                       // not hunter pet
-        return;
-
-    // prevent learn talent for different family (cheating)
-    if (!((1 << pet_family->petTalentType) & talentTabInfo->petTalentMask))
-        return;
-
-    // find current max talent rank
-    int32 curtalent_maxrank = 0;
-    for (int32 k = MAX_TALENT_RANK-1; k > -1; --k)
-    {
-        if (talentInfo->RankID[k] && pet->HasSpell(talentInfo->RankID[k]))
-        {
-            curtalent_maxrank = k + 1;
-            break;
-        }
-    }
-
-    // we already have same or higher talent rank learned
-    if (curtalent_maxrank >= int32(talentRank + 1))
-        return;
-
-    // check if we have enough talent points
-    if (CurTalentPoints < (talentRank - curtalent_maxrank + 1))
-        return;
-
-    // Check if it requires another talent
-    if (talentInfo->DependsOn > 0)
-    {
-        if (TalentEntry const *depTalentInfo = sTalentStore.LookupEntry(talentInfo->DependsOn))
-        {
-            bool hasEnoughRank = false;
-            for (int i = talentInfo->DependsOnRank; i < MAX_TALENT_RANK; ++i)
-            {
-                if (depTalentInfo->RankID[i] != 0)
-                    if (pet->HasSpell(depTalentInfo->RankID[i]))
-                        hasEnoughRank = true;
-            }
-            if (!hasEnoughRank)
-                return;
-        }
-    }
-
-    // Find out how many points we have in this field
-    uint32 spentPoints = 0;
-
-    uint32 tTab = talentInfo->TalentTab;
-    if (talentInfo->Row > 0)
-    {
-        unsigned int numRows = sTalentStore.GetNumRows();
-        for (unsigned int i = 0; i < numRows; ++i)          // Loop through all talents.
-        {
-            // Someday, someone needs to revamp
-            const TalentEntry *tmpTalent = sTalentStore.LookupEntry(i);
-            if (tmpTalent)                                  // the way talents are tracked
-            {
-                if (tmpTalent->TalentTab == tTab)
-                {
-                    for (int j = 0; j < MAX_TALENT_RANK; ++j)
-                    {
-                        if (tmpTalent->RankID[j] != 0)
-                        {
-                            if (pet->HasSpell(tmpTalent->RankID[j]))
-                            {
-                                spentPoints += j + 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // not have required min points spent in talent tree
-    if (spentPoints < (talentInfo->Row * MAX_PET_TALENT_RANK))
-        return;
-
-    // spell not set in talent.dbc
-    uint32 spellid = talentInfo->RankID[talentRank];
-    if (spellid == 0)
-    {
-        sLog.outError("Talent.dbc have for talent: %u Rank: %u spell id = 0", talentId, talentRank);
-        return;
-    }
-
-    // already known
-    if (pet->HasSpell(spellid))
-        return;
-
-    // learn! (other talent ranks will unlearned at learning)
-    pet->learnSpell(spellid);
-    DETAIL_LOG("PetTalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
-}
-
-void Player::UpdateKnownCurrencies(uint32 itemId, bool apply)
-{
-    if (CurrencyTypesEntry const* ctEntry = sCurrencyTypesStore.LookupEntry(itemId))
-    {
-        if (apply)
-            SetFlag64(PLAYER_FIELD_KNOWN_CURRENCIES, (UI64LIT(1) << (ctEntry->BitIndex - 1)));
-        else
-            RemoveFlag64(PLAYER_FIELD_KNOWN_CURRENCIES, (UI64LIT(1) << (ctEntry->BitIndex - 1)));
-    }
-}
-
 void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo,uint16 opcode)
 {
     if (m_lastFallTime >= minfo.GetFallTime() || m_lastFallZ <= minfo.GetPos()->z || opcode == MSG_MOVE_FALL_LAND)
@@ -22581,86 +22427,12 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket *data)
     }
 }
 
-void Player::BuildPetTalentsInfoData(WorldPacket *data)
-{
-    uint32 unspentTalentPoints = 0;
-    size_t pointsPos = data->wpos();
-    *data << uint32(unspentTalentPoints);                   // [PH], unspentTalentPoints
-
-    uint8 talentIdCount = 0;
-    size_t countPos = data->wpos();
-    *data << uint8(talentIdCount);                          // [PH], talentIdCount
-
-    Pet *pet = GetPet();
-    if (!pet)
-        return;
-
-    unspentTalentPoints = pet->GetFreeTalentPoints();
-
-    data->put<uint32>(pointsPos, unspentTalentPoints);      // put real points
-
-    CreatureInfo const *ci = pet->GetCreatureInfo();
-    if (!ci)
-        return;
-
-    CreatureFamilyEntry const *pet_family = sCreatureFamilyStore.LookupEntry(ci->family);
-    if (!pet_family || pet_family->petTalentType < 0)
-        return;
-
-    for (uint32 talentTabId = 1; talentTabId < sTalentTabStore.GetNumRows(); ++talentTabId)
-    {
-        TalentTabEntry const *talentTabInfo = sTalentTabStore.LookupEntry(talentTabId);
-        if (!talentTabInfo)
-            continue;
-
-        if (!((1 << pet_family->petTalentType) & talentTabInfo->petTalentMask))
-            continue;
-
-        for (uint32 talentId = 0; talentId < sTalentStore.GetNumRows(); ++talentId)
-        {
-            TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
-            if (!talentInfo)
-                continue;
-
-            // skip another tab talents
-            if (talentInfo->TalentTab != talentTabId)
-                continue;
-
-            // find max talent rank
-            int32 curtalent_maxrank = -1;
-            for (int32 k = 4; k > -1; --k)
-            {
-                if (talentInfo->RankID[k] && pet->HasSpell(talentInfo->RankID[k]))
-                {
-                    curtalent_maxrank = k;
-                    break;
-                }
-            }
-
-            // not learned talent
-            if (curtalent_maxrank < 0)
-                continue;
-
-            *data << uint32(talentInfo->TalentID);          // Talent.dbc
-            *data << uint8(curtalent_maxrank);              // talentMaxRank (0-4)
-
-            ++talentIdCount;
-        }
-
-        data->put<uint8>(countPos, talentIdCount);          // put real count
-
-        break;
-    }
-}
-
-void Player::SendTalentsInfoData(bool pet)
+void Player::SendTalentsInfoData()
 {
     WorldPacket data(SMSG_TALENT_UPDATE, 50);
     data << uint8(pet ? 1 : 0);
-    if (pet)
-        BuildPetTalentsInfoData(&data);
-    else
-        BuildPlayerTalentsInfoData(&data);
+
+    BuildPlayerTalentsInfoData(&data);
     GetSession()->SendPacket(&data);
 }
 
@@ -22911,8 +22683,6 @@ void Player::ActivateSpec(uint8 specNum)
     // prevent deletion of action buttons by client at spell unlearn or by player while spec change in progress
     SendLockActionButtons();
 
-    ApplyGlyphs(false);
-
     // copy of new talent spec (we will use it as model for converting current tlanet state to new)
     PlayerTalentMap tempSpec = m_talents[specNum];
 
@@ -23054,8 +22824,6 @@ void Player::ActivateSpec(uint8 specNum)
 
     ResummonPetTemporaryUnSummonedIfAny();
 
-    ApplyGlyphs(true);
-
     SendInitialActionButtons();
 
     Powers pw = getPowerType();
@@ -23104,7 +22872,7 @@ void Player::UpdateSpecCount(uint8 count)
 
     SetSpecsCount(count);
 
-    SendTalentsInfoData(false);
+    SendTalentsInfoData();
 }
 
 void Player::RemoveAtLoginFlag(AtLoginFlags f, bool in_db_also /*= false*/)
@@ -23477,15 +23245,15 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
     if (!mapEntry)
         return AREA_LOCKSTATUS_UNKNOWN_ERROR;
 
-    MapDifficultyEntry const* mapDiff = GetMapDifficultyData(at->target_mapId,difficulty);
-    if (mapEntry->IsDungeon() && !mapDiff)
-        return AREA_LOCKSTATUS_MISSING_DIFFICULTY;
+    //MapDifficultyEntry const* mapDiff = GetMapDifficultyData(at->target_mapId,difficulty);
+    //if (mapEntry->IsDungeon() && !mapDiff)
+    //    return AREA_LOCKSTATUS_MISSING_DIFFICULTY;
 
     if (isGameMaster())
         return AREA_LOCKSTATUS_OK;
 
-    if (GetSession()->Expansion() < mapEntry->Expansion())
-        return AREA_LOCKSTATUS_INSUFFICIENT_EXPANSION;
+    //if (GetSession()->Expansion() < mapEntry->Expansion())
+    //    return AREA_LOCKSTATUS_INSUFFICIENT_EXPANSION;
 
     if (getLevel() < at->requiredLevel && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_LEVEL))
         return AREA_LOCKSTATUS_TOO_LOW_LEVEL;
@@ -23963,91 +23731,6 @@ uint8 Player::GetTalentsCount(uint8 tab)
     return talentCount;
 }
 
-uint32 Player::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
-{
-    ShapeshiftForm form = ShapeshiftForm(ssEntry->ID);
-    Team team = TeamForRace(getRace());
-    uint32 modelid = 0;
-    // The following are the different shapeshifting models for cat/bear forms according
-    // to hair color for druids and skin tone for tauren introduced in patch 3.2
-    if (form == FORM_CAT || form == FORM_BEAR || form == FORM_DIREBEAR)
-    {
-        if (team == ALLIANCE)
-        {
-            uint8 hairColour = GetByteValue(PLAYER_BYTES, 3);
-            if (form == FORM_CAT)
-            {
-                if (hairColour >= 0 && hairColour <= 2) modelid = 29407;
-                else if (hairColour == 3 || hairColour == 5) modelid = 29405;
-                else if (hairColour == 6) modelid = 892;
-                else if (hairColour == 7) modelid = 29406;
-                else if (hairColour == 4) modelid = 29408;
-            }
-            else // form == FORM_BEAR || form == FORM_DIREBEAR
-            {
-                if (hairColour >= 0 && hairColour <= 2) modelid = 29413;
-                else if (hairColour == 3 || hairColour == 5) modelid = 29415;
-                else if (hairColour == 6) modelid = 29414;
-                else if (hairColour == 7) modelid = 29417;
-                else if (hairColour == 4) modelid = 29416;
-            }
-        }
-        else if (team == HORDE)
-        {
-            uint8 skinColour = GetByteValue(PLAYER_BYTES, 0);
-            if (getGender() == GENDER_MALE)
-            {
-                if (form == FORM_CAT)
-                {
-                    if (skinColour >= 0 && skinColour <= 5) modelid = 29412;
-                    else if (skinColour >= 6 && skinColour <= 8) modelid = 29411;
-                    else if (skinColour >= 9 && skinColour <= 11) modelid = 29410;
-                    else if ((skinColour >= 12 && skinColour <= 14) || skinColour == 18) modelid = 29409;
-                    else if (skinColour >= 15 && skinColour <= 17) modelid = 8571;
-                }
-                else // form == FORM_BEAR || form == FORM_DIREBEAR
-                {
-                    if (skinColour >= 0 && skinColour <= 2) modelid = 29418;
-                    else if ((skinColour >= 3 && skinColour <= 5) || (skinColour >= 12 && skinColour <= 14)) modelid = 29419;
-                    else if ((skinColour >= 9 && skinColour <= 11) || (skinColour >= 15 && skinColour <= 17)) modelid = 29420;
-                    else if (skinColour >= 6 && skinColour <= 8) modelid = 2289;
-                    else if (skinColour == 18) modelid = 29421;
-                }
-            }
-            else // getGender() == GENDER_FEMALE
-            {
-                if (form == FORM_CAT)
-                {
-                    if (skinColour >= 0 && skinColour <= 3) modelid = 29412;
-                    else if (skinColour == 4 || skinColour == 5) modelid = 29411;
-                    else if (skinColour == 6 || skinColour == 7) modelid = 29410;
-                    else if (skinColour == 8 || skinColour == 9) modelid = 8571;
-                    else if (skinColour == 10) modelid = 29409;
-                }
-                else // form == FORM_BEAR || form == FORM_DIREBEAR
-                {
-                    if (skinColour == 0 || skinColour == 1) modelid = 29418;
-                    else if (skinColour == 2 || skinColour == 3) modelid = 29419;
-                    else if (skinColour == 4 || skinColour == 5) modelid = 2289;
-                    else if (skinColour >= 6 && skinColour <= 9) modelid = 29420;
-                    else if (skinColour == 10) modelid = 29421;
-                }
-            }
-        }
-    }
-    else if (team == HORDE)
-    {
-        if (ssEntry->modelID_H)
-            modelid = ssEntry->modelID_H;           // 3.2.3 only the moonkin form has this information
-        else                                        // get model for race
-            modelid = sObjectMgr.GetModelForRace(ssEntry->modelID_A, getRaceMask());
-    }
-    // nothing found in above, so use default
-    if (!modelid)
-        modelid = ssEntry->modelID_A;
-    return modelid;
-}
-
 float Player::GetCollisionHeight(bool mounted)
 {
     if (mounted)
@@ -24142,153 +23825,6 @@ void Player::UpdateItemsWithTimeCheck()
         if (erase)
             m_itemsWithTimeCheck.erase(itr);
     }
-}
-
-void Player::SendRefundInfo(Item* item)
-{
-    item->CheckRefundExpired(this);
-
-    if (!item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
-    {
-        DEBUG_LOG("Player::SendRefundInfo: Item not refundable!");
-        return;
-    }
-
-    if (GetObjectGuid() != item->GetOwnerGuid())    // Formerly refundable item got traded
-    {
-        DEBUG_LOG("Player::SendRefundInfo: Item was traded!");
-        item->SetNotRefundable(this);
-        return;
-    }
-
-    ItemExtendedCostEntry const* iece = sItemExtendedCostStore.LookupEntry(item->GetPaidExtendedCost());
-    if (!iece)
-    {
-        DEBUG_LOG("Player::SendRefundInfo: Cannot find extendedcost data.");
-        return;
-    }
-
-    WorldPacket data(SMSG_ITEM_REFUND_INFO_RESPONSE, 8+4+4+4+4*4+4*4+4+4);
-    data << item->GetObjectGuid();                  // item guid
-    data << uint32(item->GetPaidMoney());           // money cost
-    data << uint32(iece->reqhonorpoints);           // honor point cost
-    for (uint32 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)   // item cost data
-    {
-        data << uint32(iece->reqitem[i]);
-        data << uint32(iece->reqitemcount[i]);
-    }
-    data << uint32(0);
-    data << uint32(item->GetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME));
-    GetSession()->SendPacket(&data);
-}
-
-void Player::RefundItem(Item* item)
-{
-    if (!item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
-    {
-        DEBUG_LOG("Player::RefundItem: Item not refundable!");
-        return;
-    }
-
-    if (item->CheckRefundExpired(this))             // item refund has expired
-    {
-        WorldPacket data(SMSG_ITEM_REFUND_RESULT, 8+4);
-        data << item->GetObjectGuid();              // Guid
-        data << uint32(10);                         // Error!
-        GetSession()->SendPacket(&data);
-        return;
-    }
-
-    if (GetObjectGuid() != item->GetOwnerGuid())    // Formerly refundable item got traded
-    {
-        DEBUG_LOG("Player::RefundItem: Item was traded!");
-        item->SetNotRefundable(this);
-        return;
-    }
-
-    ItemExtendedCostEntry const* iece = sItemExtendedCostStore.LookupEntry(item->GetPaidExtendedCost());
-    if (!iece)
-    {
-        DEBUG_LOG("Player::RefundItem: Cannot find extendedcost data.");
-        return;
-    }
-
-    bool storeError = false;
-    for (uint32 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)
-    {
-        uint32 count = iece->reqitemcount[i];
-        uint32 itemid = iece->reqitem[i];
-
-        if (count && itemid)
-        {
-            ItemPosCountVec dest;
-            InventoryResult msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemid, count);
-            if (msg != EQUIP_ERR_OK)
-            {
-                storeError = true;
-                break;
-            }
-         }
-    }
-
-    if (storeError)
-    {
-        WorldPacket data(SMSG_ITEM_REFUND_RESULT, 8+4);
-        data << item->GetObjectGuid();                   // Guid
-        data << uint32(10);                              // Error!
-        GetSession()->SendPacket(&data);
-        return;
-    }
-
-    WorldPacket data(SMSG_ITEM_REFUND_RESULT, 8+4+4+4+4+4*4+4*4);
-    data << item->GetObjectGuid();                      // item guid
-    data << uint32(0);                                  // 0, or error code
-    data << uint32(item->GetPaidMoney());               // money cost
-    data << uint32(iece->reqhonorpoints);               // honor point cost
-    for (uint32 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i) // item cost data
-    {
-        data << uint32(iece->reqitem[i]);
-        data << uint32(iece->reqitemcount[i]);
-    }
-    GetSession()->SendPacket(&data);
-
-    uint32 moneyRefund = item->GetPaidMoney();  // item-> will be invalidated in DestroyItem
-
-    // Save all relevant data to DB to prevent desynchronisation exploits
-    CharacterDatabase.BeginTransaction();
-
-    // Delete any references to the refund data
-    item->SetNotRefundable(this);
-
-    // Destroy item
-    DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
-
-    // Grant back extendedcost items
-    for (uint8 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)
-    {
-        uint32 count = iece->reqitemcount[i];
-        uint32 itemid = iece->reqitem[i];
-        if (count && itemid)
-        {
-            ItemPosCountVec dest;
-            InventoryResult msg = CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemid, count);
-            MANGOS_ASSERT(msg == EQUIP_ERR_OK); // Already checked before
-            Item* it = StoreNewItem(dest, itemid, true);
-            SendNewItem(it, count, true, false, true);
-        }
-    }
-
-    // Grant back money
-    if (moneyRefund)
-        ModifyMoney(int32(moneyRefund)); // Saved in SaveInventoryAndGoldToDB
-
-    // Grant back Honor points
-    if (uint32 honorRefund = iece->reqhonorpoints)
-        ModifyHonorPoints(int32(honorRefund));
-
-    SaveInventoryAndGoldToDB();
-
-    CharacterDatabase.CommitTransaction();
 }
 
 void Player::SetViewPoint(WorldObject* target, bool immediate, bool update_far_sight_field)

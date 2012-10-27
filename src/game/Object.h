@@ -153,6 +153,14 @@ class MANGOS_DLL_SPEC Object
 
         void SetObjectScale(float newScale);
 
+        bool isPlayer() const { return m_objectTypeId == TYPEID_PLAYER; }
+        bool isUnit() const { return m_objectTypeId == TYPEID_UNIT; }
+        bool isGameObject() const { return m_objectTypeId == TYPEID_GAMEOBJECT; }
+        bool isCorpse() const { return m_objectTypeId == TYPEID_CORPSE; }
+        bool isContainer() const { return m_objectTypeId == TYPEID_CONTAINER; }
+        bool isItem() const { return m_objectTypeId == TYPEID_ITEM; }
+        bool isDynamicObject() const { return m_objectTypeId == TYPEID_DYNAMICOBJECT; }
+
         uint8 GetTypeId() const { return m_objectTypeId; }
         bool isType(TypeMask mask) const { return (mask & m_objectType); }
 
