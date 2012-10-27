@@ -929,7 +929,6 @@ void CreatureEventAI::JustReachedHome()
 
 void CreatureEventAI::EnterEvadeMode()
 {
-    m_creature->ExitVehicle();
     m_creature->RemoveAllAuras();
     m_creature->DeleteThreatList();
     m_creature->CombatStop(true);
@@ -1267,37 +1266,6 @@ inline Unit* CreatureEventAI::GetTargetByType(uint32 Target, Unit* pActionInvoke
             return m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 1);
         case TARGET_T_ACTION_INVOKER:
             return pActionInvoker;
-
-        case TARGET_T_VEHICLE_PASSENGER:
-        {
-            if (m_creature->GetObjectGuid().IsVehicle())
-            for (int8 seatId = 0; seatId < MAX_VEHICLE_SEAT; ++seatId)
-                if (Unit* passenger = m_creature->GetVehicleKit()->GetPassenger(seatId))
-                    return passenger;
-            break;
-        }
-        case TARGET_T_VEHICLE_PASSENGER_0:
-        case TARGET_T_VEHICLE_PASSENGER_1:
-        case TARGET_T_VEHICLE_PASSENGER_2:
-        case TARGET_T_VEHICLE_PASSENGER_3:
-        case TARGET_T_VEHICLE_PASSENGER_4:
-        case TARGET_T_VEHICLE_PASSENGER_5:
-        case TARGET_T_VEHICLE_PASSENGER_6:
-        case TARGET_T_VEHICLE_PASSENGER_7:
-        {
-            if (m_creature->GetObjectGuid().IsVehicle())
-                if (Unit* passenger = m_creature->GetVehicleKit()->GetPassenger(Target - TARGET_T_VEHICLE_PASSENGER_0))
-                    return passenger;
-            break;
-        }
-
-        case TARGET_T_CURRENT_VEHICLE:
-        {
-            if (VehicleKitPtr vehicle = m_creature->GetVehicle())
-                if (Unit* base = vehicle->GetBase())
-                    return base;
-            break;
-        }
 
         default:
             break;

@@ -1762,7 +1762,6 @@ bool ChatHandler::HandleNpcDeleteCommand(char* args)
     switch (unit->GetSubtype())
     {
         case CREATURE_SUBTYPE_GENERIC:
-//        case CREATURE_SUBTYPE_VEHICLE:
         {
             unit->CombatStop();
             if (CreatureData const* data = sObjectMgr.GetCreatureData(unit->GetGUIDLow()))

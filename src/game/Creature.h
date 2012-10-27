@@ -135,7 +135,6 @@ struct CreatureInfo
     uint32  questItems[6];
     uint32  movementId;
     bool    RegenHealth;
-    uint32  vehicleId;
     uint32  equipmentId;
     uint32  trainerId;
     uint32  vendorId;
@@ -146,7 +145,7 @@ struct CreatureInfo
     // helpers
     HighGuid GetHighGuid() const
     {
-        return vehicleId ? HIGHGUID_VEHICLE : HIGHGUID_UNIT;
+        return HIGHGUID_UNIT;
     }
 
     ObjectGuid GetObjectGuid(uint32 lowguid) const { return ObjectGuid(GetHighGuid(), Entry, lowguid); }

@@ -1793,7 +1793,7 @@ Player* Map::GetPlayer(ObjectGuid guid)
 /**
  * Function return creature (non-pet and then most summoned by spell creatures) that in world at CURRENT map
  *
- * @param guid must be creature or vehicle guid (HIGHGUID_UNIT HIGHGUID_VEHICLE)
+ * @param guid must be creature guid (HIGHGUID_UNIT)
  */
 Creature* Map::GetCreature(ObjectGuid guid)
 {
@@ -1826,16 +1826,15 @@ Corpse* Map::GetCorpse(ObjectGuid guid)
 }
 
 /**
- * Function return non-player unit object that in world at CURRENT map, so creature, or pet, or vehicle
+ * Function return non-player unit object that in world at CURRENT map, so creature, or pet
  *
- * @param guid must be non-player unit guid (HIGHGUID_PET HIGHGUID_UNIT HIGHGUID_VEHICLE)
+ * @param guid must be non-player unit guid (HIGHGUID_PET HIGHGUID_UNIT)
  */
 Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
 {
     switch(guid.GetHigh())
     {
-        case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:      return GetCreature(guid);
+        case HIGHGUID_UNIT:         return GetCreature(guid);
         case HIGHGUID_PET:          return GetPet(guid);
         default:                    break;
     }
@@ -1871,7 +1870,7 @@ DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
  * Note: in case player guid not always expected need player at current map only.
  *       For example in spell casting can be expected any in world player targeting in some cases
  *
- * @param guid must be unit guid (HIGHGUID_PLAYER HIGHGUID_PET HIGHGUID_UNIT HIGHGUID_VEHICLE)
+ * @param guid must be unit guid (HIGHGUID_PLAYER HIGHGUID_PET HIGHGUID_UNIT)
  */
 Unit* Map::GetUnit(ObjectGuid guid)
 {
@@ -1890,8 +1889,7 @@ WorldObject* Map::GetWorldObject(ObjectGuid guid)
     {
         case HIGHGUID_PLAYER:       return GetPlayer(guid);
         case HIGHGUID_GAMEOBJECT:   return GetGameObject(guid);
-        case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:      return GetCreature(guid);
+        case HIGHGUID_UNIT:         return GetCreature(guid);
         case HIGHGUID_PET:          return GetPet(guid);
         case HIGHGUID_DYNAMICOBJECT:return GetDynamicObject(guid);
         case HIGHGUID_CORPSE:
@@ -1948,7 +1946,6 @@ uint32 Map::GenerateLocalLowGuid(HighGuid guidhigh)
     switch(guidhigh)
     {
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
             return m_CreatureGuids.Generate();
         case HIGHGUID_GAMEOBJECT:
             return m_GameObjectGuids.Generate();

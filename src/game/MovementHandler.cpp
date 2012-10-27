@@ -23,7 +23,6 @@
 #include "Log.h"
 #include "Corpse.h"
 #include "Player.h"
-#include "Vehicle.h"
 #include "SpellAuras.h"
 #include "MapManager.h"
 #include "Transports.h"
@@ -43,9 +42,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     // ignore unexpected far teleports
     if(!GetPlayer()->IsBeingTeleportedFar())
         return;
-
-    if (_player->GetVehicleKit())
-        _player->GetVehicleKit()->RemoveAllPassengers();
 
     // get start teleport coordinates (will used later in fail case)
     WorldLocation old_loc;
@@ -571,9 +567,6 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
                     {
                         plMover->m_transport = (*iter);
                         (*iter)->AddPassenger(plMover);
-
-                        if (plMover->GetVehicleKit())
-                            plMover->GetVehicleKit()->RemoveAllPassengers();
 
                         break;
                     }

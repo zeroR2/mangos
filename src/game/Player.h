@@ -1606,7 +1606,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SendPetGUIDs();
         void CharmSpellInitialize();
         void PossessSpellInitialize();
-        void VehicleSpellInitialize();
         void RemovePetActionBar();
 
         bool HasSpell(uint32 spell) const;

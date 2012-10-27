@@ -43,7 +43,6 @@
 #include "VMapFactory.h"
 #include "BattleGround/BattleGround.h"
 #include "Util.h"
-#include "Vehicle.h"
 #include "Chat.h"
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
@@ -1040,7 +1039,6 @@ void Spell::AddTarget(ObjectGuid targetGuid, SpellEffectIndex effIndex)
     switch(targetGuid.GetHigh())
     {
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
         case HIGHGUID_PET:
         case HIGHGUID_PLAYER:
         {
@@ -2461,23 +2459,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_UNIT_CREATOR:
             if (Unit* target = m_caster->GetCreator())
                 targetUnitMap.push_back(target);
-            break;
-        case TARGET_OWNED_VEHICLE:
-            if (VehicleKitPtr vehicle = m_caster->GetVehicle())
-                if (Unit* target = vehicle->GetBase())
-                    targetUnitMap.push_back(target);
-            break;
-        case TARGET_UNIT_PASSENGER_0:
-        case TARGET_UNIT_PASSENGER_1:
-        case TARGET_UNIT_PASSENGER_2:
-        case TARGET_UNIT_PASSENGER_3:
-        case TARGET_UNIT_PASSENGER_4:
-        case TARGET_UNIT_PASSENGER_5:
-        case TARGET_UNIT_PASSENGER_6:
-        case TARGET_UNIT_PASSENGER_7:
-            if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->GetObjectGuid().IsVehicle())
-                if (Unit *unit = m_caster->GetVehicleKit()->GetPassenger(targetMode - TARGET_UNIT_PASSENGER_0))
-                    targetUnitMap.push_back(unit);
             break;
         case TARGET_CASTER_COORDINATES:
         {
@@ -3929,8 +3910,8 @@ void Spell::update(uint32 difftime)
         return;
     }
 
-    // check if the player caster has moved before the spell finished (exclude casting on vehicles)
-    if (!m_caster->GetVehicle() && (m_caster->GetTypeId() == TYPEID_PLAYER && m_timer != 0) &&
+    // check if the player caster has moved before the spell finished
+    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_timer != 0 &&
         (m_castPositionX != m_caster->GetPositionX() || m_castPositionY != m_caster->GetPositionY() || m_castPositionZ != m_caster->GetPositionZ()) &&
         (m_spellInfo->Effect[EFFECT_INDEX_0] != SPELL_EFFECT_STUCK || !((Player*)m_caster)->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLINGFAR)))
     {
@@ -4040,7 +4021,7 @@ void Spell::update(uint32 difftime)
                         for(TargetList::const_iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
                         {
                             TargetInfo const& target = *ihit;
-                            if (!target.targetGUID.IsCreatureOrVehicle())
+                            if (!target.targetGUID.IsCreature())
                                 continue;
 
                             Unit* unit = m_caster->GetObjectGuid() == target.targetGUID ? m_caster : ObjectAccessor::GetUnit(*m_caster, target.targetGUID);
@@ -5611,21 +5592,8 @@ SpellCastResult Spell::CheckCast(bool strict)
             return SPELL_FAILED_DONT_REPORT;
     }
 
-    bool castOnVehicleAllowed = false;
-
-    if (m_caster->GetVehicle())
-    {
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE))
-            castOnVehicleAllowed = true;
-
-        if (VehicleSeatEntry const* seatInfo = m_caster->GetVehicle()->GetSeatInfo(m_caster))
-            if ((seatInfo->m_flags & SEAT_FLAG_CAN_CAST) || (seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK))
-                castOnVehicleAllowed = true;
-    }
-
-
     // not let players cast spells at mount (and let do it to creatures)
-    if ((m_caster->IsMounted() || (m_caster->GetVehicle() && !castOnVehicleAllowed)) && m_caster->GetTypeId() == TYPEID_PLAYER && !m_IsTriggeredSpell &&
+    if (m_caster->IsMounted() && m_caster->GetTypeId() == TYPEID_PLAYER && !m_IsTriggeredSpell &&
         !IsPassiveSpell(m_spellInfo) && !m_spellInfo->HasAttribute(SPELL_ATTR_CASTABLE_WHILE_MOUNTED))
     {
         if (m_caster->IsTaxiFlying())
@@ -6482,36 +6450,6 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 break;
             }
-            case SPELL_AURA_CONTROL_VEHICLE:
-            {
-                Unit* pTarget = m_targets.getUnitTarget();
-
-                // In case of TARGET_SCRIPT, we have already added a target. Use it here (and find a better solution)
-                if (m_UniqueTargetInfo.size() == 1)
-                    pTarget = m_caster->GetMap()->GetAnyTypeCreature(m_UniqueTargetInfo.front().targetGUID);
-
-                if (!pTarget || !pTarget->GetVehicleKit())
-                    return SPELL_FAILED_BAD_TARGETS;
-
-                if (m_currentBasePoints[i] < 0 || m_currentBasePoints[i] > MAX_VEHICLE_SEAT)
-                    return SPELL_FAILED_BAD_TARGETS;
-
-                // -1 if "first empty seat", seat number (starting from 0) - in other cases
-                int32 seat = m_currentBasePoints[i] - 1;
-
-                if (!pTarget->GetVehicleKit()->HasEmptySeat(seat))
-                {
-                    if (seat == -1)
-                        return SPELL_FAILED_BAD_TARGETS;
-
-                    if (!seat && m_caster->GetTypeId() == TYPEID_PLAYER && !pTarget->GetVehicleKit()->HasEmptySeat(-1))
-                        return SPELL_FAILED_BAD_TARGETS;
-
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-                        return SPELL_FAILED_BAD_TARGETS;
-                }
-                break;
-            }
             case SPELL_AURA_FAR_SIGHT:
             case SPELL_AURA_BIND_SIGHT:
             {
@@ -6637,7 +6575,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 bool dualEffect = false;
                 for(int j = 0; j < MAX_EFFECT_INDEX; ++j)
                 {
-                                                            // This effects is positive AND negative. Need for vehicles cast.
+                                                            // This effects is positive AND negative.
                     dualEffect |= (m_spellInfo->EffectImplicitTargetA[j] == TARGET_DUELVSPLAYER
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_IN_FRONT_OF_CASTER_30
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_MASTER
@@ -6654,7 +6592,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                         return SPELL_FAILED_BAD_TARGETS;
                     }
                 }
-                else if (!m_caster->GetVehicleKit() && m_caster->IsFriendlyTo(_target) && !(!m_caster->GetCharmerOrOwner() || !m_caster->GetCharmerOrOwner()->IsFriendlyTo(_target))
+                else if (m_caster->IsFriendlyTo(_target) && !(!m_caster->GetCharmerOrOwner() || !m_caster->GetCharmerOrOwner()->IsFriendlyTo(_target))
                      && !dualEffect && !IsDispelSpell(m_spellInfo))
                 {
                     DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast spell %u, but target %s is not valid",m_caster->GetObjectGuid().GetString().c_str(),m_spellInfo->Id,_target->GetObjectGuid().GetString().c_str());
@@ -8469,14 +8407,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 58912: // Deathstorm
-        {
-            if (!m_caster->GetObjectGuid().IsVehicle())
-                break;
-
-            SetTargetMap(SpellEffectIndex(i), TARGET_RANDOM_ENEMY_CHAIN_IN_AREA, targetUnitMap);
-            break;
-        }
         case 57496: // Volazj Insanity
         {
             UnitList PlayerList;
@@ -8951,20 +8881,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 70402: // Mutated Transformation (Putricide)
-        case 72511:
-        case 72512:
-        case 72513:
-        {
-            UnitList tempTargetUnitMap;
-            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
-            for (UnitList::iterator itr = tempTargetUnitMap.begin(); itr != tempTargetUnitMap.end(); ++itr)
-            {
-                if ((*itr) && !(*itr)->GetObjectGuid().IsVehicle())
-                    targetUnitMap.push_back(*itr);
-            }
-            break;
-        }
         case 70447: // Volatile Ooze Adhesive (Putricide)
         case 72836:
         case 72837:
@@ -9010,17 +8926,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                             break;
                     }
                 }
-            }
-            break;
-        }
-        case 70701: // Expunged Gas (Putricide)
-        {
-            UnitList tempTargetUnitMap;
-            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
-            for (UnitList::iterator itr = tempTargetUnitMap.begin(); itr != tempTargetUnitMap.end(); ++itr)
-            {
-                if ((*itr) && !(*itr)->GetObjectGuid().IsVehicle())
-                    targetUnitMap.push_back(*itr);
             }
             break;
         }
@@ -9105,25 +9010,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
 
             unMaxTargets = 1;
-            break;
-        }
-        case 72873: // Malleable Goo (Putricide)
-        case 72874:
-        case 72550:
-        case 72458:
-        case 72549:
-        case 70853:
-        case 72297:
-        case 72548:
-        {
-            UnitList tempTargetUnitMap;
-            FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
-            for (UnitList::iterator itr = tempTargetUnitMap.begin(); itr != tempTargetUnitMap.end(); ++itr)
-            {
-                if ((*itr) && !(*itr)->GetObjectGuid().IsVehicle())
-                    targetUnitMap.push_back(*itr);
-            }
-            targetUnitMap.remove(m_caster);
             break;
         }
         case 72038: // Empowered Shock Vortex (Blood Council)
@@ -9279,21 +9165,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             for (UnitList::iterator itr = tempTargetUnitMap.begin(); itr != tempTargetUnitMap.end();++itr)
             {
                 if ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER && !(*itr)->isAlive())
-                    targetUnitMap.push_back(*itr);
-            }
-            break;
-        }
-        case 72454:                                 // Mutated Plague (Putricide)
-        case 72464:
-        case 72506:
-        case 72507:
-        {
-            radius = DEFAULT_VISIBILITY_INSTANCE;
-            UnitList tempTargetUnitMap;
-            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE, GetAffectiveCaster());
-            for (UnitList::iterator itr = tempTargetUnitMap.begin(); itr != tempTargetUnitMap.end(); ++itr)
-            {
-                if ((*itr) && !(*itr)->GetObjectGuid().IsVehicle())
                     targetUnitMap.push_back(*itr);
             }
             break;

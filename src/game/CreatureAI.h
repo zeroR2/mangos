@@ -220,9 +220,6 @@ class MANGOS_DLL_SPEC CreatureAI
         // Called when Unit get/remove a passenger
         virtual void PassengerBoarded(Unit * /*pWho*/, int8 /*seatId*/, bool /*apply*/) {}
 
-        // Called when Unit enter/remove a Vehicle
-        virtual void EnteredVehicle(Unit* /*pWho*/, int8 /*seatId*/, bool /*apply*/) {}
-
         ///== Triggered Actions Requested ==================
 
         /**

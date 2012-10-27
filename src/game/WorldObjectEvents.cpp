@@ -25,7 +25,6 @@
 #include "CreatureAI.h"
 #include "PetAI.h"
 #include "ObjectMgr.h"
-#include "Vehicle.h"
 #include "InstanceData.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
@@ -309,7 +308,6 @@ bool AttackResumeEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     switch(m_owner.GetObjectGuid().GetHigh())
     {
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
         {
             m_owner.AttackStop(!b_force);
             CreatureAI* ai = ((Creature*)&m_owner)->AI();
@@ -355,7 +353,6 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     switch (m_owner.GetObjectGuid().GetHigh())
     {
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
         {
             Creature* c_owner = (Creature*)(&m_owner);
             if (!c_owner)
@@ -414,27 +411,6 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         default:
             sLog.outError("EvadeDelayEvent::Execute try execute for unsupported owner %s!", m_owner.GetObjectGuid().GetString().c_str());
         break;
-    }
-    return true;
-}
-
-// Vehicle events
-bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
-{
-    if (!m_vehicle.GetVehicleInfo())
-        return true;
-
-    VehicleKitPtr pVehicle = m_vehicle.GetVehicleKit();
-
-    if (!pVehicle)
-        return true;
-
-    Unit* passenger = pVehicle->GetPassenger(m_seatId);
-
-    if (passenger && passenger->IsInWorld())
-    {
-        if (!m_vehicle.RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, passenger->GetObjectGuid()))
-            passenger->ExitVehicle();
     }
     return true;
 }

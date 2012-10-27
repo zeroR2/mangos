@@ -3403,10 +3403,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
                         return;
 
-                    if (VehicleKitPtr vehicleKit = unitTarget->GetVehicleKit())
-                    {
-                        vehicleKit->SetDestination(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, unitTarget->GetOrientation(),  m_targets.GetSpeed(), m_targets.GetElevation());
-                    }
                     return;
                 }
                 case 66390:                                 // Read Last Rites
@@ -3506,7 +3502,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 68576:                                 // Eject All Passengers (also used in encounters Lich King, Jaraxxus?)
                 {
-                    m_caster->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
                     return;
                 }
                 case 69110:                                 // Ice Burst Target Search (Lich King)
@@ -4688,16 +4683,6 @@ void Spell::EffectForceCast(SpellEffectIndex eff_idx)
     {
         sLog.outError("EffectForceCast of spell %u: triggering unknown spell id %i", m_spellInfo->Id, triggered_spell_id);
         return;
-    }
-
-    // if triggered spell has SPELL_AURA_CONTROL_VEHICLE, it must be casted on caster
-    for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
-    {
-        if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_CONTROL_VEHICLE)
-        {
-            unitTarget->CastSpell(m_caster, spellInfo, true, NULL, NULL, ObjectGuid(), m_spellInfo);
-            return;
-        }
     }
 
     unitTarget->CastSpell(unitTarget, spellInfo, true, NULL, NULL, m_originalCasterGUID, m_spellInfo);
@@ -6201,9 +6186,6 @@ void Spell::EffectSummonType(SpellEffectIndex eff_idx)
                 case UNITNAME_SUMMON_TITLE_MOUNT:
                     DoSummonWild(eff_idx, summon_prop->FactionId);
                     break;
-                case UNITNAME_SUMMON_TITLE_VEHICLE:
-                    DoSummonWild(eff_idx, summon_prop->FactionId);
-                    break;
                 default:
                     sLog.outError("EffectSummonType: Unhandled summon title %u", summon_prop->Title);
                 break;
@@ -6230,14 +6212,6 @@ void Spell::EffectSummonType(SpellEffectIndex eff_idx)
                     DoSummonGuardian(eff_idx, summon_prop->FactionId);
                 break;
             }
-            break;
-        }
-        case SUMMON_PROP_GROUP_VEHICLE:
-        case SUMMON_PROP_GROUP_UNCONTROLLABLE_VEHICLE:
-        {
-            DoSummonVehicle(eff_idx, summon_prop->FactionId);
-//            sLog.outDebug("EffectSummonType: Unhandled summon group type SUMMON_PROP_GROUP_VEHICLE(%u)", summon_prop->Group);
-//            Mangos developers thinking - this summon is not supported. But in this his worked fine :)
             break;
         }
         default:
@@ -6878,74 +6852,6 @@ void Spell::DoSummonGuardian(SpellEffectIndex eff_idx, uint32 forceFaction)
 
         SendEffectLogExecute(eff_idx, spawnCreature->GetObjectGuid());
     }
-}
-
-void Spell::DoSummonVehicle(SpellEffectIndex eff_idx, uint32 forceFaction)
-{
-    if (!m_caster)
-        return;
-
-    if (m_caster->hasUnitState(UNIT_STAT_ON_VEHICLE))
-    {
-        if (m_spellInfo->HasAttribute(SPELL_ATTR_HIDDEN_CLIENTSIDE))
-            m_caster->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
-        else
-            return;
-    }
-    uint32 vehicle_entry = m_spellInfo->EffectMiscValue[eff_idx];
-
-    if (!vehicle_entry)
-        return;
-
-    SpellEntry const* m_mountspell = sSpellStore.LookupEntry(
-        m_spellInfo->EffectBasePoints[eff_idx] != 0 ?
-        m_spellInfo->CalculateSimpleValue(eff_idx) :
-        SPELL_RIDE_VEHICLE_HARDCODED);
-
-    if (!m_mountspell)
-        m_mountspell = sSpellStore.LookupEntry(46598);
-    // Used BasePoint mount spell, if not present - hardcoded (by Blzz).
-
-    float px, py, pz;
-    // If dest location present
-    if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
-    {
-        m_targets.getDestination(px, py, pz);
-    }
-    // Summon if dest location not present near caster
-    else
-        m_caster->GetClosePoint(px, py, pz,m_caster->GetObjectBoundingRadius());
-
-    m_caster->UpdateAllowedPositionZ(px,py,pz);
-
-    TempSummonType summonType = (GetSpellDuration(m_spellInfo) == 0) ? TEMPSUMMON_DEAD_OR_LOST_OWNER_DESPAWN : TEMPSUMMON_TIMED_OR_DEAD_OR_LOST_OWNER_DESPAWN;
-
-    Creature* vehicle = m_caster->SummonCreature(vehicle_entry,px,py,pz,m_caster->GetOrientation(),summonType,GetSpellDuration(m_spellInfo),true);
-
-    if (vehicle && !vehicle->GetObjectGuid().IsVehicle())
-    {
-        sLog.outError("DoSommonVehicle: Creature (guidlow %d, entry %d) summoned, but this is not vehicle. Correct VehicleId in creature_template.", vehicle->GetGUIDLow(), vehicle->GetEntry());
-        vehicle->ForcedDespawn();
-        return;
-    }
-
-    if (vehicle)
-    {
-        vehicle->setFaction(forceFaction ? forceFaction : m_caster->getFaction());
-        vehicle->SetUInt32Value(UNIT_CREATED_BY_SPELL,m_spellInfo->Id);
-        m_caster->CastSpell(vehicle, m_mountspell, true);
-        DEBUG_LOG("Caster (guidlow %d) summon vehicle (guidlow %d, entry %d) and mounted with spell %d ", m_caster->GetGUIDLow(), vehicle->GetGUIDLow(), vehicle->GetEntry(), m_mountspell->Id);
-
-        // Notify Summoner
-        if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-            ((Creature*)m_caster)->AI()->JustSummoned(vehicle);
-        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
-            ((Creature*)m_originalCaster)->AI()->JustSummoned(vehicle);
-
-        SendEffectLogExecute(eff_idx, vehicle->GetObjectGuid());
-    }
-    else
-        sLog.outError("Vehicle (entry %d) NOT summoned by undefined reason. ", vehicle_entry);
 }
 
 void Spell::EffectTeleUnitsFaceCaster(SpellEffectIndex eff_idx)
@@ -8003,7 +7909,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                         if (Creature *pSpike = unitTarget->SummonCreature(38711, x, y, z, 0.0f, TEMPSUMMON_DEAD_DESPAWN, 2000))
                         {
-                            unitTarget->CastSpell(pSpike, 46598, true); // enter vehicle
+                            unitTarget->CastSpell(pSpike, 46598, true);
                             pSpike->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1), true, 0, 0, m_caster->GetObjectGuid(), m_spellInfo);
                         }
                     }
@@ -9606,9 +9512,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     break;
                 }
                 case 56659:                                 //  Build Demolisher (Force)
-                case 56662:                                 //  Build Siege Vehicle (Force) - alliance
                 case 56664:                                 //  Build Catapult (Force)
-                case 61409:                                 //  Build Siege Vehicle (Force) - horde
                 {
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
                         return;
@@ -9896,7 +9800,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (!unitTarget || !m_caster)
                         return;
 
-                    unitTarget->CastSpell(m_caster, 62708, true); // Control Vehicle aura
                     m_caster->CastSpell(unitTarget, (m_spellInfo->Id == 62707) ? 62717 : 63477, true); // DoT/Immunity
                     break;
                 }
@@ -11930,11 +11833,6 @@ void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
     if (unitTarget->hasUnitState(UNIT_STAT_ROOT))
         return;
 
-    // Can't knockback BG vehicles
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
-        if (((Creature*)unitTarget)->IsVehicle() && ((Creature*)unitTarget)->GetMap()->IsBattleGround())
-            return;
-
     // Typhoon
     if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DRUID && m_spellInfo->GetSpellFamilyFlags().test<CF_DRUID_TYPHOON>())
         if (m_caster->HasAura(62135)) // Glyph of Typhoon
@@ -12726,7 +12624,7 @@ void Spell::EffectWMODamage(SpellEffectIndex eff_idx)
     data << gameObjTarget->GetPackGUID();
     data << caster->GetPackGUID();
 
-    if (Unit *who = caster->GetCharmerOrOwner()) //check for pet / vehicle
+    if (Unit *who = caster->GetCharmerOrOwner()) //check for pet
         data << who->GetPackGUID();
     else
         data << caster->GetPackGUID();

@@ -202,22 +202,6 @@ enum BattleGroundType
     TYPE_ARENA            = 4
 };
 
-
-enum VehicleFactions
-{
-    VEHICLE_FACTION_NEUTRAL = 35,
-    VEHICLE_FACTION_ALLIANCE = 3,
-    VEHICLE_FACTION_HORDE = 6
-};
-
-enum VehicleTypes
-{
-    VEHICLE_UNK = 0,
-    VEHICLE_BG_DEMOLISHER = 1,
-    VEHICLE_SA_CANNON = 2,
-    VEHICLE_IC_CATAPULT = 3,
-};
-
 enum BattleGroundStartingEvents
 {
     BG_STARTING_EVENT_NONE  = 0x00,
@@ -329,7 +313,6 @@ class BattleGround
         // Strand of the Ancients related
         virtual Team   GetDefender()                    const   { return TEAM_NONE; }
         virtual uint8  GetGydController(uint8 /*gyd*/)  const   { return false; }
-        virtual uint32 GetVehicleFaction(uint8 vehicleType) const { return 35; }
 
         // Set methods:
         void SetName(char const* Name)      { m_Name = Name; }

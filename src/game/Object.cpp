@@ -24,7 +24,6 @@
 #include "World.h"
 #include "Creature.h"
 #include "Player.h"
-#include "Vehicle.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "UpdateData.h"
@@ -314,7 +313,7 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     {
         Unit *unit = ((Unit*)this);
 
-        if (unit->GetTransport() || unit->GetVehicle())
+        if (unit->GetTransport())
             unit->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
         else
             unit->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
@@ -480,13 +479,6 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     if (updateFlags & UPDATEFLAG_TRANSPORT)
     {
         *data << uint32(WorldTimer::getMSTime());                       // ms time
-    }
-
-    // 0x80
-    if (updateFlags & UPDATEFLAG_VEHICLE)
-    {
-        *data << uint32(((Unit*)this)->GetVehicleInfo()->GetEntry()->m_ID); // vehicle id
-        *data << float(((WorldObject*)this)->GetOrientation());
     }
 
     // 0x200

@@ -211,9 +211,7 @@ enum SummonPropGroup
     SUMMON_PROP_GROUP_WILD              = 0,
     SUMMON_PROP_GROUP_FRIENDLY          = 1,
     SUMMON_PROP_GROUP_PETS              = 2,
-    SUMMON_PROP_GROUP_CONTROLLABLE      = 3,
-    SUMMON_PROP_GROUP_VEHICLE           = 4,
-    SUMMON_PROP_GROUP_UNCONTROLLABLE_VEHICLE        = 5
+    SUMMON_PROP_GROUP_CONTROLLABLE      = 3
 };
 
 // SummonProperties.dbc, col 2          == FactionId        (m_faction)
@@ -229,8 +227,6 @@ enum UnitNameSummonTitle
     UNITNAME_SUMMON_TITLE_RUNEBLADE     = 6,                // 's Runeblade,     summon DRW/Ghoul, 2 spells in 3.0.3"
     UNITNAME_SUMMON_TITLE_CONSTRUCT     = 7,                // 's Construct,     summon bot/bomb, 4 spells in 3.0.3
     UNITNAME_SUMMON_TITLE_OPPONENT      = 8,                // 's Opponent,      something todo with DK prequest line, 2 spells in 3.0.3
-    UNITNAME_SUMMON_TITLE_VEHICLE       = 9,                // 's Vehicle,       summon different vehicles, 14 spells in 3.0.3
-    UNITNAME_SUMMON_TITLE_MOUNT         = 10,               // 's Mount,         summon drake (vehicle), 3 spells
     UNITNAME_SUMMON_TITLE_LIGHTWELL     = 11,               // 's Lightwell,     summon lightwell, 6 spells in 3.0.3
     UNITNAME_SUMMON_TITLE_BUTLER        = 12                // 's Butler,        summon repair bot, 1 spells in 3.2.2a
 };
@@ -252,7 +248,6 @@ enum SummonPropFlags
     SUMMON_PROP_FLAG_UNK10              = 0x0200,           // 51 spells in 3.0.3, something defensive
     SUMMON_PROP_FLAG_UNK11              = 0x0400,           // 3 spells, requires something near?
     SUMMON_PROP_FLAG_UNK12              = 0x0800,           // 30 spells in 3.0.3, no idea
-    SUMMON_PROP_FLAG_UNK13              = 0x1000,           // 8 spells in 3.0.3, siege vehicle
     SUMMON_PROP_FLAG_UNK14              = 0x2000,           // 2 spells in 3.0.3, escort?
 };
 
@@ -310,74 +305,6 @@ enum SpellFamily
     SPELLFAMILY_DEATHKNIGHT = 15,
     // 16 - unused
     SPELLFAMILY_PET         = 17
-};
-
-enum VehicleFlags
-{
-    VEHICLE_FLAG_NO_STRAFE          = 0x00000001,           // Sets MOVEFLAG2_NO_STRAFE
-    VEHICLE_FLAG_NO_JUMPING         = 0x00000002,           // Sets MOVEFLAG2_NO_JUMPING
-    VEHICLE_FLAG_FULLSPEEDTURNING   = 0x00000004,           // Sets MOVEFLAG2_FULLSPEEDTURNING
-    VEHICLE_FLAG_ALLOW_PITCHING     = 0x00000010,           // Sets MOVEFLAG2_ALLOW_PITCHING
-    VEHICLE_FLAG_FULLSPEEDPITCHING  = 0x00000020,           // Sets MOVEFLAG2_FULLSPEEDPITCHING
-    VEHICLE_FLAG_CUSTOM_PITCH       = 0x00000040,           // If set use pitchMin and pitchMax from DBC, otherwise pitchMin = -pi/2, pitchMax = pi/2
-    VEHICLE_FLAG_ACCESSORY          = 0x00000200,           // Vehicle is accessory? Need additional check!
-    VEHICLE_FLAG_ADJUST_AIM_ANGLE   = 0x00000400,           // Lua_IsVehicleAimAngleAdjustable
-    VEHICLE_FLAG_ADJUST_AIM_POWER   = 0x00000800,           // Lua_IsVehicleAimPowerAdjustable
-    VEHICLE_FLAG_DISABLE_SWITCH     = 0x00400000,           // Can't change seats, VEHICLE_ID = 335 chopper
-    VEHICLE_FLAG_NOT_DISMISS        = 0x10000000,           // Vehicle not dismissed after eject passenger?
-};
-
-enum VehicleSeatFlags
-{
-    SEAT_FLAG_NONE                  = 0x00000000,           //
-    SEAT_FLAG_UNK1                  = 0x00000001,           // "HasLowerAnimForEnter"
-    SEAT_FLAG_UNK2                  = 0x00000002,           // "HasLowerAnimForRide"
-    SEAT_FLAG_UNK3                  = 0x00000004,
-    SEAT_FLAG_UNK4                  = 0x00000008,           // "ShouldUseVehicleSeatExitAnimationOnVoluntaryExit"
-    SEAT_FLAG_UNK5                  = 0x00000010,
-    SEAT_FLAG_UNK6                  = 0x00000020,
-    SEAT_FLAG_UNK7                  = 0x00000040,
-    SEAT_FLAG_UNK8                  = 0x00000080,
-    SEAT_FLAG_UNK9                  = 0x00000100,
-    SEAT_FLAG_HIDE_PASSENGER        = 0x00000200,           // Passenger is hidden
-    SEAT_FLAG_FREE_ACTION           = 0x00000400,           // "AllowsTurning"
-    SEAT_FLAG_CAN_CONTROL           = 0x00000800,           // Lua_UnitInVehicleControlSeat
-    SEAT_FLAG_UNK11                 = 0x00001000,           // "Can Cast Mount Spell"
-    SEAT_FLAG_UNCONTROLLED          = 0x00002000,           // Seat uncontrolled for passenger
-    SEAT_FLAG_CAN_ATTACK            = 0x00004000,           // Can attack, cast spells and use items from vehicle?
-    SEAT_FLAG_UNATTACKABLE          = 0x00008000,           // "ShouldUseVehicleSeatExitAnimationOnForcedExit"
-    SEAT_FLAG_UNK14                 = 0x00010000,
-    SEAT_FLAG_UNK15                 = 0x00020000,
-    SEAT_FLAG_UNK16                 = 0x00040000,           // "HasVehicleExitAnimForVoluntaryExit"
-    SEAT_FLAG_UNK17                 = 0x00080000,           // "HasVehicleExitAnimForForcedExit"
-    SEAT_FLAG_UNK18                 = 0x00100000,
-    SEAT_FLAG_UNK19                 = 0x00200000,
-    SEAT_FLAG_UNK20                 = 0x00400000,           // "RecHasVehicleEnterAnim"
-    SEAT_FLAG_UNK21                 = 0x00800000,
-    SEAT_FLAG_UNK22                 = 0x01000000,           // "EnableVehicleZoom"
-    SEAT_FLAG_USABLE                = 0x02000000,           // Lua_CanExitVehicle
-    SEAT_FLAG_CAN_SWITCH            = 0x04000000,           // Lua_CanSwitchVehicleSeats
-    SEAT_FLAG_UNK23                 = 0x08000000,           // "HasStartWaitingForVehicleTransitionAnimEnter"
-    SEAT_FLAG_UNK24                 = 0x10000000,           // "HasStartWaitingForVehicleTransitionAnimExit"
-    SEAT_FLAG_CAN_CAST              = 0x20000000,           // Lua_UnitHasVehicleUI
-    SEAT_FLAG_UNK25                 = 0x40000000,
-    SEAT_FLAG_UNK26                 = 0x80000000,           // "AllowsInteraction"
-};
-
-enum VehicleSeatFlagsB
-{
-    VEHICLE_SEAT_FLAG_B_NONE                     = 0x00000000,
-    VEHICLE_SEAT_FLAG_B_UNK1                     = 0x00000001,
-    VEHICLE_SEAT_FLAG_B_USABLE_FORCED            = 0x00000002,
-    VEHICLE_SEAT_FLAG_B_TARGETS_IN_RAIDUI        = 0x00000008,           // Lua_UnitTargetsVehicleInRaidUI
-    VEHICLE_SEAT_FLAG_B_UNK3                     = 0x00000010,
-    VEHICLE_SEAT_FLAG_B_EJECTABLE                = 0x00000020,           // ejectable
-    VEHICLE_SEAT_FLAG_B_USABLE_FORCED_2          = 0x00000040,
-    VEHICLE_SEAT_FLAG_B_UNK6                     = 0x00000080,
-    VEHICLE_SEAT_FLAG_B_USABLE_FORCED_3          = 0x00000100,
-    VEHICLE_SEAT_FLAG_B_EJECTABLE_FORCED         = 0x00200000,           // seats for forced eject? 27 seats at 3.3.5a
-    VEHICLE_SEAT_FLAG_B_CANSWITCH                = 0x04000000,           // can switch seats
-    VEHICLE_SEAT_FLAG_B_VEHICLE_PLAYERFRAME_UI   = 0x80000000,           // Lua_UnitHasVehiclePlayerFrameUI - actually checked for flagsb &~ 0x80000000
 };
 
 enum MapDifficultyFlags

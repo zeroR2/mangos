@@ -166,7 +166,7 @@ Creature::~Creature()
 void Creature::AddToWorld()
 {
     ///- Register the creature for guid lookup
-    if (!IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
+    if (!IsInWorld() && GetObjectGuid().IsCreature())
     {
         MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetMap()->GetObjectsStore().insert<Creature>(GetObjectGuid(), (Creature*)this);
@@ -179,15 +179,12 @@ void Creature::AddToWorld()
     }
     else
         Unit::AddToWorld();
-
-    if (GetVehicleKit())
-        GetVehicleKit()->Reset();
 }
 
 void Creature::RemoveFromWorld()
 {
     ///- Remove the creature from the accessor
-    if (IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
+    if (IsInWorld() && GetObjectGuid().IsCreature())
     {
         MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetMap()->GetObjectsStore().erase<Creature>(GetObjectGuid(), (Creature*)NULL);
@@ -386,8 +383,6 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
         else
             SetPvP(false);
     }
-
-    SetVehicleId(GetCreatureInfo()->vehicleId);
 
     // if eventData set then event active and need apply spell_start
     if (eventData)
@@ -657,27 +652,7 @@ void Creature::Regenerate(Powers power)
             break;
         }
         case POWER_ENERGY:
-            if (IsVehicle())
-            {
-                if (VehicleEntry const* vehicleInfo = sVehicleStore.LookupEntry(GetCreatureInfo()->vehicleId))
-                {
-
-                    switch (vehicleInfo->m_powerType)
-                    {
-                        case ENERGY_TYPE_PYRITE:
-                        case ENERGY_TYPE_BLOOD:
-                        case ENERGY_TYPE_OOZE:
-                        break;
-
-                        case ENERGY_TYPE_STEAM:
-                        default:
-                            addvalue = 10 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
-                        break;
-                    }
-                }
-            }
-            else
-                addvalue = 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
+            addvalue = 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
             break;
         case POWER_FOCUS:
             addvalue = 24 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_FOCUS);
@@ -1274,10 +1249,6 @@ bool Creature::CreateFromProto(uint32 guidlow, CreatureInfo const* cinfo, Team t
 
     if (!UpdateEntry(cinfo->Entry, team, data, eventData, false))
         return false;
-
-    // Checked at startup
-    if (GetCreatureInfo()->vehicleId)
-        SetVehicleId(GetCreatureInfo()->vehicleId);
 
     return true;
 }

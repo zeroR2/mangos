@@ -98,18 +98,6 @@ class RelocationNotifyEvent : public BasicEvent
         Unit& m_owner;
 };
 
-// Vehicle events
-class PassengerEjectEvent : public BasicEvent
-{
-    public:
-        PassengerEjectEvent(uint8 seatId, Unit& vehicle) : BasicEvent(WORLDOBJECT_EVENT_TYPE_UNIQUE), m_seatId(seatId), m_vehicle(vehicle) {}
-        bool Execute(uint64 e_time, uint32 p_time);
-
-    private:
-        uint8 m_seatId;
-        Unit& m_vehicle;
-};
-
 // Creature events
 class AssistDelayEvent : public BasicEvent
 {

@@ -268,7 +268,6 @@ pAuraProcHandler AuraProcHandler[TOTAL_AURAS]=
     &Unit::HandleNULLProc,                                  //233 set model id to the one of the creature with id m_modifier.m_miscvalue
     &Unit::HandleNULLProc,                                  //234 SPELL_AURA_MECHANIC_DURATION_MOD_NOT_STACK
     &Unit::HandleNULLProc,                                  //235 SPELL_AURA_MOD_DISPEL_RESIST
-    &Unit::HandleNULLProc,                                  //236 SPELL_AURA_CONTROL_VEHICLE
     &Unit::HandleNULLProc,                                  //237 SPELL_AURA_MOD_SPELL_DAMAGE_OF_ATTACK_POWER
     &Unit::HandleNULLProc,                                  //238 SPELL_AURA_MOD_SPELL_HEALING_OF_ATTACK_POWER
     &Unit::HandleNULLProc,                                  //239 SPELL_AURA_MOD_SCALE_2 only in Noggenfogger Elixir (16595) before 2.3.0 aura 61
@@ -3639,7 +3638,6 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                 //case 52856: break;                        // Charge
                 //case 54072: break;                        // Knockback Ball Passive
                 //case 54476: break;                        // Blood Presence
-                //case 54775: break;                        // Abandon Vehicle on Poly
                 case 56702:                                 // Shadow Sickle
                 {
                     trigger_spell_id = 56701;

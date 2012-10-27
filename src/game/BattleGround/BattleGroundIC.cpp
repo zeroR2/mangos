@@ -24,7 +24,6 @@
 #include "WorldPacket.h"
 #include "GameObject.h"
 #include "ObjectMgr.h"
-#include "Vehicle.h"
 #include "Creature.h"
 #include "MapManager.h"
 #include "Transports.h"

@@ -39,7 +39,6 @@
 #include "Pet.h"
 #include "Util.h"
 #include "Totem.h"
-#include "Vehicle.h"
 #include "BattleGround/BattleGround.h"
 #include "InstanceData.h"
 #include "OutdoorPvP/OutdoorPvP.h"
@@ -91,7 +90,6 @@ void MovementInfo::Read(ByteBuffer &data)
         data >> t_pos.z;
         data >> t_pos.o;
         data >> t_time;
-        data >> t_seat;
 
         if (moveFlags2 & MOVEFLAG2_INTERP_MOVEMENT)
             data >> t_time2;
@@ -136,7 +134,6 @@ void MovementInfo::Write(ByteBuffer &data) const
         data << t_pos.z;
         data << t_pos.o;
         data << t_time;
-        data << t_seat;
 
         if (moveFlags2 & MOVEFLAG2_INTERP_MOVEMENT)
             data << t_time2;
@@ -195,7 +192,6 @@ Unit::Unit() :
     movespline(new Movement::MoveSpline()),
     m_charmInfo(NULL),
     i_motionMaster(this),
-    m_vehicleInfo(NULL),
     m_ThreatManager(this),
     m_HostileRefManager(new HostileRefManager(this)),
     m_stateMgr(this)
@@ -292,9 +288,6 @@ Unit::Unit() :
 
     m_transport = NULL;
 
-    m_pVehicleKit = VehicleKitPtr(NULL);
-    m_pVehicle    = VehicleKitPtr(NULL);
-
     m_comboPoints = 0;
 
     m_originalFaction = 0;
@@ -330,7 +323,6 @@ Unit::~Unit()
         CleanupDeletedHolders(true);
 
         delete m_charmInfo;
-        delete m_vehicleInfo;
         delete movespline;
     }
     delete m_HostileRefManager;
@@ -520,7 +512,7 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     else if (turn)
         SetOrientation(orientation);
 
-    if ((relocate || turn) && GetVehicleKit())
+    if (relocate || turn)
     {
         if (m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
         {
@@ -529,7 +521,6 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
             z += m_movementInfo.GetTransportPos()->z;
             orientation += m_movementInfo.GetTransportPos()->o;
         }
-        GetVehicleKit()->RelocatePassengers(x, y, z, orientation);
     }
 
     return relocate || turn;
@@ -543,7 +534,6 @@ void Unit::SendMonsterMoveTransport(WorldObject *transport, SplineType type, Spl
     WorldPacket data(SMSG_MONSTER_MOVE_TRANSPORT, 60);
     data << GetPackGUID();
     data << transport->GetPackGUID();
-    data << uint8(m_movementInfo.GetTransportSeat());
     data << uint8(GetTypeId() == TYPEID_PLAYER ? 1 : 0);       // bool, new in 3.1
     data << float(transport->GetPositionX());
     data << float(transport->GetPositionY());
@@ -1291,13 +1281,6 @@ void Unit::JustKilledCreature(Creature* victim)
             ((Player*)this)->KilledMonster(normalInfo, victim->GetObjectGuid());
     }
 
-    // if victim is vehicle and has passengers - remove his
-    if (victim->GetObjectGuid().IsVehicle())
-    {
-        if (victim->GetVehicleKit())
-            victim->GetVehicleKit()->RemoveAllPassengers();
-    }
-
     // Interrupt channeling spell when a Possessed Summoned is killed
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(victim->GetUInt32Value(UNIT_CREATED_BY_SPELL));
     if (spellInfo && spellInfo->HasAttribute(SPELL_ATTR_EX_FARSIGHT) && spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNELED_1))
@@ -1321,7 +1304,7 @@ void Unit::JustKilledCreature(Creature* victim)
     if (victim->IsTemporarySummon())
     {
         TemporarySummon* pSummon = (TemporarySummon*)victim;
-        if (pSummon->GetSummonerGuid().IsCreatureOrVehicle())
+        if (pSummon->GetSummonerGuid().IsCreature())
             if(Creature* pSummoner = victim->GetMap()->GetCreature(pSummon->GetSummonerGuid()))
                 if (pSummoner->AI())
                     pSummoner->AI()->SummonedCreatureJustDied(victim);
@@ -5686,7 +5669,6 @@ void Unit::RemoveAura(Aura* aura, AuraRemoveMode mode)
             // need properly undo any auras with player-caster mover set (or will crash at next caster move packet)
             case SPELL_AURA_MOD_POSSESS:
             case SPELL_AURA_MOD_POSSESS_PET:
-            case SPELL_AURA_CONTROL_VEHICLE:
                 aura->ApplyModifier(false,true);
                 break;
             default:
@@ -6791,10 +6773,8 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
     if(!isAlive() || !victim->IsInWorld() || !victim->isAlive())
         return false;
 
-    // player cannot attack while mounted or in vehicle (exclude special vehicles)if
-    if (GetTypeId()==TYPEID_PLAYER && (IsMounted() ||
-        (GetVehicle() && (!GetVehicle()->GetSeatInfo(this) ||
-        !(GetVehicle()->GetSeatInfo(this)->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK))))))
+    // player cannot attack while mounted
+    if (GetTypeId()==TYPEID_PLAYER && IsMounted())
         return false;
 
     // nobody can attack GM in GM-mode
@@ -9233,7 +9213,7 @@ float Unit::GetPPMProcChance(uint32 WeaponSpeed, float PPM) const
     return WeaponSpeed * PPM / 600.0f;                      // result is chance in percents (probability = Speed_in_sec * (PPM / 60))
 }
 
-void Unit::Mount(uint32 mount, uint32 spellId, uint32 vehicleId, uint32 creatureEntry)
+void Unit::Mount(uint32 mount, uint32 spellId, uint32 creatureEntry)
 {
     if (!mount)
         return;
@@ -9274,14 +9254,6 @@ void Unit::Mount(uint32 mount, uint32 spellId, uint32 vehicleId, uint32 creature
                 if (sWorld.getConfig(CONFIG_BOOL_PET_UNSUMMON_AT_MOUNT))
                     minipet->Unsummon(PET_SAVE_AS_DELETED, this);
             }
-        }
-
-        if (vehicleId)
-        {
-            SetVehicleId(vehicleId);
-            GetVehicleKit()->Reset();
-            if (GetTypeId() != TYPEID_UNIT)
-                GetVehicleKit()->InstallAllAccessories(creatureEntry);
         }
 
         WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, GetPackGUID().size() + 4 + 4);
@@ -9328,17 +9300,6 @@ void Unit::Unmount(bool from_aura)
         }
         else
             ((Player*)this)->ResummonPetTemporaryUnSummonedIfAny();
-    }
-
-    if (GetTypeId() == TYPEID_PLAYER && GetVehicleKit())
-    {
-        // Send other players that we are no longer a vehicle
-        WorldPacket data(SMSG_SET_VEHICLE_REC_ID, 8+4);
-        data << GetPackGUID();
-        data << uint32(0);
-        ((Player*)this)->SendMessageToSet(&data, true);
-
-        RemoveVehicleKit();
     }
 }
 
@@ -10055,7 +10016,6 @@ void Unit::SetDeathState(DeathState s)
 {
     if (s != ALIVE && s!= JUST_ALIVED)
     {
-        ExitVehicle();
         CombatStop();
         DeleteThreatList();
         ClearComboPointHolders();                           // any combo points pointed to unit lost at it death
@@ -10080,9 +10040,6 @@ void Unit::SetDeathState(DeathState s)
         ClearAllReactives();
         ClearDiminishings();
         ProcDamageAndSpell(this, PROC_FLAG_NONE, PROC_FLAG_ON_DEATH, PROC_EX_NONE, 0);
-
-        if (GetVehicleKit())
-            GetVehicleKit()->RemoveAllPassengers();
     }
     else if (s == JUST_ALIVED)
     {
@@ -11148,10 +11105,6 @@ void Unit::CleanupsBeforeDelete()
 {
     if (m_uint32Values)                                      // only for fully created object
     {
-        if (GetVehicle())
-            ExitVehicle();
-        if (GetVehicleKit())
-            RemoveVehicleKit();
         InterruptNonMeleeSpells(true);
         KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList
         if (IsInWorld())
@@ -11237,25 +11190,6 @@ void CharmInfo::InitPossessCreateSpells()
             m_unit->CastSpell(m_unit, ((Creature*)m_unit)->GetSpell(x), true);
         else
             AddSpellToActionBar(((Creature*)m_unit)->GetSpell(x), ACT_PASSIVE);
-    }
-}
-
-void CharmInfo::InitVehicleCreateSpells(uint8 seatId)
-{
-    for (uint32 x = ACTION_BAR_INDEX_START; x < ACTION_BAR_INDEX_END; ++x)
-        SetActionBar(x, 0, ActiveStates(0x8 + x));
-
-    for (uint32 x = 0; x <= ((Creature*)m_unit)->GetSpellMaxIndex(seatId); ++x)
-    {
-        uint32 spellId = ((Creature*)m_unit)->GetSpell(x,seatId);
-
-        if (!spellId)
-            continue;
-
-        if (IsPassiveSpell(spellId))
-            m_unit->CastSpell(m_unit, spellId, true);
-        else
-            PetActionBar[x].SetAction(spellId);
     }
 }
 
@@ -11436,11 +11370,6 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
     {
         case ACT_COMMAND:                                   //0x07
         {
-        // Maybe exists some flag that disable it at client side
-            if (petGuid.IsVehicle())
-                return;
-
-
             switch(spellid)
             {
                 case COMMAND_STAY:                          //flat=1792  //STAY
@@ -11651,7 +11580,7 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
             return;
         else if((GetObjectGuid().IsPet() && !((Pet*)this)->HasSpell(spellInfo->Id)))
             return;
-        else if ((GetObjectGuid().IsCreatureOrVehicle() && !((Creature*)this)->HasSpell(spellInfo->Id)))
+        else if ((GetObjectGuid().IsCreature() && !((Creature*)this)->HasSpell(spellInfo->Id)))
             return;
     }
 
@@ -12186,7 +12115,7 @@ void Unit::SetFeared(bool apply, ObjectGuid casterGuid, uint32 spellID, uint32 t
         }
     }
 
-    if (GetTypeId() == TYPEID_PLAYER && !GetVehicle())
+    if (GetTypeId() == TYPEID_PLAYER)
         ((Player*)this)->SetClientControl(this, !apply);
 }
 
@@ -12204,7 +12133,7 @@ void Unit::SetConfused(bool apply, ObjectGuid casterGuid, uint32 spellID)
         GetUnitStateMgr().DropAction(UNIT_ACTION_CONFUSED);
     }
 
-    if (GetTypeId() == TYPEID_PLAYER && !GetVehicle())
+    if (GetTypeId() == TYPEID_PLAYER)
         ((Player*)this)->SetClientControl(this, !apply);
 }
 
@@ -12382,7 +12311,7 @@ void Unit::AddComboPoints(Unit* target, int8 count)
 
     if (GetObjectGuid().IsPlayer())
         ((Player*)this)->SendComboPoints(m_comboTargetGuid, m_comboPoints);
-    else if ((GetObjectGuid().IsPet() || GetObjectGuid().IsVehicle()) && GetCharmerOrOwner() && GetCharmerOrOwner()->GetObjectGuid().IsPlayer())
+    else if (GetObjectGuid().IsPet() && GetCharmerOrOwner() && GetCharmerOrOwner()->GetObjectGuid().IsPlayer())
         ((Player*)GetCharmerOrOwner())->SendPetComboPoints(this,m_comboTargetGuid, m_comboPoints);
 }
 
@@ -12398,7 +12327,7 @@ void Unit::ClearComboPoints()
 
     if (GetObjectGuid().IsPlayer())
         ((Player*)this)->SendComboPoints(m_comboTargetGuid, m_comboPoints);
-    else if ((GetObjectGuid().IsPet() || GetObjectGuid().IsVehicle()) && GetCharmerOrOwner() && GetCharmerOrOwner()->GetObjectGuid().IsPlayer())
+    else if (GetObjectGuid().IsPet() && GetCharmerOrOwner() && GetCharmerOrOwner()->GetObjectGuid().IsPlayer())
         ((Player*)GetCharmerOrOwner())->SendPetComboPoints(this,m_comboTargetGuid, m_comboPoints);
 
     if (Unit* target = ObjectAccessor::GetUnit(*this,m_comboTargetGuid))
@@ -12825,7 +12754,6 @@ void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool ca
         ((Player*)this)->TeleportTo(GetMapId(), x, y, z, orientation, TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET | (casting ? TELE_TO_SPELL : 0));
     else
     {
-        ExitVehicle();
         GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
         SendHeartBeat();
     }
@@ -12861,234 +12789,6 @@ struct SetPvPHelper
     void operator()(Unit* unit) const { unit->SetPvP(state); }
     bool state;
 };
-
-void Unit::RemoveVehicleKit()
-{
-    if (!m_pVehicleKit)
-        return;
-
-    m_pVehicleKit->RemoveAllPassengers();
-
-    m_pVehicleKit = VehicleKitPtr(NULL);
-
-    m_updateFlag &= ~UPDATEFLAG_VEHICLE;
-    RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
-    RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_PLAYER_VEHICLE);
-}
-
-void Unit::EnterVehicle(VehicleKitPtr vehicle, int8 seatId)
-{
-    if (vehicle)
-        EnterVehicle(vehicle->GetBase(), seatId);
-};
-
-void Unit::EnterVehicle(Unit* vehicleBase, int8 seatId)
-{
-    if (!isAlive() ||
-        !vehicleBase ||
-        !vehicleBase->isAlive() ||
-        !vehicleBase->GetVehicleKit() ||
-        GetVehicleKit() == vehicleBase->GetVehicleKit())
-        return;
-
-    if (seatId == -1)
-    {
-        if (vehicleBase->GetVehicleKit()->HasEmptySeat(seatId))
-            seatId = vehicleBase->GetVehicleKit()->GetNextEmptySeatWithFlag(0);
-        else
-        {
-            sLog.outError("Unit::EnterVehicle: unit %s try seat to  vehicle %s but no seats!", GetObjectGuid().GetString().c_str(), vehicleBase->GetObjectGuid().GetString().c_str());
-            return;
-        }
-    }
-
-    SpellEntry const* spellInfo = NULL;
-    int32 bp[MAX_EFFECT_INDEX];
-    Unit* caster = NULL;
-    Unit* target = NULL;
-
-    if (GetTypeId() == TYPEID_PLAYER && vehicleBase->GetTypeId() == TYPEID_UNIT)
-    {
-        SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(vehicleBase->GetEntry());
-        if (clickPair.first != clickPair.second)
-        {
-            for (SpellClickInfoMap::const_iterator itr = clickPair.first; itr != clickPair.second; ++itr)
-            {
-                if (itr->second.IsFitToRequirements((Player*)this))
-                {
-
-                    spellInfo = sSpellStore.LookupEntry(itr->second.spellId);
-
-                    if (!spellInfo)
-                        continue;
-
-                    bool b_controlAura = false;
-                    for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
-                    {
-                        if (IsAuraApplyEffect(spellInfo, SpellEffectIndex(i)))
-                            if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_CONTROL_VEHICLE)
-                                b_controlAura = true;
-                    }
-
-                    if (b_controlAura)
-                    {
-                        caster = (itr->second.castFlags & 0x1) ? this : vehicleBase;
-                        target = (itr->second.castFlags & 0x2) ? this : vehicleBase;
-                        break;
-                    }
-
-                    spellInfo = NULL;
-                }
-            }
-        }
-    }
-
-    if (!spellInfo)
-    {
-        caster = this;
-        target = vehicleBase;
-        spellInfo = sSpellStore.LookupEntry(SPELL_RIDE_VEHICLE_HARDCODED);
-    }
-    else
-    {
-        if (!caster)
-            caster = this;
-        if (!target)
-            target = vehicleBase;
-    }
-
-    for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
-    {
-        if (IsAuraApplyEffect(spellInfo, SpellEffectIndex(i)))
-        {
-            if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_CONTROL_VEHICLE)
-            {
-                bp[i] = seatId + 1;
-            }
-            else
-                bp[i] = NULL;
-        }
-        else
-            bp[i] = NULL;
-    }
-
-    caster->CastCustomSpell(target,spellInfo,&bp[EFFECT_INDEX_0],&bp[EFFECT_INDEX_1],&bp[EFFECT_INDEX_2],true,NULL,NULL,caster->GetObjectGuid());
-    DEBUG_LOG("Unit::EnterVehicle: unit %s enter vehicle %s with control aura %u", GetObjectGuid().GetString().c_str(), vehicleBase->GetObjectGuid().GetString().c_str(),spellInfo->Id);
-}
-
-void Unit::ExitVehicle()
-{
-    if (!GetVehicle())
-        return;
-    Unit* vehicleBase = GetVehicle()->GetBase();
-
-    if (!vehicleBase)
-        return;
-
-    if (!vehicleBase->RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, GetObjectGuid()))
-    {
-        _ExitVehicle();
-        sLog.outDetail("Unit::ExitVehicle: unit %s leave vehicle %s but no control aura!", GetObjectGuid().GetString().c_str(), vehicleBase->GetObjectGuid().GetString().c_str());
-    }
-}
-
-void Unit::ChangeSeat(int8 seatId, bool next)
-{
-    if (!GetVehicle())
-        return;
-
-    if (seatId < 0)
-    {
-        seatId = m_pVehicle->GetNextEmptySeatWithFlag(m_movementInfo.GetTransportSeat(), next);
-        if (seatId < 0)
-            return;
-    }
-    else if (seatId == m_movementInfo.GetTransportSeat() || !m_pVehicle->HasEmptySeat(seatId))
-        return;
-
-    if (GetVehicle()->GetPassenger(seatId) &&
-       (!GetVehicle()->GetPassenger(seatId)->GetObjectGuid().IsVehicle() || !GetVehicle()->GetSeatInfo(GetVehicle()->GetPassenger(seatId))))
-        return;
-
-    GetVehicle()->RemovePassenger(this);
-    GetVehicle()->AddPassenger(this, seatId);
-}
-
-void Unit::_EnterVehicle(VehicleKitPtr vehicle, int8 seatId)
-{
-    if (!isAlive() || !vehicle || GetVehicleKit() == vehicle)
-        return;
-
-    if (GetVehicle())
-    {
-        if (GetVehicle() == vehicle)
-        {
-            if (seatId >= 0)
-                ChangeSeat(seatId);
-
-            return;
-        }
-        else
-            ExitVehicle();
-    }
-    else
-    {
-        InterruptNonMeleeSpells(false);
-        RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
-
-        if (Pet* pet = GetPet())
-        {
-            if (GetTypeId() == TYPEID_PLAYER)
-                ((Player*)this)->UnsummonPetTemporaryIfAny(true);
-            else
-                pet->Unsummon(PET_SAVE_AS_CURRENT,this);
-        }
-    }
-
-    if (!vehicle->AddPassenger(this, seatId))
-        return;
-
-    m_pVehicle = vehicle;
-
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        Player* player = (Player*)this;
-
-        if (BattleGround *bg = player->GetBattleGround())
-            bg->EventPlayerDroppedFlag(player);
-
-        WorldPacket data(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA);
-        player->GetSession()->SendPacket(&data);
-
-        data.Initialize(SMSG_BREAK_TARGET, 8);
-        data << GetVehicle()->GetBase()->GetPackGUID();
-        player->GetSession()->SendPacket(&data);
-    }
-
-    if (Transport* pTransport = GetTransport())
-    {
-        if (GetTypeId() == TYPEID_PLAYER)
-            pTransport->RemovePassenger((Player*)this);
-
-        SetTransport(NULL);
-    }
-}
-
-void Unit::_ExitVehicle()
-{
-    if (!GetVehicle())
-        return;
-
-    GetVehicle()->RemovePassenger(this, true);
-
-    m_pVehicle = VehicleKitPtr(NULL);
-    clearUnitState(UNIT_STAT_ON_VEHICLE);
-
-    SendHeartBeat();
-
-    if (isAlive() && GetTypeId() == TYPEID_PLAYER)
-        ((Player*)this)->ResummonPetTemporaryUnSummonedIfAny();
-}
 
 void Unit::SetPvP( bool state )
 {
@@ -13440,12 +13140,6 @@ ObjectGuid const& Unit::GetCreatorGuid() const
 {
     switch(GetObjectGuid().GetHigh())
     {
-        case HIGHGUID_VEHICLE:
-            {
-                if (!(const_cast<Unit*>(this)->GetVehicleInfo()->GetEntry()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY)))
-                    if (GetOwner())
-                        return GetOwner()->GetObjectGuid();
-            }
         // No break here!
         case HIGHGUID_UNIT:
             if (((Creature*)this)->IsTemporarySummon())
@@ -13463,36 +13157,6 @@ ObjectGuid const& Unit::GetCreatorGuid() const
 
         default:
             return ObjectGuid::Null;
-    }
-}
-
-void Unit::SetVehicleId(uint32 entry)
-{
-    delete m_vehicleInfo;
-
-    if (entry)
-    {
-        VehicleEntry const* ventry = sVehicleStore.LookupEntry(entry);
-        MANGOS_ASSERT(ventry != NULL);
-
-        m_vehicleInfo = new VehicleInfo(ventry);
-        m_updateFlag |= UPDATEFLAG_VEHICLE;
-
-        if (!m_pVehicleKit)
-            m_pVehicleKit = VehicleKitPtr(new VehicleKit(this));
-    }
-    else
-    {
-        m_vehicleInfo = NULL;
-        m_updateFlag &= ~UPDATEFLAG_VEHICLE;
-    }
-
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        WorldPacket data(SMSG_SET_VEHICLE_REC_ID, 16);
-        data << GetPackGUID();
-        data << uint32(entry);
-        SendMessageToSet(&data, true);
     }
 }
 

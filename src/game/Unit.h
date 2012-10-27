@@ -277,7 +277,6 @@ class Item;
 class Pet;
 class PetAura;
 class Totem;
-class VehicleInfo;
 
 struct SpellImmune
 {
@@ -408,9 +407,6 @@ enum UnitState
     UNIT_STAT_FLEEING         = 0x00020000,                     // FleeMovementGenerator/TimedFleeingMovementGenerator active/onstack
     UNIT_STAT_FLEEING_MOVE    = 0x00040000,
 
-    // custom MMGen (may be removed)
-    UNIT_STAT_ON_VEHICLE      = 0x00080000,                     // Unit is on vehicle
-
     // More room for other MMGens
 
     // High-Level states (usually only with Creatures)
@@ -423,20 +419,20 @@ enum UnitState
     // masks (only for check)
 
     // can't move currently
-    UNIT_STAT_CAN_NOT_MOVE    = UNIT_STAT_ROOT | UNIT_STAT_STUNNED | UNIT_STAT_DIED | UNIT_STAT_ON_VEHICLE,
+    UNIT_STAT_CAN_NOT_MOVE    = UNIT_STAT_ROOT | UNIT_STAT_STUNNED | UNIT_STAT_DIED,
 
     // stay by different reasons
     UNIT_STAT_NOT_MOVE        = UNIT_STAT_ROOT | UNIT_STAT_STUNNED | UNIT_STAT_DIED |
-                                UNIT_STAT_DISTRACTED | UNIT_STAT_ON_VEHICLE,
+                                UNIT_STAT_DISTRACTED,
 
     // stay or scripted movement for effect( = in player case you can't move by client command)
     UNIT_STAT_NO_FREE_MOVE    = UNIT_STAT_ROOT | UNIT_STAT_STUNNED | UNIT_STAT_DIED |
                                 UNIT_STAT_TAXI_FLIGHT |
-                                UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING | UNIT_STAT_ON_VEHICLE,
+                                UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING,
 
     // not react at move in sight or other
     UNIT_STAT_CAN_NOT_REACT   = UNIT_STAT_STUNNED | UNIT_STAT_DIED |
-                                UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING | UNIT_STAT_ON_VEHICLE,
+                                UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING,
 
     // AI disabled by some reason
     UNIT_STAT_LOST_CONTROL    = UNIT_STAT_FLEEING | UNIT_STAT_CONTROLLED,
@@ -603,8 +599,7 @@ enum NPCFlags
     UNIT_NPC_FLAG_AUCTIONEER            = 0x00200000,       // 100%
     UNIT_NPC_FLAG_STABLEMASTER          = 0x00400000,       // 100%
     UNIT_NPC_FLAG_GUILD_BANKER          = 0x00800000,       // cause client to send 997 opcode
-    UNIT_NPC_FLAG_SPELLCLICK            = 0x01000000,       // cause client to send 1015 opcode (spell click), dynamic, set at loading and don't must be set in DB
-    UNIT_NPC_FLAG_PLAYER_VEHICLE        = 0x02000000,       // players with mounts that have vehicle data should have it set
+    UNIT_NPC_FLAG_SPELLCLICK            = 0x01000000        // cause client to send 1015 opcode (spell click), dynamic, set at loading and don't must be set in DB
 };
 
 // used in most movement packets (send and received)
@@ -736,7 +731,7 @@ class MovementInfo
 
     public:
         MovementInfo() : moveFlags(MOVEFLAG_NONE), moveFlags2(MOVEFLAG2_NONE), time(0),
-            t_time(0), t_seat(-1), t_seatInfo(NULL), t_time2(0), s_pitch(0.0f), fallTime(0), splineElevation(0.0f) {}
+            t_time(0), t_time2(0), s_pitch(0.0f), fallTime(0), splineElevation(0.0f) {}
 
         // Read/Write methods
         void Read(ByteBuffer &data);
@@ -753,7 +748,7 @@ class MovementInfo
 
         // Position manipulations
         Position const *GetPos() const { return &pos; }
-        void SetTransportData(ObjectGuid guid, float x, float y, float z, float o, uint32 time, int8 seat, VehicleSeatEntry const* seatInfo = NULL)
+        void SetTransportData(ObjectGuid guid, float x, float y, float z, float o, uint32 time)
         {
             t_guid = guid;
             t_pos.x = x;
@@ -761,8 +756,6 @@ class MovementInfo
             t_pos.z = z;
             t_pos.o = o;
             t_time = time;
-            t_seat = seat;
-            t_seatInfo = seatInfo;
         }
         void ClearTransportData()
         {
@@ -772,15 +765,10 @@ class MovementInfo
             t_pos.z = 0.0f;
             t_pos.o = 0.0f;
             t_time = 0;
-            t_seat = -1;
-            t_seatInfo = NULL;
             moveFlags2 = MOVEFLAG2_NONE;
         }
         ObjectGuid const& GetTransportGuid() const { return t_guid; }
         Position const *GetTransportPos() const { return &t_pos; }
-        int8 GetTransportSeat() const { return t_seat; }
-        uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
-        uint32 GetVehicleSeatFlags() const { return t_seatInfo ? t_seatInfo->m_flags : 0; }
         uint32 GetTransportTime() const { return t_time; }
         uint32 GetFallTime() const { return fallTime; }
         void ChangeOrientation(float o) { pos.o = o; }
@@ -815,8 +803,6 @@ class MovementInfo
                 t_guid     = targetInfo.t_guid;
                 t_pos      = targetInfo.t_pos;
                 t_time     = targetInfo.t_time;
-                t_seat     = targetInfo.t_seat;
-                t_seatInfo = targetInfo.t_seatInfo;
                 t_time2    = targetInfo.t_time2;
             }
             return *this;
@@ -832,8 +818,6 @@ class MovementInfo
         ObjectGuid t_guid;
         Position t_pos;
         uint32   t_time;
-        int8     t_seat;
-        VehicleSeatEntry const* t_seatInfo;
         uint32   t_time2;
         // swimming and flying
         float    s_pitch;
@@ -1186,7 +1170,6 @@ struct MANGOS_DLL_SPEC CharmInfo
         void   SetState(CharmStateType type, uint8 value);
 
         void InitPossessCreateSpells();
-        void InitVehicleCreateSpells(uint8 seatId = 0);
         void InitCharmCreateSpells();
         void InitPetActionBar();
         void InitEmptyActionBar();
@@ -1265,7 +1248,6 @@ typedef GuidSet GroupPetList;
 #define EVADE_TIME_DELAY_MIN 100
 
 struct SpellProcEventEntry;                                 // used only privately
-class  VehicleKit;
 
 class MANGOS_DLL_SPEC Unit : public WorldObject
 {
@@ -1436,12 +1418,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         bool IsMounted() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT ); }
         uint32 GetMountID() const { return GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID); }
-        void Mount(uint32 mount, uint32 spellId = 0, uint32 vehicleId = 0, uint32 creatureEntry = 0);
+        void Mount(uint32 mount, uint32 spellId = 0, uint32 creatureEntry = 0);
         void Unmount(bool from_aura = false);
-
-        VehicleInfo* GetVehicleInfo() { return m_vehicleInfo; }
-        bool IsVehicle() const { return m_vehicleInfo != NULL; }
-        void SetVehicleId(uint32 entry);
 
         uint16 GetMaxSkillValueForLevel(Unit const* target = NULL) const { return (target ? GetLevelForTarget(target) : getLevel()) * 5; }
         void DealDamageMods(DamageInfo* damageInfo);
@@ -2177,20 +2155,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         float GetTransOffsetZ() const { return m_movementInfo.GetTransportPos()->z; }
         float GetTransOffsetO() const { return m_movementInfo.GetTransportPos()->o; }
         uint32 GetTransTime() const { return m_movementInfo.GetTransportTime(); }
-        int8 GetTransSeat() const { return m_movementInfo.GetTransportSeat(); }
-
-        // Vehicle system (over-aura operation)
-        void EnterVehicle(Unit* base, int8 seatId = -1);
-        void EnterVehicle(VehicleKitPtr vehicle, int8 seatId = -1);
-        void ExitVehicle();
-        // Vehicle system (direct operation)
-        void _EnterVehicle(VehicleKitPtr vehicle, int8 seatId = -1);
-        void _ExitVehicle();
-
-        void ChangeSeat(int8 seatId, bool next = true);
-        VehicleKitPtr GetVehicle() const { return m_pVehicle; }
-        VehicleKitPtr GetVehicleKit() const { return m_pVehicleKit; }
-        void RemoveVehicleKit();
 
         void ScheduleAINotify(uint32 delay);
         bool IsAINotifyScheduled() const { return m_AINotifyScheduled;}
@@ -2252,10 +2216,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         // Transports
         Transport* m_transport;
-
-        VehicleInfo* m_vehicleInfo;
-        VehicleKitPtr m_pVehicleKit;
-        VehicleKitPtr m_pVehicle;
 
         void DisableSpline();
         bool m_isCreatureLinkingTrigger;

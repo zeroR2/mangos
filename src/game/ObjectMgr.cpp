@@ -685,12 +685,6 @@ void ObjectMgr::LoadCreatureTemplates()
             const_cast<CreatureInfo*>(cInfo)->MovementType = IDLE_MOTION_TYPE;
         }
 
-        if (cInfo->vehicleId && !sVehicleStore.LookupEntry(cInfo->vehicleId))
-        {
-            sLog.outErrorDb("Creature (Entry: %u) has non-existing vehicle_id (%u), set to 0.", cInfo->Entry, cInfo->vehicleId);
-            const_cast<CreatureInfo*>(cInfo)->vehicleId = 0;
-        }
-
         if(cInfo->equipmentId > 0)                          // 0 no equipment
         {
             if(!GetEquipmentInfo(cInfo->equipmentId))
@@ -1379,37 +1373,6 @@ void ObjectMgr::RemoveCreatureFromGrid(uint32 guid, CreatureData const* data)
 
             CellObjectGuids& cell_guids = mMapObjectGuids[MAKE_PAIR32(data->mapid,i)][cell_id];
             cell_guids.creatures.erase(guid);
-        }
-    }
-}
-
-void ObjectMgr::LoadVehicleAccessory()
-{
-    sVehicleAccessoryStorage.Load();
-
-    sLog.outString(">> Loaded %u vehicle accessories", sVehicleAccessoryStorage.GetRecordCount());
-    sLog.outString();
-
-    // Check content
-    for (SQLMultiStorage::SQLSIterator<VehicleAccessory> itr = sVehicleAccessoryStorage.getDataBegin<VehicleAccessory>(); itr < sVehicleAccessoryStorage.getDataEnd<VehicleAccessory>(); ++itr)
-    {
-        if (!sCreatureStorage.LookupEntry<CreatureInfo>(itr->vehicleEntry))
-        {
-            sLog.outErrorDb("Table `vehicle_accessory` has entry (vehicle entry: %u, seat %u, passenger %u) where vehicle_entry is invalid, skip vehicle.", itr->vehicleEntry, itr->seatId, itr->passengerEntry);
-            sVehicleAccessoryStorage.EraseEntry(itr->vehicleEntry);
-            continue;
-        }
-        if (!sCreatureStorage.LookupEntry<CreatureInfo>(itr->passengerEntry))
-        {
-            sLog.outErrorDb("Table `vehicle_accessory` has entry (vehicle entry: %u, seat %u, passenger %u) where accessory_entry is invalid, skip vehicle.", itr->vehicleEntry, itr->seatId, itr->passengerEntry);
-            sVehicleAccessoryStorage.EraseEntry(itr->vehicleEntry);
-            continue;
-        }
-        if (itr->seatId >= MAX_VEHICLE_SEAT)
-        {
-            sLog.outErrorDb("Table `vehicle_accessory` has entry (vehicle entry: %u, seat %u, passenger %u) where seat is invalid (must be between 0 and %u), skip vehicle.", itr->vehicleEntry, itr->seatId, itr->passengerEntry, MAX_VEHICLE_SEAT - 1);
-            sVehicleAccessoryStorage.EraseEntry(itr->vehicleEntry);
-            continue;
         }
     }
 }

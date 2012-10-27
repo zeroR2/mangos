@@ -21,7 +21,6 @@
  * The Transport System in MaNGOS consists of these files:
  * - TransportSystem.h to provide the basic classes TransportBase and TransportInfo
  * - TransportSystem.cpp which implements these classes
- * - Vehicle.h as a vehicle is a transporter it will inherit itr transporter-information from TransportBase
  * - Transports.h to implement the MOTransporter (subclas of gameobject) - Remains TODO
  * as well of
  * - impacts to various files
@@ -99,9 +98,6 @@ class TransportInfo
         // Accessors
         WorldObject* GetTransport() const { return m_transport->GetOwner(); }
         ObjectGuid GetTransportGuid() const { return m_transport->GetOwner()->GetObjectGuid(); }
-
-        // Required for chain-updating (passenger on transporter on transporter)
-        bool IsOnVehicle() const { return m_transport->GetOwner()->GetTypeId() == TYPEID_PLAYER || m_transport->GetOwner()->GetTypeId() == TYPEID_UNIT; }
 
         // Get local position and seat
         uint8 GetTransportSeat() const { return m_seat; }

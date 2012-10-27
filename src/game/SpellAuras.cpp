@@ -44,7 +44,6 @@
 #include "Util.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
-#include "Vehicle.h"
 #include "CellImpl.h"
 #include "InstanceData.h"
 #include "Language.h"
@@ -290,7 +289,6 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNULL,                                      //233 set model id to the one of the creature with id m_modifier.m_miscvalue
     &Aura::HandleNoImmediateEffect,                         //234 SPELL_AURA_MECHANIC_DURATION_MOD_NOT_STACK implement in Unit::CalculateAuraDuration
     &Aura::HandleAuraModDispelResist,                       //235 SPELL_AURA_MOD_DISPEL_RESIST               implement in Unit::MagicSpellHitResult
-    &Aura::HandleAuraControlVehicle,                        //236 SPELL_AURA_CONTROL_VEHICLE
     &Aura::HandleModSpellDamagePercentFromAttackPower,      //237 SPELL_AURA_MOD_SPELL_DAMAGE_OF_ATTACK_POWER  implemented in Unit::SpellBaseDamageBonusDone
     &Aura::HandleModSpellHealingPercentFromAttackPower,     //238 SPELL_AURA_MOD_SPELL_HEALING_OF_ATTACK_POWER implemented in Unit::SpellBaseHealingBonusDone
     &Aura::HandleAuraModScale,                              //239 SPELL_AURA_MOD_SCALE_2 only in Noggenfogger Elixir (16595) before 2.3.0 aura 61
@@ -350,7 +348,6 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleAuraAddMechanicAbilities,                  //293 SPELL_AURA_ADD_MECHANIC_ABILITIES  replaces target's action bars with a predefined spellset
     &Aura::HandleAuraStopNaturalManaRegen,                  //294 SPELL_AURA_STOP_NATURAL_MANA_REGEN implemented in Player:Regenerate
     &Aura::HandleUnused,                                    //295 unused (3.2.2a)
-    &Aura::HandleAuraSetVehicle,                            //296 SPELL_AURA_SET_VEHICLE_ID sets vehicle on target
     &Aura::HandleNULL,                                      //297 1 spell (counter spell school?)
     &Aura::HandleUnused,                                    //298 unused (3.2.2a)
     &Aura::HandleUnused,                                    //299 unused (3.2.2a)
@@ -1248,8 +1245,6 @@ bool Aura::IsEffectStacking()
                 return false;
             }
             break;
-        case SPELL_AURA_CONTROL_VEHICLE:
-            return true;
 
         default:
             break;
@@ -3907,7 +3902,7 @@ void Aura::HandleAuraMounted(bool apply, bool Real)
         if (minfo)
             display_id = minfo->modelid;
 
-        target->Mount(display_id, GetId(), ci->vehicleId, GetMiscValue());
+        target->Mount(display_id, GetId(), GetMiscValue());
     }
     else
     {
@@ -4840,7 +4835,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
         {
             ((Creature*)target)->AIM_Initialize();
         }
-        else if (target->GetTypeId() == TYPEID_PLAYER && !target->GetVehicle())
+        else if (target->GetTypeId() == TYPEID_PLAYER)
         {
             ((Player*)target)->SetClientControl(target, 0);
         }
@@ -4873,7 +4868,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         target->SetCharmerGuid(ObjectGuid());
 
-        if (target->GetTypeId() == TYPEID_PLAYER && !target->GetVehicle())
+        if (target->GetTypeId() == TYPEID_PLAYER)
         {
             ((Player*)target)->setFactionForRace(target->getRace());
             ((Player*)target)->SetClientControl(target, 1);
@@ -5191,7 +5186,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
         target->GetUnitStateMgr().PushAction(UNIT_ACTION_STUN);
 
         // Deep Freeze damage part
-        if (GetId() == 44572 && !(target->IsCharmerOrOwnerPlayerOrPlayerItself() || target->IsVehicle()) && target->IsImmuneToSpellEffect(GetSpellProto(), EFFECT_INDEX_0))
+        if (GetId() == 44572 && !target->IsCharmerOrOwnerPlayerOrPlayerItself() && target->IsImmuneToSpellEffect(GetSpellProto(), EFFECT_INDEX_0))
         {
             Unit* caster = GetCaster();
             if(!caster)
@@ -5268,7 +5263,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
 
         target->GetUnitStateMgr().DropAction(UNIT_ACTION_STUN);
 
-        if(!target->hasUnitState(UNIT_STAT_ROOT | UNIT_STAT_ON_VEHICLE))       // prevent allow move if have also root effect
+        if(!target->hasUnitState(UNIT_STAT_ROOT))       // prevent allow move if have also root effect
         {
             if (target->getVictim() && target->isAlive())
                 target->SetTargetGuid(target->getVictim()->GetObjectGuid());
@@ -10056,7 +10051,7 @@ void Aura::PeriodicCheck()
         case SPELL_AURA_MOD_ROOT:
         case SPELL_AURA_TRANSFORM:
         {
-            if (caster->GetObjectGuid().IsPlayer() && target->GetObjectGuid().IsCreatureOrVehicle())
+            if (caster->GetObjectGuid().IsPlayer() && target->GetObjectGuid().IsCreature())
             {
                 if (caster->MagicSpellHitResult(target, spellProto) != SPELL_MISS_NONE)
                 {
@@ -10128,52 +10123,6 @@ void Aura::HandleArenaPreparation(bool apply, bool Real)
     target->HandleArenaPreparation(apply);
 }
 
-/**
- * Such auras are applied from a caster(=player) to a vehicle.
- * This has been verified using spell #49256
- */
-void Aura::HandleAuraControlVehicle(bool apply, bool Real)
-{
-    if (!Real)
-        return;
-
-    Unit* target = GetTarget();
-    if (!target->IsVehicle())
-        return;
-
-    // TODO: Check for free seat
-
-    Unit *caster = GetCaster();
-    if (!caster)
-        return;
-
-    if (apply)
-    {
-        // TODO: find a way to make this work properly
-        // some spells seem like store vehicle seat info in basepoints, but not true for all of them, so... ;/
-        int32 seat = GetModifier()->m_amount <= MAX_VEHICLE_SEAT ? GetModifier()->m_amount - 1 : -1;
-
-        if (seat >= 0 && caster->GetTypeId() == TYPEID_PLAYER && !target->GetVehicleKit()->HasEmptySeat(seat))
-            seat = -1;
-
-        caster->_EnterVehicle(target->GetVehicleKit(), seat);
-    }
-    else
-    {
-
-        if (caster->GetVehicle() && caster->GetVehicle() == target->GetVehicleKit())
-        {
-            if (m_removeMode == AURA_REMOVE_BY_STACK)
-                caster->GetVehicle()->RemovePassenger(caster, false);
-            else
-                caster->_ExitVehicle();
-        }
-
-        // some SPELL_AURA_CONTROL_VEHICLE auras have a dummy effect on the player - remove them
-        caster->RemoveAurasDueToSpell(GetId());
-    }
-}
-
 void Aura::HandleAuraLinked(bool apply, bool Real)
 {
     if (!Real)
@@ -10193,7 +10142,6 @@ void Aura::HandleAuraLinked(bool apply, bool Real)
     if (apply)
     {
         if (pCaster && pCaster->GetTypeId() == TYPEID_PLAYER &&
-            pTarget->GetObjectGuid().IsVehicle() &&
             spellInfo->HasAttribute(SPELL_ATTR_EX_HIDDEN_AURA) &&
             spellInfo->HasAttribute(SPELL_ATTR_HIDE_IN_COMBAT_LOG))
         {
@@ -10206,7 +10154,7 @@ void Aura::HandleAuraLinked(bool apply, bool Real)
             int32 bp1 = int32(((float)spellInfo->EffectBasePoints[EFFECT_INDEX_1] + bonus) * 100);
             int32 bp2 = int32(((float)spellInfo->EffectBasePoints[EFFECT_INDEX_2] + bonus) * 100);
 
-            // don't lower stats of vehicle, if GS player below then calculation base
+            // don't lower stats of , if GS player below then calculation base
             if (bp0 < 0)
                 bp0 = 0;
             if (bp1 < 0)
@@ -10729,10 +10677,6 @@ void SpellAuraHolder::_AddSpellAuraHolder()
                         m_target->ModifyAuraState(AURA_STATE_LIGHT_TARGET, true);
                     else if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_SHADOW))
                         m_target->ModifyAuraState(AURA_STATE_DARK_TARGET, true);
-
-                        // need more correct research for this aura state and effect (mostly Ulduar vehicle spells)
-//                    else if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_FIRE))
-//                        m_target->ModifyAuraState(AURA_STATE_SPELLFIRE, true);
                     break;
                 }
             default:
@@ -12553,41 +12497,6 @@ void Aura::HandleAuraModReflectSpells(bool Apply, bool Real)
             default:
                 break;
         }
-    }
-}
-
-void Aura::HandleAuraSetVehicle(bool apply, bool real)
-{
-    if (!real)
-        return;
-
-    Unit* target = GetTarget();
-
-    if (target->GetTypeId() != TYPEID_PLAYER || !target->IsInWorld())
-        return;
-
-    uint32 vehicleId = GetMiscValue();
-
-    if (vehicleId == 0)
-        return;
-
-    if (apply)
-    {
-        target->SetVehicleId(vehicleId);
-    }
-    else
-        if (target->GetVehicleKit())
-            target->RemoveVehicleKit();
-
-    WorldPacket data(SMSG_SET_VEHICLE_REC_ID, target->GetPackGUID().size()+4);
-    data.appendPackGUID(target->GetObjectGuid());
-    data << uint32(apply ? vehicleId : 0);
-    target->SendMessageToSet(&data, true);
-
-    if (apply)
-    {
-        data.Initialize(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA, 0);
-        ((Player*)target)->GetSession()->SendPacket(&data);
     }
 }
 

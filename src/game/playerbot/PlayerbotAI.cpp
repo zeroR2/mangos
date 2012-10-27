@@ -2436,10 +2436,6 @@ void PlayerbotAI::DoLoot()
                                 if (CastSpell(21652))   // Closing
                                     return;
                                 break;
-                            case LOCKTYPE_OPEN_FROM_VEHICLE:
-                                if (CastSpell(61437))   // Opening
-                                    return;
-                                break;
                             default:
                                 if (SkillByLockType(LockType(lockInfo->Index[i])) > 0)
                                 {

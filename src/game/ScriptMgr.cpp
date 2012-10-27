@@ -860,7 +860,6 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
     switch (guid.GetHigh())
     {
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
             resultObject = m_map->GetCreature(guid);
             break;
         case HIGHGUID_PET:

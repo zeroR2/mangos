@@ -380,24 +380,9 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    //  Players on vehicles may cast many simple spells (like knock) from self
-
     Unit* mover = NULL;
 
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE) && _mover->IsCharmerOrOwnerPlayerOrPlayerItself())
-        mover = _mover->GetCharmerOrOwnerPlayerOrPlayerItself();
-    else
-        mover = _mover;
-
-    // casting own spells on some vehicles
-    if (mover->GetObjectGuid().IsVehicle() && mover->GetCharmerOrOwnerPlayerOrPlayerItself())
-    {
-        Player *plr = mover->GetCharmerOrOwnerPlayerOrPlayerItself();
-        if (mover->GetVehicleKit()->GetSeatInfo(plr) &&
-           ((mover->GetVehicleKit()->GetSeatInfo(plr)->m_flags & SEAT_FLAG_CAN_ATTACK) ||
-            (mover->GetVehicleKit()->GetSeatInfo(plr)->m_flags & SEAT_FLAG_CAN_CAST) ))
-            mover = plr;
-    }
+    mover = _mover;
 
     bool triggered = false;
     SpellEntry const* triggeredBy = NULL;
@@ -649,7 +634,7 @@ void WorldSession::HandleSpellClick( WorldPacket & recv_data )
     if (!unit)
         return;
 
-    if (_player->isInCombat() && !guid.IsVehicle())                              // client prevent click and set different icon at combat state
+    if (_player->isInCombat())                              // client prevent click and set different icon at combat state
         return;
 
     SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(unit->GetEntry());

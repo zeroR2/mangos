@@ -92,7 +92,7 @@ void PointMovementGenerator<Creature>::MovementInform(Creature &unit)
     if (unit.IsTemporarySummon())
     {
         TemporarySummon* pSummon = (TemporarySummon*)(&unit);
-        if (pSummon->GetSummonerGuid().IsCreatureOrVehicle())
+        if (pSummon->GetSummonerGuid().IsCreature())
             if(Creature* pSummoner = unit.GetMap()->GetCreature(pSummon->GetSummonerGuid()))
                 if (pSummoner->AI())
                     pSummoner->AI()->SummonedMovementInform(&unit, POINT_MOTION_TYPE, id);
@@ -132,22 +132,4 @@ void EffectMovementGenerator::Finalize(Unit &unit)
 
     if (((Creature&)unit).AI() && unit.movespline->Finalized())
         ((Creature&)unit).AI()->MovementInform(EFFECT_MOTION_TYPE, m_Id);
-}
-
-bool EjectMovementGenerator::Update(Unit &unit, const uint32 &)
-{
-    return !unit.movespline->Finalized();
-}
-
-void EjectMovementGenerator::Finalize(Unit &unit)
-{
-    if (unit.GetTypeId() == TYPEID_UNIT && ((Creature&)unit).AI() && unit.movespline->Finalized())
-        ((Creature&)unit).AI()->MovementInform(EFFECT_MOTION_TYPE, m_Id);
-
-    unit.clearUnitState(UNIT_STAT_ON_VEHICLE);
-    unit.m_movementInfo.ClearTransportData();
-    unit.m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
-
-    if (unit.GetTypeId() == TYPEID_PLAYER)
-        ((Player&)unit).SetMover(&unit);
 }

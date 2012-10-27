@@ -551,7 +551,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
     if ((IsSpellHaveAura(spellInfo, SPELL_AURA_TRACK_CREATURES) ||
         IsSpellHaveAura(spellInfo, SPELL_AURA_TRACK_RESOURCES)  ||
         IsSpellHaveAura(spellInfo, SPELL_AURA_TRACK_STEALTHED)) &&
-        (spellInfo->HasAttribute(SPELL_ATTR_EX_UNK17) || spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE)))
+        spellInfo->HasAttribute(SPELL_ATTR_EX_UNK17))
         return SPELL_TRACKER;
 
     // elixirs can have different families, but potion most ofc.
@@ -2856,7 +2856,6 @@ bool SpellMgr::IsStackableSpellAuraHolder(SpellEntry const* spellInfo)
             case SPELL_AURA_PERIODIC_MANA_LEECH:
             case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
             case SPELL_AURA_POWER_BURN_MANA:
-            case SPELL_AURA_CONTROL_VEHICLE:
             case SPELL_AURA_MOD_STUN:
                 return true;
         }

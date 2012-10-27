@@ -155,17 +155,6 @@ enum Powers
 
 #define MAX_POWERS                        7
 
-enum EnergyType
-{
-    ENERGY_TYPE_UNK0      = 0,                          // Possible mana or flat energy.
-    ENERGY_TYPE_UNK1      = 1,                          // 2 vehicles in 3.3.5a
-    ENERGY_TYPE_PYRITE    = 41,                         // 2 vehicles in 3.3.5a
-    ENERGY_TYPE_STEAM     = 61,                         // 9 vehicles in 3.3.5a
-    ENERGY_TYPE_OOZE      = 121,                        // 1 vehicle  in 3.3.5a
-    ENERGY_TYPE_BLOOD     = 141,                        // 1 vehicle  in 3.3.5a
-    ENERGY_TYPE_UNK142    = 142,                        // 1 vehicle  in 3.3.5a
-};
-
 enum SpellSchools
 {
     SPELL_SCHOOL_NORMAL                 = 0,
@@ -474,7 +463,6 @@ enum SpellAttributesEx6
     SPELL_ATTR_EX6_IGNORE_DETECTION            = 0x00000200,            // 9 many spells, ignored unit detections/phasing.
     SPELL_ATTR_EX6_NORMAL_DIFFICULTY           = 0x00000400,            // 10 this spells not have heroic difficulty versions in DBC (may be only one from effects?)
     SPELL_ATTR_EX6_NOT_IN_RAID_INSTANCE        = 0x00000800,            // 11 not usable in raid instance
-    SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE         = 0x00001000,            // 12 for auras SPELL_AURA_TRACK_CREATURES, SPELL_AURA_TRACK_RESOURCES and SPELL_AURA_TRACK_STEALTHED select non-stacking tracking spells
     SPELL_ATTR_EX6_CAN_TARGET_INVISIBLE        = 0x00002000,            // 13 ignore visibility requirement for spell target (phases, invisibility, etc.)
     SPELL_ATTR_EX6_UNK14                       = 0x00004000,            // 14
     SPELL_ATTR_EX6_UNK15                       = 0x00008000,            // 15 not set in 3.0.3
@@ -1029,7 +1017,6 @@ enum SpellCastResultCustom
     SPELL_FAILED_CUSTOM_ERROR_39        = 39,               // "You don't have anything to throw! Find a Vargul and use Gymer Grab to pick one up!"
     SPELL_FAILED_CUSTOM_ERROR_40        = 40,               // "Bouldercrag's War Horn can only be used within 10 yards of Valduran the Stormborn."
     SPELL_FAILED_CUSTOM_ERROR_41        = 41,               // "You are not carrying a passenger. There is nobody to drop off."
-    SPELL_FAILED_CUSTOM_ERROR_42        = 42,               // "You cannot build any more siege vehicles."
     SPELL_FAILED_CUSTOM_ERROR_43        = 43,               // "You are already carrying a captured Argent Crusader. You must return to the Argen Vanguard Infirmary and drop off your passenger before you may pick up another."
     SPELL_FAILED_CUSTOM_ERROR_44        = 44,               // "You can't do that while rooted."
     SPELL_FAILED_CUSTOM_ERROR_45        = 45,               // "Requires a nearby target."
@@ -1337,16 +1324,6 @@ enum Targets
     TARGET_DEST_RADIUS                      = 91,
     TARGET_UNIT_CREATOR                     = 92,
     TARGET_93                               = 93,
-    TARGET_OWNED_VEHICLE                    = 94,
-    TARGET_UNIT_DRIVER                      = 95,
-    TARGET_UNIT_PASSENGER_0                 = 96,
-    TARGET_UNIT_PASSENGER_1                 = 97,
-    TARGET_UNIT_PASSENGER_2                 = 98,
-    TARGET_UNIT_PASSENGER_3                 = 99,
-    TARGET_UNIT_PASSENGER_4                 = 100,
-    TARGET_UNIT_PASSENGER_5                 = 101,
-    TARGET_UNIT_PASSENGER_6                 = 102,
-    TARGET_UNIT_PASSENGER_7                 = 103,
     TARGET_IN_FRONT_OF_CASTER_30            = 104,
     TARGET_105                              = 105,
     TARGET_106                              = 106,
@@ -2095,7 +2072,6 @@ enum LockType
     LOCKTYPE_SLOW_CLOSE            = 18,
     LOCKTYPE_FISHING               = 19,
     LOCKTYPE_INSCRIPTION           = 20,
-    LOCKTYPE_OPEN_FROM_VEHICLE     = 21
 };
 
 enum TrainerType                                            // this is important type for npcs!
@@ -2201,7 +2177,6 @@ enum CreatureTypeFlags
     CREATURE_TYPEFLAGS_ENGINEERLOOT     = 0x00008000,       // Can be looted by engineer
     CREATURE_TYPEFLAGS_EXOTIC           = 0x00010000,       // Can be tamed by hunter as exotic pet
     CREATURE_TYPEFLAGS_UNK18            = 0x00020000,       // related to CreatureDisplayInfo and scaling in some way
-    CREATURE_TYPEFLAGS_UNK19            = 0x00040000,       // ? Related to vehicle/siege weapons?
     CREATURE_TYPEFLAGS_UNK20            = 0x00080000,       // may be has something to do with missiles
     CREATURE_TYPEFLAGS_UNK21            = 0x00100000,       // no idea, but it used by client, may be related to rendering
     CREATURE_TYPEFLAGS_UNK22            = 0x00200000,       // may be has something to do with animation (disable animation?)

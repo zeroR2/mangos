@@ -1775,11 +1775,6 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
         m_movementInfo.ClearTransportData();
     }
 
-    if (GetVehicleKit())
-        GetVehicleKit()->RemoveAllPassengers();
-
-    ExitVehicle();
-
     // The player was ported to another map and looses the duel immediately.
     // We have to perform this check before the teleport, otherwise the
     // ObjectAccessor won't find the flag.
@@ -2317,7 +2312,7 @@ Creature* Player::GetNPCIfCanInteractWith(ObjectGuid guid, uint32 npcflagmask)
         return NULL;
 
     // not in interactive state
-    if (hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL)  && !hasUnitState(UNIT_STAT_ON_VEHICLE))
+    if (hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
         return NULL;
 
     // exist (we need look pets also for some interaction (quest/etc)
@@ -2364,7 +2359,7 @@ GameObject* Player::GetGameObjectIfCanInteractWith(ObjectGuid guid, uint32 gameo
         return NULL;
 
     // not in interactive state
-    if (hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL) && !hasUnitState(UNIT_STAT_ON_VEHICLE))
+    if (hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
         return NULL;
 
     if (GameObject *go = GetMap()->GetGameObject(guid))
@@ -2612,9 +2607,6 @@ void Player::GiveXP(uint32 xp, Unit* victim)
         return;
 
     if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_XP_USER_DISABLED))
-        return;
-
-    if (hasUnitState(UNIT_STAT_ON_VEHICLE))
         return;
 
     uint32 level = getLevel();
@@ -8545,7 +8537,6 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             break;
         }
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
         {
             Creature *creature = GetMap()->GetCreature(guid);
 
@@ -15076,7 +15067,7 @@ void Player::KilledMonsterCredit(uint32 entry, ObjectGuid guid)
 
 void Player::CastedCreatureOrGO(uint32 entry, ObjectGuid guid, uint32 spell_id, bool original_caster)
 {
-    bool isCreature = guid.IsCreatureOrVehicle();
+    bool isCreature = guid.IsCreature();
 
     uint32 addCastCount = 1;
     for (int i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
@@ -19001,59 +18992,6 @@ void Player::PossessSpellInitialize()
     GetSession()->SendPacket(&data);
 }
 
-void Player::VehicleSpellInitialize()
-{
-    Creature* charm = (Creature*)GetCharm();
-
-    if (!charm)
-        return;
-
-    CharmInfo *charmInfo = charm->GetCharmInfo();
-
-    if (!charmInfo)
-    {
-        sLog.outError("Player::VehicleSpellInitialize(): vehicle (GUID: %u) has no charminfo!", charm->GetGUIDLow());
-        return;
-    }
-
-    size_t cooldownsCount = charm->m_CreatureSpellCooldowns.size() + charm->m_CreatureCategoryCooldowns.size();
-
-    WorldPacket data(SMSG_PET_SPELLS, 8+2+4+4+4*MAX_UNIT_ACTION_BAR_INDEX+1+1+cooldownsCount*(4+2+4+4));
-    data << charm->GetObjectGuid();
-    data << uint16(((Creature*)charm)->GetCreatureInfo()->family);
-    data << uint32(0);
-    data << uint32(charmInfo->GetState());
-
-    charmInfo->BuildActionBar(&data);
-
-    data << uint8(0);                                       // additional spells count
-    data << uint8(cooldownsCount);
-
-    time_t curTime = time(NULL);
-
-    for (CreatureSpellCooldowns::const_iterator itr = charm->m_CreatureSpellCooldowns.begin(); itr != charm->m_CreatureSpellCooldowns.end(); ++itr)
-    {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
-
-        data << uint32(itr->first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(cooldown);                           // cooldown
-        data << uint32(0);                                  // category cooldown
-    }
-
-    for (CreatureSpellCooldowns::const_iterator itr = charm->m_CreatureCategoryCooldowns.begin(); itr != charm->m_CreatureCategoryCooldowns.end(); ++itr)
-    {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
-
-        data << uint32(itr->first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(0);                                  // cooldown
-        data << uint32(cooldown);                           // category cooldown
-    }
-
-    GetSession()->SendPacket(&data);
-}
-
 void Player::CharmSpellInitialize()
 {
     Unit* charm = GetCharm();
@@ -19367,7 +19305,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     if (npc)
     {
         // not let cheating with start flight mounted
-        if (IsMounted() || GetVehicle())
+        if (IsMounted())
         {
             GetSession()->SendActivateTaxiReply(ERR_TAXIPLAYERALREADYMOUNTED);
             return false;
@@ -19390,7 +19328,6 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     else
     {
         RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
-        ExitVehicle();
 
         if (IsInDisallowedMountForm())
             RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
@@ -20752,7 +20689,7 @@ void Player::SendInitialPacketsAfterAddToMap()
         SetRoot(true);
 
     // manual send package (have code in ApplyModifier(true,true); that don't must be re-applied.
-    if (HasAuraType(SPELL_AURA_MOD_ROOT) || GetVehicle())
+    if (HasAuraType(SPELL_AURA_MOD_ROOT))
     {
         SetRoot(true);
     }
@@ -21219,7 +21156,7 @@ void Player::UpdateForQuestWorldObjects()
             if (GameObject *obj = GetMap()->GetGameObject(*itr))
                 obj->BuildValuesUpdateBlockForPlayer(&udata,this);
         }
-        else if (itr->IsCreatureOrVehicle())
+        else if (itr->IsCreature())
         {
             Creature *obj = GetMap()->GetAnyTypeCreature(*itr);
             if (!obj)
@@ -21865,10 +21802,6 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
         if (m_lastLiquid && m_lastLiquid->SpellId)
         {
             RemoveAurasDueToSpell(m_lastLiquid->SpellId);
-            if (GetVehicle() && GetVehicle()->GetBase())
-            {
-                GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
-            }
         }
         m_lastLiquid = NULL;
         return;
@@ -21882,10 +21815,6 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
         if (m_lastLiquid && m_lastLiquid->SpellId && m_lastLiquid->Id != liqEntry)
         {
             RemoveAurasDueToSpell(m_lastLiquid->SpellId);
-            if (GetVehicle() && GetVehicle()->GetBase())
-            {
-                GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
-            }
         }
 
         if (liquid && liquid->SpellId)
@@ -21902,26 +21831,12 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
                             CastSpell(this, pSpellEntry, true);
                         }
                     }
-                    if (GetVehicle() && GetVehicle()->GetBase())
-                    {
-                        if (!GetVehicle()->GetBase()->HasAura(liquid->SpellId))
-                        {
-                            if (SpellMgr::IsTargetMatchedWithCreatureType(pSpellEntry, GetVehicle()->GetBase()))
-                            {
-                                GetVehicle()->GetBase()->CastSpell(GetVehicle()->GetBase(), pSpellEntry, true);
-                            }
-                        }
-                    }
                 }
             }
             else
             {
                 // Player is above Water or walk on Water
                 RemoveAurasDueToSpell(liquid->SpellId);
-                if (GetVehicle() && GetVehicle()->GetBase())
-                {
-                    GetVehicle()->GetBase()->RemoveAurasDueToSpell(liquid->SpellId);
-                }
             }
         }
 
@@ -21931,10 +21846,6 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
     {
         // Player change to no specific LiquidEntry (= 0)
         RemoveAurasDueToSpell(m_lastLiquid->SpellId);
-        if (GetVehicle() && GetVehicle()->GetBase())
-        {
-            GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
-        }
     }
 
     // All liquids type - check under water position
@@ -23674,7 +23585,6 @@ Object* Player::GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask)
                 return GetMap()->GetGameObject(guid);
             break;
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
             if ((typemask & TYPEMASK_UNIT) && IsInWorld())
                 return GetMap()->GetCreature(guid);
             break;

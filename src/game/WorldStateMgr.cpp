@@ -585,7 +585,6 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
             break;
         }
         case HIGHGUID_UNIT:
-        case HIGHGUID_VEHICLE:
         case HIGHGUID_PET:
         case HIGHGUID_PLAYER:
         default:
