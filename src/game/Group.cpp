@@ -1675,7 +1675,7 @@ void Group::UpdateLooterGuid(WorldObject* pSource, bool ifneed)
     SendUpdate();
 }
 
-GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* bgOrTemplate, BattleGroundQueueTypeId bgQueueTypeId, uint32 MinPlayerCount, uint32 MaxPlayerCount, bool isRated, uint32 arenaSlot)
+GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* bgOrTemplate, BattleGroundQueueTypeId bgQueueTypeId, uint32 MinPlayerCount, uint32 MaxPlayerCount)
 {
     BattlemasterListEntry const* bgEntry = sBattlemasterListStore.LookupEntry(bgOrTemplate->GetTypeID());
     if(!bgEntry)
@@ -1684,14 +1684,10 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
     // check for min / max count
     uint32 memberscount = GetMembersCount();
 
-    // only check for MinPlayerCount since MinPlayerCount == MaxPlayerCount for arenas...
-    if(bgOrTemplate->isArena() && memberscount != MinPlayerCount)
-        return ERR_ARENA_TEAM_PARTY_SIZE;
-
     if(memberscount > bgEntry->maxGroupSize)                // no MinPlayerCount for battlegrounds
         return ERR_BATTLEGROUND_NONE;                       // ERR_GROUP_JOIN_BATTLEGROUND_TOO_MANY handled on client side
 
-    // get a player as reference, to compare other players' stats to (arena team id, queue id based on level, etc.)
+    // get a player as reference, to compare other players' stats to (queue id based on level, etc.)
     Player * reference = GetFirstMember()->getSource();
     // no reference found, can't join this way
     if(!reference)
@@ -1701,12 +1697,11 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
     if(!bracketEntry)
         return ERR_BATTLEGROUND_JOIN_FAILED;
 
-    uint32 arenaTeamId = reference->GetArenaTeamId(arenaSlot);
     Team team = reference->GetTeam();
 
     uint32 allowedPlayerCount = 0;
 
-    BattleGroundQueueTypeId bgQueueTypeIdRandom = BattleGroundMgr::BGQueueTypeId(BATTLEGROUND_RB, ARENA_TYPE_NONE);
+    BattleGroundQueueTypeId bgQueueTypeIdRandom = BattleGroundMgr::BGQueueTypeId(BATTLEGROUND_RB);
 
     // check every member of the group to be able to join
     for(GroupReference *itr = GetFirstMember(); itr != NULL; itr = itr->next())
@@ -1722,9 +1717,6 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
         PvPDifficultyEntry const* memberBracketEntry = GetBattlegroundBracketByLevel(bracketEntry->mapId, member->getLevel());
         if(memberBracketEntry != bracketEntry)
             return ERR_BATTLEGROUND_JOIN_RANGE_INDEX;
-        // don't let join rated matches if the arena team id doesn't match
-        if(isRated && member->GetArenaTeamId(arenaSlot) != arenaTeamId)
-            return ERR_BATTLEGROUND_JOIN_FAILED;
         // don't let join if someone from the group is already in that bg queue
         if(member->InBattleGroundQueueForBattleGroundQueueType(bgQueueTypeId))
             return ERR_BATTLEGROUND_JOIN_FAILED;            // not blizz-like
@@ -1734,7 +1726,7 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
         // don't let join to bg queue random if someone from the group is already in bg queue
         if(bgOrTemplate->GetTypeID() == BATTLEGROUND_RB && member->InBattleGroundQueue())
             return ERR_IN_NON_RANDOM_BG;
-        // check for deserter debuff in case not arena queue
+        // check for deserter debuff
         if(bgOrTemplate->GetTypeID() != BATTLEGROUND_AA && !member->CanJoinToBattleground())
             return ERR_GROUP_JOIN_BATTLEGROUND_DESERTERS;
         // check if member can join any more battleground queues
@@ -1743,10 +1735,6 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
 
         ++allowedPlayerCount;
     }
-
-    if(bgOrTemplate->GetTypeID() == BATTLEGROUND_AA)
-        if(allowedPlayerCount < MinPlayerCount || allowedPlayerCount > MaxPlayerCount)
-            return ERR_ARENA_TEAM_PARTY_SIZE;
 
     return GroupJoinBattlegroundResult(bgOrTemplate->GetTypeID());
 }

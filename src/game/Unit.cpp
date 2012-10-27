@@ -5694,80 +5694,6 @@ void Unit::RemoveAllAuras(AuraRemoveMode mode /*= AURA_REMOVE_BY_DEFAULT*/)
     }
 }
 
-void Unit::RemoveArenaAuras(bool onleave)
-{
-    // in join, remove positive buffs, on end, remove negative
-    // used to remove positive visible auras in arenas
-    for(SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-    {
-        if (!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_UNK21) &&
-                                                            // don't remove stances, shadowform, pally/hunter auras
-            !iter->second->IsPassive() &&                   // don't remove passive auras
-            (!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) ||
-            !iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_HIDE_IN_COMBAT_LOG)) &&
-                                                            // not unaffected by invulnerability auras or not having that unknown flag (that seemed the most probable)
-            (iter->second->IsPositive() != onleave))        // remove positive buffs on enter, negative buffs on leave
-        {
-            RemoveSpellAuraHolder(iter->second);
-            iter = m_spellAuraHolders.begin();
-        }
-        else
-            ++iter;
-    }
-}
-
-void Unit::HandleArenaPreparation(bool apply)
-{
-    ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PREPARATION, apply);
-
-    if (apply)
-    {
-        // max regen powers at start preparation
-        SetHealth(GetMaxHealth());
-        SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-        SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-    }
-    else
-    {
-        // reset originally 0 powers at start/leave
-        SetPower(POWER_RAGE, 0);
-        SetPower(POWER_RUNIC_POWER, 0);
-        SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
-        SetPower(POWER_ENERGY, GetMaxPower(POWER_ENERGY));
-
-        // Remove all buffs with duration < 25 sec (actually depends on config value)
-        // and auras, which have SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA (former SPELL_ATTR_EX5_UNK2 = 0x00000004).
-        for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
-        {
-            if ((!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_UNK21) &&
-                                                                // don't remove stances, shadowform, pally/hunter auras
-                !iter->second->IsPassive() &&                   // don't remove passive auras
-                (iter->second->GetAuraMaxDuration() > 0 &&
-                iter->second->GetAuraDuration() <= sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS)) ||
-                iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA))
-            {
-                RemoveSpellAuraHolder(iter->second, AURA_REMOVE_BY_CANCEL);
-                iter = m_spellAuraHolders.begin();
-            }
-            else
-                ++iter;
-        }
-    }
-
-    if (GetObjectGuid().IsPet())
-    {
-        Pet* pet = ((Pet*)this);
-        if (pet)
-        {
-            Unit* owner = pet->GetOwner();
-            if (owner && (owner->GetTypeId() == TYPEID_PLAYER) && ((Player*)owner)->GetGroup())
-                ((Player*)owner)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_AURAS);
-        }
-    }
-    else
-        CallForAllControlledUnits(ApplyArenaPreparationWithHelper(apply),CONTROLLED_PET|CONTROLLED_GUARDIANS);
-}
-
 bool Unit::RemoveSpellsCausingAuraByCaster(AuraType auraType, ObjectGuid casterGuid, AuraRemoveMode mode)
 {
     SpellAuraHolderQueue holdersToRemove;
@@ -9238,7 +9164,7 @@ void Unit::Mount(uint32 mount, uint32 spellId, uint32 creatureEntry)
             // Normal case (Unsummon only permanent pet)
             else if (Pet* pet = GetPet())
             {
-                if (pet->IsPermanentPetFor((Player*)this) && !((Player*)this)->InArena() &&
+                if (pet->IsPermanentPetFor((Player*)this) &&
                     sWorld.getConfig(CONFIG_BOOL_PET_UNSUMMON_AT_MOUNT))
                 {
                     ((Player*)this)->UnsummonPetTemporaryIfAny();
@@ -9566,11 +9492,6 @@ bool Unit::isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, boo
     // non faction visibility non-breakable for non-GMs
     if (m_Visibility == VISIBILITY_OFF)
         return false;
-
-    // Arena visibility before arena start
-    if (GetTypeId() == TYPEID_PLAYER && HasAura(32727)) // Arena Preparation
-        if (Player * p_target = ((Unit*)u)->GetCharmerOrOwnerPlayerOrPlayerItself())
-            return ((Player*)this)->GetBGTeam() == p_target->GetBGTeam();
 
     // raw invisibility
     bool invisible = (m_invisibilityMask != 0 || u->m_invisibilityMask !=0);

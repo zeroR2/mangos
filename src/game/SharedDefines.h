@@ -931,7 +931,6 @@ enum SpellCastResult
     SPELL_FAILED_PLAY_TIME = 148,
     SPELL_FAILED_REPUTATION = 149,
     SPELL_FAILED_MIN_SKILL = 150,
-    SPELL_FAILED_NOT_IN_ARENA = 151,
     SPELL_FAILED_NOT_ON_SHAPESHIFT = 152,
     SPELL_FAILED_NOT_ON_STEALTHED = 153,
     SPELL_FAILED_NOT_ON_DAMAGE_IMMUNE = 154,
@@ -948,7 +947,6 @@ enum SpellCastResult
     SPELL_FAILED_NO_PLAYTIME = 165,
     SPELL_FAILED_NOT_IN_BATTLEGROUND = 166,
     SPELL_FAILED_NOT_IN_RAID_INSTANCE = 167,
-    SPELL_FAILED_ONLY_IN_ARENA = 168,
     SPELL_FAILED_TARGET_LOCKED_TO_RAID_INSTANCE = 169,
     SPELL_FAILED_ON_USE_ENCHANT = 170,
     SPELL_FAILED_NOT_ON_GROUND = 171,
@@ -2220,7 +2218,6 @@ enum HolidayIds
     HOLIDAY_LUNAR_FESTIVAL           = 327,
     HOLIDAY_LOVE_IS_IN_THE_AIR       = 335,
     HOLIDAY_FIRE_FESTIVAL            = 341,
-    HOLIDAY_CALL_TO_ARMS_EY          = 353,
     HOLIDAY_BREWFEST                 = 372,
     HOLIDAY_DARKMOON_FAIRE_ELWYNN    = 374,
     HOLIDAY_DARKMOON_FAIRE_THUNDER   = 375,
@@ -2605,7 +2602,6 @@ enum ChatMsg
     CHAT_MSG_BATTLEGROUND_LEADER    = 0x2D,
     CHAT_MSG_RESTRICTED             = 0x2E,
     CHAT_MSG_BATTLENET              = 0x2F,
-    CHAT_MSG_ARENA_POINTS           = 0x32,
     CHAT_MSG_PARTY_LEADER           = 0x33
 };
 
@@ -2810,7 +2806,6 @@ enum ResponseCodes
     CHAR_CREATE_CHARACTER_IN_GUILD                         = 0x3D,
     CHAR_CREATE_RESTRICTED_RACECLASS                       = 0x3E,
     CHAR_CREATE_CHARACTER_CHOOSE_RACE                      = 0x3F,
-    CHAR_CREATE_CHARACTER_ARENA_LEADER                     = 0x40,
     CHAR_CREATE_CHARACTER_DELETE_MAIL                      = 0x41,
     CHAR_CREATE_CHARACTER_SWAP_FACTION                     = 0x42,
     CHAR_CREATE_CHARACTER_RACE_ONLY                        = 0x43,
@@ -2822,7 +2817,6 @@ enum ResponseCodes
     CHAR_DELETE_FAILED                                     = 0x48,
     CHAR_DELETE_FAILED_LOCKED_FOR_TRANSFER                 = 0x49,
     CHAR_DELETE_FAILED_GUILD_LEADER                        = 0x4A,
-    CHAR_DELETE_FAILED_ARENA_CAPTAIN                       = 0x4B,
 
     CHAR_LOGIN_IN_PROGRESS                                 = 0x4C,
     CHAR_LOGIN_SUCCESS                                     = 0x4D,
@@ -2871,52 +2865,25 @@ enum BanReturn
     BAN_NOTFOUND
 };
 
-// indexes of BattlemasterList.dbc
 enum BattleGroundTypeId
 {
     BATTLEGROUND_TYPE_NONE     = 0,
     BATTLEGROUND_AV            = 1,
     BATTLEGROUND_WS            = 2,
-    BATTLEGROUND_AB            = 3,
-    BATTLEGROUND_NA            = 4,
-    BATTLEGROUND_BE            = 5,
-    BATTLEGROUND_AA            = 6,                         // all arenas
-    BATTLEGROUND_EY            = 7,
-    BATTLEGROUND_RL            = 8,
-    BATTLEGROUND_SA            = 9,
-    BATTLEGROUND_DS            = 10,
-    BATTLEGROUND_RV            = 11,
-    BATTLEGROUND_IC            = 30,
-    BATTLEGROUND_RB            = 32                         // random battleground
+    BATTLEGROUND_AB            = 3
 };
-#define MAX_BATTLEGROUND_TYPE_ID 33
 
-// handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
+#define MAX_BATTLEGROUND_TYPE_ID 4
+
 enum BattleGroundQueueTypeId
 {
     BATTLEGROUND_QUEUE_NONE     = 0,
     BATTLEGROUND_QUEUE_AV       = 1,    // Alterac Vally
     BATTLEGROUND_QUEUE_WS       = 2,    // Warsong Gulch
-    BATTLEGROUND_QUEUE_AB       = 3,    // Arathi basin
-    BATTLEGROUND_QUEUE_EY       = 4,    // Eye of the Storm
-    BATTLEGROUND_QUEUE_SA       = 5,    // Strand of the Ancients
-    BATTLEGROUND_QUEUE_IC       = 6,    // Isle of Conquest
-    BATTLEGROUND_QUEUE_RB       = 7,
-    BATTLEGROUND_QUEUE_2v2      = 8,
-    BATTLEGROUND_QUEUE_3v3      = 9,
-    BATTLEGROUND_QUEUE_5v5      = 10
-};
-#define MAX_BATTLEGROUND_QUEUE_TYPES 11
-
-enum ArenaType
-{
-    ARENA_TYPE_NONE         = 0,                            // used for mark non-arenas or problematic cases
-    ARENA_TYPE_2v2          = 2,
-    ARENA_TYPE_3v3          = 3,
-    ARENA_TYPE_5v5          = 5
+    BATTLEGROUND_QUEUE_AB       = 3     // Arathi basin
 };
 
-inline bool IsArenaTypeValid(ArenaType type) { return type == ARENA_TYPE_2v2 || type == ARENA_TYPE_3v3 || type == ARENA_TYPE_5v5; }
+#define MAX_BATTLEGROUND_QUEUE_TYPES 4
 
 enum MailResponseType
 {
@@ -2972,7 +2939,6 @@ enum CalendarResponseResult
     CALENDAR_ERROR_DELETE_CREATOR_FAILED        = 22,
     CALENDAR_ERROR_SYSTEM_DISABLED              = 24,
     CALENDAR_ERROR_RESTRICTED_ACCOUNT           = 25,
-    CALENDAR_ERROR_ARENA_EVENTS_EXCEEDED        = 26,
     CALENDAR_ERROR_RESTRICTED_LEVEL             = 27,
     CALENDAR_ERROR_USER_SQUELCHED               = 28,
     CALENDAR_ERROR_NO_INVITE                    = 29,
@@ -3086,7 +3052,7 @@ enum AreaLockStatus
 #define MAX_VISIBILITY_DISTANCE     500.0f      // max distance for visible object show, limited in 500 yards
 #define DEFAULT_VISIBILITY_DISTANCE 90.0f       // default visible distance, 90 yards on continents
 #define DEFAULT_VISIBILITY_INSTANCE 120.0f      // default visible distance in instances, 120 yards
-#define DEFAULT_VISIBILITY_BGARENAS 180.0f      // default visible distance in BG/Arenas, 180 yards
+#define DEFAULT_VISIBILITY_BG       180.0f      // default visible distance in BG, 180 yards
 
 enum PhaseMasks
 {

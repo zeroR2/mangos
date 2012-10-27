@@ -30,12 +30,6 @@
 #define BG_EVENT_NONE 255
 // those generic events should get a high event id
 #define BG_EVENT_DOOR 254
-#define IC_EVENT_BOSS_A 251
-#define IC_EVENT_BOSS_H 252
-// only arena event
-// cause this buff apears 90sec after start in every bg i implement it here
-#define ARENA_BUFF_EVENT 253
-
 
 class Creature;
 class GameObject;
@@ -66,7 +60,6 @@ enum BattleGroundQuests
     SPELL_AB_QUEST_REWARD           = 43484,
     SPELL_AV_QUEST_REWARD           = 43475,
     SPELL_AV_QUEST_KILLED_BOSS      = 23658,
-    SPELL_EY_QUEST_REWARD           = 43477,
     SPELL_AB_QUEST_REWARD_4_BASES   = 24061,
     SPELL_AB_QUEST_REWARD_5_BASES   = 24064
 };
@@ -92,7 +85,6 @@ enum BattleGroundMarksCount
 
 enum BattleGroundSpells
 {
-    SPELL_ARENA_PREPARATION         = 32727,                // use this one, 32728 not correct
     SPELL_ALLIANCE_GOLD_FLAG        = 32724,
     SPELL_ALLIANCE_GREEN_FLAG       = 32725,
     SPELL_HORDE_GOLD_FLAG           = 35774,
@@ -100,7 +92,6 @@ enum BattleGroundSpells
     SPELL_PREPARATION               = 44521,                // Preparation
     SPELL_RECENTLY_DROPPED_FLAG     = 42792,                // Recently Dropped Flag
     SPELL_AURA_PLAYER_INACTIVE      = 43681,                // Inactive
-    SPELL_ARENA_DAMPENING           = 74410,                // Arena - Dampening
     SPELL_BATTLEGROUND_DAMPENING    = 74411,                // Battleground - Dampening
 };
 
@@ -114,8 +105,6 @@ enum BattleGroundTimeIntervals
     RESPAWN_ONE_DAY                 = 86400,                // secs
     RESPAWN_IMMEDIATELY             = 0,                    // secs
     BUFF_RESPAWN_TIME               = 180,                  // secs
-    ARENA_SPAWN_BUFF_OBJECTS        = 90000,                // ms - 90sec after start
-    ARENA_TIME_LIMIT                = 2820000,              // ms - 47 minutes after start
 };
 
 enum BattleGroundStartTimeIntervals
@@ -123,7 +112,6 @@ enum BattleGroundStartTimeIntervals
     BG_START_DELAY_2M               = 120000,               // ms (2 minutes)
     BG_START_DELAY_1M               = 60000,                // ms (1 minute)
     BG_START_DELAY_30S              = 30000,                // ms (30 seconds)
-    BG_START_DELAY_15S              = 15000,                // ms (15 seconds) Used only in arena
     BG_START_DELAY_NONE             = 0,                    // ms
 };
 
@@ -137,9 +125,7 @@ enum BattleGroundBuffObjects
 enum BattleGroundRandomRewards
 {
     BG_REWARD_WINNER_HONOR_FIRST    = 30,
-    BG_REWARD_WINNER_ARENA_FIRST    = 25,
     BG_REWARD_WINNER_HONOR_LAST     = 15,
-    BG_REWARD_WINNER_ARENA_LAST     = 0,
     BG_REWARD_LOOSER_HONOR_FIRST    = 5,
     BG_REWARD_LOOSER_HONOR_LAST     = 5
 };
@@ -176,30 +162,26 @@ enum ScoreType
     SCORE_DEATHS                = 2,
     SCORE_HONORABLE_KILLS       = 3,
     SCORE_BONUS_HONOR           = 4,
-    // EY, but in MSG_PVP_LOG_DATA opcode!
-    SCORE_DAMAGE_DONE           = 5,
-    SCORE_HEALING_DONE          = 6,
     // WS
-    SCORE_FLAG_CAPTURES         = 7,
-    SCORE_FLAG_RETURNS          = 8,
+    SCORE_FLAG_CAPTURES         = 5,
+    SCORE_FLAG_RETURNS          = 6,
     // AB
-    SCORE_BASES_ASSAULTED       = 9,
-    SCORE_BASES_DEFENDED        = 10,
+    SCORE_BASES_ASSAULTED       = 7,
+    SCORE_BASES_DEFENDED        = 8,
     // AV
-    SCORE_GRAVEYARDS_ASSAULTED  = 11,
-    SCORE_GRAVEYARDS_DEFENDED   = 12,
-    SCORE_TOWERS_ASSAULTED      = 13,
-    SCORE_TOWERS_DEFENDED       = 14,
-    SCORE_SECONDARY_OBJECTIVES  = 15,
+    SCORE_GRAVEYARDS_ASSAULTED  = 9,
+    SCORE_GRAVEYARDS_DEFENDED   = 10,
+    SCORE_TOWERS_ASSAULTED      = 11,
+    SCORE_TOWERS_DEFENDED       = 12,
+    SCORE_SECONDARY_OBJECTIVES  = 13,
     // SA
-    SCORE_GATES_DESTROYED       = 16,
-    SCORE_DEMOLISHERS_DESTROYED = 17
+    SCORE_GATES_DESTROYED       = 14,
+    SCORE_DEMOLISHERS_DESTROYED = 15
 };
 
 enum BattleGroundType
 {
-    TYPE_BATTLEGROUND     = 3,
-    TYPE_ARENA            = 4
+    TYPE_BATTLEGROUND     = 3
 };
 
 enum BattleGroundStartingEvents
@@ -226,10 +208,8 @@ enum GroupJoinBattlegroundResult
     ERR_GROUP_JOIN_BATTLEGROUND_FAIL        = 0,            // Your group has joined a battleground queue, but you are not eligible (showed for non existing BattlemasterList.dbc indexes)
     ERR_BATTLEGROUND_NONE                   = -1,           // not show anything
     ERR_GROUP_JOIN_BATTLEGROUND_DESERTERS   = -2,           // You cannot join the battleground yet because you or one of your party members is flagged as a Deserter.
-    ERR_ARENA_TEAM_PARTY_SIZE               = -3,           // Incorrect party size for this arena.
     ERR_BATTLEGROUND_TOO_MANY_QUEUES        = -4,           // You can only be queued for 2 battles at once
     ERR_BATTLEGROUND_CANNOT_QUEUE_FOR_RATED = -5,           // You cannot queue for a rated match while queued for other battles
-    ERR_BATTLEDGROUND_QUEUED_FOR_RATED      = -6,           // You cannot queue for another battle while queued for a rated arena match
     ERR_BATTLEGROUND_TEAM_LEFT_QUEUE        = -7,           // Your team has left the arena queue
     ERR_BATTLEGROUND_NOT_IN_BATTLEGROUND    = -8,           // You can't do that in a battleground.
     ERR_BATTLEGROUND_JOIN_XP_GAIN           = -9,           // wtf, doesn't exist in client...
@@ -304,7 +284,6 @@ class BattleGround
         uint32 GetMinPlayersPerTeam() const { return m_MinPlayersPerTeam; }
 
         int32 GetStartDelayTime() const     { return m_StartDelayTime; }
-        ArenaType GetArenaType() const          { return m_ArenaType; }
         Team GetWinner() const              { return m_Winner; }
         uint32 GetBattlemasterEntry() const;
         uint32 GetBonusHonorFromKill(uint32 kills) const;
@@ -327,9 +306,6 @@ class BattleGround
         void SetMaxPlayers(uint32 MaxPlayers) { m_MaxPlayers = MaxPlayers; }
         void SetMinPlayers(uint32 MinPlayers) { m_MinPlayers = MinPlayers; }
         void SetLevelRange(uint32 min, uint32 max) { m_LevelMin = min; m_LevelMax = max; }
-        void SetRated(bool state)           { m_IsRated = state; }
-        void SetArenaType(ArenaType type)   { m_ArenaType = type; }
-        void SetArenaorBGType(bool _isArena) { m_IsArena = _isArena; }
         void SetWinner(Team winner)         { m_Winner = winner; }
 
         void ModifyStartDelayTime(int diff) { m_StartDelayTime -= diff; }
@@ -354,10 +330,6 @@ class BattleGround
         }
         bool HasFreeSlots() const;
         uint32 GetFreeSlotsForTeam(Team team) const;
-
-        bool isArena() const        { return m_IsArena; }
-        bool isBattleGround() const { return !m_IsArena; }
-        bool isRated() const        { return m_IsRated; }
 
         typedef std::map<ObjectGuid, BattleGroundPlayer> BattleGroundPlayerMap;
         BattleGroundPlayerMap const& GetPlayers() const { return m_Players; }
@@ -441,13 +413,6 @@ class BattleGround
             else
                 ++m_PlayersCount[GetTeamIndex(team)];
         }
-
-        // used for rated arena battles
-        void SetArenaTeamIdForTeam(Team team, uint32 ArenaTeamId) { m_ArenaTeamIds[GetTeamIndex(team)] = ArenaTeamId; }
-        uint32 GetArenaTeamIdForTeam(Team team) const             { return m_ArenaTeamIds[GetTeamIndex(team)]; }
-        void SetArenaTeamRatingChangeForTeam(Team team, int32 RatingChange) { m_ArenaTeamRatingChanges[GetTeamIndex(team)] = RatingChange; }
-        int32 GetArenaTeamRatingChangeForTeam(Team team) const    { return m_ArenaTeamRatingChanges[GetTeamIndex(team)]; }
-        void CheckArenaWinConditions();
 
         /* Triggers handle */
         // must be implemented in BG subclass
@@ -572,19 +537,14 @@ class BattleGround
         BattleGroundTypeId m_RandomTypeID;
         BattleGroundStatus m_Status;
         uint32 m_ClientInstanceID;                          // the instance-id which is sent to the client and without any other internal use
-        uint32 m_StartTime;
-        bool m_ArenaBuffSpawned;                            // to cache if arenabuff event is started (cause bool is faster than checking IsActiveEvent)
+        uint32 m_StartTime;                        // to cache if arenabuff event is started (cause bool is faster than checking IsActiveEvent)
         int32 m_EndTime;                                    // it is set to 120000 when bg is ending and it decreases itself
         BattleGroundBracketId m_BracketId;
-        ArenaType  m_ArenaType;                             // 2=2v2, 3=3v3, 5=5v5
         bool   m_InBGFreeSlotQueue;                         // used to make sure that BG is only once inserted into the BattleGroundMgr.BGFreeSlotQueue[bgTypeId] deque
-        bool   m_IsArena;
         Team   m_Winner;
         int32  m_StartDelayTime;
-        bool   m_IsRated;                                   // is this battle rated?
         bool   m_PrematureCountDown;
         uint32 m_PrematureCountDownTimer;
-        bool   m_ArenaEnded;
         char const* m_Name;
 
         /* Player lists */
@@ -602,11 +562,6 @@ class BattleGround
 
         /* Players count by team */
         uint32 m_PlayersCount[PVP_TEAM_COUNT];
-
-        /* Arena team ids by team */
-        uint32 m_ArenaTeamIds[PVP_TEAM_COUNT];
-
-        int32 m_ArenaTeamRatingChanges[PVP_TEAM_COUNT];
 
         /* Limits */
         uint32 m_LevelMin;

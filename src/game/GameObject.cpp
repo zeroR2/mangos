@@ -1704,10 +1704,6 @@ void GameObject::Use(Unit* user)
                             if (bg->GetTypeID(true) == BATTLEGROUND_WS)
                                 bg->EventPlayerClickedOnFlag(player, this);
                             break;
-                        case 184142:                        // Netherstorm Flag
-                            if (bg->GetTypeID(true) == BATTLEGROUND_EY)
-                                bg->EventPlayerClickedOnFlag(player, this);
-                            break;
                     }
                 }
                 // this cause to call return, all flags must be deleted here!!

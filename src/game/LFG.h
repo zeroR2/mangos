@@ -190,7 +190,7 @@ enum LFGJoinResult
     ERR_LFG_RANDOM_COOLDOWN_PLAYER              = 0x0E,                    // You can not queue for random dungeons while on random dungeon cooldown
     ERR_LFG_RANDOM_COOLDOWN_PARTY               = 0x0F,                    // One or more party members are on random dungeon cooldown
     ERR_LFG_TOO_MANY_MEMBERS                    = 0x10,                    // You can not enter dungeons with more that 5 party members
-    ERR_LFG_CANT_USE_DUNGEONS                   = 0x11,                    // You can not use the dungeon system while in BG or arenas
+    ERR_LFG_CANT_USE_DUNGEONS                   = 0x11,                    // You can not use the dungeon system while in BG
     ERR_LFG_ROLE_CHECK_FAILED2                  = 0x12,                    // RoleCheck Failed
 };
 

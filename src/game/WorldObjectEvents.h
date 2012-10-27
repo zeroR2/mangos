@@ -168,7 +168,7 @@ class TeleportDelayEvent : public BasicEvent
 class BGQueueInviteEvent : public BasicEvent
 {
     public:
-        BGQueueInviteEvent(ObjectGuid pl_guid, uint32 BgInstanceGUID, BattleGroundTypeId BgTypeId, ArenaType arenaType, uint32 removeTime);
+        BGQueueInviteEvent(ObjectGuid pl_guid, uint32 BgInstanceGUID, BattleGroundTypeId BgTypeId, uint32 removeTime);
         virtual ~BGQueueInviteEvent() {};
 
         virtual bool Execute(uint64 e_time, uint32 p_time);
@@ -177,7 +177,6 @@ class BGQueueInviteEvent : public BasicEvent
         ObjectGuid m_PlayerGuid;
         uint32 m_BgInstanceGUID;
         BattleGroundTypeId m_BgTypeId;
-        ArenaType m_ArenaType;
         uint32 m_RemoveTime;
 };
 

@@ -131,13 +131,6 @@ void WorldSession::HandleCalendarGuildFilter(WorldPacket& recv_data)
     recv_data.read_skip<uint32>();                          // unk3
 }
 
-void WorldSession::HandleCalendarArenaTeam(WorldPacket& recv_data)
-{
-    DEBUG_LOG("WORLD: CMSG_CALENDAR_ARENA_TEAM");
-    recv_data.hexlike();
-    recv_data.read_skip<uint32>();                          // unk
-}
-
 void WorldSession::HandleCalendarAddEvent(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_ADD_EVENT");

@@ -74,8 +74,8 @@ void MapPersistentState::SaveCreatureRespawnTime(uint32 loguid, time_t t)
 {
     SetCreatureRespawnTime(loguid, t);
 
-    // BGs/Arenas always reset at server restart/unload, so no reason store in DB
-    if (GetMapEntry()->IsBattleGroundOrArena())
+    // BGs always reset at server restart/unload, so no reason store in DB
+    if (GetMapEntry()->IsBattleGround())
         return;
 
     CharacterDatabase.BeginTransaction();
@@ -99,8 +99,8 @@ void MapPersistentState::SaveGORespawnTime(uint32 loguid, time_t t)
 {
     SetGORespawnTime(loguid, t);
 
-    // BGs/Arenas always reset at server restart/unload, so no reason store in DB
-    if (GetMapEntry()->IsBattleGroundOrArena())
+    // BGs always reset at server restart/unload, so no reason store in DB
+    if (GetMapEntry()->IsBattleGround())
         return;
 
     CharacterDatabase.BeginTransaction();
@@ -438,7 +438,7 @@ time_t DungeonPersistentState::GetRealResetTime() const
 bool BattleGroundPersistentState::CanBeUnload() const
 {
     // prevent unload if used for loaded map
-    // BGs/Arenas not locked by respawn data/etc
+    // BGs not locked by respawn data/etc
     return MapPersistentState::CanBeUnload();
 }
 
@@ -774,7 +774,7 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
             dungeonState->SaveToDB();
         state = dungeonState;
     }
-    else if (mapEntry->IsBattleGroundOrArena())
+    else if (mapEntry->IsBattleGround())
         state = new BattleGroundPersistentState(mapEntry->MapID, instanceId, difficulty);
     else if (!instanceId)
         state = new WorldPersistentState(mapEntry->MapID);

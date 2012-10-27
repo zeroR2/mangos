@@ -118,8 +118,6 @@ enum eConfigUInt32Values
     CONFIG_UINT32_START_PLAYER_MONEY,
     CONFIG_UINT32_MAX_HONOR_POINTS,
     CONFIG_UINT32_START_HONOR_POINTS,
-    CONFIG_UINT32_MAX_ARENA_POINTS,
-    CONFIG_UINT32_START_ARENA_POINTS,
     CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR,
     CONFIG_UINT32_INSTANCE_UNLOAD_DELAY,
     CONFIG_UINT32_MAX_SPELL_CASTS_IN_CHAIN,
@@ -176,9 +174,6 @@ enum eConfigUInt32Values
     CONFIG_UINT32_BATTLEGROUND_PREMATURE_FINISH_TIMER,
     CONFIG_UINT32_BATTLEGROUND_PREMADE_GROUP_WAIT_FOR_MATCH,
     CONFIG_UINT32_BATTLEGROUND_QUEUE_ANNOUNCER_JOIN,
-    CONFIG_UINT32_ARENA_MAX_RATING_DIFFERENCE,
-    CONFIG_UINT32_ARENA_RATING_DISCARD_TIMER,
-    CONFIG_UINT32_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS,
     CONFIG_UINT32_CLIENTCACHE_VERSION,
     CONFIG_UINT32_GUILD_EVENT_LOG_COUNT,
     CONFIG_UINT32_GUILD_BANK_EVENT_LOG_COUNT,
@@ -209,7 +204,6 @@ enum eConfigUInt32Values
     CONFIG_UINT32_PLAYERBOT_RESTRICTLEVEL,
     CONFIG_UINT32_PLAYERBOT_MINBOTLEVEL,
     CONFIG_UINT32_GEAR_CALC_BASE,
-    CONFIG_UINT32_ARENA_AURAS_DURATION,
     CONFIG_UINT32_VMSS_MAXTHREADBREAKS,
     CONFIG_UINT32_VMSS_TBREMTIME,
     CONFIG_UINT32_VMSS_MAPFREEMETHOD,
@@ -225,8 +219,6 @@ enum eConfigUInt32Values
 enum eConfigInt32Values
 {
     CONFIG_INT32_DEATH_SICKNESS_LEVEL = 0,
-    CONFIG_INT32_ARENA_STARTRATING,
-    CONFIG_INT32_ARENA_STARTPERSONALRATING,
     CONFIG_INT32_QUEST_LOW_LEVEL_HIDE_DIFF,
     CONFIG_INT32_QUEST_HIGH_LEVEL_HIDE_DIFF,
     CONFIG_INT32_VALUE_COUNT
@@ -352,7 +344,7 @@ enum eConfigBoolValues
     CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVP,
     CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVE,
     CONFIG_BOOL_DEATH_BONES_WORLD,
-    CONFIG_BOOL_DEATH_BONES_BG_OR_ARENA,
+    CONFIG_BOOL_DEATH_BONES_BG,
     CONFIG_BOOL_ALL_TAXI_PATHS,
     CONFIG_BOOL_DECLINED_NAMES_USED,
     CONFIG_BOOL_SKILL_MILLING,
@@ -361,10 +353,6 @@ enum eConfigBoolValues
     CONFIG_BOOL_SKILL_FAIL_POSSIBLE_FISHINGPOOL,
     CONFIG_BOOL_BATTLEGROUND_CAST_DESERTER,
     CONFIG_BOOL_BATTLEGROUND_QUEUE_ANNOUNCER_START,
-    CONFIG_BOOL_ARENA_AUTO_DISTRIBUTE_POINTS,
-    CONFIG_BOOL_ARENA_QUEUE_ANNOUNCER_JOIN,
-    CONFIG_BOOL_ARENA_QUEUE_ANNOUNCER_EXIT,
-    CONFIG_BOOL_ARENA_QUEUE_ANNOUNCER_START,
     CONFIG_BOOL_OUTDOORPVP_SI_ENABLED,
     CONFIG_BOOL_OUTDOORPVP_EP_ENABLED,
     CONFIG_BOOL_OUTDOORPVP_HP_ENABLED,
@@ -437,7 +425,7 @@ enum RealmType
     REALM_TYPE_NORMAL2  = 4,
     REALM_TYPE_RP       = 6,
     REALM_TYPE_RPPVP    = 8,
-    REALM_TYPE_FFA_PVP  = 16                                // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
+    REALM_TYPE_FFA_PVP  = 16                                // custom, free for all pvp mode like PvP in all zones except rest activated places and sanctuaries
                                                             // replaced by REALM_PVP in realm list
 };
 
@@ -644,7 +632,7 @@ class World
         // for max speed access
         static float GetMaxVisibleDistanceOnContinents()    { return m_MaxVisibleDistanceOnContinents; }
         static float GetMaxVisibleDistanceInInstances()     { return m_MaxVisibleDistanceInInstances;  }
-        static float GetMaxVisibleDistanceInBGArenas()      { return m_MaxVisibleDistanceInBGArenas;   }
+        static float GetMaxVisibleDistanceInBG()            { return m_MaxVisibleDistanceInBG;         }
 
         static float GetMaxVisibleDistanceInFlight()        { return m_MaxVisibleDistanceInFlight;    }
         static float GetVisibleUnitGreyDistance()           { return m_VisibleUnitGreyDistance;       }
@@ -743,7 +731,7 @@ class World
         // for max speed access
         static float m_MaxVisibleDistanceOnContinents;
         static float m_MaxVisibleDistanceInInstances;
-        static float m_MaxVisibleDistanceInBGArenas;
+        static float m_MaxVisibleDistanceInBG;
 
         static float m_MaxVisibleDistanceInFlight;
         static float m_VisibleUnitGreyDistance;

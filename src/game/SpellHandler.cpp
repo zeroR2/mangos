@@ -111,16 +111,6 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    // only allow conjured consumable, bandage, poisons (all should have the 2^21 item flag set in DB)
-    if (proto->Class == ITEM_CLASS_CONSUMABLE &&
-        !(proto->Flags & ITEM_FLAG_USEABLE_IN_ARENA) &&
-        pUser->InArena())
-    {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
-        pUser->SendEquipError(EQUIP_ERR_NOT_DURING_ARENA_MATCH,pItem,NULL);
-        return;
-    }
-
     if ((proto->Area && proto->Area != pUser->GetAreaId()) ||
         (proto->Map && proto->Map != pUser->GetMapId()))
     {

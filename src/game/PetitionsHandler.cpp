@@ -27,25 +27,12 @@
 #include "Opcodes.h"
 #include "Guild.h"
 #include "GuildMgr.h"
-#include "ArenaTeam.h"
 #include "GossipDef.h"
 #include "SocialMgr.h"
-
-/*enum PetitionType // dbc data
-{
-    PETITION_TYPE_GUILD      = 1,
-    PETITION_TYPE_ARENA_TEAM = 3
-};*/
 
 // Charters ID in item_template
 #define GUILD_CHARTER               5863
 #define GUILD_CHARTER_COST          1000                    // 10 S
-#define ARENA_TEAM_CHARTER_2v2      23560
-#define ARENA_TEAM_CHARTER_2v2_COST 800000                  // 80 G
-#define ARENA_TEAM_CHARTER_3v3      23561
-#define ARENA_TEAM_CHARTER_3v3_COST 1200000                 // 120 G
-#define ARENA_TEAM_CHARTER_5v5      23562
-#define ARENA_TEAM_CHARTER_5v5_COST 2000000                 // 200 G
 #define CHARTER_DISPLAY_ID          16161
 
 void WorldSession::HandlePetitionBuyOpcode(WorldPacket & recv_data)
@@ -54,7 +41,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket & recv_data)
     recv_data.hexlike();
 
     ObjectGuid guidNPC;
-    uint32 clientIndex;                                     // 1 for guild and arenaslot+1 for arenas in client
+    uint32 clientIndex;                                     // 1 for guild
     std::string name;
 
     recv_data >> guidNPC;                                   // NPC GUID
@@ -108,43 +95,6 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket & recv_data)
         cost = GUILD_CHARTER_COST;
         type = 9;
     }
-    else
-    {
-        // TODO: find correct opcode
-        if(_player->getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
-        {
-            SendNotification(LANG_ARENA_ONE_TOOLOW, sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
-            return;
-        }
-
-        switch(clientIndex)                                 // arenaSlot+1 as received from client (1 from 3 case)
-        {
-            case 1:
-                charterid = ARENA_TEAM_CHARTER_2v2;
-                cost = ARENA_TEAM_CHARTER_2v2_COST;
-                type = 2;                                   // 2v2
-                break;
-            case 2:
-                charterid = ARENA_TEAM_CHARTER_3v3;
-                cost = ARENA_TEAM_CHARTER_3v3_COST;
-                type = 3;                                   // 3v3
-                break;
-            case 3:
-                charterid = ARENA_TEAM_CHARTER_5v5;
-                cost = ARENA_TEAM_CHARTER_5v5_COST;
-                type = 5;                                   // 5v5
-                break;
-            default:
-                DEBUG_LOG("unknown selection at buy arena petition: %u", clientIndex);
-                return;
-        }
-
-        if(_player->GetArenaTeamId(clientIndex - 1))        // arenaSlot+1 as received from client
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, name, "", ERR_ALREADY_IN_ARENA_TEAM);
-            return;
-        }
-    }
 
     if(type == 9)
     {
@@ -156,19 +106,6 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket & recv_data)
         if(sObjectMgr.IsReservedName(name) || !ObjectMgr::IsValidCharterName(name))
         {
             SendGuildCommandResult(GUILD_CREATE_S, name, ERR_GUILD_NAME_INVALID);
-            return;
-        }
-    }
-    else
-    {
-        if(sObjectMgr.GetArenaTeamByName(name))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, name, "", ERR_ARENA_TEAM_NAME_EXISTS_S);
-            return;
-        }
-        if(sObjectMgr.IsReservedName(name) || !ObjectMgr::IsValidCharterName(name))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, name, "", ERR_ARENA_TEAM_NAME_INVALID);
             return;
         }
     }
@@ -200,13 +137,12 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket & recv_data)
         return;
 
     charter->SetUInt32Value(ITEM_FIELD_ENCHANTMENT_1_1, charter->GetGUIDLow());
-    // ITEM_FIELD_ENCHANTMENT_1_1 is guild/arenateam id
+    // ITEM_FIELD_ENCHANTMENT_1_1 is guild
     // ITEM_FIELD_ENCHANTMENT_1_1+1 is current signatures count (showed on item)
     charter->SetState(ITEM_CHANGED, _player);
     _player->SendNewItem(charter, 1, true, false);
 
     // a petition is invalid, if both the owner and the type matches
-    // we checked above, if this player is in an arenateam, so this must be data corruption
     QueryResult *result = CharacterDatabase.PQuery("SELECT petitionguid FROM petition WHERE ownerguid = '%u'  AND type = '%u'", _player->GetGUIDLow(), type);
 
     std::ostringstream ssInvalidPetitionGUIDs;
@@ -337,7 +273,7 @@ void WorldSession::SendPetitionQueryOpcode(ObjectGuid petitionguid)
     WorldPacket data(SMSG_PETITION_QUERY_RESPONSE, (4+8+name.size()+1+1+4*12+2+10));
     data << uint32(petitionLowGuid);                        // guild/team guid (in mangos always same as GUID_LOPART(petition guid)
     data << ObjectGuid(ownerGuid);                          // charter owner guid
-    data << name;                                           // name (guild/arena team)
+    data << name;                                           // name (guild)
     data << uint8(0);                                       // some string
     if (type == 9)
     {
@@ -366,7 +302,7 @@ void WorldSession::SendPetitionQueryOpcode(ObjectGuid petitionguid)
     data << uint32(0);                                      // 14
 
     if (type == 9)
-        data << uint32(0);                                  // 15 0 - guild, 1 - arena team
+        data << uint32(0);                                  // 15 0 - guild
     else
         data << uint32(1);
 
@@ -413,19 +349,6 @@ void WorldSession::HandlePetitionRenameOpcode(WorldPacket & recv_data)
         if(sObjectMgr.IsReservedName(newname) || !ObjectMgr::IsValidCharterName(newname))
         {
             SendGuildCommandResult(GUILD_CREATE_S, newname, ERR_GUILD_NAME_INVALID);
-            return;
-        }
-    }
-    else
-    {
-        if(sObjectMgr.GetArenaTeamByName(newname))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, newname, "", ERR_ARENA_TEAM_NAME_EXISTS_S);
-            return;
-        }
-        if(sObjectMgr.IsReservedName(newname) || !ObjectMgr::IsValidCharterName(newname))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, newname, "", ERR_ARENA_TEAM_NAME_INVALID);
             return;
         }
     }
@@ -483,52 +406,20 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket & recv_data)
     if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) &&
         GetPlayer()->GetTeam() != sAccountMgr.GetPlayerTeamByGUID(ownerGuid))
     {
-        if(type != 9)
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_INVITE_SS, "", "", ERR_ARENA_TEAM_NOT_ALLIED);
-        else
-            SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_NOT_ALLIED);
+        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_NOT_ALLIED);
         return;
     }
 
-    if(type != 9)
+    
+    if(_player->GetGuildId())
     {
-        if(_player->getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, "", _player->GetName(), ERR_ARENA_TEAM_TARGET_TOO_LOW_S);
-            return;
-        }
-
-        if (!IsArenaTypeValid(ArenaType(type)))
-            return;
-
-        uint8 slot = ArenaTeam::GetSlotByType(ArenaType(type));
-        if(slot >= MAX_ARENA_SLOT)
-            return;
-
-        if(_player->GetArenaTeamId(slot))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_INVITE_SS, "", _player->GetName(), ERR_ALREADY_IN_ARENA_TEAM_S);
-            return;
-        }
-
-        if(_player->GetArenaTeamIdInvited())
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_INVITE_SS, "", _player->GetName(), ERR_ALREADY_INVITED_TO_ARENA_TEAM_S);
-            return;
-        }
+        SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_IN_GUILD_S);
+        return;
     }
-    else
+    if(_player->GetGuildIdInvited())
     {
-        if(_player->GetGuildId())
-        {
-            SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_IN_GUILD_S);
-            return;
-        }
-        if(_player->GetGuildIdInvited())
-        {
-            SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_INVITED_TO_GUILD_S);
-            return;
-        }
+        SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_INVITED_TO_GUILD_S);
+        return;
     }
 
     if(++signs > type)                                        // client signs maximum
@@ -638,55 +529,20 @@ void WorldSession::HandleOfferPetitionOpcode(WorldPacket & recv_data)
 
     if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) && GetPlayer()->GetTeam() != player->GetTeam() )
     {
-        if(type != 9)
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_INVITE_SS, "", "", ERR_ARENA_TEAM_NOT_ALLIED);
-        else
-            SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_NOT_ALLIED);
+        SendGuildCommandResult(GUILD_CREATE_S, "", ERR_GUILD_NOT_ALLIED);
         return;
     }
 
-    if(type != 9)
+    if(player->GetGuildId())
     {
-        if(player->getLevel() < sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
-        {
-            // player is too low level to join an arena team
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, "", player->GetName(), ERR_ARENA_TEAM_TARGET_TOO_LOW_S);
-            return;
-        }
-
-        if (!IsArenaTypeValid(ArenaType(type)))
-            return;
-
-        uint8 slot = ArenaTeam::GetSlotByType(ArenaType(type));
-        if(slot >= MAX_ARENA_SLOT)
-            return;
-
-        if(player->GetArenaTeamId(slot))
-        {
-            // player is already in an arena team
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, "", player->GetName(), ERR_ALREADY_IN_ARENA_TEAM_S);
-            return;
-        }
-
-        if(player->GetArenaTeamIdInvited())
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_INVITE_SS, "", _player->GetName(), ERR_ALREADY_INVITED_TO_ARENA_TEAM_S);
-            return;
-        }
+        SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_IN_GUILD_S);
+        return;
     }
-    else
-    {
-        if(player->GetGuildId())
-        {
-            SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_IN_GUILD_S);
-            return;
-        }
 
-        if(player->GetGuildIdInvited())
-        {
-            SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_INVITED_TO_GUILD_S);
-            return;
-        }
+    if(player->GetGuildIdInvited())
+    {
+        SendGuildCommandResult(GUILD_INVITE_S, _player->GetName(), ERR_ALREADY_INVITED_TO_GUILD_S);
+        return;
     }
 
     /// Get petition signs count
@@ -760,24 +616,6 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket & recv_data)
             return;
         }
     }
-    else
-    {
-        if (!IsArenaTypeValid(ArenaType(type)))
-            return;
-
-        uint8 slot = ArenaTeam::GetSlotByType(ArenaType(type));
-        if (slot >= MAX_ARENA_SLOT)
-            return;
-
-        if (_player->GetArenaTeamId(slot))
-        {
-            //data.Initialize(SMSG_TURN_IN_PETITION_RESULTS, 4);
-            //data << (uint32)PETITION_TURN_ALREADY_IN_GUILD;   // already in guild
-            //_player->GetSession()->SendPacket(&data);
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, name, "", ERR_ALREADY_IN_ARENA_TEAM);
-            return;
-        }
-    }
 
     if (_player->GetObjectGuid() != ownerGuid)
         return;
@@ -801,15 +639,6 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket & recv_data)
         if (sGuildMgr.GetGuildByName(name))
         {
             SendGuildCommandResult(GUILD_CREATE_S, name, ERR_GUILD_NAME_EXISTS_S);
-            delete result;
-            return;
-        }
-    }
-    else
-    {
-        if(sObjectMgr.GetArenaTeamByName(name))
-        {
-            SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, name, "", ERR_ARENA_TEAM_NAME_EXISTS_S);
             delete result;
             return;
         }
@@ -851,39 +680,6 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket & recv_data)
                 continue;
 
             guild->AddMember(signGuid, guild->GetLowestRank());
-            result->NextRow();
-        }
-    }
-    else                                                    // or arena team
-    {
-        ArenaTeam* at = new ArenaTeam;
-        if (!at->Create(_player->GetObjectGuid(), ArenaType(type), name))
-        {
-            sLog.outError("PetitionsHandler: arena team create failed.");
-            delete at;
-            delete result;
-            return;
-        }
-
-        uint32 icon, iconcolor, border, bordercolor, backgroud;
-        recv_data >> backgroud >> icon >> iconcolor >> border >> bordercolor;
-
-        at->SetEmblem(backgroud, icon, iconcolor, border, bordercolor);
-
-        // register team and add captain
-        sObjectMgr.AddArenaTeam(at);
-        DEBUG_LOG("PetitonsHandler: arena team added to objmrg");
-
-        // add members
-        for(uint8 i = 0; i < signs; ++i)
-        {
-            Field* fields = result->Fetch();
-            ObjectGuid memberGUID = ObjectGuid(HIGHGUID_PLAYER, fields[0].GetUInt32());
-            if (!memberGUID)
-                continue;
-
-            DEBUG_LOG("PetitionsHandler: adding arena member %s", memberGUID.GetString().c_str());
-            at->AddMember(memberGUID);
             result->NextRow();
         }
     }
@@ -945,39 +741,7 @@ void WorldSession::SendPetitionShowList(ObjectGuid guid)
         data << uint32(0);                                  // unknown
         data << uint32(9);                                  // required signs?
     }
-    else
-    {
-        // 2v2
-        data << uint32(1);                                  // index
-        data << uint32(ARENA_TEAM_CHARTER_2v2);             // charter entry
-        data << uint32(CHARTER_DISPLAY_ID);                 // charter display id
-        data << uint32(ARENA_TEAM_CHARTER_2v2_COST);        // charter cost
-        data << uint32(2);                                  // unknown
-        data << uint32(2);                                  // required signs?
-        // 3v3
-        data << uint32(2);                                  // index
-        data << uint32(ARENA_TEAM_CHARTER_3v3);             // charter entry
-        data << uint32(CHARTER_DISPLAY_ID);                 // charter display id
-        data << uint32(ARENA_TEAM_CHARTER_3v3_COST);        // charter cost
-        data << uint32(3);                                  // unknown
-        data << uint32(3);                                  // required signs?
-        // 5v5
-        data << uint32(3);                                  // index
-        data << uint32(ARENA_TEAM_CHARTER_5v5);             // charter entry
-        data << uint32(CHARTER_DISPLAY_ID);                 // charter display id
-        data << uint32(ARENA_TEAM_CHARTER_5v5_COST);        // charter cost
-        data << uint32(5);                                  // unknown
-        data << uint32(5);                                  // required signs?
-    }
-    //for(uint8 i = 0; i < count; ++i)
-    //{
-    //    data << uint32(i);                        // index
-    //    data << uint32(GUILD_CHARTER);            // charter entry
-    //    data << uint32(CHARTER_DISPLAY_ID);       // charter display id
-    //    data << uint32(GUILD_CHARTER_COST+i);     // charter cost
-    //    data << uint32(0);                        // unknown
-    //    data << uint32(9);                        // required signs?
-    //}
+
     SendPacket(&data);
     DEBUG_LOG("Sent SMSG_PETITION_SHOWLIST");
 }

@@ -57,14 +57,8 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
 
     uint32 areaId = pl->GetAreaId();
 
-    if(sWorld.getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) && sWorld.IsAreaIdEnabledDuelReset(areaId)){
-        //remove arena cds
-        pl->RemoveArenaSpellCooldowns();
-        plTarget->RemoveArenaSpellCooldowns();
-
-        //remove negative arena auras
-        pl->RemoveArenaAuras(true);
-        plTarget->RemoveArenaAuras(true);
+    if(sWorld.getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) && sWorld.IsAreaIdEnabledDuelReset(areaId))
+    {
 
         //set max mana and hp
         pl->SetHealth(pl->GetMaxHealth());
@@ -78,14 +72,12 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
         {
             plPet->SetHealth(plPet->GetMaxHealth());
             plPet->SetPower(plPet->getPowerType(), plPet->GetMaxPower(plPet->getPowerType()));
-            plPet->RemoveArenaAuras(true);
         }
         Pet* plPetTarget = plTarget->GetPet();
         if(plPetTarget != NULL)
         {
             plPetTarget->SetHealth(plPetTarget->GetMaxHealth());
             plPetTarget->SetPower(plPetTarget->getPowerType(), plPetTarget->GetMaxPower(plPetTarget->getPowerType()));
-            plPetTarget->RemoveArenaAuras(true);
         }
     }
 }

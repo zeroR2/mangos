@@ -327,7 +327,7 @@ Map* MapManager::CreateInstance(uint32 id, Player * player)
     uint32 NewInstanceId = 0;                                   // instanceId of the resulting map
     const MapEntry* entry = sMapStore.LookupEntry(id);
 
-    if(entry->IsBattleGroundOrArena())
+    if(entry->IsBattleGround())
     {
         // find existing bg map for player
         NewInstanceId = player->GetBattleGroundId();
@@ -402,14 +402,14 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
     uint8 spawnMode = bracketEntry ? bracketEntry->difficulty : REGULAR_DIFFICULTY;
 
     BattleGroundMap *map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId, spawnMode);
-    MANGOS_ASSERT(map->IsBattleGroundOrArena());
+    MANGOS_ASSERT(map->IsBattleGround());
     map->SetBG(bg);
     bg->SetBgMap(map);
 
     //add map into map container
     i_maps[MapID(id, InstanceId)] = map;
 
-    // BGs/Arenas not have saved instance data
+    // BGs not have saved instance data
     map->CreateInstanceData(false);
 
     return map;

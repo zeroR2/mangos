@@ -247,7 +247,6 @@ pAuraProcHandler AuraProcHandler[TOTAL_AURAS]=
     &Unit::HandleNULLProc,                                  //212 SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT
     &Unit::HandleNULLProc,                                  //213 SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT implemented in Player::RewardRage
     &Unit::HandleNULLProc,                                  //214 Tamed Pet Passive (single test like spell 20782, also single for 157 aura)
-    &Unit::HandleNULLProc,                                  //215 SPELL_AURA_ARENA_PREPARATION
     &Unit::HandleNULLProc,                                  //216 SPELL_AURA_HASTE_SPELLS
     &Unit::HandleNULLProc,                                  //217 unused (3.0.8a-3.2.2a)
     &Unit::HandleNULLProc,                                  //218 SPELL_AURA_HASTE_RANGED

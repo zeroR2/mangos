@@ -483,7 +483,7 @@ void Map::Update(const uint32 &t_diff)
     m_dyn_tree.update(t_diff);
     uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
 
-    BattleGround* bg = this->IsBattleGroundOrArena() ? ((BattleGroundMap*)this)->GetBG() : NULL;
+    BattleGround* bg = this->IsBattleGround() ? ((BattleGroundMap*)this)->GetBG() : NULL;
     while(!i_loadingObjectQueue.empty())
     {
         LoadingObjectQueueMember* loadingObject = i_loadingObjectQueue.top();
@@ -626,7 +626,7 @@ void Map::Update(const uint32 &t_diff)
 
     // Don't unload grids if it's battleground, since we may have manually added GOs,creatures, those doesn't load from DB at grid re-load !
     // This isn't really bother us, since as soon as we have instanced BG-s, the whole map unloads as the BG gets ended
-    if (!IsBattleGroundOrArena())
+    if (!IsBattleGround())
     {
         for (GridRefManager<NGridType>::iterator i = GridRefManager<NGridType>::begin(); i != GridRefManager<NGridType>::end(); )
         {
@@ -1630,7 +1630,7 @@ DungeonPersistentState* DungeonMap::GetPersistanceState() const
 BattleGroundMap::BattleGroundMap(uint32 id, time_t expiry, uint32 InstanceId, uint8 spawnMode)
   : Map(id, expiry, InstanceId, spawnMode)
 {
-    //lets initialize visibility distance for BG/Arenas
+    //lets initialize visibility distance for BGs
     BattleGroundMap::InitVisibilityDistance();
 }
 
@@ -1653,8 +1653,8 @@ BattleGroundPersistentState* BattleGroundMap::GetPersistanceState() const
 
 void BattleGroundMap::InitVisibilityDistance()
 {
-    //init visibility distance for BG/Arenas
-    m_VisibleDistance = World::GetMaxVisibleDistanceInBGArenas();
+    //init visibility distance for BGs
+    m_VisibleDistance = World::GetMaxVisibleDistanceInBG();
 }
 
 bool BattleGroundMap::CanEnter(Player * player)

@@ -297,7 +297,7 @@ class BattleGroundPersistentState : public MapPersistentState
 {
     public:
         /* Created either when:
-           - any new BG/arena is being generated
+           - any new BG is being generated
         */
         BattleGroundPersistentState(uint16 MapId, uint32 InstanceId, Difficulty difficulty)
             : MapPersistentState(MapId, InstanceId, difficulty) {}

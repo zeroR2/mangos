@@ -65,9 +65,7 @@ enum AreaFlags
     AREA_FLAG_SANCTUARY             = 0x00000800,           // sanctuary area (PvP disabled)
     AREA_FLAG_NEED_FLY              = 0x00001000,           // only Netherwing Ledge, Socrethar's Seat, Tempest Keep, The Arcatraz, The Botanica, The Mechanar, Sorrow Wing Point, Dragonspine Ridge, Netherwing Mines, Dragonmaw Base Camp, Dragonmaw Skyway
     AREA_FLAG_UNUSED1               = 0x00002000,           // not used now (no area/zones with this flag set in 3.0.3)
-    AREA_FLAG_OUTLAND2              = 0x00004000,           // expansion zones? (only Circle of Blood Arena not have this flag, but have 0x00000400 flag)
     AREA_FLAG_PVP                   = 0x00008000,           // pvp objective area? (Death's Door also has this flag although it's no pvp object area)
-    AREA_FLAG_ARENA_INSTANCE        = 0x00010000,           // used by instanced arenas only
     AREA_FLAG_UNUSED2               = 0x00020000,           // not used now (no area/zones with this flag set in 3.0.3)
     AREA_FLAG_UNK5                  = 0x00040000,           // only used for Amani Pass, Hatchet Hills
     AREA_FLAG_UNK6                  = 0x00080000,           // Valgarde and Acherus: The Ebon Hold
@@ -139,8 +137,7 @@ enum MapTypes                                               // Lua_IsInInstance
     MAP_COMMON          = 0,                                // none
     MAP_INSTANCE        = 1,                                // party
     MAP_RAID            = 2,                                // raid
-    MAP_BATTLEGROUND    = 3,                                // pvp
-    MAP_ARENA           = 4                                 // arena
+    MAP_BATTLEGROUND    = 3                                 // pvp
 };
 
 enum MapFlags                                               // Map flags (need more research)

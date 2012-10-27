@@ -24,8 +24,8 @@
 
 void InstanceData::SaveToDB()
 {
-    // no reason to save BGs/Arenas
-    if (instance->IsBattleGroundOrArena())
+    // no reason to save BGs
+    if (instance->IsBattleGround())
         return;
 
     if (!Save())

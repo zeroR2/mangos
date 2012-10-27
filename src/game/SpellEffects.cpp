@@ -44,7 +44,6 @@
 #include "BattleGround/BattleGroundMgr.h"
 #include "BattleGround/BattleGround.h"
 #include "BattleGround/BattleGroundWS.h"
-#include "BattleGround/BattleGroundEY.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Language.h"
 #include "SocialMgr.h"
@@ -5961,17 +5960,6 @@ void Spell::EffectOpenLock(SpellEffectIndex eff_idx)
                 return;
             }
         }
-        else if (goInfo->type == GAMEOBJECT_TYPE_FLAGSTAND)
-        {
-            //CanUseBattleGroundObject() already called in CheckCast()
-            // in battleground check
-            if (BattleGround *bg = player->GetBattleGround())
-            {
-                if (bg->GetTypeID(true) == BATTLEGROUND_EY)
-                    bg->EventPlayerClickedOnFlag(player, gameObjTarget);
-                return;
-            }
-        }
         else if(goInfo->type == GAMEOBJECT_TYPE_GOOBER)
         {
             // Check if object is handled by outdoor pvp
@@ -7829,14 +7817,6 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
                     Team team = pl->GetTeam() == ALLIANCE ? HORDE : ALLIANCE;
 
                     ((BattleGroundWS*)bg)->SetDroppedFlagGuid(pGameObj->GetObjectGuid(), team);
-                }
-                break;
-            }
-            case 566:                                       //EY
-            {
-                if (bg && bg->GetTypeID(true)==BATTLEGROUND_EY && bg->GetStatus() == STATUS_IN_PROGRESS)
-                {
-                    ((BattleGroundEY*)bg)->SetDroppedFlagGuid(pGameObj->GetObjectGuid());
                 }
                 break;
             }

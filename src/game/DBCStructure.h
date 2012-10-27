@@ -394,7 +394,7 @@ struct MapEntry
     uint32  MapID;                                          // 0        m_ID
     //char*       internalname;                             // 1        m_Directory
     uint32  map_type;                                       // 2        m_InstanceType
-    //uint32 isPvP;                                         // 3        m_PVP 0 or 1 for battlegrounds (not arenas)
+    //uint32 isPvP;                                         // 3        m_PVP 0 or 1 for battlegrounds
     char*   name[8];                                        // 4-11     m_MapName_lang
                                                             // 12 string flags
                                                             // 13-15 unused (something PvPZone related - levels?)

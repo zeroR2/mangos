@@ -4268,14 +4268,6 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
 
     // bg spell checks
 
-    // do not allow spells to be cast in arenas
-    // - with SPELL_ATTR_EX4_NOT_USABLE_IN_ARENA flag
-    // - with greater than 10 min CD
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX4_NOT_USABLE_IN_ARENA) ||
-         (GetSpellRecoveryTime(spellInfo) > 10 * MINUTE * IN_MILLISECONDS && !spellInfo->HasAttribute(SPELL_ATTR_EX4_USABLE_IN_ARENA)))
-        if (player && player->InArena())
-            return SPELL_FAILED_NOT_IN_ARENA;
-
     // Spell casted only on battleground
     if (spellInfo->HasAttribute(SPELL_ATTR_EX3_BATTLEGROUND))
         if (!player || !player->InBattleGround())
@@ -4322,38 +4314,11 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
             BattleGround* bg = player->GetBattleGround();
             return bg && bg->GetStatus()==STATUS_WAIT_JOIN ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
         }
-        case 32724:                                         // Gold Team (Alliance)
-        case 32725:                                         // Green Team (Alliance)
-        case 35774:                                         // Gold Team (Horde)
-        case 35775:                                         // Green Team (Horde)
-        {
-            return player && player->InArena() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_IN_ARENA;
-        }
-        case 32727:                                         // Arena Preparation
-        {
-            if (!player)
-                return SPELL_FAILED_REQUIRES_AREA;
-            if (!player->InArena())
-                return SPELL_FAILED_REQUIRES_AREA;
-
-            BattleGround* bg = player->GetBattleGround();
-            return bg && bg->GetStatus()==STATUS_WAIT_JOIN ? SPELL_CAST_OK : SPELL_FAILED_ONLY_IN_ARENA;
-        }
         case 69065:                                         // Impaled
         case 69126:                                         // Pungent blight - first aura
         case 69152:                                         // Gazeous blight - first aura
         case 72293:                                         // Mark of the Fallen Champion
             return map_id == 631 ? SPELL_CAST_OK : SPELL_FAILED_INCORRECT_AREA;
-        case 74410:                                         // Arena - Dampening
-            return player && player->InArena() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_IN_ARENA;
-        case 74411:                                         // Battleground - Dampening
-        {
-            if (!player)
-                return SPELL_FAILED_ONLY_BATTLEGROUNDS;
-
-            BattleGround* bg = player->GetBattleGround();
-            return bg && !bg->isArena() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
-        }
     }
 
     return SPELL_CAST_OK;

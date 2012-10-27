@@ -69,7 +69,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     Map* map = NULL;
 
     // prevent crash at attempt landing to not existed battleground instance
-    if(mEntry->IsBattleGroundOrArena())
+    if(mEntry->IsBattleGround())
     {
         if (GetPlayer()->GetBattleGroundId())
             map = sMapMgr.FindMap(loc.mapid, GetPlayer()->GetBattleGroundId());
@@ -143,7 +143,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     if(_player->InBattleGround())
     {
         // cleanup setting if outdated
-        if(!mEntry->IsBattleGroundOrArena())
+        if(!mEntry->IsBattleGround())
         {
             // We're not in BG
             _player->SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
@@ -591,7 +591,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         plMover->m_movementInfo = movementInfo;
 
         if((movementInfo.GetPos()->z < -500.0f) || (plMover->GetMapId() == 617 && movementInfo.GetPos()->z < 2.0f) || (plMover->GetMapId() == 572 && movementInfo.GetPos()->z < 20.0f)
-        || (plMover->GetMapId() == 562 && movementInfo.GetPos()->z < -20.0f)) // Prevent falling under textures on some arenas
+        || (plMover->GetMapId() == 562 && movementInfo.GetPos()->z < -20.0f)) // Prevent falling under textures
         {
             if (plMover->GetBattleGround()
                     && plMover->GetBattleGround()->HandlePlayerUnderMap(_player))

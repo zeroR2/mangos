@@ -762,19 +762,6 @@ enum InstanceResetWarningType
     RAID_INSTANCE_EXPIRED           = 5
 };
 
-// PLAYER_FIELD_ARENA_TEAM_INFO_1_1 offsets
-enum ArenaTeamInfoType
-{
-    ARENA_TEAM_ID               = 0,
-    ARENA_TEAM_TYPE             = 1,                        // new in 3.2 - team type?
-    ARENA_TEAM_MEMBER           = 2,                        // 0 - captain, 1 - member
-    ARENA_TEAM_GAMES_WEEK       = 3,
-    ARENA_TEAM_GAMES_SEASON     = 4,
-    ARENA_TEAM_WINS_SEASON      = 5,
-    ARENA_TEAM_PERSONAL_RATING  = 6,
-    ARENA_TEAM_END              = 7
-};
-
 enum RestType
 {
     REST_TYPE_NO                = 0,
@@ -848,7 +835,6 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADSPELLCOOLDOWNS,
     PLAYER_LOGIN_QUERY_LOADDECLINEDNAMES,
     PLAYER_LOGIN_QUERY_LOADGUILD,
-    PLAYER_LOGIN_QUERY_LOADARENAINFO,
     PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS,
     PLAYER_LOGIN_QUERY_LOADBGDATA,
     PLAYER_LOGIN_QUERY_LOADACCOUNTDATA,
@@ -1696,7 +1682,6 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
 
-        void RemoveArenaSpellCooldowns();
         void RemoveAllSpellCooldown();
         void _LoadSpellCooldowns(QueryResult *result);
         void _SaveSpellCooldowns();
@@ -1778,23 +1763,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         static uint32 GetRankFromDB(ObjectGuid guid);
         int GetGuildIdInvited() { return m_GuildIdInvited; }
         static void RemovePetitionsAndSigns(ObjectGuid guid, uint32 type);
-
-        // Arena Team
-        void SetInArenaTeam(uint32 ArenaTeamId, uint8 slot, ArenaType type)
-        {
-            SetArenaTeamInfoField(slot, ARENA_TEAM_ID, ArenaTeamId);
-            SetArenaTeamInfoField(slot, ARENA_TEAM_TYPE, type);
-        }
-        void SetArenaTeamInfoField(uint8 slot, ArenaTeamInfoType type, uint32 value)
-        {
-            SetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + type, value);
-        }
-        uint32 GetArenaTeamId(uint8 slot) { return GetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + ARENA_TEAM_ID); }
-        uint32 GetArenaPersonalRating(uint8 slot) { return GetUInt32Value(PLAYER_FIELD_ARENA_TEAM_INFO_1_1 + (slot * ARENA_TEAM_END) + ARENA_TEAM_PERSONAL_RATING); }
-        static uint32 GetArenaTeamIdFromDB(ObjectGuid guid, ArenaType type);
-        void SetArenaTeamIdInvited(uint32 ArenaTeamId) { m_ArenaTeamIdInvited = ArenaTeamId; }
-        uint32 GetArenaTeamIdInvited() { return m_ArenaTeamIdInvited; }
-        static void LeaveAllArenaTeams(ObjectGuid guid);
 
         Difficulty GetDifficulty(bool isRaid) const { return isRaid ? GetRaidDifficulty() : GetDungeonDifficulty(); }
         uint32 GetDifficulty() const { return m_Difficulty; }
@@ -1991,17 +1959,11 @@ class MANGOS_DLL_SPEC Player : public Unit
         /*********************************************************/
         /***                  PVP SYSTEM                       ***/
         /*********************************************************/
-        void UpdateArenaFields();
         void UpdateHonorFields();
         bool RewardHonor(Unit *pVictim, uint32 groupsize, float honor = -1);
         uint32 GetHonorPoints() const { return GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY); }
-        uint32 GetArenaPoints() const { return GetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY); }
         void SetHonorPoints(uint32 value);
-        void SetArenaPoints(uint32 value);
         void ModifyHonorPoints(int32 value);
-        void ModifyArenaPoints(int32 value);
-
-        uint32 GetMaxPersonalArenaRatingRequirement(uint32 minarenaslot);
 
         //End of PvP System
 
@@ -2089,7 +2051,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         /*********************************************************/
 
         bool InBattleGround()       const                { return m_bgData.bgInstanceID != 0; }
-        bool InArena()              const;
         uint32 GetBattleGroundId()  const                { return m_bgData.bgInstanceID; }
         BattleGroundTypeId GetBattleGroundTypeId() const { return m_bgData.bgTypeID; }
         BattleGround* GetBattleGround() const;
@@ -2502,7 +2463,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void _LoadFriendList(QueryResult *result);
         bool _LoadHomeBind(QueryResult *result);
         void _LoadDeclinedNames(QueryResult *result);
-        void _LoadArenaTeamInfo(QueryResult *result);
         void _LoadEquipmentSets(QueryResult *result);
         void _LoadBGData(QueryResult* result);
         void _LoadGlyphs(QueryResult *result);
@@ -2568,7 +2528,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         SkillStatusMap mSkillStatus;
 
         uint32 m_GuildIdInvited;
-        uint32 m_ArenaTeamIdInvited;
 
         PlayerMails m_mail;
         PlayerSpellMap m_spells;

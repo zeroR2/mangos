@@ -52,7 +52,6 @@
 #include "BattleGround/BattleGroundMgr.h"
 #include "BattleGround/BattleGroundAV.h"
 #include "OutdoorPvP/OutdoorPvP.h"
-#include "ArenaTeam.h"
 #include "Chat.h"
 #include "Database/DatabaseImpl.h"
 #include "Spell.h"
@@ -433,7 +432,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     duel = NULL;
 
     m_GuildIdInvited = 0;
-    m_ArenaTeamIdInvited = 0;
 
     m_atLoginFlags = AT_LOGIN_NONE;
 
@@ -728,7 +726,6 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
         SetByteValue(PLAYER_BYTES_2, 3, REST_STATE_NORMAL);
 
     SetUInt16Value(PLAYER_BYTES_3, 0, gender);              // only GENDER_MALE/GENDER_FEMALE (1 bit) allowed, drunk state = 0
-    SetByteValue(PLAYER_BYTES_3, 3, 0);                     // BattlefieldArenaFaction (0 or 1)
 
     SetUInt32Value(PLAYER_GUILDID, 0);
     SetUInt32Value(PLAYER_GUILDRANK, 0);
@@ -761,7 +758,6 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
     SetUInt32Value (PLAYER_FIELD_COINAGE, sWorld.getConfig(CONFIG_UINT32_START_PLAYER_MONEY));
     SetHonorPoints(sWorld.getConfig(CONFIG_UINT32_START_HONOR_POINTS));
-    SetArenaPoints(sWorld.getConfig(CONFIG_UINT32_START_ARENA_POINTS));
 
     // Played time
     m_Last_tick = time(NULL);
@@ -1153,7 +1149,6 @@ void Player::HandleDrowning(uint32 time_diff)
                 uint32 damage = urand(600, 700);
                 if (m_MirrorTimerFlags&UNDERWATER_INLAVA)
                     EnvironmentalDamage(DAMAGE_LAVA, damage);
-                // need to skip Slime damage in Undercity and Ruins of Lordaeron arena
                 // maybe someone can find better way to handle environmental damage
             }
         }
@@ -1338,7 +1333,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
             else
             {
                 // Use area updates as well
-                // Needed for free for all arenas for example
                 if (m_areaUpdateId != newarea)
                     UpdateArea(newarea);
 
@@ -1683,7 +1677,7 @@ void Player::ToggleAFK()
     ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK);
 
     // afk player not allowed in battleground
-    if (isAFK() && InBattleGround() && !InArena())
+    if (isAFK() && InBattleGround())
         LeaveBattleground();
 }
 
@@ -1759,7 +1753,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
 
     // don't let enter battlegrounds without assigned battleground id (for example through areatrigger)...
     // don't let gm level > 1 either
-    if (!InBattleGround() && mEntry->IsBattleGroundOrArena())
+    if (!InBattleGround() && mEntry->IsBattleGround())
         return false;
 
     // client without expansion support
@@ -3789,37 +3783,6 @@ void Player::RemoveSpellCategoryCooldown(uint32 cat, bool update /* = false */)
         RemoveSpellCooldown(*itr, update);
 }
 
-void Player::RemoveArenaSpellCooldowns()
-{
-    // remove cooldowns on spells that has < 15 min CD
-    SpellCooldowns::iterator itr, next;
-    // iterate spell cooldowns
-    for (itr = m_spellCooldowns.begin();itr != m_spellCooldowns.end(); itr = next)
-    {
-        next = itr;
-        ++next;
-        SpellEntry const * entry = sSpellStore.LookupEntry(itr->first);
-        // check if spellentry is present and if the cooldown is less than 15 mins
-        if (entry &&
-            entry->RecoveryTime <= 15 * MINUTE * IN_MILLISECONDS &&
-            entry->CategoryRecoveryTime <= 15 * MINUTE * IN_MILLISECONDS)
-        {
-            // remove & notify
-            RemoveSpellCooldown(itr->first, true);
-        }
-    }
-
-    if (Pet *pet = GetPet())
-    {
-        // notify player
-        for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
-            SendClearCooldown(itr->first, pet);
-
-        // actually clear cooldowns
-        pet->m_CreatureSpellCooldowns.clear();
-    }
-}
-
 void Player::RemoveAllSpellCooldown()
 {
     if (!m_spellCooldowns.empty())
@@ -4241,9 +4204,6 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             }
         }
     }
-
-    // remove from arena teams
-    LeaveAllArenaTeams(playerguid);
 
     // the player was uninvited already on logout so just remove from group
     QueryResult *resultGroup = CharacterDatabase.PQuery("SELECT groupId FROM group_member WHERE memberGuid='%u'", lowguid);
@@ -4679,7 +4639,7 @@ Corpse* Player::CreateCorpse()
         flags |= CORPSE_FLAG_HIDE_HELM;
     if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_CLOAK))
         flags |= CORPSE_FLAG_HIDE_CLOAK;
-    if (InBattleGround() && !InArena())
+    if (InBattleGround())
         flags |= CORPSE_FLAG_LOOTABLE;                      // to be able to remove insignia
     corpse->SetUInt32Value(CORPSE_FIELD_FLAGS, flags);
 
@@ -4702,8 +4662,8 @@ Corpse* Player::CreateCorpse()
         }
     }
 
-    // we not need saved corpses for BG/arenas
-    if (!GetMap()->IsBattleGroundOrArena())
+    // we not need saved corpses for BG
+    if (!GetMap()->IsBattleGround())
         corpse->SaveToDB();
 
     // register for player, but not show
@@ -6629,11 +6589,6 @@ void Player::RewardReputation(Quest const *pQuest)
     // TODO: implement reputation spillover
 }
 
-void Player::UpdateArenaFields(void)
-{
-    /* arena calcs go here */
-}
-
 void Player::UpdateHonorFields()
 {
     /// called when rewarding honor and at each save
@@ -6739,18 +6694,6 @@ void Player::UpdateHonorFields()
 ///An exact honor value can also be given (overriding the calcs)
 bool Player::RewardHonor(Unit *uVictim, uint32 groupsize, float honor)
 {
-    // do not reward honor in arenas, but enable onkill spellproc
-    if (InArena())
-    {
-        if (!uVictim || uVictim == this || uVictim->GetTypeId() != TYPEID_PLAYER)
-            return false;
-
-        if (GetBGTeam() == ((Player*)uVictim)->GetBGTeam())
-            return false;
-
-        return true;
-    }
-
     // 'Inactive' this aura prevents the player from gaining honor points and battleground tokens
     if (GetDummyAura(SPELL_AURA_PLAYER_INACTIVE))
         return false;
@@ -6873,14 +6816,6 @@ void Player::SetHonorPoints(uint32 value)
     SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, value);
 }
 
-void Player::SetArenaPoints(uint32 value)
-{
-    if (value > sWorld.getConfig(CONFIG_UINT32_MAX_ARENA_POINTS))
-        value = sWorld.getConfig(CONFIG_UINT32_MAX_ARENA_POINTS);
-
-    SetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY, value);
-}
-
 void Player::ModifyHonorPoints(int32 value)
 {
     int32 newValue = (int32)GetHonorPoints() + value;
@@ -6889,16 +6824,6 @@ void Player::ModifyHonorPoints(int32 value)
         newValue = 0;
 
     SetHonorPoints(newValue);
-}
-
-void Player::ModifyArenaPoints(int32 value)
-{
-    int32 newValue = (int32)GetArenaPoints() + value;
-
-    if (newValue < 0)
-        newValue = 0;
-
-    SetArenaPoints(newValue);
 }
 
 uint32 Player::GetGuildIdFromDB(ObjectGuid guid)
@@ -6925,17 +6850,6 @@ uint32 Player::GetRankFromDB(ObjectGuid guid)
     }
     else
         return 0;
-}
-
-uint32 Player::GetArenaTeamIdFromDB(ObjectGuid guid, ArenaType type)
-{
-    QueryResult *result = CharacterDatabase.PQuery("SELECT arena_team_member.arenateamid FROM arena_team_member JOIN arena_team ON arena_team_member.arenateamid = arena_team.arenateamid WHERE guid='%u' AND type='%u' LIMIT 1", guid.GetCounter(), type);
-    if (!result)
-        return 0;
-
-    uint32 id = (*result)[0].GetUInt32();
-    delete result;
-    return id;
 }
 
 uint32 Player::GetZoneIdFromDB(ObjectGuid guid)
@@ -10635,15 +10549,10 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item *pItem, bool
 
                 // do not allow equipping gear except weapons, offhands, projectiles, relics in
                 // - combat
-                // - in-progress arenas
                 if (!pProto->CanChangeEquipStateInCombat())
                 {
                     if (isInCombat())
                         return EQUIP_ERR_NOT_IN_COMBAT;
-
-                    if (BattleGround* bg = GetBattleGround())
-                        if (bg->isArena() && bg->GetStatus() == STATUS_IN_PROGRESS)
-                            return EQUIP_ERR_NOT_DURING_ARENA_MATCH;
                 }
 
                 // prevent equip item in process logout
@@ -10774,15 +10683,10 @@ InventoryResult Player::CanUnequipItem(uint16 pos, bool swap) const
 
     // do not allow unequipping gear except weapons, offhands, projectiles, relics in
     // - combat
-    // - in-progress arenas
     if (!pProto->CanChangeEquipStateInCombat())
     {
         if (isInCombat())
             return EQUIP_ERR_NOT_IN_COMBAT;
-
-        if (BattleGround* bg = GetBattleGround())
-            if (bg->isArena() && bg->GetStatus() == STATUS_IN_PROGRESS)
-                return EQUIP_ERR_NOT_DURING_ARENA_MATCH;
     }
 
     // prevent unequip item in process logout
@@ -11929,7 +11833,6 @@ void Player::DestroyZoneLimitedItem(bool update, uint32 new_zone)
 
 void Player::DestroyConjuredItems(bool update)
 {
-    // used when entering arena
     // destroys all conjured items
     DEBUG_LOG("STORAGE: DestroyConjuredItems");
 
@@ -15341,7 +15244,6 @@ void Player::SendQuestReward(Quest const *pQuest, uint32 XP, Object * questGiver
 
     data << uint32(10*MaNGOS::Honor::hk_honor_at_level(getLevel(), pQuest->GetRewHonorAddition()));
     data << uint32(pQuest->GetBonusTalents());              // bonus talents
-    data << uint32(0);                                      // arena points
     GetSession()->SendPacket(&data);
 }
 
@@ -15446,43 +15348,6 @@ void Player::_LoadDeclinedNames(QueryResult* result)
     for (int i = 0; i < MAX_DECLINED_NAME_CASES; ++i)
         m_declinedname->name[i] = fields[i].GetCppString();
 
-    delete result;
-}
-
-void Player::_LoadArenaTeamInfo(QueryResult *result)
-{
-    // arenateamid, played_week, played_season, personal_rating
-    memset((void*)&m_uint32Values[PLAYER_FIELD_ARENA_TEAM_INFO_1_1], 0, sizeof(uint32) * MAX_ARENA_SLOT * ARENA_TEAM_END);
-    if (!result)
-        return;
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        uint32 arenateamid     = fields[0].GetUInt32();
-        uint32 played_week     = fields[1].GetUInt32();
-        uint32 played_season   = fields[2].GetUInt32();
-        uint32 wons_season     = fields[3].GetUInt32();
-        uint32 personal_rating = fields[4].GetUInt32();
-
-        ArenaTeam* aTeam = sObjectMgr.GetArenaTeamById(arenateamid);
-        if (!aTeam)
-        {
-            sLog.outError("Player::_LoadArenaTeamInfo: couldn't load arenateam %u", arenateamid);
-            continue;
-        }
-        uint8  arenaSlot = aTeam->GetSlot();
-
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_ID, arenateamid);
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_TYPE, aTeam->GetType());
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_MEMBER, (aTeam->GetCaptainGuid() == GetObjectGuid()) ? 0 : 1);
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_GAMES_WEEK, played_week);
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_GAMES_SEASON, played_season);
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_WINS_SEASON, wons_season);
-        SetArenaTeamInfoField(arenaSlot, ARENA_TEAM_PERSONAL_RATING, personal_rating);
-
-    } while (result->NextRow());
     delete result;
 }
 
@@ -15712,27 +15577,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     _LoadGroup(holder->GetResult(PLAYER_LOGIN_QUERY_LOADGROUP));
 
-    _LoadArenaTeamInfo(holder->GetResult(PLAYER_LOGIN_QUERY_LOADARENAINFO));
-
-    SetArenaPoints(fields[39].GetUInt32());
-
-    // check arena teams integrity
-    for (uint32 arena_slot = 0; arena_slot < MAX_ARENA_SLOT; ++arena_slot)
-    {
-        uint32 arena_team_id = GetArenaTeamId(arena_slot);
-        if (!arena_team_id)
-            continue;
-
-        ArenaTeam * at = sObjectMgr.GetArenaTeamById(arena_team_id);
-        if (at)
-            if (at->HaveMember(GetObjectGuid()))
-                continue;
-
-        // arena team not exist or not member, cleanup fields
-        for (int j = 0; j < ARENA_TEAM_END; ++j)
-            SetArenaTeamInfoField(arena_slot, ArenaTeamInfoType(j), 0);
-    }
-
     SetHonorPoints(fields[40].GetUInt32());
 
     SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, fields[41].GetUInt32());
@@ -15780,7 +15624,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
         if (player_at_bg && currentBg->GetStatus() != STATUS_WAIT_LEAVE)
         {
-            BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(currentBg->GetTypeID(), currentBg->GetArenaType());
+            BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(currentBg->GetTypeID());
             AddBattleGroundQueueId(bgQueueTypeId);
 
             m_bgData.bgTypeID = currentBg->GetTypeID();     // bg data not marked as modified
@@ -15817,8 +15661,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     {
         mapEntry = sMapStore.LookupEntry(savedLocation.mapid);
         // if server restart after player save in BG or area
-        // player can have current coordinates in to BG/Arena map, fix this
-        if (mapEntry->IsBattleGroundOrArena())
+        // player can have current coordinates in to BG map, fix this
+        if (mapEntry->IsBattleGround())
         {
             const WorldLocation& _loc = GetBattleGroundEntryPoint();
             if (!MapManager::IsValidMapCoord(_loc))
@@ -16519,7 +16363,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
 
     std::map<uint32, Bag*> bagMap;                          // fast guid lookup for bags
     std::list<Item*> problematicItems;
-    std::list<Item*> problematicArenaItems;
 
     // prevent items from being added to the queue when stored
     m_itemUpdateQueueBlocked = true;
@@ -16590,7 +16433,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         uint8  slot       = fields[3].GetUInt8();
 
         bool success = true;
-        bool arenaitem = false;
 
         // the item/bag is not in a bag
         if (!bagLowGuid)
@@ -17634,14 +17476,14 @@ void Player::SaveToDB()
         "taximask, online, cinematic, "
         "totaltime, leveltime, rest_bonus, logout_time, is_logout_resting, resettalents_cost, resettalents_time, "
         "trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, "
-        "death_expire_time, taxi_path, arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, totalKills, "
+        "death_expire_time, taxi_path, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, totalKills, "
         "todayKills, yesterdayKills, chosenTitle, knownCurrencies, watchedFaction, drunk, health, power1, power2, power3, "
         "power4, power5, power6, power7, specCount, activeSpec, exploredZones, equipmentCache, ammoId, knownTitles, actionBars, grantableLevels) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, "
         "?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, "
-        "?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
@@ -17718,8 +17560,6 @@ void Player::SaveToDB()
 
     ss << m_taxi.SaveTaxiDestinationsToString();       //string
     uberInsert.addString(ss);
-
-    uberInsert.addUInt32(GetArenaPoints());
 
     uberInsert.addUInt32(GetHonorPoints());
 
@@ -18433,8 +18273,8 @@ void Player::_SaveStats()
         "melee_hitrating, melee_critrating, melee_hasterating, melee_mainmindmg, melee_mainmaxdmg, "
         "melee_offmindmg, melee_offmaxdmg, melee_maintime, melee_offtime, ranged_critrating, ranged_hasterating, "
         "ranged_hitrating, ranged_mindmg, ranged_maxdmg, ranged_attacktime, "
-        "spell_hitrating, spell_critrating, spell_hasterating, spell_bonusdmg, spell_bonusheal, spell_critproc, account, name, race, class, gender, level, map, money, totaltime, online, arenaPoints, totalHonorPoints, totalKills, equipmentCache, specCount, activeSpec, data) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        "spell_hitrating, spell_critrating, spell_hasterating, spell_bonusdmg, spell_bonusheal, spell_critproc, account, name, race, class, gender, level, map, money, totaltime, online, totalHonorPoints, totalKills, equipmentCache, specCount, activeSpec, data) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     stmt.addUInt32(GetGUIDLow());
     stmt.addUInt32(GetMaxHealth());
@@ -18493,7 +18333,6 @@ void Player::_SaveStats()
     stmt.addUInt32(GetMoney());
     stmt.addUInt32(m_Played_time[PLAYED_TIME_TOTAL]);
     stmt.addUInt32(IsInWorld() ? 1 : 0);
-    stmt.addUInt32(GetArenaPoints());
     stmt.addUInt32(GetHonorPoints());
     stmt.addUInt32(GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
 
@@ -19188,28 +19027,6 @@ void Player::RemovePetitionsAndSigns(ObjectGuid guid, uint32 type)
     CharacterDatabase.CommitTransaction();
 }
 
-void Player::LeaveAllArenaTeams(ObjectGuid guid)
-{
-    uint32 lowguid = guid.GetCounter();
-    QueryResult *result = CharacterDatabase.PQuery("SELECT arena_team_member.arenateamid FROM arena_team_member JOIN arena_team ON arena_team_member.arenateamid = arena_team.arenateamid WHERE guid='%u'", lowguid);
-    if (!result)
-        return;
-
-    do
-    {
-        Field* fields = result->Fetch();
-        if (uint32 at_id = fields[0].GetUInt32())
-        {
-            ArenaTeam* at = sObjectMgr.GetArenaTeamById(at_id);
-            if (at)
-                at->DelMember(guid);
-        }
-
-    } while (result->NextRow());
-
-    delete result;
-}
-
 void Player::SetRestBonus (float rest_bonus_new)
 {
     // Prevent resting on max level
@@ -19659,8 +19476,6 @@ void Player::TakeExtendedCost(uint32 extendedCostId, uint32 count)
 
     if (extendedCost->reqhonorpoints)
         ModifyHonorPoints(-int32(extendedCost->reqhonorpoints * count));
-    if (extendedCost->reqarenapoints)
-        ModifyArenaPoints(-int32(extendedCost->reqarenapoints * count));
 
     for (uint8 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)
     {
@@ -19814,13 +19629,6 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
             return false;
         }
 
-        // arena points price
-        if (GetArenaPoints() < (iece->reqarenapoints * count))
-        {
-            SendEquipError(EQUIP_ERR_NOT_ENOUGH_ARENA_POINTS, NULL, NULL);
-            return false;
-        }
-
         // item base price
         for (uint8 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)
         {
@@ -19829,14 +19637,6 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
                 SendEquipError(EQUIP_ERR_VENDOR_MISSING_TURNINS, NULL, NULL);
                 return false;
             }
-        }
-
-        // check for personal arena rating requirement
-        if (GetMaxPersonalArenaRatingRequirement(iece->reqarenaslot) < iece->reqpersonalarenarating)
-        {
-            // probably not the proper equip err
-            SendEquipError(EQUIP_ERR_CANT_EQUIP_RANK, NULL, NULL);
-            return false;
         }
     }
 
@@ -19875,27 +19675,6 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
     }
 
     return crItem->maxcount != 0;
-}
-
-uint32 Player::GetMaxPersonalArenaRatingRequirement(uint32 minarenaslot)
-{
-    // returns the maximal personal arena rating that can be used to purchase items requiring this condition
-    // the personal rating of the arena team must match the required limit as well
-    // so return max[in arenateams](min(personalrating[teamtype], teamrating[teamtype]))
-    uint32 max_personal_rating = 0;
-    for (int i = minarenaslot; i < MAX_ARENA_SLOT; ++i)
-    {
-        ArenaTeam* at = sObjectMgr.GetArenaTeamById(GetArenaTeamId(i));
-        if (at)
-        {
-            uint32 p_rating = GetArenaPersonalRating(i);
-            uint32 t_rating = at->GetRating();
-            p_rating = p_rating < t_rating ? p_rating : t_rating;
-            if (max_personal_rating < p_rating)
-                max_personal_rating = p_rating;
-        }
-    }
-    return max_personal_rating;
 }
 
 void Player::UpdateHomebindTime(uint32 time)
@@ -20294,8 +20073,8 @@ void Player::SetBattleGroundEntryPoint(bool forLFG)
             else
                 sLog.outError("SetBattleGroundEntryPoint: Dungeon map %u has no linked graveyard, setting home location as entry point.", GetMapId());
         }
-        // If new entry point is not BG or arena set it
-        else if (!GetMap()->IsBattleGroundOrArena())
+        // If new entry point is not BG set it
+        else if (!GetMap()->IsBattleGround())
         {
             m_bgData.joinPos = WorldLocation(GetMapId(), GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
             m_bgData.m_needSave = true;
@@ -21004,15 +20783,6 @@ BattleGround* Player::GetBattleGround() const
         return NULL;
 
     return sBattleGroundMgr.GetBattleGround(GetBattleGroundId(), m_bgData.bgTypeID);
-}
-
-bool Player::InArena() const
-{
-    BattleGround *bg = GetBattleGround();
-    if (!bg || !bg->isArena())
-        return false;
-
-    return true;
 }
 
 bool Player::GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const
@@ -23943,7 +23713,7 @@ bool Player::CheckTransferPossibility(uint32 mapId)
     }
 
     // Battleground requirements checked in another place
-    if (InBattleGround() && targetMapEntry->IsBattleGroundOrArena())
+    if (InBattleGround() && targetMapEntry->IsBattleGround())
         return true;
 
     AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(mapId);
@@ -24533,7 +24303,6 @@ void Player::SendRefundInfo(Item* item)
     data << item->GetObjectGuid();                  // item guid
     data << uint32(item->GetPaidMoney());           // money cost
     data << uint32(iece->reqhonorpoints);           // honor point cost
-    data << uint32(iece->reqarenapoints);           // arena point cost
     for (uint32 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)   // item cost data
     {
         data << uint32(iece->reqitem[i]);
@@ -24607,7 +24376,6 @@ void Player::RefundItem(Item* item)
     data << uint32(0);                                  // 0, or error code
     data << uint32(item->GetPaidMoney());               // money cost
     data << uint32(iece->reqhonorpoints);               // honor point cost
-    data << uint32(iece->reqarenapoints);               // arena point cost
     for (uint32 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i) // item cost data
     {
         data << uint32(iece->reqitem[i]);
@@ -24648,10 +24416,6 @@ void Player::RefundItem(Item* item)
     // Grant back Honor points
     if (uint32 honorRefund = iece->reqhonorpoints)
         ModifyHonorPoints(int32(honorRefund));
-
-    // Grant back Arena points
-    if (uint32 arenaRefund = iece->reqarenapoints)
-        ModifyArenaPoints(int32(arenaRefund));
 
     SaveInventoryAndGoldToDB();
 

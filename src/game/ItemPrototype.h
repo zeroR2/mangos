@@ -111,7 +111,7 @@ enum ItemPrototypeFlags
     ITEM_FLAG_IGNORE_BAG_SPACE                = 0x00000400, // ignore bag space at new item creation?
     ITEM_FLAG_PARTY_LOOT                      = 0x00000800, // determines if item is party loot or not
     ITEM_FLAG_REFUNDABLE                      = 0x00001000, // item cost can be refunded within 2 hours after purchase
-    ITEM_FLAG_CHARTER                         = 0x00002000, // arena/guild charter
+    ITEM_FLAG_CHARTER                         = 0x00002000, // guild charter
     ITEM_FLAG_UNK14                           = 0x00004000,
     ITEM_FLAG_UNK15                           = 0x00008000, // a lot of items have this
     ITEM_FLAG_UNK16                           = 0x00010000, // a lot of items have this
@@ -119,7 +119,6 @@ enum ItemPrototypeFlags
     ITEM_FLAG_PROSPECTABLE                    = 0x00040000, // item can have prospecting loot (in fact some items expected have empty loot)
     ITEM_FLAG_UNIQUE_EQUIPPED                 = 0x00080000,
     ITEM_FLAG_UNK20                           = 0x00100000,
-    ITEM_FLAG_USEABLE_IN_ARENA                = 0x00200000,
     ITEM_FLAG_THROWABLE                       = 0x00400000, // Only items of ITEM_SUBCLASS_WEAPON_THROWN have it but not all, so can't be used as in game check
     ITEM_FLAG_SPECIALUSE                      = 0x00800000, // last used flag in 2.3.0
     ITEM_FLAG_UNK24                           = 0x01000000,

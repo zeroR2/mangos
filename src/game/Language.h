@@ -296,7 +296,6 @@ enum MangosStrings
     LANG_YOU_ENABLE_CHAT                = 304,
 
     LANG_COMMAND_MODIFY_REP             = 305,
-    LANG_COMMAND_MODIFY_ARENA           = 306,
     LANG_COMMAND_FACTION_NOTFOUND       = 307,
     LANG_COMMAND_FACTION_UNKNOWN        = 308,
     LANG_COMMAND_FACTION_INVPARAM       = 309,
@@ -644,9 +643,6 @@ enum MangosStrings
     LANG_BG_WS_ALLIANCE_FLAG_RESPAWNED  = 614,
     LANG_BG_WS_HORDE_FLAG_RESPAWNED     = 615,
     // 616 - 635 not used
-    LANG_BG_EY_START_ONE_MINUTE         = 636,
-    LANG_BG_EY_START_HALF_MINUTE        = 637,
-    LANG_BG_EY_HAS_BEGUN                = 638,
     // 639 - 649 not used
     LANG_BG_ALLY                        = 650,
     LANG_BG_HORDE                       = 651,
@@ -668,33 +664,7 @@ enum MangosStrings
     LANG_BG_AB_H_NEAR_VICTORY           = 665,
     LANG_BG_MARK_BY_MAIL                = 666,
 
-    LANG_BG_EY_HAS_TAKEN_A_M_TOWER      = 667,
-    LANG_BG_EY_HAS_TAKEN_H_M_TOWER      = 668,
-    LANG_BG_EY_HAS_TAKEN_A_D_RUINS      = 669,
-    LANG_BG_EY_HAS_TAKEN_H_D_RUINS      = 670,
-    LANG_BG_EY_HAS_TAKEN_A_B_TOWER      = 671,
-    LANG_BG_EY_HAS_TAKEN_H_B_TOWER      = 672,
-    LANG_BG_EY_HAS_TAKEN_A_F_RUINS      = 673,
-    LANG_BG_EY_HAS_TAKEN_H_F_RUINS      = 674,
-    LANG_BG_EY_HAS_LOST_A_M_TOWER       = 675,
-    LANG_BG_EY_HAS_LOST_H_M_TOWER       = 676,
-    LANG_BG_EY_HAS_LOST_A_D_RUINS       = 677,
-    LANG_BG_EY_HAS_LOST_H_D_RUINS       = 678,
-    LANG_BG_EY_HAS_LOST_A_B_TOWER       = 679,
-    LANG_BG_EY_HAS_LOST_H_B_TOWER       = 680,
-    LANG_BG_EY_HAS_LOST_A_F_RUINS       = 681,
-    LANG_BG_EY_HAS_LOST_H_F_RUINS       = 682,
-    LANG_BG_EY_HAS_TAKEN_FLAG           = 683,
-    LANG_BG_EY_CAPTURED_FLAG_A          = 684,
-    LANG_BG_EY_CAPTURED_FLAG_H          = 685,
-    LANG_BG_EY_DROPPED_FLAG             = 686,
-    LANG_BG_EY_RESETED_FLAG             = 687,
     // 688 - 699 not used
-    LANG_ARENA_ONE_TOOLOW               = 700,
-    LANG_ARENA_ONE_MINUTE               = 701,
-    LANG_ARENA_THIRTY_SECONDS           = 702,
-    LANG_ARENA_FIFTEEN_SECONDS          = 703,
-    LANG_ARENA_HAS_BEGUN                = 704,
 
     LANG_WAIT_BEFORE_SPEAKING           = 705,
     LANG_NOT_EQUIPPED_ITEM              = 706,
@@ -705,20 +675,12 @@ enum MangosStrings
 
     LANG_BG_QUEUE_ANNOUNCE_SELF         = 711,
     LANG_BG_QUEUE_ANNOUNCE_WORLD        = 712,
-    LANG_YOUR_ARENA_LEVEL_REQ_ERROR     = 713,
 //                                      = 714, not used
     LANG_YOUR_BG_LEVEL_REQ_ERROR        = 715,
 //                                      = 716, not used
     LANG_BG_STARTED_ANNOUNCE_WORLD      = 717,
-    LANG_ARENA_QUEUE_ANNOUNCE_WORLD_JOIN = 718,
-    LANG_ARENA_QUEUE_ANNOUNCE_WORLD_EXIT = 719,
 
     LANG_BG_GROUP_TOO_LARGE             = 720,              // "Your group is too large for this battleground. Please regroup to join."
-    LANG_ARENA_GROUP_TOO_LARGE          = 721,              // "Your group is too large for this arena. Please regroup to join."
-    LANG_ARENA_YOUR_TEAM_ONLY           = 722,              // "Your group has members not in your arena team. Please regroup to join."
-    LANG_ARENA_NOT_ENOUGH_PLAYERS       = 723,              // "Your group does not have enough players to join this match."
-    LANG_ARENA_GOLD_WINS                = 724,              // "The Gold Team wins!"
-    LANG_ARENA_GREEN_WINS               = 725,              // "The Green Team wins!"
 //                                      = 726, not used
     LANG_BG_GROUP_OFFLINE_MEMBER        = 727,              // "Your group has an offline member. Please remove him before joining."
     LANG_BG_GROUP_MIXED_FACTION         = 728,              // "Your group has players from the opposing faction. You can't join the battleground as a group."
@@ -727,20 +689,12 @@ enum MangosStrings
     LANG_BG_GROUP_MEMBER_DESERTER       = 731,              // "Someone in your party is Deserter. You can't join as group."
     LANG_BG_GROUP_MEMBER_NO_FREE_QUEUE_SLOTS = 732,         // "Someone in your party is already in three battleground queues. You cannot join as group."
 
-    LANG_CANNOT_TELE_TO_BG              = 733,              // "You cannot teleport to a battleground or arena map."
-    LANG_CANNOT_SUMMON_TO_BG            = 734,              // "You cannot summon players to a battleground or arena map."
+    LANG_CANNOT_TELE_TO_BG              = 733,              // "You cannot teleport to a battleground map."
+    LANG_CANNOT_SUMMON_TO_BG            = 734,              // "You cannot summon players to a battleground map."
     LANG_CANNOT_GO_TO_BG_GM             = 735,              // "You must be in GM mode to teleport to a player in a battleground."
     LANG_CANNOT_GO_TO_BG_FROM_BG        = 736,              // "You cannot teleport to a battleground from another battleground. Please leave the current battleground first."
-    LANG_DEBUG_ARENA_ON                 = 737,
-    LANG_DEBUG_ARENA_OFF                = 738,
     LANG_DEBUG_BG_ON                    = 739,
     LANG_DEBUG_BG_OFF                   = 740,
-    LANG_DIST_ARENA_POINTS_START        = 741,
-    LANG_DIST_ARENA_POINTS_ONLINE_START = 742,
-    LANG_DIST_ARENA_POINTS_ONLINE_END   = 743,
-    LANG_DIST_ARENA_POINTS_TEAM_START   = 744,
-    LANG_DIST_ARENA_POINTS_TEAM_END     = 745,
-    LANG_DIST_ARENA_POINTS_END          = 746,
 //                                      = 747, not used
 //                                      = 748, not used
 //                                      = 749, not used
@@ -787,7 +741,7 @@ enum MangosStrings
     LANG_BG_AV_H_NEAR_LOSE              = 788,
     LANG_BG_AV_H_GENERAL_DEAD           = 789,
     LANG_BG_AV_A_GENERAL_DEAD           = 790,
-    // Room for battleground/arena strings 791-799 not used
+    // Room for battleground strings 791-799 not used
 
     // in game strings
     //                                  = 800, not used
@@ -1040,7 +994,6 @@ enum MangosStrings
     LANG_BAN_IP_ANNOUNCE                = 17894,
     LANG_PERMBAN_IP_ANNOUNCE            = 17895,
     LANG_MUTE_ANNOUNCE                  = 17896,
-    LANG_ARENA_STARTED_ANNOUNCE_WORLD   = 17898,
 
     // SOTA
     LANG_BG_SA_START_TWO_MINUTE             = 20000,

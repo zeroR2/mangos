@@ -547,9 +547,9 @@ void Pet::SetDeathState(DeathState s)                       // overwrite virtual
             SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
             RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
 
-            //lose happiness when died and not in BG/Arena
+            //lose happiness when died and not in BG
             MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
-            if(!mapEntry || (mapEntry->map_type != MAP_ARENA && mapEntry->map_type != MAP_BATTLEGROUND))
+            if(!mapEntry || mapEntry->map_type != MAP_BATTLEGROUND)
                 ModifyPower(POWER_HAPPINESS, -HAPPINESS_LEVEL_SIZE);
 
 //            if (HasSpell(55709))
@@ -3309,15 +3309,6 @@ float Pet::OCTRegenMPPerSpirit()
     float spirit    = GetStat(STAT_SPIRIT);
     float regen     = spirit * moreRatio->ratio;
     return regen;
-}
-
-void ApplyArenaPreparationWithHelper::operator() (Unit* unit) const
-{
-    if (!unit || !unit->GetObjectGuid().IsPet())
-        return;
-
-    if (unit->IsInWorld())
-        unit->HandleArenaPreparation(apply);
 }
 
 Unit* Pet::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)

@@ -268,7 +268,6 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleAuraModRangedAttackPowerOfStatPercent,     //212 SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT
     &Aura::HandleNoImmediateEffect,                         //213 SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT implemented in Player::RewardRage
     &Aura::HandleUnused,                                    //214 Tamed Pet Passive (single test like spell 20782, also single for 157 aura)
-    &Aura::HandleArenaPreparation,                          //215 SPELL_AURA_ARENA_PREPARATION
     &Aura::HandleModCastingSpeed,                           //216 SPELL_AURA_HASTE_SPELLS
     &Aura::HandleUnused,                                    //217 unused (3.0.8a-3.2.2a)
     &Aura::HandleAuraModRangedHaste,                        //218 SPELL_AURA_HASTE_RANGED
@@ -10114,15 +10113,6 @@ void Aura::HandleManaShield(bool apply, bool Real)
     }
 }
 
-void Aura::HandleArenaPreparation(bool apply, bool Real)
-{
-    if (!Real)
-        return;
-
-    Unit* target = GetTarget();
-    target->HandleArenaPreparation(apply);
-}
-
 void Aura::HandleAuraLinked(bool apply, bool Real)
 {
     if (!Real)
@@ -11166,11 +11156,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     else
                         return;
                     break;
-                }
-                case 37728:                                 // Arena preparation
-                {
-                    GetTarget()->HandleArenaPreparation(apply);
-                    return;
                 }
                 case 55053:                                 // Deathbloom (25 man)
                 {

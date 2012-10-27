@@ -839,7 +839,7 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode( WorldPacket &recv_data )
     if (!player)
     {
         WorldPacket data(SMSG_PARTY_MEMBER_STATS_FULL, 3+4+2);
-        data << uint8(0);                                   // only for SMSG_PARTY_MEMBER_STATS_FULL, probably arena/bg related
+        data << uint8(0);                                   // only for SMSG_PARTY_MEMBER_STATS_FULL, probably bg related
         data << guid.WriteAsPacked();
         data << uint32(GROUP_UPDATE_FLAG_STATUS);
         data << uint16(MEMBER_STATUS_OFFLINE);
@@ -850,7 +850,7 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode( WorldPacket &recv_data )
     Pet *pet = player->GetPet();
 
     WorldPacket data(SMSG_PARTY_MEMBER_STATS_FULL, 4+2+2+2+1+2*6+8+1+8);
-    data << uint8(0);                                       // only for SMSG_PARTY_MEMBER_STATS_FULL, probably arena/bg related
+    data << uint8(0);                                       // only for SMSG_PARTY_MEMBER_STATS_FULL, probably bg related
     data << player->GetPackGUID();
 
     uint32 mask1 = 0x00040BFF;                              // common mask, real flags used 0x000040BFF
