@@ -715,7 +715,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         void LockAI(bool lock) { m_AI_locked = lock; };
         bool IsAILocked() const { return m_AI_locked; };
 
-        void SetVirtualItem(VirtualItemSlot slot, uint32 item_id) { SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + slot, item_id); }
+        void SetVirtualItem(VirtualItemSlot slot, uint32 item_id);
 
     protected:
         bool MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* pSpellInfo, uint32 selectFlags) const;

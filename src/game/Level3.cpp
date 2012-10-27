@@ -4750,7 +4750,6 @@ bool ChatHandler::HandleResetLevelCommand(char* args)
     target->_ApplyAllLevelScaleItemMods(false);
 
     target->SetLevel(start_level);
-    target->InitRunes();
     target->InitStatsForLevel(true);
     target->InitTaxiNodesForLevel();
     target->InitGlyphsForLevel();
@@ -4775,7 +4774,6 @@ bool ChatHandler::HandleResetStatsCommand(char* args)
     if (!HandleResetStatsOrLevelHelper(target))
         return false;
 
-    target->InitRunes();
     target->InitStatsForLevel(true);
     target->InitTaxiNodesForLevel();
     target->InitGlyphsForLevel();

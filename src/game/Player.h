@@ -328,52 +328,6 @@ struct Areas
     float y2;
 };
 
-#define MAX_RUNES       6
-#define RUNE_COOLDOWN   (2*5*IN_MILLISECONDS)                // msec
-
-enum RuneType
-{
-    RUNE_BLOOD      = 0,
-    RUNE_UNHOLY     = 1,
-    RUNE_FROST      = 2,
-    RUNE_DEATH      = 3,
-    NUM_RUNE_TYPES  = 4
-};
-
-struct RuneInfo
-{
-    uint8  BaseRune;
-    uint8  CurrentRune;
-    uint16 Cooldown;                                        // msec
-    uint32 ConvertedBy;
-};
-
-struct Runes
-{
-    RuneInfo runes[MAX_RUNES];
-    uint8 runeState;                                        // mask of available runes
-    uint8 needConvert;                                      // mask of runes that need to be converted
-
-    void SetRuneState(uint8 index, bool set = true)
-    {
-        if (set)
-            runeState |= (1 << index);                      // usable
-        else
-            runeState &= ~(1 << index);                     // on cooldown
-    }
-
-    bool IsRuneNeedsConvert(uint8 index)
-    {
-        if (!needConvert)
-            return false;
-
-        if (needConvert & (1 << index))
-            return true;
-        else
-            return false;
-    }
-};
-
 struct EnchantDuration
 {
     EnchantDuration() : item(NULL), slot(MAX_ENCHANTMENT_SLOT), leftduration(0) {};
@@ -1635,14 +1589,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void ActivateSpec(uint8 specNum);
         void UpdateSpecCount(uint8 count);
 
-        void InitGlyphsForLevel();
-        void SetGlyphSlot(uint8 slot, uint32 slottype) { SetUInt32Value(PLAYER_FIELD_GLYPH_SLOTS_1 + slot, slottype); }
-        uint32 GetGlyphSlot(uint8 slot) { return GetUInt32Value(PLAYER_FIELD_GLYPH_SLOTS_1 + slot); }
-        void SetGlyph(uint8 slot, uint32 glyph) { m_glyphs[m_activeSpec][slot].SetId(glyph); }
-        uint32 GetGlyph(uint8 slot) { return m_glyphs[m_activeSpec][slot].GetId(); }
-        void ApplyGlyph(uint8 slot, bool apply);
-        void ApplyGlyphs(bool apply);
-
         uint32 GetFreePrimaryProfessionPoints() const { return GetUInt32Value(PLAYER_CHARACTER_POINTS2); }
         void SetFreePrimaryProfessions(uint16 profs) { SetUInt32Value(PLAYER_CHARACTER_POINTS2, profs); }
         void InitPrimaryProfessions();
@@ -1959,11 +1905,34 @@ class MANGOS_DLL_SPEC Player : public Unit
         /*********************************************************/
         /***                  PVP SYSTEM                       ***/
         /*********************************************************/
-        void UpdateHonorFields();
+
+        bool AddHonor(float contribution, uint8 type, Unit* source = NULL);
+        void UpdateHonor();
+        void ResetHonor();
+        bool RewardHonor(Unit *pVictim,uint32 groupsize);
+        uint32 CalculateHonorRank(float rank_points) const;
+        uint32 GetHonorRank() const;
+        uint32 CalculateTotalKills(Unit *Victim) const;
+        //Acessors of contribution points
+        void SetContributionPoints(float contribution_points) { m_contribution_points = contribution_points; }
+        float GetContributionPoints(void) const { return m_contribution_points; }
+        //Acessors of righest rank
+        uint32 GetHonorHighestRank() const { return m_highest_rank; }
+        void SetHonorHighestRank(uint32 hr) { m_highest_rank = hr; }
+        //Acessors of rank points
+        float GetRankPoints() const { return m_rank_points; }
+        void SetRankPoints(float rank_points) { m_rank_points = rank_points; }
+        //Acessors of lifetime
+        uint32 GetHonorStoredKills(bool honorable) const { return honorable? m_stored_honorableKills : m_stored_dishonorableKills; }
+        void SetHonorStoredKills(uint32 kills,bool honorable) { if (honorable) m_stored_honorableKills = kills; else m_stored_dishonorableKills = kills; }
+        //Acessors of last week standing
+        int32 GetHonorLastWeekStanding() const { return m_standing; }
+
+        /*void UpdateHonorFields();
         bool RewardHonor(Unit *pVictim, uint32 groupsize, float honor = -1);
         uint32 GetHonorPoints() const { return GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY); }
         void SetHonorPoints(uint32 value);
-        void ModifyHonorPoints(int32 value);
+        void ModifyHonorPoints(int32 value);*/
 
         //End of PvP System
 
@@ -2359,37 +2328,9 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
 
-        // Rune functions, need check  getClass() == CLASS_DEATH_KNIGHT before access
-        uint8 GetRunesState() const { return m_runes->runeState; }
-        RuneType GetBaseRune(uint8 index) const { return RuneType(m_runes->runes[index].BaseRune); }
-        RuneType GetCurrentRune(uint8 index) const { return RuneType(m_runes->runes[index].CurrentRune); }
-        uint16 GetRuneCooldown(uint8 index) const { return m_runes->runes[index].Cooldown; }
-        bool IsBaseRuneSlotsOnCooldown(RuneType runeType) const;
-        void SetBaseRune(uint8 index, RuneType baseRune) { m_runes->runes[index].BaseRune = baseRune; }
-        void SetCurrentRune(uint8 index, RuneType currentRune) { m_runes->runes[index].CurrentRune = currentRune; }
-        void SetRuneCooldown(uint8 index, uint16 cooldown) { m_runes->runes[index].Cooldown = cooldown; m_runes->SetRuneState(index, (cooldown == 0) ? true : false); }
-        void ConvertRune(uint8 index, RuneType newType, uint32 spellid = 0);
-        void SetConvertedBy(uint8 index, uint32 spellid) { m_runes->runes[index].ConvertedBy = spellid; }
-        void ClearConvertedBy(uint8 index) { m_runes->runes[index].ConvertedBy = 0; }
-        bool IsRuneConvertedBy(uint8 index, uint32 spellid) { return m_runes->runes[index].ConvertedBy == spellid; }
-        void SetNeedConvertRune(uint8 index, bool convert, uint32 spellid = 0)
-        {
-            if (convert)
-                m_runes->needConvert |= (1 << index);                      // need convert
-            else
-                m_runes->needConvert &= ~(1 << index);                     // removed from convert
-
-            if (spellid != 0)
-                SetConvertedBy(index, spellid);
-        }
-        bool ActivateRunes(RuneType type, uint32 count);
-        void ResyncRunes();
-        void AddRunePower(uint8 index);
-        void InitRunes();
-
-        bool HasTitle(uint32 bitIndex) const;
-        bool HasTitle(CharTitlesEntry const* title) const { return HasTitle(title->bit_index); }
-        void SetTitle(CharTitlesEntry const* title, bool lost = false);
+        //bool HasTitle(uint32 bitIndex) const;
+        //bool HasTitle(CharTitlesEntry const* title) const { return HasTitle(title->bit_index); }
+        //void SetTitle(CharTitlesEntry const* title, bool lost = false);
 
         bool canSeeSpellClickOn(Creature const* creature) const;
 
@@ -2500,6 +2441,14 @@ class MANGOS_DLL_SPEC Player : public Unit
         /*********************************************************/
         /***                  HONOR SYSTEM                     ***/
         /*********************************************************/
+        HonorMap m_honor;
+        float m_contribution_points;
+        float m_rank_points;
+        uint32 m_stored_honorableKills;         //honorae kills from BD
+        uint32 m_stored_dishonorableKills;
+        uint32 m_highest_rank;
+        uint32 m_standing;
+
         time_t m_lastHonorUpdateTime;
 
         void outDebugStatsValues() const;
@@ -2634,7 +2583,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         float  m_summon_z;
 
         DeclinedName* m_declinedname;
-        Runes* m_runes;
         EquipmentSets m_EquipmentSets;
 
         // Refer-A-Friend
@@ -2703,7 +2651,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_lastFallTime;
         float  m_lastFallZ;
 
-        LiquidTypeEntry const* m_lastLiquid;
+        //LiquidTypeEntry const* m_lastLiquid;
 
         int32 m_MirrorTimer[MAX_TIMERS];
         uint8 m_MirrorTimerFlags;

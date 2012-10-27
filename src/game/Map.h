@@ -217,7 +217,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool IsRegularDifficulty() const { return GetDifficulty() == REGULAR_DIFFICULTY; }
         uint32 GetMaxPlayers() const;                       // dependent from map difficulty
         uint32 GetMaxResetDelay() const;                    // dependent from map difficulty
-        MapDifficultyEntry const* GetMapDifficulty() const; // dependent from map difficulty
 
         bool Instanceable() const { return i_mapEntry && i_mapEntry->Instanceable(); }
         // NOTE: this duplicate of Instanceable(), but Instanceable() can be changed when BG also will be instanceable
@@ -225,8 +224,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
         bool IsRaidOrHeroicDungeon() const { return IsRaid() || GetDifficulty() > DUNGEON_DIFFICULTY_NORMAL; }
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
-        bool IsBattleArena() const { return i_mapEntry && i_mapEntry->IsBattleArena(); }
-        bool IsBattleGroundOrArena() const { return i_mapEntry && i_mapEntry->IsBattleGroundOrArena(); }
 
         // can't be NULL for loaded map
         MapPersistentState* GetPersistentState() const;

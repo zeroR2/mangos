@@ -144,17 +144,6 @@ PlayerTaxi::PlayerTaxi()
 
 void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint32 level)
 {
-    // class specific initial known nodes
-    switch(chrClass)
-    {
-        case CLASS_DEATH_KNIGHT:
-        {
-            for (int i = 0; i < TaxiMaskSize; ++i)
-                m_taximask[i] |= sOldContinentsNodesMask[i];
-            break;
-        }
-    }
-
     // race specific initial known nodes: capital and taxi hub masks
     switch(race)
     {
@@ -454,7 +443,7 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     m_DailyQuestChanged = false;
     m_WeeklyQuestChanged = false;
 
-    m_lastLiquid = NULL;
+    //m_lastLiquid = NULL;
 
     for (int i=0; i<MAX_TIMERS; ++i)
         m_MirrorTimer[i] = DISABLED_MIRROR_TIMER;
@@ -705,9 +694,9 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
     SetByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_PVP);
     SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
-    SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+    //SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
     SetFloatValue(UNIT_MOD_CAST_SPEED, 1.0f);               // fix cast time showed in spell tooltip on client
-    SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);            // default for players in 3.0.3
+    //SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);            // default for players in 3.0.3
 
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, -1);  // -1 is default value
 
@@ -731,14 +720,14 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     SetUInt32Value(PLAYER_GUILDRANK, 0);
     SetUInt32Value(PLAYER_GUILD_TIMESTAMP, 0);
 
-    for (int i = 0; i < KNOWN_TITLES_SIZE; ++i)
+    /*for (int i = 0; i < KNOWN_TITLES_SIZE; ++i)
         SetUInt64Value(PLAYER__FIELD_KNOWN_TITLES + i, 0);  // 0=disabled
-    SetUInt32Value(PLAYER_CHOSEN_TITLE, 0);
+    SetUInt32Value(PLAYER_CHOSEN_TITLE, 0);*/
 
-    SetUInt32Value(PLAYER_FIELD_KILLS, 0);
-    SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, 0);
-    SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, 0);
-    SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
+    //SetUInt32Value(PLAYER_FIELD_KILLS, 0);
+    //SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, 0);
+    //SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, 0);
+    //SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
 
     // set starting level
     uint32 start_level = getClass() != CLASS_DEATH_KNIGHT
@@ -754,10 +743,8 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
     SetUInt32Value(UNIT_FIELD_LEVEL, start_level);
 
-    InitRunes();
-
     SetUInt32Value (PLAYER_FIELD_COINAGE, sWorld.getConfig(CONFIG_UINT32_START_PLAYER_MONEY));
-    SetHonorPoints(sWorld.getConfig(CONFIG_UINT32_START_HONOR_POINTS));
+    //SetHonorPoints(sWorld.getConfig(CONFIG_UINT32_START_HONOR_POINTS));
 
     // Played time
     m_Last_tick = time(NULL);
@@ -767,7 +754,6 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     // base stats and related field values
     InitStatsForLevel();
     InitTaxiNodesForLevel();
-    InitGlyphsForLevel();
     InitTalentForLevel();
     InitPrimaryProfessions();                               // to max set before any spell added
 
@@ -1133,7 +1119,7 @@ void Player::HandleDrowning(uint32 time_diff)
             SendMirrorTimer(FATIGUE_TIMER, DarkWaterTime, m_MirrorTimer[FATIGUE_TIMER], 10);
     }
 
-    if ((m_MirrorTimerFlags & (UNDERWATER_INLAVA /*| UNDERWATER_INSLIME*/)) && !(m_lastLiquid && m_lastLiquid->SpellId))
+    if ((m_MirrorTimerFlags & (UNDERWATER_INLAVA /*| UNDERWATER_INSLIME*/)) /* && !(m_lastLiquid && m_lastLiquid->SpellId) */)
     {
         // Breath timer not activated - activate it
         if (m_MirrorTimer[FIRE_TIMER] == DISABLED_MIRROR_TIMER)
@@ -1354,8 +1340,8 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     if (isAlive())
     {
         // if no longer casting, set regen power as soon as it is up.
-        if (!IsUnderLastManaUseEffect() && !HasAuraType(SPELL_AURA_STOP_NATURAL_MANA_REGEN))
-            SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+        /*if (!IsUnderLastManaUseEffect() && !HasAuraType(SPELL_AURA_STOP_NATURAL_MANA_REGEN))
+            SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);*/
 
         if (!m_regenTimer)
             RegenerateAll(IsUnderLastManaUseEffect() ? REGEN_TIME_PRECISE : REGEN_TIME_FULL);
@@ -2159,11 +2145,11 @@ void Player::Regenerate(Powers power, uint32 diff)
             if (IsUnderLastManaUseEffect())
             {
                 // Mangos Updates Mana in intervals of 2s, which is correct
-                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
+                addvalue += /* GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) * */ ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             }
             else
             {
-                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
+                addvalue += /* GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * */ ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             }
             break;
         }
@@ -2183,43 +2169,7 @@ void Player::Regenerate(Powers power, uint32 diff)
             float RunicPowerDecreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RUNICPOWER_LOSS);
             addvalue += 30 * RunicPowerDecreaseRate;         // 3 RunicPower by tick
             break;
-        }
-        case POWER_RUNE:
-        {
-            if (getClass() != CLASS_DEATH_KNIGHT)
-                break;
-
-            for (uint32 rune = 0; rune < MAX_RUNES; ++rune)
-            {
-                if (uint16 cd = GetRuneCooldown(rune))       // if we have cooldown, reduce it...
-                {
-                    uint32 cd_diff = diff;
-                    AuraList const& ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
-                    for (AuraList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
-                        if ((*i)->GetModifier()->m_miscvalue == int32(power) && (*i)->GetMiscBValue()==GetCurrentRune(rune))
-                            cd_diff = cd_diff * ((*i)->GetModifier()->m_amount + 100) / 100;
-
-                    SetRuneCooldown(rune, (cd < cd_diff) ? 0 : cd - cd_diff);
-
-                    // check if we don't have cooldown, need convert and that our rune wasn't already converted
-                    if (cd < cd_diff && m_runes->IsRuneNeedsConvert(rune) && GetBaseRune(rune) == GetCurrentRune(rune))
-                    {
-                        // currently all delayed rune converts happen with rune death
-                        // ConvertedBy was initialized at proc
-                        ConvertRune(rune, RUNE_DEATH);
-                        SetNeedConvertRune(rune, false);
-                    }
-                }
-                else if (m_runes->IsRuneNeedsConvert(rune) && GetBaseRune(rune) == GetCurrentRune(rune))
-                {
-                    // currently all delayed rune converts happen with rune death
-                    // ConvertedBy was initialized at proc
-                    ConvertRune(rune, RUNE_DEATH);
-                    SetNeedConvertRune(rune, false);
-                }
-            }
-            break;
-        }
+        }        
         case POWER_FOCUS:
         case POWER_HAPPINESS:
         case POWER_HEALTH:
@@ -2728,7 +2678,6 @@ void Player::GiveLevel(uint32 level)
 
     InitTalentForLevel();
     InitTaxiNodesForLevel();
-    InitGlyphsForLevel();
 
     UpdateAllStats();
 
@@ -2819,7 +2768,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     PlayerLevelInfo info;
     sObjectMgr.GetPlayerLevelInfo(getRace(),getClass(),getLevel(),&info);
 
-    SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
+    //SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL));
     SetUInt32Value(PLAYER_NEXT_LEVEL_XP, sObjectMgr.GetXPForLevel(getLevel()));
 
     // reset before any aura state sources (health set/aura apply)
@@ -2850,7 +2799,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
     for (uint16 index = PLAYER_FIELD_COMBAT_RATING_1; index < PLAYER_FIELD_COMBAT_RATING_1 + MAX_COMBAT_RATING; ++index)
         SetUInt32Value(index, 0);
 
-    SetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS,0);
+    //SetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS,0);
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
     {
         SetInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG+i, 0);
@@ -2879,16 +2828,16 @@ void Player::InitStatsForLevel(bool reapplyMods)
 
     // Base crit values (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
     SetFloatValue(PLAYER_CRIT_PERCENTAGE,0.0f);
-    SetFloatValue(PLAYER_OFFHAND_CRIT_PERCENTAGE,0.0f);
+    //SetFloatValue(PLAYER_OFFHAND_CRIT_PERCENTAGE,0.0f);
     SetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE,0.0f);
 
     // Init spell schools (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
-    for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
-        SetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1+i, 0.0f);
+    //for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
+    //    SetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1+i, 0.0f);
 
     SetFloatValue(PLAYER_PARRY_PERCENTAGE, 0.0f);
     SetFloatValue(PLAYER_BLOCK_PERCENTAGE, 0.0f);
-    SetUInt32Value(PLAYER_SHIELD_BLOCK, 0);
+    //SetUInt32Value(PLAYER_SHIELD_BLOCK, 0);
 
     // Dodge percentage
     SetFloatValue(PLAYER_DODGE_PERCENTAGE, 0.0f);
@@ -2905,16 +2854,16 @@ void Player::InitStatsForLevel(bool reapplyMods)
         SetResistanceBuffMods(SpellSchools(i), false, 0.0f);
     }
 
-    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE,0);
-    SetUInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE,0);
+    //SetUInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE,0);
+    //SetUInt32Value(PLAYER_FIELD_MOD_TARGET_PHYSICAL_RESISTANCE,0);
     for (int i = 0; i < MAX_SPELL_SCHOOL; ++i)
     {
         SetUInt32Value(UNIT_FIELD_POWER_COST_MODIFIER+i,0);
         SetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER+i,0.0f);
     }
     // Reset no reagent cost field
-    for (int i = 0; i < 3; ++i)
-        SetUInt32Value(PLAYER_NO_REAGENT_COST_1 + i, 0);
+    //for (int i = 0; i < 3; ++i)
+    //    SetUInt32Value(PLAYER_NO_REAGENT_COST_1 + i, 0);
     // Init data for form but skip reapply item mods for form
     InitDataForForm(reapplyMods);
 
@@ -2937,7 +2886,7 @@ void Player::InitStatsForLevel(bool reapplyMods)
         UNIT_FLAG_SKINNABLE      | UNIT_FLAG_MOUNT        | UNIT_FLAG_TAXI_FLIGHT     );
     SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);   // must be set
 
-    SetFlag(UNIT_FIELD_FLAGS_2,UNIT_FLAG2_REGENERATE_POWER);// must be set
+    //SetFlag(UNIT_FIELD_FLAGS_2,UNIT_FLAG2_REGENERATE_POWER);// must be set
 
     // cleanup player flags (will be re-applied if need at aura load), to avoid have ghost flag without ghost aura, for example.
     RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK | PLAYER_FLAGS_DND | PLAYER_FLAGS_GM | PLAYER_FLAGS_GHOST);
@@ -5131,7 +5080,7 @@ uint32 Player::GetShieldBlockValue() const
     return uint32(value);
 }
 
-float Player::GetMeleeCritFromAgility()
+/*float Player::GetMeleeCritFromAgility()
 {
     uint32 level = getLevel();
     uint32 pclass = getClass();
@@ -5145,6 +5094,34 @@ float Player::GetMeleeCritFromAgility()
 
     float crit=critBase->base + GetStat(STAT_AGILITY)*critRatio->ratio;
     return crit*100.0f;
+}*/
+
+float Player::GetMeleeCritFromAgility()
+{
+    // new calculation with abt mods.
+    float val = 0.0f, classrate = 0.0f;
+
+    uint32 level = getLevel();
+    if (level > 60)
+        level = 60;
+
+    switch(getClass())
+    {
+        case CLASS_ROGUE:   classrate = 29 - ((60 - level)*0.4);  break;
+        case CLASS_HUNTER:  classrate = 53 - ((60 - level)*0.7);  break;
+        case CLASS_PRIEST:
+        case CLASS_WARLOCK:
+        case CLASS_DRUID:
+        case CLASS_WARRIOR:
+        case CLASS_PALADIN:
+        case CLASS_SHAMAN:
+        case CLASS_MAGE:
+        default:            classrate = 20 - ((60 - level)*0.25); break;
+    }
+
+    val = GetStat(STAT_AGILITY)/classrate;
+
+  return val;
 }
 
 void Player::GetDodgeFromAgility(float &diminishing, float &nondiminishing)
@@ -5611,9 +5588,9 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
                      SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
                      if (!pEnchant)
                          continue;
-                     if (pEnchant->requiredSkill != SkillId)
-                         continue;
-                     if (SkillValue < pEnchant->requiredSkillValue && new_value >= pEnchant->requiredSkillValue)
+                     //if (pEnchant->requiredSkill != SkillId)
+                     //    continue;
+                     //if (SkillValue < pEnchant->requiredSkillValue && new_value >= pEnchant->requiredSkillValue)
                          ApplyEnchantment(pItem, EnchantmentSlot(slot), true);
                 }
             }
@@ -6589,241 +6566,287 @@ void Player::RewardReputation(Quest const *pQuest)
     // TODO: implement reputation spillover
 }
 
-void Player::UpdateHonorFields()
+//Update honor fields , cleanKills is only used during char saving
+void Player::UpdateHonor()
 {
-    /// called when rewarding honor and at each save
-    time_t now = time(NULL);
-    time_t today = (time(NULL) / DAY) * DAY;
+    uint32 today_honorableKills = 0;
+    uint32 today_dishonorableKills = 0;
 
-    if (m_lastHonorUpdateTime < today)
+    uint32 yesterdayKills = 0;
+    uint32 thisWeekKills = 0;
+    uint32 lastWeekKills = 0;
+
+    float yesterdayContribution = 0.0f;
+    float thisWeekContribution = 0.0f;
+    float lastWeekContribution = 0.0f;
+
+    time_t rawtime;
+    time(&rawtime);
+    tm* now = localtime(&rawtime);
+
+    float honorBar = 0.0f;
+
+    uint32 today = sWorld.GetDateFromDatabase();
+
+    uint32 yesterday     = today - 1;
+    uint32 thisWeekBegin = today - now->tm_wday;
+    uint32 thisWeekEnd   = thisWeekBegin + 7;
+    uint32 lastWeekBegin = thisWeekBegin - 7;
+    uint32 lastWeekEnd   = lastWeekBegin + 7;
+
+    DETAIL_LOG("PLAYER: UpdateHonor");
+
+    uint32 total_dishonorableKills = GetHonorStoredKills(false);
+    uint32 total_honorableKills = GetHonorStoredKills(true);
+
+    for (HonorMap::iterator itr = m_honor.begin(); itr != m_honor.end(); ++itr)
     {
-        time_t yesterday = today - DAY;
-
-        uint16 kills_today = PAIR32_LOPART(GetUInt32Value(PLAYER_FIELD_KILLS));
-
-        // update yesterday's contribution
-        if (m_lastHonorUpdateTime >= yesterday)
+        if(itr->type == HONORABLE_KILL)
         {
-            SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, GetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION));
+            total_honorableKills++;
 
-            // this is the first update today, reset today's contribution
-            SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, 0);
-            SetUInt32Value(PLAYER_FIELD_KILLS, MAKE_PAIR32(0,kills_today));
+            if (itr->date == today)
+                today_honorableKills++;
+
+            if (itr->date == yesterday)
+                yesterdayKills++;
+
+            if ((itr->date >= thisWeekBegin) && (itr->date <= thisWeekEnd))
+                thisWeekKills++;
+
+            if ((itr->date >= lastWeekBegin) && (itr->date < lastWeekEnd))
+                lastWeekKills++;
         }
-        else
+
+        if (itr->type != DISHONORABLE_KILL)
         {
-            // no honor/kills yesterday or today, reset
-            SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
-            SetUInt32Value(PLAYER_FIELD_KILLS, 0);
+            if (itr->date == yesterday)
+                yesterdayContribution += itr->contributionPoints;
+
+            if ((itr->date >= thisWeekBegin) && (itr->date <= thisWeekEnd))
+                thisWeekContribution += itr->contributionPoints;
+
+            if ((itr->date >= lastWeekBegin) && (itr->date < lastWeekEnd))
+                lastWeekContribution += itr->contributionPoints;
+        }
+
+        if (itr->type == DISHONORABLE_KILL)
+        {
+            total_dishonorableKills++;
+
+            if (itr->date == today)
+                today_dishonorableKills++;
         }
     }
 
-    m_lastHonorUpdateTime = now;
+    uint32 honor_rank = CalculateHonorRank(GetRankPoints());
+    uint32 t_honor_rank = honor_rank;
 
-    // START custom PvP Honor Kills Title System
-    if (sWorld.getConfig(CONFIG_BOOL_ALLOW_HONOR_KILLS_TITLES))
-    {
-        uint32 HonorKills = GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS);
-        uint32 victim_rank = 0;
+    if (honor_rank > GetHonorHighestRank())
+        SetHonorHighestRank(honor_rank);
+    if (honor_rank != 0)
+        honor_rank -= 4;
 
-        //this may consume a lot of cpu cycles.
-        //You can use this sql query: "SELECT max(totalKills) FROM characters" to get the max totalKills
-        //of yours players and edit this condition to:  "if (HonorKills < 15 || HonorKills > max(totalKills)+1)) return;"
-        //don't forget to replace max(totalKills) with the result of query
-        if (HonorKills < 15)
-            return;
+    // NEXT RANK BAR
+    if (GetRankPoints() <= 0.00)
+        honorBar = 0.0;
+    else if (GetRankPoints() < 2000.00)
+        honorBar = GetRankPoints() * (256.00/2000.00);
+    else if (GetRankPoints() < 5000.00)
+        honorBar = (GetRankPoints() - 2000) * (256.00/3000.00);
+    else
+        honorBar = ((uint32)GetRankPoints() % 5000) * (256.00/5000.00);
 
-        if (HonorKills >= 15 && HonorKills < 2000)
-            victim_rank = 1;
-        else if (HonorKills >= 2000 && HonorKills < 5000)
-            victim_rank = 2;
-        else if (HonorKills >= 5000 && HonorKills < 10000)
-            victim_rank = 3;
-        else if (HonorKills >= 10000 && HonorKills < 15000)
-            victim_rank = 4;
-        else if (HonorKills >= 15000 && HonorKills < 20000)
-            victim_rank = 5;
-        else if (HonorKills >= 20000 && HonorKills < 25000)
-            victim_rank = 6;
-        else if (HonorKills >= 25000 && HonorKills < 30000)
-            victim_rank = 7;
-        else if (HonorKills >= 30000 && HonorKills < 35000)
-            victim_rank = 8;
-        else if (HonorKills >= 35000 && HonorKills < 40000)
-            victim_rank = 9;
-        else if (HonorKills >= 40000 && HonorKills < 45000)
-            victim_rank = 10;
-        else if (HonorKills >= 45000 && HonorKills < 50000)
-            victim_rank = 11;
-        else if (HonorKills >= 50000 && HonorKills < 55000)
-            victim_rank = 12;
-        else if (HonorKills >= 55000 && HonorKills < 60000)
-            victim_rank = 13;
-        else if (HonorKills >= 60000)
-            victim_rank = 14;
+    // HIGHEST RANK
+    SetByteValue(PLAYER_FIELD_BYTES, 3, m_highest_rank);
 
-        // horde titles starting from 15+
-        if (GetTeam() == HORDE)
-            victim_rank += 14;
+    // PLAYER_FIELD_HONOR_BAR
+    SetUInt32Value(PLAYER_FIELD_BYTES2, (uint32) honorBar);
 
-        if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(victim_rank))
-        {
-            // if player does have title there is no need to update fourther
-            if (!HasTitle(titleEntry))
-            {
-                // lets remove all previous ranks
-                for (uint8 i = 1; i < 29; ++i)
-                {
-                    if (CharTitlesEntry const* title = sCharTitlesStore.LookupEntry(i))
-                    {
-                        if (HasTitle(title))
-                            SetTitle(title, true);
-                    }
-                }
-                // finaly apply and set as active new title
-                SetTitle(titleEntry);
-                SetUInt32Value(PLAYER_CHOSEN_TITLE, victim_rank);
-            }
-        }
-    }
-    // END custom PvP Honor Kills Title System
+    // RANK (Patent)
+    if (t_honor_rank)
+        SetUInt32Value(PLAYER_BYTES_3, (( honor_rank << 24) + 0x04000000) + (m_drunk & 0xFFFE) + getGender());
+    else
+        SetUInt32Value(PLAYER_BYTES_3, (m_drunk & 0xFFFE) + getGender());
+
+    // TODAY
+    SetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 0, today_honorableKills);
+    SetUInt16Value(PLAYER_FIELD_SESSION_KILLS, 1, today_dishonorableKills);
+
+    // YESTERDAY
+    SetUInt32Value(PLAYER_FIELD_YESTERDAY_KILLS, yesterdayKills);
+    SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, (uint32) (yesterdayContribution > 0.0f ? yesterdayContribution : 0.0f));
+
+    // THIS WEEK
+    SetUInt32Value(PLAYER_FIELD_THIS_WEEK_KILLS, thisWeekKills);
+    SetUInt32Value(PLAYER_FIELD_THIS_WEEK_CONTRIBUTION, (uint32) (thisWeekContribution > 0.0f ? thisWeekContribution : 0.0f));
+
+    // LAST WEEK
+    SetUInt32Value(PLAYER_FIELD_LAST_WEEK_KILLS, lastWeekKills);
+    SetUInt32Value(PLAYER_FIELD_LAST_WEEK_CONTRIBUTION, (uint32) (lastWeekContribution > 0.0f ? lastWeekContribution : 0.0f));
+    SetUInt32Value(PLAYER_FIELD_LAST_WEEK_RANK, GetHonorLastWeekStanding());
+
+    // LIFE TIME
+    SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, total_honorableKills);
+    SetUInt32Value(PLAYER_FIELD_LIFETIME_DISHONORABLE_KILLS, total_dishonorableKills);
 }
 
-///Calculate the amount of honor gained based on the victim
-///and the size of the group for which the honor is divided
-///An exact honor value can also be given (overriding the calcs)
-bool Player::RewardHonor(Unit *uVictim, uint32 groupsize, float honor)
+void Player::ResetHonor()
 {
-    // 'Inactive' this aura prevents the player from gaining honor points and battleground tokens
-    if (GetDummyAura(SPELL_AURA_PLAYER_INACTIVE))
+    //it will delete all honor permanently
+    CharacterDatabase.PExecute("DELETE FROM character_honor WHERE guid = '%u'",GetGUIDLow());
+    m_honor.clear();
+    SetHonorStoredKills(0,true);
+    SetHonorStoredKills(0,false);
+    SetRankPoints(0);
+    SetHonorHighestRank(0);
+    UpdateHonor();
+}
+
+uint32 Player::GetHonorRank() const
+{
+    return CalculateHonorRank(m_rank_points);
+}
+
+//What is Player's rank... private, scout...
+uint32 Player::CalculateHonorRank(float rank_points) const
+{
+    uint32 rank = 0;
+    if (rank_points <= -2000.0) rank = 1;       // Pariah (-4)
+    else if (rank_points <= -1000.0) rank = 2;  // Outlaw (-3)
+    else if (rank_points <= -500.0) rank = 3;   // Exiled (-2)
+    else if (rank_points < 0.0) rank = 4;       // Dishonored (-1)
+    else if (rank_points == 0) rank = 0;
+    else if (rank_points <  2000.00) rank = 5;
+    else if (rank_points > (HONOR_RANK_COUNT-7)*5000) rank = HONOR_RANK_COUNT-1;
+    else rank = 6 + uint32(rank_points / 5000);
+
+    return rank;
+}
+
+//How many times Player kill pVictim...
+uint32 Player::CalculateTotalKills(Unit *Victim) const
+{
+    uint32 total_kills = 0;
+    uint32 ID= 0;
+
+    uint32 today = sWorld.GetDateFromDatabase();
+
+    if (!Victim)
+        return 0;
+
+    uint8 vType = Victim->GetTypeId();
+
+    switch (vType)
+    {
+        case TYPEID_PLAYER: ID = ((Player*)Victim)->GetGUIDLow(); break;
+        case TYPEID_UNIT: ID = Victim->GetEntry(); break; // actually kills count not used for NPCs
+        default: return 0; // cheat?
+    }
+
+    for (HonorMap::const_iterator itr = m_honor.begin(); itr != m_honor.end(); ++itr)
+        if (itr->victimType == vType && itr->victimID == ID && itr->date == today)
+            total_kills ++;
+
+    return total_kills;
+}
+
+//How much honor Player gains/loses killing uVictim
+bool Player::RewardHonor(Unit* uVictim, uint32 groupsize)
+{
+    float rank_points = 0;
+
+    DETAIL_LOG("PLAYER: RewardHonor");
+
+    if (!uVictim)
         return false;
 
-    ObjectGuid victim_guid;
-    uint32 victim_rank = 0;
+    if (uVictim->GetAura(2479, EFFECT_INDEX_0))             // Honorless Target
+        return false;
 
-    // need call before fields update to have chance move yesterday data to appropriate fields before today data change.
-    UpdateHonorFields();
-
-    if (honor <= 0)
+    if (uVictim->isUnit())
     {
-        if (!uVictim || uVictim == this || uVictim->HasAuraType(SPELL_AURA_NO_PVP_CREDIT))
+        Creature *cVictim = (Creature *)uVictim;
+        if (cVictim->IsCivilian() && !IsHonorOrXPTarget(cVictim))
+        {
+            rank_points = ANATHEMA::Honor::DishonorableKillPoints(getLevel());
+            SetRankPoints(GetRankPoints() - rank_points);
+            if(GetRankPoints() < -2500.0)
+                SetRankPoints(-2500.0);
+            AddHonor(rank_points, DISHONORABLE_KILL, cVictim);
+            return true;
+        }
+
+        if (cVictim->IsRacialLeader())
+        {
+            AddHonor(488.0, HONORABLE_KILL, cVictim);
+            return true;
+        }
+    }
+    else
+    if (uVictim->isPlayer())
+    {
+        Player *pVictim = (Player *)uVictim;
+
+        if (GetTeam() == pVictim->GetTeam())
             return false;
 
-        victim_guid = uVictim->GetObjectGuid();
-
-        if (uVictim->GetTypeId() == TYPEID_PLAYER)
+        if (IsHonorOrXPTarget(pVictim))
         {
-            Player *pVictim = (Player *)uVictim;
-
-            if (GetTeam() == pVictim->GetTeam() && !sWorld.IsFFAPvPRealm())
-                return false;
-
-            float f = 1;                                    //need for total kills (?? need more info)
-            uint32 k_grey = 0;
-            uint32 k_level = getLevel();
-            uint32 v_level = pVictim->getLevel();
-
-            {
-                // PLAYER_CHOSEN_TITLE VALUES DESCRIPTION
-                //  [0]      Just name
-                //  [1..14]  Alliance honor titles and player name
-                //  [15..28] Horde honor titles and player name
-                //  [29..38] Other title and player name
-                //  [39+]    Nothing
-                uint32 victim_title = pVictim->GetUInt32Value(PLAYER_CHOSEN_TITLE);
-                                                            // Get Killer titles, CharTitlesEntry::bit_index
-                // Ranks:
-                //  title[1..14]  -> rank[5..18]
-                //  title[15..28] -> rank[5..18]
-                //  title[other]  -> 0
-                if (victim_title == 0)
-                    victim_guid.Clear();                    // Don't show HK: <rank> message, only log.
-                else if (victim_title < 15)
-                    victim_rank = victim_title + 4;
-                else if (victim_title < 29)
-                    victim_rank = victim_title - 14 + 4;
-                else
-                    victim_guid.Clear();                    // Don't show HK: <rank> message, only log.
-            }
-
-            k_grey = MaNGOS::XP::GetGrayLevel(k_level);
-
-            if (v_level<=k_grey)
-                return false;
-
-            float diff_level = (k_level == k_grey) ? 1 : ((float(v_level) - float(k_grey)) / (float(k_level) - float(k_grey)));
-
-            int32 v_rank =1;                                //need more info
-
-            honor = ((f * diff_level * (190 + v_rank*10))/6);
-            honor *= float(k_level) / 70.0f;                //factor of dependence on levels of the killer
-
-            // count the number of playerkills in one day
-            ApplyModUInt32Value(PLAYER_FIELD_KILLS, 1, true);
-            // and those in a lifetime
-            ApplyModUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, 1, true);
-        }
-        else
-        {
-            Creature *cVictim = (Creature *)uVictim;
-
-            if (!cVictim->IsRacialLeader())
-                return false;
-
-            honor = 2000;                                    // ??? need more info
-            victim_rank = 19;                               // HK: Leader
-
-            if (groupsize > 1)
-                honor *= groupsize;
+            AddHonor(ANATHEMA::Honor::HonorableKillPoints(this, pVictim, groupsize), HONORABLE_KILL, pVictim);
+            return true;
         }
     }
 
-    if (uVictim != NULL)
+    return false;
+}
+
+bool Player::AddHonor(float contribution, uint8 type, Unit* source)
+{
+    // Prevent give fake records to db with 0 honor
+    if (!contribution)
+        return false;
+
+    // If not source, then give yourself
+    if (!source)
+        source = this;
+
+    // CharacterDatabase.PExecute("INSERT INTO `character_honor` (`guid`,`victim`,`victim_type`,`honor`,`date`,`type`) VALUES (%u, %u, %u, %f, %u, %u)", (uint32)GetGUIDLow(), (uint32)uVictim->GetEntry(),uVictim->GetType() (float)honor_points, (uint32)today, (uint8)kill_type);
+
+    HonorData honorData;
+    honorData.date                  = sWorld.GetDateFromDatabase();
+    honorData.contributionPoints    = contribution;
+    honorData.victimID              = (source->isPlayer() ? source->GetGUIDLow() : source->GetEntry());
+    honorData.victimType            = (source == this ? 0 : source->GetTypeId());
+    honorData.type                  = type;
+    honorData.state                 = HK_NEW;
+
+    m_honor.push_back(honorData);
+
+    WorldPacket data(SMSG_PVP_CREDIT, 4+8+4);
+    data << uint32(type == DISHONORABLE_KILL ? -contribution : contribution);
+
+    if (source == this)
+        data << uint64(0);
+    else
+        data << (source->GetObjectGuid());
+
+    if (source->isUnit())
     {
-        honor *= sWorld.getConfig(CONFIG_FLOAT_RATE_HONOR);
-        honor *= (GetMaxPositiveAuraModifier(SPELL_AURA_MOD_HONOR_GAIN) + 100.0f)/100.0f;
-
-        if (groupsize > 1)
-            honor /= groupsize;
-
-        honor *= (((float)urand(8,12))/10);                 // approx honor: 80% - 120% of real honor
-        honor *= 2.0f;   // as of 3.3.3  HK have had a 100% increase to honor
+        if (((Creature*)source)->IsRacialLeader())
+            data << uint32(19);
+        else
+            data << uint32(0);
     }
+    else if (source == this)
+        data << uint32(0);
+    else
+        data << ((Player*)source)->GetHonorRank();
 
-    // honor - for show honor points in log
-    // victim_guid - for show victim name in log
-    // victim_rank [1..4]  HK: <dishonored rank>
-    // victim_rank [5..19] HK: <alliance\horde rank>
-    // victim_rank [0,20+] HK: <>
-    WorldPacket data(SMSG_PVP_CREDIT, 4 + 8 + 4);
-    data << uint32(honor);
-    data << ObjectGuid(victim_guid);
-    data << uint32(victim_rank);
-    GetSession()->SendPacket(&data);
+    SendDirectMessage(&data);
 
-    // add honor points
-    ModifyHonorPoints(int32(honor));
-
-    ApplyModUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, uint32(honor), true);
+    UpdateHonor();
     return true;
-}
-
-void Player::SetHonorPoints(uint32 value)
-{
-    if (value > sWorld.getConfig(CONFIG_UINT32_MAX_HONOR_POINTS))
-        value = sWorld.getConfig(CONFIG_UINT32_MAX_HONOR_POINTS);
-
-    SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, value);
-}
-
-void Player::ModifyHonorPoints(int32 value)
-{
-    int32 newValue = (int32)GetHonorPoints() + value;
-
-    if (newValue < 0)
-        newValue = 0;
-
-    SetHonorPoints(newValue);
 }
 
 uint32 Player::GetGuildIdFromDB(ObjectGuid guid)
@@ -15885,9 +15908,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     // reset stats before loading any modifiers
     InitStatsForLevel();
-    InitGlyphsForLevel();
     InitTaxiNodesForLevel();
-    InitRunes();
 
     // rest bonus can only be calculated after InitStatsForLevel()
     m_rest_bonus = fields[21].GetFloat();
@@ -21754,32 +21775,6 @@ void Player::InitGlyphsForLevel()
     SetUInt32Value(PLAYER_GLYPHS_ENABLED, value);
 }
 
-void Player::ApplyGlyph(uint8 slot, bool apply)
-{
-    if (uint32 glyph = GetGlyph(slot))
-    {
-        if (GlyphPropertiesEntry const *gp = sGlyphPropertiesStore.LookupEntry(glyph))
-        {
-            if (apply)
-            {
-                CastSpell(this, gp->SpellId, true);
-                SetUInt32Value(PLAYER_FIELD_GLYPHS_1 + slot, glyph);
-            }
-            else
-            {
-                RemoveAurasDueToSpell(gp->SpellId);
-                SetUInt32Value(PLAYER_FIELD_GLYPHS_1 + slot, 0);
-            }
-        }
-    }
-}
-
-void Player::ApplyGlyphs(bool apply)
-{
-    for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-        ApplyGlyph(i,apply);
-}
-
 bool Player::isTotalImmune()
 {
     AuraList const& immune = GetAurasByType(SPELL_AURA_SCHOOL_IMMUNITY);
@@ -21792,132 +21787,6 @@ bool Player::isTotalImmune()
             return true;
     }
     return false;
-}
-
-bool Player::HasTitle(uint32 bitIndex) const
-{
-    if (bitIndex > MAX_TITLE_INDEX)
-        return false;
-
-    uint32 fieldIndexOffset = bitIndex / 32;
-    uint32 flag = 1 << (bitIndex % 32);
-    return HasFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
-}
-
-void Player::SetTitle(CharTitlesEntry const* title, bool lost)
-{
-    uint32 fieldIndexOffset = title->bit_index / 32;
-    uint32 flag = 1 << (title->bit_index % 32);
-
-    if (lost)
-    {
-        if (!HasFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag))
-            return;
-
-        RemoveFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
-    }
-    else
-    {
-        if (HasFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag))
-            return;
-
-        SetFlag(PLAYER__FIELD_KNOWN_TITLES + fieldIndexOffset, flag);
-    }
-
-    WorldPacket data(SMSG_TITLE_EARNED, 4 + 4);
-    data << uint32(title->bit_index);
-    data << uint32(lost ? 0 : 1);                           // 1 - earned, 0 - lost
-    GetSession()->SendPacket(&data);
-}
-
-void Player::ConvertRune(uint8 index, RuneType newType, uint32 spellid)
-{
-    SetCurrentRune(index, newType);
-
-    if (spellid != 0)
-        SetConvertedBy(index, spellid);
-
-    WorldPacket data(SMSG_CONVERT_RUNE, 2);
-    data << uint8(index);
-    data << uint8(newType);
-    GetSession()->SendPacket(&data);
-}
-
-bool Player::ActivateRunes(RuneType type, uint32 count)
-{
-    bool modify = false;
-    for (uint32 j = 0; count > 0 && j < MAX_RUNES; ++j)
-    {
-        if (GetCurrentRune(j) == type && GetRuneCooldown(j) > 0)
-        {
-            SetRuneCooldown(j, 0);
-            --count;
-            modify = true;
-        }
-    }
-
-    return modify;
-}
-
-void Player::ResyncRunes()
-{
-    WorldPacket data(SMSG_RESYNC_RUNES, 4 + MAX_RUNES * 2);
-    data << uint32(MAX_RUNES);
-    for (uint32 i = 0; i < MAX_RUNES; ++i)
-    {
-        data << uint8(GetCurrentRune(i));                   // rune type
-        data << uint8(255 - ((GetRuneCooldown(i) / REGEN_TIME_FULL) * 51));     // passed cooldown time (0-255)
-    }
-    GetSession()->SendPacket(&data);
-}
-
-void Player::AddRunePower(uint8 index)
-{
-    WorldPacket data(SMSG_ADD_RUNE_POWER, 4);
-    data << uint32(1 << index);                             // mask (0x00-0x3F probably)
-    GetSession()->SendPacket(&data);
-}
-
-static RuneType runeSlotTypes[MAX_RUNES] = {
-    /*0*/ RUNE_BLOOD,
-    /*1*/ RUNE_BLOOD,
-    /*2*/ RUNE_UNHOLY,
-    /*3*/ RUNE_UNHOLY,
-    /*4*/ RUNE_FROST,
-    /*5*/ RUNE_FROST
-};
-
-void Player::InitRunes()
-{
-    if (getClass() != CLASS_DEATH_KNIGHT)
-        return;
-
-    m_runes = new Runes;
-
-    m_runes->runeState = 0;
-    m_runes->needConvert = 0;
-
-    for (uint32 i = 0; i < MAX_RUNES; ++i)
-    {
-        SetBaseRune(i, runeSlotTypes[i]);                   // init base types
-        SetCurrentRune(i, runeSlotTypes[i]);                // init current types
-        SetRuneCooldown(i, 0);                              // reset cooldowns
-        SetConvertedBy(i, 0);                               // init spellid
-        m_runes->SetRuneState(i);
-    }
-
-    for (uint32 i = 0; i < NUM_RUNE_TYPES; ++i)
-        SetFloatValue(PLAYER_RUNE_REGEN_1 + i, 0.1f);
-}
-
-
-bool Player::IsBaseRuneSlotsOnCooldown(RuneType runeType) const
-{
-    for (uint32 i = 0; i < MAX_RUNES; ++i)
-        if (GetBaseRune(i) == runeType && GetRuneCooldown(i) == 0)
-            return false;
-
-    return true;
 }
 
 void Player::AutoStoreLoot(uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)

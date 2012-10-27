@@ -426,10 +426,10 @@ struct MapEntry
         return MapID == 0 || MapID == 1;
     }
 
-    bool IsTransport() const
+    /*bool IsTransport() const
     {
         return map_type == MAP_COMMON && mapFlags == MAP_FLAG_INSTANCEABLE;
-    }
+    }*/
 };
 
 struct QuestSortEntry

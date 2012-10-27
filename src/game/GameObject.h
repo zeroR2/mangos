@@ -712,14 +712,14 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         static void AddToRemoveListInMaps(uint32 db_guid, GameObjectData const* data);
         static void SpawnInMaps(uint32 db_guid, GameObjectData const* data);
 
-        GameobjectTypes GetGoType() const { return GameobjectTypes(GetByteValue(GAMEOBJECT_BYTES_1, 1)); }
-        void SetGoType(GameobjectTypes type) { SetByteValue(GAMEOBJECT_BYTES_1, 1, type); }
-        GOState GetGoState() const { return GOState(GetByteValue(GAMEOBJECT_BYTES_1, 0)); }
+        GameobjectTypes GetGoType() const { return GameobjectTypes(GetByteValue(GAMEOBJECT_TYPE_ID, 1)); }
+        void SetGoType(GameobjectTypes type) { SetByteValue(GAMEOBJECT_TYPE_ID, 1, type); }
+        GOState GetGoState() const { return GOState(GetByteValue(GAMEOBJECT_TYPE_ID, 0)); }
         void SetGoState(GOState state);
-        uint8 GetGoArtKit() const { return GetByteValue(GAMEOBJECT_BYTES_1, 2); }
-        void SetGoArtKit(uint8 artkit) { SetByteValue(GAMEOBJECT_BYTES_1, 2, artkit); }
-        uint8 GetGoAnimProgress() const { return GetByteValue(GAMEOBJECT_BYTES_1, 3); }
-        void SetGoAnimProgress(uint8 animprogress) { SetByteValue(GAMEOBJECT_BYTES_1, 3, animprogress); }
+        uint8 GetGoArtKit() const { return GetByteValue(GAMEOBJECT_TYPE_ID, 2); }
+        void SetGoArtKit(uint8 artkit) { SetByteValue(GAMEOBJECT_TYPE_ID, 2, artkit); }
+        uint8 GetGoAnimProgress() const { return GetByteValue(GAMEOBJECT_TYPE_ID, 3); }
+        void SetGoAnimProgress(uint8 animprogress) { SetByteValue(GAMEOBJECT_TYPE_ID, 3, animprogress); }
         uint32 GetDisplayId() const { return GetUInt32Value(GAMEOBJECT_DISPLAYID); }
         void SetDisplayId(uint32 modelId);
         void SetPhaseMask(uint32 newPhaseMask, bool update);
