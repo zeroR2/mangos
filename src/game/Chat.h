@@ -23,8 +23,6 @@
 #include "SharedDefines.h"
 #include "ObjectGuid.h"
 
-struct AchievementEntry;
-struct AchievementCriteriaEntry;
 struct AreaTrigger;
 struct AreaTriggerEntry;
 struct FactionEntry;
@@ -166,13 +164,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleAuctionItemCommand(char* args);
         bool HandleAuctionCommand(char* args);
 
-        bool HandleAchievementCommand(char* args);
-
-        bool HandleAchievementAddCommand(char* args);
-        bool HandleAchievementRemoveCommand(char* args);
-        bool HandleAchievementCriteriaAddCommand(char* args);
-        bool HandleAchievementCriteriaRemoveCommand(char* args);
-
         bool HandleBanAccountCommand(char* args);
         bool HandleBanCharacterCommand(char* args);
         bool HandleBanIPCommand(char* args);
@@ -189,7 +180,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleCastSelfCommand(char* args);
         bool HandleCastTargetCommand(char* args);
 
-        bool HandleCharacterAchievementsCommand(char* args);
         bool HandleCharacterChangeFactionCommand(char* args);
         bool HandleCharacterChangeRaceCommand(char* args);
         bool HandleCharacterCustomizeCommand(char* args);
@@ -305,7 +295,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleLookupAccountEmailCommand(char* args);
         bool HandleLookupAccountIpCommand(char* args);
         bool HandleLookupAccountNameCommand(char* args);
-        bool HandleLookupAchievementCommand(char* args);
         bool HandleLookupAreaCommand(char* args);
         bool HandleLookupCreatureCommand(char* args);
         bool HandleLookupEventCommand(char* args);
@@ -393,7 +382,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleQuestCompleteCommand(char* args);
 
         bool HandleReloadAllCommand(char* args);
-        bool HandleReloadAllAchievementCommand(char* args);
         bool HandleReloadAllAreaCommand(char* args);
         bool HandleReloadAllGossipsCommand(char* args);
         bool HandleReloadAllItemCommand(char* args);
@@ -407,8 +395,6 @@ class MANGOS_DLL_SPEC ChatHandler
 
         bool HandleReloadConfigCommand(char* args);
 
-        bool HandleReloadAchievementCriteriaRequirementCommand(char* args);
-        bool HandleReloadAchievementRewardCommand(char* args);
         bool HandleReloadAreaTriggerTavernCommand(char* args);
         bool HandleReloadAreaTriggerTeleportCommand(char* args);
         bool HandleReloadBattleEventCommand(char* args);
@@ -431,7 +417,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleReloadItemConvertCommand(char* args);
         bool HandleReloadItemEnchantementsCommand(char* args);
         bool HandleReloadItemRequiredTragetCommand(char* args);
-        bool HandleReloadLocalesAchievementRewardCommand(char* args);
         bool HandleReloadLocalesCreatureCommand(char* args);
         bool HandleReloadLocalesGameobjectCommand(char* args);
         bool HandleReloadLocalesGossipMenuOptionCommand(char* args);
@@ -489,7 +474,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleReloadSpellDisabledCommand(char* args);
         bool HandleReloadAntiCheatCommand(char* args);
 
-        bool HandleResetAchievementsCommand(char* args);
         bool HandleResetAllCommand(char* args);
         bool HandleResetHonorCommand(char* args);
         bool HandleResetLevelCommand(char* args);
@@ -677,8 +661,6 @@ class MANGOS_DLL_SPEC ChatHandler
 
         // Utility methods for commands
         bool ShowAccountListHelper(QueryResult* result, uint32* limit = NULL, bool title = true, bool error = true);
-        void ShowAchievementListHelper(AchievementEntry const* achEntry, LocaleConstant loc, time_t const* date = NULL, Player* target = NULL);
-        void ShowAchievementCriteriaListHelper(AchievementCriteriaEntry const* criEntry, AchievementEntry const* achEntry, LocaleConstant loc, Player* target = NULL);
         void ShowFactionListHelper(FactionEntry const* factionEntry, LocaleConstant loc, FactionState const* repState = NULL, Player* target = NULL);
         void ShowItemListHelper(uint32 itemId, int loc_idx, Player* target = NULL);
         void ShowQuestListHelper(uint32 questId, int32 loc_idx, Player* target = NULL);

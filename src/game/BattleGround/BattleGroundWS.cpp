@@ -152,9 +152,6 @@ void BattleGroundWS::StartingEventOpenDoors()
     SpawnEvent(WS_EVENT_SPIRITGUIDES_SPAWN, 0, true);
     SpawnEvent(WS_EVENT_FLAG_A, 0, true);
     SpawnEvent(WS_EVENT_FLAG_H, 0, true);
-
-    // Players that join battleground after start are not eligible to get achievement.
-    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, BG_WS_EVENT_START_BATTLE);
 }
 
 void BattleGroundWS::AddPlayer(Player* plr)
@@ -268,7 +265,6 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player* source)
 
     UpdateFlagState(source->GetTeam(), 1);                  // flag state none
     UpdateTeamScore(source->GetTeam());
-    source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, 42);
 
     // only flag capture should be updated
     UpdatePlayerScore(source, SCORE_FLAG_CAPTURES, 1);      // +1 flag captures
@@ -390,11 +386,6 @@ void BattleGroundWS::PickOrReturnFlag(Player* pPlayer, Team forTeam, bool picked
         UpdateFlagState(A ? ALLIANCE : HORDE, BG_WS_FLAG_STATE_ON_PLAYER);
         UpdateWorldState(A ? BG_WS_FLAG_UNK_HORDE : BG_WS_FLAG_UNK_ALLIANCE, 1);
         pPlayer->CastSpell(pPlayer, A ? BG_WS_SPELL_WARSONG_FLAG : BG_WS_SPELL_SILVERWING_FLAG, true);
-
-        if (!fromGround)
-            //For timed achivements (Quick Cap)
-            pPlayer->GetAchievementMgr().StartTimedAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, A ? BG_WS_SPELL_WARSONG_FLAG_PICKED : BG_WS_SPELL_SILVERWING_FLAG_PICKED);
-
     }
     // Flag on ground (not in base), return flag to base.
     else
@@ -597,8 +588,6 @@ void BattleGroundWS::UpdatePlayerScore(Player* source, uint32 type, uint32 value
             BattleGround::UpdatePlayerScore(source, type, value);
             return;
     }
-
-    source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
 }
 
 WorldSafeLocsEntry const* BattleGroundWS::GetClosestGraveYard(Player* player)

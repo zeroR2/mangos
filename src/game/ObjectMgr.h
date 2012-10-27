@@ -88,8 +88,6 @@ struct AreaTrigger
     uint32 requiredQuestHeroicH;
     uint32 minGS;
     uint32 maxGS;
-    uint32 achiev0;
-    uint32 achiev1;
     uint32 combatMode;
     uint32 target_mapId;
     float  target_X;
@@ -108,9 +106,7 @@ struct AreaTrigger
                                     && requiredQuestH == 0 
                                     && requiredQuestHeroicH == 0
                                     && minGS == 0 
-                                    && maxGS == 0
-                                    && achiev0 == 0 
-                                    && achiev1 == 0);
+                                    && maxGS == 0);
                                     }
 
     bool IsLessOrEqualThan(AreaTrigger const* l) const      // Expected to have same map
@@ -127,8 +123,6 @@ struct AreaTrigger
                 && requiredQuestHeroicH <= l->requiredQuestHeroicH
                 && minGS <= l->minGS
                 && maxGS <= l->maxGS
-                && achiev0 <= l->achiev0
-                && achiev1 <= l->achiev1
                 );
     }
 
@@ -480,8 +474,6 @@ enum ConditionType
     CONDITION_SPELL                 = 17,                   // spell_id     0, 1 (0: has spell, 1: hasn't spell)
     CONDITION_INSTANCE_SCRIPT       = 18,                   // map_id       instance_condition_id (instance script specific enum)
     CONDITION_QUESTAVAILABLE        = 19,                   // quest_id     0       for case when loot/gossip possible only if player can start quest
-    CONDITION_ACHIEVEMENT           = 20,                   // ach_id       0, 1 (0: has achievement, 1: hasn't achievement) for player
-    CONDITION_ACHIEVEMENT_REALM     = 21,                   // ach_id       0, 1 (0: has achievement, 1: hasn't achievement) for server
     CONDITION_QUEST_NONE            = 22,                   // quest_id     0 (quest did not take and not rewarded)
     CONDITION_ITEM_WITH_BANK        = 23,                   // item_id      count   check present req. amount items in inventory or bank
     CONDITION_NOITEM_WITH_BANK      = 24,                   // item_id      count   check not present req. amount items in inventory or bank

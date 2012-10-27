@@ -366,8 +366,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
                    itemGuid.GetString().c_str(), auctioneerGuid.GetString().c_str(), bid, buyout, etime, auctionHouseEntry->houseId);
 
         SendAuctionCommandResult(AH, AUCTION_STARTED, AUCTION_OK);
-
-        GetPlayer()->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CREATE_AUCTION, 1);
     }
 }
 
@@ -446,11 +444,6 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recv_data)
         return;
 
     SendAuctionCommandResult(auction, AUCTION_BID_PLACED, AUCTION_OK);
-
-    if (auction->UpdateBid(price, pl))
-        pl->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_BID, price);
-    else
-        pl->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_BID, auction->buyout);
 }
 
 // this void is called when auction_owner cancels his auction

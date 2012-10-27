@@ -1086,16 +1086,6 @@ void LFGMgr::SendLFGReward(Player* pPlayer, LFGDungeonEntry const* pRandomDungeo
         return;
     }
 
-    // Update achievements
-    if (pRandomDungeon->difficulty == DUNGEON_DIFFICULTY_HEROIC)
-    {
-        if (Group* pGroup = pPlayer->GetGroup())
-        {
-            if (pGroup->GetLFGGroupState()->GetRandomPlayersCount())
-                pPlayer->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_USE_LFD_TO_GROUP_WITH_PLAYERS, pGroup->GetLFGGroupState()->GetRandomPlayersCount());
-        }
-    }
-
     pPlayer->GetLFGPlayerState()->SetState(LFG_STATE_FINISHED_DUNGEON);
 
     LFGReward const* reward = GetRandomDungeonReward(pRandomDungeon, pPlayer);

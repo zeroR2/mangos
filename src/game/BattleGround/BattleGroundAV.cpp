@@ -284,9 +284,6 @@ void BattleGroundAV::StartingEventOpenDoors()
     UpdateWorldState(BG_AV_SHOW_A_SCORE, 1);
 
     OpenDoorEvent(BG_EVENT_DOOR);
-
-    // Players that join battleground after start are not available to get achievement.
-    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, BG_AV_EVENT_START_BATTLE);
 }
 
 void BattleGroundAV::AddPlayer(Player* plr)
@@ -425,8 +422,6 @@ void BattleGroundAV::UpdatePlayerScore(Player* source, uint32 type, uint32 value
             BattleGround::UpdatePlayerScore(source, type, value);
             return;
     }
-
-    source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
 }
 
 void BattleGroundAV::EventPlayerDestroyedPoint(BG_AV_Nodes node)
@@ -586,7 +581,6 @@ void BattleGroundAV::EventPlayerDefendsPoint(Player* player, BG_AV_Nodes node)
                        GetNodeName(node),
                        (teamIdx == TEAM_INDEX_ALLIANCE) ? LANG_BG_ALLY : LANG_BG_HORDE);
         UpdatePlayerScore(player, SCORE_GRAVEYARDS_DEFENDED, 1);
-        player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, 65);
 
         // update the statistic for the defending player
         PlaySoundToAll((teamIdx == TEAM_INDEX_ALLIANCE) ? BG_AV_SOUND_ALLIANCE_GOOD : BG_AV_SOUND_HORDE_GOOD);
@@ -833,18 +827,4 @@ void BattleGroundAV::Reset()
 
     InitNode(BG_AV_NODES_SNOWFALL_GRAVE, TEAM_INDEX_NEUTRAL, false);                            // give snowfall neutral owner
 
-}
-
-bool BattleGroundAV::hasAllTowers(TeamIndex team)
-{
-    // if the winner team captain is dead, no need to check further
-    if ((IsActiveEvent((team == TEAM_INDEX_ALLIANCE) ? BG_AV_NodeEventCaptainDead_A : BG_AV_NodeEventCaptainDead_H, 0)))
-        return false;
-
-    // all winner towers/bunkers have to be owned by the winners, enemy ones must be destroyed (none in conflict)
-    for (int i = BG_AV_NODES_DUNBALDAR_SOUTH; i <= BG_AV_NODES_FROSTWOLF_WTOWER; ++i)
-        if (m_Nodes[i].Owner != team || m_Nodes[i].State != POINT_CONTROLLED)
-            return false;
-
-    return true;
 }

@@ -5773,8 +5773,8 @@ void ObjectMgr::LoadAreaTriggerTeleports()
     QueryResult* result = WorldDatabase.Query("SELECT id, required_level, required_item, required_item2, heroic_key, heroic_key2,"
     // 6                     7                              8                      9                            10     11
     "required_quest_done_A, required_quest_done_heroic_A, required_quest_done_H, required_quest_done_heroic_H, minGS, maxGS,"
-    // 12          13                 14                 15                 16                  17           18           19
-    " target_map, target_position_x, target_position_y, target_position_z, target_orientation, achiev_id_0, achiev_id_1, combat_mode "
+    // 12          13                 14                 15                 16                  17
+    " target_map, target_position_x, target_position_y, target_position_z, target_orientation, combat_mode "
     //
     "FROM areatrigger_teleport");
     if (!result)
@@ -5819,9 +5819,7 @@ void ObjectMgr::LoadAreaTriggerTeleports()
         at.target_Y             = fields[14].GetFloat();
         at.target_Z             = fields[15].GetFloat();
         at.target_Orientation   = fields[16].GetFloat();
-        at.achiev0              = fields[17].GetUInt32();
-        at.achiev1              = fields[18].GetUInt32();
-        at.combatMode           = fields[19].GetUInt32();
+        at.combatMode           = fields[17].GetUInt32();
 
         AreaTriggerEntry const* atEntry = sAreaTriggerStore.LookupEntry(Trigger_ID);
         if (!atEntry && !sWorld.getConfig(CONFIG_BOOL_ALLOW_CUSTOM_MAPS))
@@ -8118,25 +8116,6 @@ bool PlayerCondition::Meets(Player const * player) const
             else
                 return false;
         }
-        case CONDITION_ACHIEVEMENT:
-        {
-            switch(m_value2)
-            {
-                case 0: return player->GetAchievementMgr().HasAchievement(m_value1);
-                case 1: return !player->GetAchievementMgr().HasAchievement(m_value1);
-            }
-            return false;
-        }
-        case CONDITION_ACHIEVEMENT_REALM:
-        {
-            AchievementEntry const* ach = sAchievementStore.LookupEntry(m_value1);
-            switch(m_value2)
-            {
-                case 0: return sAchievementMgr.IsRealmCompleted(ach);
-                case 1: return !sAchievementMgr.IsRealmCompleted(ach);
-            }
-            return false;
-        }
         case CONDITION_QUEST_NONE:
         {
             if (!player->IsCurrentQuest(m_value1) && !player->GetQuestRewardStatus(m_value1))
@@ -8509,23 +8488,6 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
             if (!mapEntry || !mapEntry->IsDungeon())
             {
                 sLog.outErrorDb("Instance script condition (entry %u, type %u) has nonexistent map id %u as first arg, skipped", entry, condition, value1);
-                return false;
-            }
-
-            break;
-        }
-        case CONDITION_ACHIEVEMENT:
-        case CONDITION_ACHIEVEMENT_REALM:
-        {
-            if (!sAchievementStore.LookupEntry(value1))
-            {
-                sLog.outErrorDb("Achievement condition (entry %u, type %u) requires to have non existing achievement (Id: %d), skipped", entry, condition, value1);
-                return false;
-            }
-
-            if (value2 > 1)
-            {
-                sLog.outErrorDb("Achievement condition (entry %u, type %u) has invalid argument %u (must be 0..1), skipped", entry, condition, value2);
                 return false;
             }
 

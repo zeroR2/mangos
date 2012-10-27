@@ -228,7 +228,6 @@ bool ChatHandler::HandleReloadAllCommand(char* /*args*/)
 {
     HandleReloadSkillFishingBaseLevelCommand((char*)"");
 
-    HandleReloadAllAchievementCommand((char*)"");
     HandleReloadAllAreaCommand((char*)"");
     HandleReloadAllEventAICommand((char*)"");
     HandleReloadAllLootCommand((char*)"");
@@ -244,13 +243,6 @@ bool ChatHandler::HandleReloadAllCommand(char* /*args*/)
     HandleReloadReservedNameCommand((char*)"");
     HandleReloadMangosStringCommand((char*)"");
     HandleReloadGameTeleCommand((char*)"");
-    return true;
-}
-
-bool ChatHandler::HandleReloadAllAchievementCommand(char* /*args*/)
-{
-    HandleReloadAchievementCriteriaRequirementCommand((char*)"");
-    HandleReloadAchievementRewardCommand((char*)"");
     return true;
 }
 
@@ -361,7 +353,6 @@ bool ChatHandler::HandleReloadAllItemCommand(char* /*args*/)
 
 bool ChatHandler::HandleReloadAllLocalesCommand(char* /*args*/)
 {
-    HandleReloadLocalesAchievementRewardCommand((char*)"a");
     HandleReloadLocalesCreatureCommand((char*)"a");
     HandleReloadLocalesGameobjectCommand((char*)"a");
     HandleReloadLocalesGossipMenuOptionCommand((char*)"a");
@@ -379,22 +370,6 @@ bool ChatHandler::HandleReloadConfigCommand(char* /*args*/)
     sWorld.LoadConfigSettings(true);
     sMapMgr.InitializeVisibilityDistanceInfo();
     SendGlobalSysMessage("World config settings reloaded.");
-    return true;
-}
-
-bool ChatHandler::HandleReloadAchievementCriteriaRequirementCommand(char* /*args*/)
-{
-    sLog.outString("Re-Loading Additional Achievement Criteria Requirements Data...");
-    sAchievementMgr.LoadAchievementCriteriaRequirements();
-    SendGlobalSysMessage("DB table `achievement_criteria_requirement` reloaded.");
-    return true;
-}
-
-bool ChatHandler::HandleReloadAchievementRewardCommand(char* /*args*/)
-{
-    sLog.outString("Re-Loading Achievement Reward Data...");
-    sAchievementMgr.LoadRewards();
-    SendGlobalSysMessage("DB table `achievement_reward` reloaded.");
     return true;
 }
 
@@ -1021,14 +996,6 @@ bool ChatHandler::HandleReloadGameTeleCommand(char* /*args*/)
     return true;
 }
 
-bool ChatHandler::HandleReloadLocalesAchievementRewardCommand(char* /*args*/)
-{
-    sLog.outString("Re-Loading Locales Achievement Reward Data...");
-    sAchievementMgr.LoadRewardLocales();
-    SendGlobalSysMessage("DB table `locales_achievement_reward` reloaded.");
-    return true;
-}
-
 bool ChatHandler::HandleReloadLocalesCreatureCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Locales Creature ...");
@@ -1288,275 +1255,6 @@ bool ChatHandler::HandleAccountSetPasswordCommand(char* args)
     LogCommand(msg);
     SetSentErrorMessage(true);
     return false;
-}
-
-
-void ChatHandler::ShowAchievementCriteriaListHelper(AchievementCriteriaEntry const* criEntry, AchievementEntry const* achEntry, LocaleConstant loc, Player* target /*= NULL*/)
-{
-    std::ostringstream ss;
-    if (m_session)
-    {
-        ss << criEntry->ID << " - |cffffffff|Hachievement_criteria:" << criEntry->ID << "|h[" << criEntry->name[loc] << " " << localeNames[loc] << "]|h|r";
-    }
-    else
-        ss << criEntry->ID << " - " << criEntry->name[loc] << " " << localeNames[loc];
-
-    if (target)
-        ss << " = " << target->GetAchievementMgr().GetCriteriaProgressCounter(criEntry);
-
-    if (achEntry->flags & ACHIEVEMENT_FLAG_COUNTER)
-        ss << GetMangosString(LANG_COUNTER);
-    else
-    {
-        ss << " [" << AchievementMgr::GetCriteriaProgressMaxCounter(criEntry, achEntry) << "]";
-
-        if (target && target->GetAchievementMgr().IsCompletedCriteria(criEntry, achEntry))
-            ss << GetMangosString(LANG_COMPLETE);
-    }
-
-    SendSysMessage(ss.str().c_str());
-}
-
-bool ChatHandler::HandleAchievementCommand(char* args)
-{
-    char* nameStr = ExtractOptNotLastArg(&args);
-
-    Player* target = NULL;
-
-    if (nameStr)
-    {
-        if (!ExtractPlayerTarget(&nameStr, &target))
-            return false;
-    }
-    else
-        target = getSelectedPlayer();
-
-    uint32 achId;
-    if (!ExtractUint32KeyFromLink(&args, "Hachievement", achId))
-        return false;
-
-    AchievementEntry const* achEntry = sAchievementStore.LookupEntry(achId);
-    if (!achEntry)
-    {
-        PSendSysMessage(LANG_ACHIEVEMENT_NOT_EXIST, achId);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    LocaleConstant loc = GetSessionDbcLocale();
-
-    CompletedAchievementData const* completed = target ? target->GetAchievementMgr().GetCompleteData(achId) : NULL;
-
-    ShowAchievementListHelper(achEntry, loc, completed ? &completed->date : NULL, target);
-
-    if (AchievementCriteriaEntryList const* criteriaList = sAchievementMgr.GetAchievementCriteriaByAchievement(achEntry->ID))
-    {
-        SendSysMessage(LANG_COMMAND_ACHIEVEMENT_CRITERIA);
-        for (AchievementCriteriaEntryList::const_iterator itr = criteriaList->begin(); itr != criteriaList->end(); ++itr)
-            ShowAchievementCriteriaListHelper(*itr, achEntry, loc, target);
-    }
-
-    return true;
-}
-
-bool ChatHandler::HandleAchievementAddCommand(char* args)
-{
-    char* nameStr = ExtractOptNotLastArg(&args);
-
-    Player* target;
-    if (!ExtractPlayerTarget(&nameStr, &target))
-        return false;
-
-    uint32 achId;
-    if (!ExtractUint32KeyFromLink(&args, "Hachievement", achId))
-        return false;
-
-    AchievementEntry const* achEntry = sAchievementStore.LookupEntry(achId);
-    if (!achEntry || (achEntry->flags & ACHIEVEMENT_FLAG_COUNTER))
-    {
-        PSendSysMessage(LANG_ACHIEVEMENT_NOT_EXIST, achId);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    AchievementMgr& mgr = target->GetAchievementMgr();
-
-    if (AchievementCriteriaEntryList const* criteriaList = sAchievementMgr.GetAchievementCriteriaByAchievement(achEntry->ID))
-    {
-        for (AchievementCriteriaEntryList::const_iterator itr = criteriaList->begin(); itr != criteriaList->end(); ++itr)
-        {
-            if (mgr.IsCompletedCriteria(*itr, achEntry))
-                continue;
-
-            uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(*itr, achEntry);
-            if (maxValue == std::numeric_limits<uint32>::max())
-                maxValue = 1;                               // Exception for counter like achievements, set them only to 1
-            mgr.SetCriteriaProgress(*itr, achEntry, maxValue, AchievementMgr::PROGRESS_SET);
-        }
-    }
-
-    LocaleConstant loc = GetSessionDbcLocale();
-    CompletedAchievementData const* completed = target ? target->GetAchievementMgr().GetCompleteData(achId) : NULL;
-    ShowAchievementListHelper(achEntry, loc, completed ? &completed->date : NULL, target);
-    return true;
-}
-
-bool ChatHandler::HandleAchievementRemoveCommand(char* args)
-{
-    char* nameStr = ExtractOptNotLastArg(&args);
-
-    Player* target;
-    if (!ExtractPlayerTarget(&nameStr, &target))
-        return false;
-
-    uint32 achId;
-    if (!ExtractUint32KeyFromLink(&args, "Hachievement", achId))
-        return false;
-
-    AchievementEntry const* achEntry = sAchievementStore.LookupEntry(achId);
-    if (!achEntry)
-    {
-        PSendSysMessage(LANG_ACHIEVEMENT_NOT_EXIST, achId);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    AchievementMgr& mgr = target->GetAchievementMgr();
-
-    if (AchievementCriteriaEntryList const* criteriaList = sAchievementMgr.GetAchievementCriteriaByAchievement(achEntry->ID))
-        for (AchievementCriteriaEntryList::const_iterator itr = criteriaList->begin(); itr != criteriaList->end(); ++itr)
-            mgr.SetCriteriaProgress(*itr, achEntry, 0, AchievementMgr::PROGRESS_SET);
-
-    LocaleConstant loc = GetSessionDbcLocale();
-    CompletedAchievementData const* completed = target ? target->GetAchievementMgr().GetCompleteData(achId) : NULL;
-    ShowAchievementListHelper(achEntry, loc, completed ? &completed->date : NULL, target);
-    return true;
-}
-
-bool ChatHandler::HandleAchievementCriteriaAddCommand(char* args)
-{
-    Player* target;
-    uint32 criId;
-
-    if (!ExtractUint32KeyFromLink(&args, "Hachievement_criteria", criId))
-    {
-        // maybe player first
-        char* nameStr = ExtractArg(&args);
-        if (!ExtractPlayerTarget(&nameStr, &target))
-            return false;
-
-        if (!ExtractUint32KeyFromLink(&args, "Hachievement_criteria", criId))
-            return false;
-    }
-    else
-        target = getSelectedPlayer();
-
-    AchievementCriteriaEntry const* criEntry = sAchievementCriteriaStore.LookupEntry(criId);
-    if (!criEntry)
-    {
-        PSendSysMessage(LANG_ACHIEVEMENT_CRITERIA_NOT_EXIST, criId);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    AchievementEntry const* achEntry = sAchievementStore.LookupEntry(criEntry->referredAchievement);
-    if (!achEntry)
-        return false;
-
-    LocaleConstant loc = GetSessionDbcLocale();
-
-    uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(criEntry, achEntry);
-    if (maxValue == std::numeric_limits<uint32>::max())
-        maxValue = 1;                                       // Exception for counter like achievements, set them only to 1
-
-    AchievementMgr& mgr = target->GetAchievementMgr();
-
-    // nothing do if completed
-    if (mgr.IsCompletedCriteria(criEntry, achEntry))
-    {
-        ShowAchievementCriteriaListHelper(criEntry, achEntry, loc, target);
-        return true;
-    }
-
-    uint32 progress = mgr.GetCriteriaProgressCounter(criEntry);
-
-    uint32 val;
-    if (!ExtractOptUInt32(&args, val, maxValue ? maxValue : 1))
-        return false;
-
-    uint32 new_val;
-
-    if (maxValue)
-        new_val = progress < maxValue && maxValue - progress > val ? progress + val : maxValue;
-    else
-    {
-        uint32 max_int = std::numeric_limits<uint32>::max();
-        new_val = progress < max_int && max_int - progress > val ? progress + val : max_int;
-    }
-
-    mgr.SetCriteriaProgress(criEntry, achEntry, new_val, AchievementMgr::PROGRESS_SET);
-
-    ShowAchievementCriteriaListHelper(criEntry, achEntry, loc, target);
-    return true;
-}
-
-bool ChatHandler::HandleAchievementCriteriaRemoveCommand(char* args)
-{
-    Player* target;
-    uint32 criId;
-
-    if (!ExtractUint32KeyFromLink(&args, "Hachievement_criteria", criId))
-    {
-        // maybe player first
-        char* nameStr = ExtractArg(&args);
-        if (!ExtractPlayerTarget(&nameStr, &target))
-            return false;
-
-        if (!ExtractUint32KeyFromLink(&args, "Hachievement_criteria", criId))
-            return false;
-    }
-    else
-        target = getSelectedPlayer();
-
-    AchievementCriteriaEntry const* criEntry = sAchievementCriteriaStore.LookupEntry(criId);
-    if (!criEntry)
-    {
-        PSendSysMessage(LANG_ACHIEVEMENT_CRITERIA_NOT_EXIST, criId);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    AchievementEntry const* achEntry = sAchievementStore.LookupEntry(criEntry->referredAchievement);
-    if (!achEntry)
-        return false;
-
-    LocaleConstant loc = GetSessionDbcLocale();
-
-    uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(criEntry, achEntry);
-    if (maxValue == std::numeric_limits<uint32>::max())
-        maxValue = 1;                                       // Exception for counter like achievements, set them only to 1
-
-    AchievementMgr& mgr = target->GetAchievementMgr();
-
-    uint32 progress = mgr.GetCriteriaProgressCounter(criEntry);
-
-    // nothing do if not started
-    if (progress == 0)
-    {
-        ShowAchievementCriteriaListHelper(criEntry, achEntry, loc, target);
-        return true;
-    }
-
-    uint32 change;
-    if (!ExtractOptUInt32(&args, change, maxValue ? maxValue : 1))
-        return false;
-
-    uint32 newval = change < progress ? progress - change : 0;
-
-    mgr.SetCriteriaProgress(criEntry, achEntry, newval, AchievementMgr::PROGRESS_SET);
-
-    ShowAchievementCriteriaListHelper(criEntry, achEntry, loc, target);
-    return true;
 }
 
 bool ChatHandler::HandleMaxSkillCommand(char* /*args*/)
@@ -5007,21 +4705,6 @@ bool ChatHandler::HandleListTalentsCommand(char* /*args*/)
     return true;
 }
 
-bool ChatHandler::HandleResetAchievementsCommand(char* args)
-{
-    Player* target;
-    ObjectGuid target_guid;
-    if (!ExtractPlayerTarget(&args, &target, &target_guid))
-        return false;
-
-    if (target)
-        target->GetAchievementMgr().Reset();
-    else
-        AchievementMgr::DeleteFromDB(target_guid);
-
-    return true;
-}
-
 bool ChatHandler::HandleResetHonorCommand(char* args)
 {
     Player* target;
@@ -5033,7 +4716,6 @@ bool ChatHandler::HandleResetHonorCommand(char* args)
     target->SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, 0);
     target->SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, 0);
     target->SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
-    target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL);
 
     return true;
 }

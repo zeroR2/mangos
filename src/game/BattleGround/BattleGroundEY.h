@@ -296,9 +296,6 @@ class BattleGroundEY : public BattleGround
         virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
         virtual void EventPlayerDroppedFlag(Player* source);
 
-        /* achievement req. */
-        bool IsAllNodesControlledByTeam(Team team) const override;
-
     private:
         // process capture events
         void ProcessCaptureEvent(GameObject* go, uint32 towerId, Team team, uint32 newWorldState, uint32 message);

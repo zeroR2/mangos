@@ -39,54 +39,6 @@ INSERT INTO `db_version` VALUES
 UNLOCK TABLES;
 
 --
--- Table structure for table `achievement_criteria_requirement`
---
-
-DROP TABLE IF EXISTS `achievement_criteria_requirement`;
-CREATE TABLE `achievement_criteria_requirement` (
-  `criteria_id` mediumint(8) NOT NULL,
-  `type` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `value1` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `value2` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`criteria_id`,`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Achievment system';
-
---
--- Dumping data for table `achievement_criteria_requirement`
---
-
-LOCK TABLES `achievement_criteria_requirement` WRITE;
-/*!40000 ALTER TABLE `achievement_criteria_requirement` DISABLE KEYS */;
-/*!40000 ALTER TABLE `achievement_criteria_requirement` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `achievement_reward`
---
-
-DROP TABLE IF EXISTS `achievement_reward`;
-CREATE TABLE `achievement_reward` (
-  `entry` mediumint(8) unsigned NOT NULL default '0',
-  `gender` tinyint(3) default '2',
-  `title_A` mediumint(8) unsigned NOT NULL default '0',
-  `title_H` mediumint(8) unsigned NOT NULL default '0',
-  `item` mediumint(8) unsigned NOT NULL default '0',
-  `sender` mediumint(8) unsigned NOT NULL default '0',
-  `subject` varchar(255) default NULL,
-  `text` text,
-  PRIMARY KEY  (`entry`,`gender`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Achievment system';
-
---
--- Dumping data for table `achievement_reward`
---
-
-LOCK TABLES `achievement_reward` WRITE;
-/*!40000 ALTER TABLE `achievement_reward` DISABLE KEYS */;
-/*!40000 ALTER TABLE `achievement_reward` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `areatrigger_involvedrelation`
 --
 
@@ -496,11 +448,6 @@ INSERT INTO `command` VALUES
 ('account set addon',3,'Syntax: .account set addon [#accountId|$accountName] #addon\r\n\r\nSet user (possible targeted) expansion addon level allowed. Addon values: 0 - normal, 1 - tbc, 2 - wotlk.'),
 ('account set gmlevel',4,'Syntax: .account set gmlevel [#accountId|$accountName] #level\r\n\r\nSet the security level for targeted player (can''t be used at self) or for #accountId or $accountName to a level of #level.\r\n\r\n#level may range from 0 to 3.'),
 ('account set password',4,'Syntax: .account set password (#accountId|$accountName) $password $password\r\n\r\nSet password for account.'),
-('achievement',3,'Syntax: .achievement $playername #achivementid\r\n\r\nShow state achievment #achivmentid (can be shift link) and list of achievement criteria with progress data for selected player in game or by player name.'),
-('achievement add',3,'Syntax: .achievement add $playername #achivementid\r\n\r\nComplete achievement and all it\'s criteria for selected player in game or by player name. Command can\'t be used for counter achievements.'),
-('achievement remove',3,'Syntax: .achievement remove $playername #achivementid\r\n\r\nRemove complete state for achievement #achivmentid and reset all achievement\'s criteria for selected player in game or by player name. Also command can be used for reset counter achievements.'),
-('achievement criteria add',3,'Syntax: .achievement criteria add $playername #criteriaid #change\r\n\r\nIncrease progress for non-completed criteria at #change for selected player in game or by player name. If #chnage not provided then non-counter criteria progress set to completed state. For counter criteria increased at 1.'),
-('achievement criteria remove',3,'Syntax: .achievement criteria remove $playername #criteriaid #change\r\n\r\necrease progress for criteria at #change for selected player in game or by player name. If #chnage not provided then criteria progress reset to 0.'),
 ('additem',3,'Syntax: .additem #itemid/[#itemname]/#shift-click-item-link #itemcount\r\n\r\nAdds the specified number of items of id #itemid (or exact (!) name $itemname in brackets, or link created by shift-click at item in inventory or recipe) to your or selected character inventory. If #itemcount is omitted, only one item will be added.\r\n.'),
 ('additemset',3,'Syntax: .additemset #itemsetid\r\n\r\nAdd items from itemset of id #itemsetid to your or selected character inventory. Will add by one example each item from itemset.'),
 ('ahbot items amount',3,'Syntax: .ahbot items amount $GreyItems $WhiteItems $GreenItems $BlueItems $PurpleItems $OrangeItems $YellowItems\r\n\r\nSet amount of each items color be selled on auction.'),
@@ -540,7 +487,6 @@ INSERT INTO `command` VALUES
 ('cast dist',3,'Syntax: .cast dist #spellid [#dist [triggered]]\r\n  You will cast spell to pint at distance #dist. If \'trigered\' or part provided then spell casted with triggered flag. Not all spells can be casted as area spells.'),
 ('cast self',3,'Syntax: .cast self #spellid [triggered]\r\nCast #spellid by target at target itself. If \'trigered\' or part provided then spell casted with triggered flag.'),
 ('cast target',3,'Syntax: .cast target #spellid [triggered]\r\n  Selected target will cast #spellid to his victim. If \'trigered\' or part provided then spell casted with triggered flag.'),
-('character achievements',2,'Syntax: .character achievements [$player_name]\r\n\r\nShow completed achievments for selected player or player find by $player_name.'),
 ('character customize',2,'Syntax: .character customize [$name]\r\n\r\nMark selected in game or by $name in command character for customize at next login.'),
 ('character deleted delete', 4, 'Syntax: .character deleted delete #guid|$name\r\n\r\nCompletely deletes the selected characters.\r\nIf $name is supplied, only characters with that string in their name will be deleted, if #guid is supplied, only the character with that GUID will be deleted.'),
 ('character deleted list', 3, 'Syntax: .character deleted list [#guid|$name]\r\n\r\nShows a list with all deleted characters.\r\nIf $name is supplied, only characters with that string in their name will be selected, if #guid is supplied, only the character with that GUID will be selected.'),
@@ -646,7 +592,6 @@ INSERT INTO `command` VALUES
 ('lookup account email',2,'Syntax: .lookup account email $emailpart [#limit] \r\n\r\n Searchs accounts, which email including $emailpart with optional parametr #limit of results. If #limit not provided expected 100.'),
 ('lookup account ip',2,'Syntax: lookup account ip $ippart [#limit] \r\n\r\n Searchs accounts, which last used ip inluding $ippart (textual) with optional parametr #$limit of results. If #limit not provided expected 100.'),
 ('lookup account name',2,'Syntax: .lookup account name $accountpart [#limit] \r\n\r\n Searchs accounts, which username including $accountpart with optional parametr #limit of results. If #limit not provided expected 100.'),
-('lookup achievement',2,'Syntax: .lookup $name\r\nLooks up a achievement by $namepart, and returns all matches with their quest ID\'s. Achievement shift-links generated with information about achievment state for selected player. Also for completed achievments in list show complete date.'),
 ('lookup area',1,'Syntax: .lookup area $namepart\r\n\r\nLooks up an area by $namepart, and returns all matches with their area ID\'s.'),
 ('lookup creature',3,'Syntax: .lookup creature $namepart\r\n\r\nLooks up a creature by $namepart, and returns all matches with their creature ID\'s.'),
 ('lookup event',2,'Syntax: .lookup event $name\r\nAttempts to find the ID of the event with the provided $name.'),
@@ -735,7 +680,6 @@ INSERT INTO `command` VALUES
 ('quit',4,'Syntax: quit\r\n\r\nClose RA connection. Command must be typed fully (quit).'),
 ('recall',1,'Syntax: .recall [$playername]\r\n\r\nTeleport $playername or selected player to the place where he has been before last use of a teleportation command. If no $playername is entered and no player is selected, it will teleport you.'),
 ('reload all',3,'Syntax: .reload all\r\n\r\nReload all tables with reload support added and that can be _safe_ reloaded.'),
-('reload all_achievement',3,'Syntax: .reload all_achievement\r\n\r\nReload all `achievement_*` tables if reload support added for this table and this table can be _safe_ reloaded.'),
 ('reload all_area',3,'Syntax: .reload all_area\r\n\r\nReload all `areatrigger_*` tables if reload support added for this table and this table can be _safe_ reloaded.'),
 ('reload all_eventai',3,'Syntax: .reload all_eventai\r\n\r\nReload `creature_ai_*` tables if reload support added for these tables and these tables can be _safe_ reloaded.'),
 ('reload all_item',3,'Syntax: .reload all_item\r\n\r\nReload `item_required_target`, `page_texts` and `item_enchantment_template` tables.'),
@@ -747,7 +691,6 @@ INSERT INTO `command` VALUES
 ('reload all_scripts',3,'Syntax: .reload all_scripts\r\n\r\nReload `*_scripts` tables.'),
 ('reload config',3,'Syntax: .reload config\r\n\r\nReload config settings (by default stored in mangosd.conf). Not all settings can be change at reload: some new setting values will be ignored until restart, some values will applied with delay or only to new objects/maps, some values will explicitly rejected to change at reload.'),
 ('repairitems',2,'Syntax: .repairitems\r\n\r\nRepair all selected player''s items.'),
-('reset achievements',3,'Syntax: .reset achievements [$playername]\r\n\r\nReset achievements data for selected or named (online or offline) character. Achievements for persistance progress data like completed quests/etc re-filled at reset. Achievements for events like kills/casts/etc will lost.'),
 ('reset all',3,'Syntax: .reset all spells\r\n\r\nSyntax: .reset all talents\r\n\r\nRequest reset spells or talents (including talents for all character\'s pets if any) at next login each existed character.'),
 ('reset honor',3,'Syntax: .reset honor [Playername]\r\n  Reset all honor data for targeted character.'),
 ('reset level',3,'Syntax: .reset level [Playername]\r\n  Reset level to 1 including reset stats and talents.  Equipped items with greater level requirement can be lost.'),
@@ -2710,42 +2653,6 @@ INSERT INTO `item_template` VALUES
 UNLOCK TABLES;
 
 --
--- Table structure for table `locales_achievement_reward`
---
-
-DROP TABLE IF EXISTS `locales_achievement_reward`;
-CREATE TABLE `locales_achievement_reward` (
-  `entry` mediumint(8) unsigned NOT NULL default '0',
-  `gender` tinyint(3) default '2',
-  `subject_loc1` varchar(100) NOT NULL default '',
-  `subject_loc2` varchar(100) NOT NULL default '',
-  `subject_loc3` varchar(100) NOT NULL default '',
-  `subject_loc4` varchar(100) NOT NULL default '',
-  `subject_loc5` varchar(100) NOT NULL default '',
-  `subject_loc6` varchar(100) NOT NULL default '',
-  `subject_loc7` varchar(100) NOT NULL default '',
-  `subject_loc8` varchar(100) NOT NULL default '',
-  `text_loc1` text default NULL,
-  `text_loc2` text default NULL,
-  `text_loc3` text default NULL,
-  `text_loc4` text default NULL,
-  `text_loc5` text default NULL,
-  `text_loc6` text default NULL,
-  `text_loc7` text default NULL,
-  `text_loc8` text default NULL,
-  PRIMARY KEY  (`entry`,`gender`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `locales_achievement_reward`
---
-
-LOCK TABLES `locales_achievement_reward` WRITE;
-/*!40000 ALTER TABLE `locales_achievement_reward` DISABLE KEYS */;
-/*!40000 ALTER TABLE `locales_achievement_reward` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `locales_creature`
 --
 
@@ -3580,7 +3487,6 @@ INSERT INTO `mangos_string` VALUES
 (369,'Required quest (normal difficulty):',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (370,'Required heroic keys:',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (371,'Required quest (heroic difficulty):',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(372,'No achievement!',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (373,'Response:\n%s ',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (374,'Tickets count: %i\n',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (375,'Player %s not have tickets.',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
@@ -3947,7 +3853,6 @@ INSERT INTO `mangos_string` VALUES
 (807,'Please provide character name',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (808,'Player %s not found or offline',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (809,'Account for character %s not found',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(810,'|Hplayer:$N|h[$N]|h has earned the achievement $a!',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (811,'Guild Master',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (812,'Officer',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (813,'Veteran',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
@@ -4048,8 +3953,6 @@ INSERT INTO `mangos_string` VALUES
 (1160,'You modify for %s float field:%u to sum with:%f = %f',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (1161,'Criteria:',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (1162,' [counter]',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(1163,'Achievement %u doesn\'t exist.',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(1164,'Achievement criteria %u doesn\'t exist.',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (1165,'Spell %u not have auras.',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (1166,'Scripting library not found or not accessible.',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (1167,'Scripting library has wrong list functions (outdated?).',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),

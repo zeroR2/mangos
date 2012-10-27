@@ -1670,7 +1670,6 @@ void GameObject::Use(Unit* user)
             Player* player = (Player*)user;
 
             player->SendLoot(GetObjectGuid(), LOOT_FISHINGHOLE);
-            player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_FISH_IN_GAMEOBJECT, GetGOInfo()->id);
             return;
         }
         case GAMEOBJECT_TYPE_FLAGDROP:                      // 26

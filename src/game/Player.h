@@ -33,7 +33,6 @@
 #include "Pet.h"
 #include "MapReference.h"
 #include "Util.h"                                           // for Tokens typedef
-#include "AchievementMgr.h"
 #include "ReputationMgr.h"
 #include "BattleGround/BattleGround.h"
 #include "SharedDefines.h"
@@ -850,8 +849,6 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADDECLINEDNAMES,
     PLAYER_LOGIN_QUERY_LOADGUILD,
     PLAYER_LOGIN_QUERY_LOADARENAINFO,
-    PLAYER_LOGIN_QUERY_LOADACHIEVEMENTS,
-    PLAYER_LOGIN_QUERY_LOADCRITERIAPROGRESS,
     PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS,
     PLAYER_LOGIN_QUERY_LOADBGDATA,
     PLAYER_LOGIN_QUERY_LOADACCOUNTDATA,
@@ -1549,7 +1546,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         {
             SetUInt32Value (PLAYER_FIELD_COINAGE, value);
             MoneyChanged(value);
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_GOLD_VALUE_OWNED);
         }
 
         QuestStatusMap const& GetQuestStatusMap() { return mQuestStatus; };
@@ -2431,13 +2427,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void AddRunePower(uint8 index);
         void InitRunes();
 
-        AchievementMgr const& GetAchievementMgr() const { return m_achievementMgr; }
-        AchievementMgr& GetAchievementMgr() { return m_achievementMgr; }
-        void UpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscvalue1=0, uint32 miscvalue2=0, Unit *unit=NULL, uint32 time=0);
-        void CompletedAchievement(AchievementEntry const* entry);
-        void CompletedAchievement(uint32 uiAchievementID);
-        void StartTimedAchievementCriteria(AchievementCriteriaTypes type, uint32 timedRequirementId, time_t startTime = 0);
-
         bool HasTitle(uint32 bitIndex) const;
         bool HasTitle(CharTitlesEntry const* title) const { return HasTitle(title->bit_index); }
         void SetTitle(CharTitlesEntry const* title, bool lost = false);
@@ -2779,7 +2768,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         // Temporary removed pet cache
         PetNumberList m_temporaryUnsummonedPetNumber;
 
-        AchievementMgr m_achievementMgr;
         ReputationMgr  m_reputationMgr;
 
         uint32 m_timeSyncCounter;

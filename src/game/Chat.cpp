@@ -37,9 +37,7 @@
 #include "AuctionHouseBot/AuctionHouseBot.h"
 
 // Supported shift-links (client generated and server side)
-// |color|Hachievement:achievement_id:player_guid_hex:completed_0_1:mm:dd:yy_from_2000:criteriaMask1:criteriaMask2:criteriaMask3:criteriaMask4|h[name]|h|r
 //                                                                        - client, item icon shift click, not used in server currently
-// |color|Hachievement_criteria:criteria_id|h[name]|h|r
 // |color|Harea:area_id|h[name]|h|r
 // |color|Hareatrigger:id|h[name]|h|r
 // |color|Hareatrigger_target:id|h[name]|h|r
@@ -96,22 +94,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "password",       SEC_PLAYER,         true,  &ChatHandler::HandleAccountPasswordCommand,     "", NULL },
         { "",               SEC_PLAYER,         true,  &ChatHandler::HandleAccountCommand,             "", NULL },
         { NULL,             0,                  false, NULL,                                           "", NULL }
-    };
-
-    static ChatCommand achievementCriteriaCommandTable[] =
-    {
-        { "add",            SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAchievementCriteriaAddCommand,   "", NULL },
-        { "remove",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAchievementCriteriaRemoveCommand, "", NULL },
-        { NULL,             0,                  true,  NULL,                                                "", NULL }
-    };
-
-    static ChatCommand achievementCommandTable[] =
-    {
-        { "criteria",       SEC_ADMINISTRATOR,  true,  NULL,                                           "", achievementCriteriaCommandTable },
-        { "add",            SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAchievementAddCommand,      "", NULL },
-        { "remove",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAchievementRemoveCommand,   "", NULL },
-        { "",               SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleAchievementCommand,         "", NULL },
-        { NULL,             0,                  true,  NULL,                                           "", NULL }
     };
 
     static ChatCommand ahbotItemsAmountCommandTable[] =
@@ -207,7 +189,6 @@ ChatCommand* ChatHandler::getCommandTable()
 
     static ChatCommand characterCommandTable[] =
     {
-        { "achievements",   SEC_GAMEMASTER,     true,  &ChatHandler::HandleCharacterAchievementsCommand, "", NULL },
         { "customize",      SEC_GAMEMASTER,     true,  &ChatHandler::HandleCharacterCustomizeCommand,  "", NULL },
         { "deleted",        SEC_GAMEMASTER,     true,  NULL,                                           "", characterDeletedCommandTable},
         { "erase",          SEC_CONSOLE,        true,  &ChatHandler::HandleCharacterEraseCommand,      "", NULL },
@@ -389,7 +370,6 @@ ChatCommand* ChatHandler::getCommandTable()
     static ChatCommand lookupCommandTable[] =
     {
         { "account",        SEC_GAMEMASTER,     true,  NULL,                                           "", lookupAccountCommandTable },
-        { "achievement",    SEC_GAMEMASTER,     true,  &ChatHandler::HandleLookupAchievementCommand,   "", NULL },
         { "area",           SEC_MODERATOR,      true,  &ChatHandler::HandleLookupAreaCommand,          "", NULL },
         { "creature",       SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleLookupCreatureCommand,      "", NULL },
         { "event",          SEC_GAMEMASTER,     true,  &ChatHandler::HandleLookupEventCommand,         "", NULL },
@@ -524,7 +504,6 @@ ChatCommand* ChatHandler::getCommandTable()
     static ChatCommand reloadCommandTable[] =
     {
         { "all",            SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReloadAllCommand,           "", NULL },
-        { "all_achievement", SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReloadAllAchievementCommand, "", NULL },
         { "all_area",       SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReloadAllAreaCommand,       "", NULL },
         { "all_eventai",    SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReloadAllEventAICommand,    "", NULL },
         { "all_gossips",    SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReloadAllGossipsCommand,    "", NULL },
@@ -538,8 +517,6 @@ ChatCommand* ChatHandler::getCommandTable()
 
         { "config",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReloadConfigCommand,        "", NULL },
 
-        { "achievement_criteria_requirement", SEC_ADMINISTRATOR, true, &ChatHandler::HandleReloadAchievementCriteriaRequirementCommand, "", NULL },
-        { "achievement_reward",          SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadAchievementRewardCommand,       "", NULL },
         { "areatrigger_involvedrelation", SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadQuestAreaTriggersCommand,       "", NULL },
         { "areatrigger_tavern",          SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadAreaTriggerTavernCommand,       "", NULL },
         { "areatrigger_teleport",        SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadAreaTriggerTeleportCommand,     "", NULL },
@@ -570,7 +547,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "item_enchantment_template",   SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadItemEnchantementsCommand,       "", NULL },
         { "item_loot_template",          SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadLootTemplatesItemCommand,       "", NULL },
         { "item_required_target",        SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadItemRequiredTragetCommand,      "", NULL },
-        { "locales_achievement_reward",  SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadLocalesAchievementRewardCommand, "", NULL },
         { "locales_creature",            SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadLocalesCreatureCommand,         "", NULL },
         { "locales_gameobject",          SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadLocalesGameobjectCommand,       "", NULL },
         { "locales_gossip_menu_option",  SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadLocalesGossipMenuOptionCommand, "", NULL },
@@ -627,7 +603,6 @@ ChatCommand* ChatHandler::getCommandTable()
 
     static ChatCommand resetCommandTable[] =
     {
-        { "achievements",   SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleResetAchievementsCommand,   "", NULL },
         { "honor",          SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleResetHonorCommand,          "", NULL },
         { "level",          SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleResetLevelCommand,          "", NULL },
         { "specs",          SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleResetSpecsCommand,          "", NULL },
@@ -762,7 +737,6 @@ ChatCommand* ChatHandler::getCommandTable()
     static ChatCommand commandTable[] =
     {
         { "account",        SEC_PLAYER,         true,  NULL,                                           "", accountCommandTable  },
-        { "achievement",    SEC_ADMINISTRATOR,  true,  NULL,                                           "", achievementCommandTable },
         { "auction",        SEC_ADMINISTRATOR,  false, NULL,                                           "", auctionCommandTable  },
         { "ahbot",          SEC_ADMINISTRATOR,  true,  NULL,                                           "", ahbotCommandTable    },
         { "cast",           SEC_ADMINISTRATOR,  false, NULL,                                           "", castCommandTable     },
@@ -1505,7 +1479,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
     |cff4e96f7|Htalent:2232:-1|h[Taste for Blood]|h|r
     |cff71d5ff|Hspell:21563|h[Command]|h|r
     |cffffd000|Henchant:3919|h[Engineering: Rough Dynamite]|h|r
-    |cffffff00|Hachievement:546:0000000000000001:0:0:0:-1:0:0:0:0|h[Safe Deposit]|h|r
     |cff66bbff|Hglyph:21:762|h[Glyph of Bladestorm]|h|r
 
     | will be escaped to ||
@@ -1561,7 +1534,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
     ItemPrototype const* linkedItem = NULL;
     Quest const* linkedQuest = NULL;
     SpellEntry const* linkedSpell = NULL;
-    AchievementEntry const* linkedAchievement = NULL;
     ItemRandomPropertiesEntry const* itemProperty = NULL;
     ItemRandomSuffixEntry const* itemSuffix = NULL;
 
@@ -1572,7 +1544,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
             linkedItem = NULL;
             linkedQuest = NULL;
             linkedSpell = NULL;
-            linkedAchievement = NULL;
             itemProperty = NULL;
             itemSuffix = NULL;
 
@@ -1866,29 +1837,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
                     if (!linkedSpell)
                         return false;
                 }
-                else if (strcmp(buffer, "achievement") == 0)
-                {
-                    if (color != CHAT_LINK_COLOR_ACHIEVEMENT)
-                        return false;
-
-                    reader.getline(buffer, 256, ':');
-                    if (reader.eof())                       // : must be
-                        return false;
-
-                    uint32 achievementId = atoi(buffer);
-                    linkedAchievement = sAchievementStore.LookupEntry(achievementId);
-
-                    if (!linkedAchievement)
-                        return false;
-
-                    char c = reader.peek();
-                    // skip progress
-                    while (c != '|' && c != '\0')
-                    {
-                        reader.ignore(1);
-                        c = reader.peek();
-                    }
-                }
                 else if (strcmp(buffer, "glyph") == 0)
                 {
                     if (color != CHAT_LINK_COLOR_GLYPH)
@@ -2056,20 +2004,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
                                 return false;
                             }
                         }
-                    }
-                    else if (linkedAchievement)
-                    {
-                        bool foundName = false;
-                        for (uint8 i = 0; i < MAX_LOCALE; ++i)
-                        {
-                            if (*linkedAchievement->name[i] && strcmp(linkedAchievement->name[i], buffer) == 0)
-                            {
-                                foundName = true;
-                                break;
-                            }
-                        }
-                        if (!foundName)
-                            return false;
                     }
                     // that place should never be reached - if nothing linked has been set in |H
                     // it will return false before

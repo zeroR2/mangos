@@ -185,8 +185,6 @@ void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket & recv_data)
             if ( _player->CanCompleteQuest( quest ) )
                 _player->CompleteQuest( quest );
 
-            _player->GetAchievementMgr().StartTimedAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, quest);
-
             _player->PlayerTalkClass->CloseGossip();
 
             if( qInfo->GetSrcSpell() > 0 )
@@ -352,8 +350,6 @@ void WorldSession::HandleQuestLogRemoveQuest(WorldPacket& recv_data)
         }
 
         _player->SetQuestSlot(slot, 0);
-
-        _player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_QUEST_ABANDONED, 1);
     }
 }
 

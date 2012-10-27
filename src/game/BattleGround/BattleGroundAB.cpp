@@ -141,13 +141,6 @@ void BattleGroundAB::Update(uint32 diff)
                     UpdateWorldState(BG_AB_OP_RESOURCES_ALLY, m_TeamScores[team]);
                 if (team == TEAM_INDEX_HORDE)
                     UpdateWorldState(BG_AB_OP_RESOURCES_HORDE, m_TeamScores[team]);
-
-                // update achievement flags
-                // we increased m_TeamScores[team] so we just need to check if it is 500 more than other teams resources
-                // horde will be a bit disadvantaged, but we can assume that points aren't updated for both team in same Update() call
-                uint8 otherTeam = (team + 1) % PVP_TEAM_COUNT;
-                if (m_TeamScores[team] > m_TeamScores[otherTeam] + 500)
-                    m_TeamScores500Disadvantage[otherTeam] = true;
             }
         }
 
@@ -175,9 +168,6 @@ void BattleGroundAB::StartingEventOpenDoors()
         SpawnBGObject(m_BgObjects[BG_AB_OBJECT_SPEEDBUFF_STABLES + buff + i * 3], RESPAWN_IMMEDIATELY);
     }
     OpenDoorEvent(BG_EVENT_DOOR);
-
-    // Players that join battleground after start are not eligible to get achievement.
-    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, AB_EVENT_START_BATTLE);
 }
 
 void BattleGroundAB::AddPlayer(Player* plr)
@@ -360,7 +350,6 @@ void BattleGroundAB::EventPlayerClickedOnFlag(Player* source, GameObject* target
     if (m_Nodes[node] == BG_AB_NODE_TYPE_NEUTRAL)
     {
         UpdatePlayerScore(source, SCORE_BASES_ASSAULTED, 1);
-        source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, 122);
 
         m_prevNodes[node] = m_Nodes[node];
         m_Nodes[node] = teamIndex + 1;
@@ -399,7 +388,6 @@ void BattleGroundAB::EventPlayerClickedOnFlag(Player* source, GameObject* target
         else
         {
             UpdatePlayerScore(source, SCORE_BASES_DEFENDED, 1);
-            source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, 123);
 
             m_prevNodes[node] = m_Nodes[node];
             m_Nodes[node] = teamIndex + BG_AB_NODE_TYPE_OCCUPIED;
@@ -420,7 +408,6 @@ void BattleGroundAB::EventPlayerClickedOnFlag(Player* source, GameObject* target
     else
     {
         UpdatePlayerScore(source, SCORE_BASES_ASSAULTED, 1);
-        source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, 122);
 
         m_prevNodes[node] = m_Nodes[node];
         m_Nodes[node] = teamIndex + BG_AB_NODE_TYPE_CONTESTED;
@@ -474,7 +461,6 @@ void BattleGroundAB::Reset()
         m_lastTick[i] = 0;
         m_honorScoreTicks[i] = 0;
         m_ReputationScoreTicks[i] = 0;
-        m_TeamScores500Disadvantage[i] = false;
     }
 
     m_IsInformedNearVictory = false;
@@ -570,16 +556,4 @@ void BattleGroundAB::UpdatePlayerScore(Player* source, uint32 type, uint32 value
             BattleGround::UpdatePlayerScore(source, type, value);
             return;
     }
-
-    source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
-}
-
-bool BattleGroundAB::IsAllNodesControlledByTeam(Team team) const
-{
-    for (uint8 i = 0; i < BG_AB_NODES_MAX; ++i)
-        if ((team == ALLIANCE && m_Nodes[i] != BG_AB_NODE_STATUS_ALLY_OCCUPIED) ||
-                (team == HORDE && m_Nodes[i] != BG_AB_NODE_STATUS_HORDE_OCCUPIED))
-            return false;
-
-    return true;
 }

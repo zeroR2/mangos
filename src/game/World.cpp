@@ -33,7 +33,6 @@
 #include "Weather.h"
 #include "Player.h"
 #include "AccountMgr.h"
-#include "AchievementMgr.h"
 #include "AuctionHouseMgr.h"
 #include "ObjectMgr.h"
 #include "CreatureEventAIMgr.h"
@@ -723,7 +722,6 @@ void World::LoadConfigSettings(bool reload)
 
     setConfigMinMax(CONFIG_UINT32_START_GM_LEVEL, "GM.StartLevel", 1, getConfig(CONFIG_UINT32_START_PLAYER_LEVEL), MAX_LEVEL);
     setConfig(CONFIG_BOOL_GM_LOWER_SECURITY, "GM.LowerSecurity", false);
-    setConfig(CONFIG_BOOL_GM_ALLOW_ACHIEVEMENT_GAINS, "GM.AllowAchievementGain", true);
 
     setConfig(CONFIG_BOOL_GM_ANNOUNCE_BAN, "GM.AnnounceBan", false);
 
@@ -1402,17 +1400,6 @@ void World::SetInitialWorldSettings()
 
     sLog.outString( "Loading Skill Fishing base level requirements..." );
     sObjectMgr.LoadFishingBaseSkillLevel();
-
-    sLog.outString();
-    sLog.outString( "Loading Achievements..." );
-    sAchievementMgr.LoadAchievementReferenceList();
-    sAchievementMgr.LoadAchievementCriteriaList();
-    sAchievementMgr.LoadAchievementCriteriaRequirements();
-    sAchievementMgr.LoadRewards();
-    sAchievementMgr.LoadRewardLocales();
-    sAchievementMgr.LoadCompletedAchievements();
-    sLog.outString( ">>> Achievements loaded" );
-    sLog.outString();
 
     sLog.outString( "Loading Instance encounters data..." );  // must be after Creature loading
     sObjectMgr.LoadInstanceEncounters();

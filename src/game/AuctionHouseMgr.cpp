@@ -153,8 +153,6 @@ void AuctionHouseMgr::SendAuctionWonMail(AuctionEntry* auction)
         if (bidder)
         {
             bidder->GetSession()->SendAuctionBidderNotification(auction);
-            // FIXME: for offline player need also
-            bidder->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WON_AUCTIONS, 1);
         }
 
         RemoveAItem(auction->itemGuidLow);                  // we have to remove the item, before we delete it !!
@@ -202,13 +200,6 @@ void AuctionHouseMgr::SendAuctionSuccessfulMail(AuctionEntry* auction)
         DEBUG_LOG("AuctionSuccessful body string : %s", auctionSuccessfulBody.str().c_str());
 
         uint32 profit = auction->bid + auction->deposit - auctionCut;
-
-        if (owner)
-        {
-            // FIXME: what do if owner offline
-            owner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_EARNED_BY_AUCTIONS, profit);
-            owner->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_SOLD, auction->bid);
-        }
 
         MailDraft(msgAuctionSuccessfulSubject.str(), auctionSuccessfulBody.str())
         .SetMoney(profit)

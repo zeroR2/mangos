@@ -80,13 +80,6 @@ enum BG_SA_GraveYardStatus
     BG_SA_GRAVE_STATUS_HORDE_OCCUPIED    = 4    // Captured by the Horde, not clickable by anyone
 };
 
-enum BG_SA_Spells
-{
-    BG_SA_END_OF_ROUND                  = 52459, // Achievement Criteria
-    BG_SA_PLANT_SEAFORIUM_CHARGE        = 60937, // Spell doesnt exist(Achievement Criteria)
-    BG_SA_STORM_THE_BEACH               = 65246, // Spell doesnt exist(Achievement Criteria)
-};
-
 enum BG_SA_Timers
 {
     BG_SA_ROUNDLENGTH                   = 600000,
@@ -255,9 +248,6 @@ class BattleGroundSA : public BattleGround
         uint32 GetCorrectFactionSA(uint8 vehicleType) const;
         /* This teleports player to correct loc in function of BG status and it resurects player if necesary */
         void TeleportPlayerToCorrectLoc(Player *player, bool resetBattle = false);
-        // for achievement - win with all walls
-        bool winSAwithAllWalls(Team team);
-        bool isDemolisherDestroyed[2];
 
     private:
         uint8 m_Gyd[BG_SA_GRY_MAX + 1];

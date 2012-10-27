@@ -72,8 +72,6 @@ BattleGroundSA::BattleGroundSA()
     m_BgObjects.resize(BG_SA_MAXOBJ);
     shipsStarted = false;
     shipsSpawned = false;
-    isDemolisherDestroyed[0] = false; // ALLIANCE
-    isDemolisherDestroyed[1] = false; // HORDE
     shipsTimer = BG_SA_BOAT_START;
 
     for (int32 i = 0; i < BG_SA_GATE_MAX; ++i)
@@ -201,26 +199,12 @@ void BattleGroundSA::Update(uint32 diff)
                 RoundScores[0].winner = GetDefender();
                 RoundScores[0].time = BG_SA_ROUNDLENGTH;
 
-                for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-                {
-                    Player* plr = sObjectMgr.GetPlayer(itr->first);
-                    if (plr)
-                        plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_END_OF_ROUND);
-                }
-
                 ResetBattle(0, defender);
             }
             else // Timeout of second round
             {
                 SendMessageToAll(defender == ALLIANCE ? LANG_BG_SA_ALLIANCE_TIMEOUT_END_2ROUND : LANG_BG_SA_HORDE_TIMEOUT_END_2ROUND, CHAT_MSG_BG_SYSTEM_NEUTRAL, NULL);
                 RoundScores[1].winner = GetDefender();
-
-                for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-                {
-                    Player* plr = sObjectMgr.GetPlayer(itr->first);
-                    if (plr)
-                        plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_END_OF_ROUND);
-                }
 
                 if (RoundScores[0].winner == GetDefender())
                     EndBattleGround(GetDefender());
@@ -271,7 +255,6 @@ void BattleGroundSA::Update(uint32 diff)
             SetStatus(STATUS_IN_PROGRESS); // Start round two
             PlaySoundToAll(SOUND_BG_START);
             SendWarningToAll(LANG_BG_SA_HAS_BEGUN);
-            StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_EVENT_START_BATTLE_2);
 
             for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
             {
@@ -333,7 +316,6 @@ void BattleGroundSA::StartingEventOpenDoors()
     SpawnEvent(SA_EVENT_ADD_BOMB_B, (GetDefender() == ALLIANCE ? BG_SA_GRAVE_STATUS_HORDE_OCCUPIED : BG_SA_GRAVE_STATUS_ALLY_OCCUPIED), true);
     ToggleTimer();
     HandleInteractivity();
-    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_EVENT_START_BATTLE_1);
 }
 
 void BattleGroundSA::RemovePlayer(Player* /*plr*/, ObjectGuid /*guid*/)
@@ -636,10 +618,6 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
 {
     TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
-    // Seaforium Charge Explosion
-    if (doneBy == 52408)
-        player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_PLANT_SEAFORIUM_CHARGE);
-
     BG_SA_GoType type = BG_SA_GO_GATES_T_NONE;
     switch (target_obj->GetEntry())
     {
@@ -824,17 +802,6 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     return;
                 }
 
-                //Achievement Storm the Beach (1310)
-                for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-                {
-                    Player* plr = sObjectMgr.GetPlayer(itr->first);
-                    if (plr)
-                    {
-                        if (plr->GetTeam() != defender)
-                            plr->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_STORM_THE_BEACH);
-                    }
-                }
-
                 if (Phase == SA_ROUND_ONE) // Victory at first round
                 {
                     RoundScores[0].winner = GetDefender() == ALLIANCE ? HORDE : ALLIANCE;
@@ -874,7 +841,6 @@ void BattleGroundSA::HandleKillUnit(Creature* unit, Player* killer)
     if (unit->GetEntry() == 28781) // Demolisher
     {
         UpdatePlayerScore(killer, SCORE_DEMOLISHERS_DESTROYED, 1);
-        isDemolisherDestroyed[killer->GetTeam() == HORDE ? 0 : 1] = true;
     }
 }
 
@@ -1156,18 +1122,4 @@ uint32 BattleGroundSA::GetCorrectFactionSA(uint8 vehicleType) const
             return VEHICLE_FACTION_NEUTRAL;
     }
     return VEHICLE_FACTION_NEUTRAL;
-}
-
-bool BattleGroundSA::winSAwithAllWalls(Team team)
-{
-   if (GetDefender() != team)
-        return false;
-
-    bool allNotDestroyed = true;
-
-    for (uint32 i = 0; i < BG_SA_GATE_MAX; ++i)
-        if (GateStatus[i] == BG_SA_GO_GATES_DESTROY)
-            allNotDestroyed = false;
-
-    return allNotDestroyed;
 }

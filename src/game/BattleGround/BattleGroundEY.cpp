@@ -90,9 +90,6 @@ void BattleGroundEY::StartingEventOpenDoors()
         uint8 buff = urand(0, 2);
         SpawnBGObject(m_BgObjects[EY_OBJECT_SPEEDBUFF_FEL_REAVER_RUINS + buff + i * 3], RESPAWN_IMMEDIATELY);
     }
-
-    // Players that join battleground after start are not eligible to get achievement.
-    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, EY_EVENT_START_BATTLE);
 }
 
 void BattleGroundEY::AddPoints(Team team, uint32 points)
@@ -533,7 +530,6 @@ void BattleGroundEY::UpdatePlayerScore(Player* source, uint32 type, uint32 value
     {
         case SCORE_FLAG_CAPTURES:                           // flags captured
             ((BattleGroundEYScore*)itr->second)->FlagCaptures += value;
-            source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, EY_OBJECTIVE_CAPTURE_FLAG);
             break;
         default:
             BattleGround::UpdatePlayerScore(source, type, value);
@@ -628,13 +624,4 @@ WorldSafeLocsEntry const* BattleGroundEY::GetClosestGraveYard(Player* player)
     }
 
     return nearestEntry;
-}
-
-bool BattleGroundEY::IsAllNodesControlledByTeam(Team team) const
-{
-    for (uint8 i = 0; i < EY_NODES_MAX; ++i)
-        if (m_towerOwner[i] != team)
-            return false;
-
-    return true;
 }

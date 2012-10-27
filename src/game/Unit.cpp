@@ -948,13 +948,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
                 bg->UpdatePlayerScore(killer, SCORE_DAMAGE_DONE, damageInfo->damage);
             }
         }
-
-        killer->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DAMAGE_DONE, damageInfo->damage, 0, pVictim);
-        killer->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_DEALT, damageInfo->damage);
     }
-
-    if (pVictim->GetTypeId() == TYPEID_PLAYER)
-        ((Player*)pVictim)->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_RECEIVED, damageInfo->damage);
 
     if (pVictim->GetTypeId() == TYPEID_UNIT && !((Creature*)pVictim)->IsPet() && !((Creature*)pVictim)->HasLootRecipient())
         ((Creature*)pVictim)->SetLootRecipient(this);
@@ -1078,15 +1072,6 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             if (!damageFromSpiritOfRedemtionTalent)
                 playerVictim->SetPvPDeath(player_tap != NULL);
 
-            // achievement stuff
-            playerVictim->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_TOTAL_DAMAGE_RECEIVED, health);
-            if (player_tap)
-                player_tap->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_SPECIAL_PVP_KILL, 1, 0, pVictim);
-            if (GetTypeId() == TYPEID_UNIT)
-                playerVictim->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_CREATURE, GetEntry());
-            else if (GetTypeId() == TYPEID_PLAYER && pVictim != this)
-                playerVictim->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_PLAYER, 1, playerVictim->GetTeam());
-
             // 10% durability loss on death
             // only if not player and not controlled by player pet. And not at BG
             if (damageInfo->durabilityLoss && !player_tap && !playerVictim->InBattleGround())
@@ -1144,9 +1129,6 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
     else                                                    // if (health <= damage)
     {
         DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"Unit::DealDamage %s still alive", pVictim->GetGuidStr().c_str());
-
-        if (pVictim->GetTypeId() == TYPEID_PLAYER)
-            ((Player*)pVictim)->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_TOTAL_DAMAGE_RECEIVED, damageInfo->damage);
 
         pVictim->ModifyHealth(- int32(damageInfo->damage));
 
@@ -7403,18 +7385,6 @@ int32 Unit::DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellPro
     {
         if (BattleGround* bg = ((Player*)unit)->GetBattleGround())
             bg->UpdatePlayerScore((Player*)unit, SCORE_HEALING_DONE, gain);
-
-        // use the actual gain, as the overheal shall not be counted, skip gain 0 (it ignored anyway in to criteria)
-        if (gain)
-            ((Player*)unit)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HEALING_DONE, gain, 0, pVictim);
-
-        ((Player*)unit)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEAL_CASTED, addhealth);
-    }
-
-    if (pVictim->GetTypeId() == TYPEID_PLAYER)
-    {
-        ((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_TOTAL_HEALING_RECEIVED, gain);
-        ((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEALING_RECEIVED, addhealth);
     }
 
     return gain;

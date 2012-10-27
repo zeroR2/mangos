@@ -95,13 +95,6 @@ enum eWGSpell
     SPELL_VEHICLE_TELEPORT                       = 49759,
 };
 
-enum eWGAchievements
-{
-    ACHIEVEMENTS_WIN_WG                          = 1717,
-    ACHIEVEMENTS_WIN_WG_100                      = 1718,
-    ACHIEVEMENTS_WG_TOWER_DESTROY                = 1727,
-};
-
 enum eWGGameObjectBuildingType
 {
     WORLD_PVP_WG_OBJECTTYPE_DOOR,

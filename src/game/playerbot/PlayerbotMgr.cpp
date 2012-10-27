@@ -577,16 +577,6 @@ void PlayerbotMgr::HandleMasterIncomingPacket(const WorldPacket& packet)
                 (bot->GetPlayerbotAI()->CanStore()) ? choice = urand(0, 3) : choice = 0;  // pass = 0, need = 1, greed = 2, disenchant = 3
 
                 group->CountRollVote(bot, Guid, NumberOfPlayers, RollVote(choice));
-
-                switch (choice)
-                {
-                    case ROLL_NEED:
-                        bot->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ROLL_NEED, 1);
-                        break;
-                    case ROLL_GREED:
-                        bot->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ROLL_GREED, 1);
-                        break;
-                }
             }
             return;
         }

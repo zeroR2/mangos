@@ -98,8 +98,6 @@ bool LoginQueryHolder::Initialize()
     // in other case still be dummy query
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADGUILD,           "SELECT guildid,rank FROM guild_member WHERE guid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADARENAINFO,       "SELECT arenateamid, played_week, played_season, wons_season, personal_rating FROM arena_team_member WHERE guid='%u'", m_guid.GetCounter());
-    res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADACHIEVEMENTS,    "SELECT achievement, date FROM character_achievement WHERE guid = '%u'", m_guid.GetCounter());
-    res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADCRITERIAPROGRESS, "SELECT criteria, counter, date FROM character_achievement_progress WHERE guid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS,   "SELECT setguid, setindex, name, iconname, ignore_mask, item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13, item14, item15, item16, item17, item18 FROM character_equipmentsets WHERE guid = '%u' ORDER BY setindex", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADBGDATA,          "SELECT instance_id, team, join_x, join_y, join_z, join_o, join_map, taxi_start, taxi_end, mount_spell FROM character_battleground_data WHERE guid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADACCOUNTDATA,     "SELECT type, time, data FROM character_account_data WHERE guid='%u'", m_guid.GetCounter());
@@ -856,9 +854,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
     m_playerLoading = false;
 
-    // Handle Login-Achievements (should be handled after loading)
-    pCurrChar->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ON_LOGIN, 1);
-
     // Titles check
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_CHECK_TITLES))
     {
@@ -1185,15 +1180,12 @@ void WorldSession::HandleAlterAppearanceOpcode(WorldPacket& recv_data)
     }
 
     _player->ModifyMoney(-int32(Cost));                     // it isn't free
-    _player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_AT_BARBER, Cost);
 
     _player->SetByteValue(PLAYER_BYTES, 2, uint8(bs_hair->hair_id));
     _player->SetByteValue(PLAYER_BYTES, 3, uint8(Color));
     _player->SetByteValue(PLAYER_BYTES_2, 0, uint8(bs_facialHair->hair_id));
     if (_player->getRace() == RACE_TAUREN)
         _player->SetByteValue(PLAYER_BYTES, 0, uint8(skinTone_id));
-
-    _player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_VISIT_BARBER_SHOP, 1);
 
     _player->SetStandState(0);                              // stand up
 }
@@ -1399,20 +1391,6 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
             CharacterDatabase.PExecute("INSERT INTO `character_homebind` VALUES ('%u','0','1519','-8867.68','673.373','97.9034')", guid.GetCounter());
         else
             CharacterDatabase.PExecute("INSERT INTO `character_homebind` VALUES ('%u','1','1637','1633.33','-4439.11','15.7588')", guid.GetCounter());
-
-        // Achievement conversion
-        if (QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_achievements"))
-        {
-            do
-            {
-                Field *fields2 = result2->Fetch();
-                uint32 achiev_alliance = fields2[0].GetUInt32();
-                uint32 achiev_horde = fields2[1].GetUInt32();
-                CharacterDatabase.PExecute("UPDATE IGNORE `character_achievement` set achievement = '%u' where achievement = '%u' AND guid = '%u'",
-                    team == TEAM_INDEX_ALLIANCE ? achiev_alliance : achiev_horde, team == TEAM_INDEX_ALLIANCE ? achiev_horde : achiev_alliance, guid.GetCounter());
-            }
-            while (result2->NextRow());
-        }
 
         // Item conversion
         if(QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_items"))

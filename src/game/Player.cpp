@@ -58,7 +58,6 @@
 #include "Spell.h"
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
-#include "AchievementMgr.h"
 #include "Mail.h"
 #include "SpellAuras.h"
 #include "DBCStores.h"
@@ -381,7 +380,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 //== Player ====================================================
 
-Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m_achievementMgr(this), m_reputationMgr(this)
+Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m_reputationMgr(this)
 {
     m_speakTime = 0;
     m_speakCount = 0;
@@ -1016,8 +1015,6 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
             WorldPacket data2(SMSG_DURABILITY_DAMAGE_DEATH, 0);
             GetSession()->SendPacket(&data2);
         }
-
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATHS_FROM, 1, type);
     }
 
     return final_damage;
@@ -1225,9 +1222,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
 {
     if (!IsInWorld())
         return;
-
-    // Remove failed timed Achievements
-    GetAchievementMgr().DoFailedTimedAchievementCriterias();
 
     // Undelivered mail
     if (m_nextMailDelivereTime && m_nextMailDelivereTime <= time(NULL))
@@ -1503,10 +1497,6 @@ void Player::SetDeathState(DeathState s)
         // passive spell
         if (!ressSpellId)
             ressSpellId = GetResurrectionSpellId();
-
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATH_AT_MAP, 1);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATH, 1);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_DEATH_IN_DUNGEON, 1);
 
         if (InstanceData* mapInstance = GetInstanceData())
             mapInstance->OnPlayerDeath(this);
@@ -2775,8 +2765,6 @@ void Player::GiveLevel(uint32 level)
     if (MailLevelReward const* mailReward = sObjectMgr.GetMailLevelReward(level,getRaceMask()))
         MailDraft(mailReward->mailTemplateId).SendMailTo(this,MailSender(MAIL_CREATURE,mailReward->senderEntry));
 
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL);
-
     GetLFGPlayerState()->Update();
 
     // resend quests status directly
@@ -3500,18 +3488,6 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool dependen
         }
     }
 
-    if (!GetSession()->PlayerLoading())
-    {
-        // not ranked skills
-        for (SkillLineAbilityMap::const_iterator _spell_idx = skill_bounds.first; _spell_idx != skill_bounds.second; ++_spell_idx)
-        {
-            GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LINE,_spell_idx->second->skillId);
-            GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILLLINE_SPELLS,_spell_idx->second->skillId);
-        }
-
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL,spell_id);
-    }
-
     // return true (for send learn packet) only if spell active (in case ranked spells) and not replace old spell
     return active && !disabled && !superceded_old;
 }
@@ -4070,8 +4046,6 @@ bool Player::resetTalents(bool no_cost, bool all_specs)
     if (!no_cost)
     {
         ModifyMoney(-(int32)cost);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_FOR_TALENTS, cost);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_NUMBER_OF_TALENT_RESETS, 1);
 
         m_resetTalentsCost = cost;
         m_resetTalentsTime = time(NULL);
@@ -4447,8 +4421,6 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             CharacterDatabase.PExecute("DELETE FROM mail_items WHERE receiver = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_pet WHERE owner = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_pet_declinedname WHERE owner = '%u'", lowguid);
-            CharacterDatabase.PExecute("DELETE FROM character_achievement WHERE guid = '%u'", lowguid);
-            CharacterDatabase.PExecute("DELETE FROM character_achievement_progress WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_equipmentsets WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM guild_eventlog WHERE PlayerGuid1 = '%u' OR PlayerGuid2 = '%u'", lowguid, lowguid);
             CharacterDatabase.PExecute("DELETE FROM guild_bank_eventlog WHERE PlayerGuid = '%u'", lowguid);
@@ -5531,7 +5503,7 @@ bool Player::UpdateSkill(uint32 skill_id, uint32 step)
         SetUInt32Value(valueIndex,MAKE_SKILL_VALUE(new_value,max));
         if (itr->second.uState != SKILL_NEW)
             itr->second.uState = SKILL_CHANGED;
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL,skill_id);
+
         return true;
     }
 
@@ -5695,7 +5667,6 @@ bool Player::UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step)
             }
         }
 
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL,SkillId);
         DEBUG_LOG("Player::UpdateSkillPro Chance=%3.1f%% taken", Chance/10.0);
         return true;
     }
@@ -5820,7 +5791,6 @@ void Player::UpdateSkillsForLevel()
                 SetUInt32Value(valueIndex, MAKE_SKILL_VALUE(maxSkill,maxSkill));
                 if (itr->second.uState != SKILL_NEW)
                     itr->second.uState = SKILL_CHANGED;
-                GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, pskill);
             }
             else if (max != maxconfskill)                    /// update max skill value if current max skill not maximized
             {
@@ -5852,7 +5822,6 @@ void Player::UpdateSkillsToMaxSkillsForLevel()
             SetUInt32Value(valueIndex,MAKE_SKILL_VALUE(max,max));
             if (itr->second.uState != SKILL_NEW)
                 itr->second.uState = SKILL_CHANGED;
-            GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, pskill);
         }
 
         if (pskill == SKILL_DEFENSE)
@@ -5901,8 +5870,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
             if (itr->second.uState != SKILL_NEW)
                 itr->second.uState = SKILL_CHANGED;
             learnSkillRewardedSpells(id, currVal);
-            GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, id);
-            GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, id);
 
              for (int i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
              {
@@ -5981,8 +5948,6 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
 
                 SetUInt32Value(PLAYER_SKILL_INDEX(i), MAKE_PAIR32(id, step));
                 SetUInt32Value(PLAYER_SKILL_VALUE_INDEX(i),MAKE_SKILL_VALUE(currVal, maxVal));
-                GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL, id);
-                GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL, id);
 
                 // insert new entry or update if not deleted old entry yet
                 if (itr != mSkillStatus.end())
@@ -6414,7 +6379,6 @@ void Player::CheckAreaExploreAndOutdoor()
     {
         SetUInt32Value(PLAYER_EXPLORED_ZONES_1 + offset, (uint32)(currFields | val));
 
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA);
 
         AreaTableEntry const *p = GetAreaEntryByAreaFlagAndMap(areaFlag,GetMapId());
         if (!p)
@@ -6863,10 +6827,6 @@ bool Player::RewardHonor(Unit *uVictim, uint32 groupsize, float honor)
             ApplyModUInt32Value(PLAYER_FIELD_KILLS, 1, true);
             // and those in a lifetime
             ApplyModUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS, 1, true);
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL);
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HONORABLE_KILL, 1);
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HK_CLASS, pVictim->getClass());
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HK_RACE, pVictim->getRace());
         }
         else
         {
@@ -7251,13 +7211,6 @@ void Player::DuelComplete(DuelCompleteType type)
         data << duel->opponent->GetName();
         data << GetName();
         SendMessageToSet(&data,true);
-    }
-
-    if (type == DUEL_WON)
-    {
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOSE_DUEL, 1);
-        if (duel->opponent)
-            duel->opponent->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_DUEL, 1);
     }
 
     //Remove Duel Flag object
@@ -8740,7 +8693,7 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
         default: break;
     }
 
-    // need know merged fishing/corpse loot type for achievements
+    // need know merged fishing/corpse loot type
     loot->loot_type = loot_type;
 
     WorldPacket data(SMSG_LOOT_RESPONSE, (9+50));           // we guess size
@@ -11216,8 +11169,7 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
     {
         ResetCachedGearScore();
         ItemAddedQuestCheck(item, count);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_RECEIVE_EPIC_ITEM, item, count);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_ITEM, item, count);
+
         pItem = StoreItem(dest, pItem, update);
 
         if (pItem->IsEligibleForSoulboundTrade(allowedLooters))
@@ -11368,7 +11320,6 @@ Item* Player::EquipNewItem(uint16 pos, uint32 item, bool update)
     {
         ResetCachedGearScore();
         ItemAddedQuestCheck(item, 1);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_RECEIVE_EPIC_ITEM, item, 1);
         return EquipItem(pos, pItem, update);
     }
 
@@ -11477,10 +11428,6 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
     if ((slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND) && CanTitanGrip() && HasTwoHandWeaponInOneHand() && !HasAura(49152))
         CastSpell(this, 49152, true);
 
-    // only for full equip instead adding to stack
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, slot+1);
-
     return pItem;
 }
 
@@ -11503,9 +11450,6 @@ void Player::QuickEquipItem(uint16 pos, Item *pItem)
         // Apply Titan's Grip damage penalty if necessary
         if ((slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND) && CanTitanGrip() && HasTwoHandWeaponInOneHand() && !HasAura(49152))
             CastSpell(this, 49152, true);
-
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, slot+1);
     }
 }
 
@@ -11663,7 +11607,6 @@ void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool 
 {
     // update quest counters
     ItemAddedQuestCheck(pItem->GetEntry(), pItem->GetCount());
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_RECEIVE_EPIC_ITEM, pItem->GetEntry(), pItem->GetCount());
 
     // store item
     Item* pLastItem = StoreItem(dest, pItem, update);
@@ -14265,14 +14208,12 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
         if (pQuest->GetRewOrReqMoney() > 0)
         {
             ModifyMoney(pQuest->GetRewOrReqMoney());
-            GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_MONEY_FROM_QUEST_REWARD, uint32(pQuest->GetRewOrReqMoney()));
         }
     }
     else
     {
         // reward money for max level already included in pQuest->GetRewMoneyMaxLevel()
         ModifyMoney(int32(pQuest->GetRewMoneyMaxLevel()));
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_MONEY_FROM_QUEST_REWARD, pQuest->GetRewMoneyMaxLevel());
     }
 
     // req money case
@@ -14303,7 +14244,6 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     if (pQuest->IsDaily())
     {
         SetDailyQuestStatus(quest_id);
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_DAILY_QUEST, 1);
     }
 
     if (pQuest->IsWeekly())
@@ -14346,12 +14286,6 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
         CastSpell(this, pQuest->GetRewSpellCast(), true);
     else if (pQuest->GetRewSpell() > 0)
         CastSpell(this, pQuest->GetRewSpell(), true);
-
-    if (pQuest->GetZoneOrSort() > 0)
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_IN_ZONE, pQuest->GetZoneOrSort());
-
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT);
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, pQuest->GetQuestId());
 
     uint32 zone = 0;
     uint32 area = 0;
@@ -15087,7 +15021,6 @@ void Player::KilledMonster(CreatureInfo const* cInfo, ObjectGuid guid)
 void Player::KilledMonsterCredit(uint32 entry, ObjectGuid guid)
 {
     uint32 addkillcount = 1;
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, entry, addkillcount);
 
     for (int i = 0; i < MAX_QUEST_LOG_SIZE; ++i)
     {
@@ -15718,10 +15651,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     InitDisplayIds();                                       // model, scale and model data
 
     SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);
-
-    // just load criteria/achievement data, safe call before any load, and need, because some spell/item/quest loading
-    // can triggering achievement criteria update that will be lost if this call will later
-    m_achievementMgr.LoadFromDB(holder->GetResult(PLAYER_LOGIN_QUERY_LOADACHIEVEMENTS), holder->GetResult(PLAYER_LOGIN_QUERY_LOADCRITERIAPROGRESS));
 
     uint32 money = fields[8].GetUInt32();
     if (money > MAX_MONEY_AMOUNT)
@@ -16354,8 +16283,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     }
 
     _LoadDeclinedNames(holder->GetResult(PLAYER_LOGIN_QUERY_LOADDECLINEDNAMES));
-
-    m_achievementMgr.CheckAllAchievementCriteria();
 
     _LoadEquipmentSets(holder->GetResult(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS));
 
@@ -17872,7 +17799,6 @@ void Player::SaveToDB()
     _SaveActions();
     _SaveAuras();
     _SaveSkills();
-    m_achievementMgr.SaveToDB();
     m_reputationMgr.SaveToDB();
     _SaveEquipmentSets();
     GetSession()->SaveTutorialsData();                      // changed only while character in game
@@ -19581,8 +19507,6 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
 
     //Checks and preparations done, DO FLIGHT
     ModifyMoney(-(int32)totalcost);
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_FOR_TRAVELLING, totalcost);
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_FLIGHT_PATHS_TAKEN, 1);
 
     // prevent stealth flight
     RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
@@ -20779,8 +20703,6 @@ void Player::SendInitialPacketsBeforeAddToMap()
 
     SendEquipmentSetList();
 
-    m_achievementMgr.SendAllAchievementData();
-
     data.Initialize(SMSG_LOGIN_SETTIMESPEED, 4 + 4 + 4);
     data.AppendPackedTime(sWorld.GetGameTime());
     data << (float)0.01666667f;                             // game speed
@@ -21090,10 +21012,6 @@ void Player::SetDailyQuestStatus(uint32 quest_id)
             break;
         }
     }
-
-    // if first daily quest at curent day
-    if (!quest_daily_idx)
-        GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_DAILY_QUEST_DAILY, 1);
 }
 
 void Player::SetWeeklyQuestStatus(uint32 quest_id)
@@ -21118,10 +21036,6 @@ void Player::ResetDailyQuestStatus()
 
          SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1 + quest_daily_idx, 0);
     }
-
-    // Reset daily_quest_daily if there are no daily quest last day
-    if (!dailyQuestCount)
-        GetAchievementMgr().ResetAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_DAILY_QUEST_DAILY, ACHIEVEMENT_CRITERIA_CONDITION_DAILY);
 
     // DB data deleted in caller
     m_DailyQuestChanged = false;
@@ -21356,8 +21270,6 @@ void Player::SummonIfPossible(bool agree)
 
     m_summon_expire = 0;
 
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ACCEPTED_SUMMONINGS, 1);
-
     TeleportTo(m_summon_mapid, m_summon_x, m_summon_y, m_summon_z,GetOrientation());
 }
 
@@ -21586,8 +21498,6 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
     // honor can be in PvP and !PvP (racial leader) cases
     RewardHonor(pVictim,1);
 
-    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GET_KILLING_BLOWS, 1, 0, pVictim);
-
     // xp and reputation only in !PvP case
     if (!PvP)
     {
@@ -21603,9 +21513,6 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
             if (CreatureInfo const* normalInfo = ObjectMgr::GetCreatureTemplate(pVictim->GetEntry()))
             {
                 KilledMonster(normalInfo, pVictim->GetObjectGuid());
-
-                if (uint32 normalType = normalInfo->type)
-                    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, normalType, xp);
             }
         }
     }
@@ -22719,10 +22626,6 @@ void Player::HandleFall(MovementInfo const& movementInfo)
 
                 uint32 original_health = GetHealth();
                 uint32 final_damage = EnvironmentalDamage(DAMAGE_FALL, damage);
-
-                // recheck alive, might have died of EnvironmentalDamage, avoid cases when player die in fact like Spirit of Redemption case
-                if (isAlive() && final_damage < original_health)
-                    GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_FALL_WITHOUT_DYING, uint32(z_diff*100));
             }
 
             //Z given by moveinfo, LastZ, FallTime, WaterZ, MapZ, Damage, Safefall reduction
@@ -22730,16 +22633,6 @@ void Player::HandleFall(MovementInfo const& movementInfo)
         }
     }
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_LANDING);     // Remove auras that should be removed at landing
-}
-
-void Player::UpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscvalue1/*=0*/, uint32 miscvalue2/*=0*/, Unit *unit/*=NULL*/, uint32 time/*=0*/)
-{
-    GetAchievementMgr().UpdateAchievementCriteria(type, miscvalue1,miscvalue2,unit,time);
-}
-
-void Player::StartTimedAchievementCriteria(AchievementCriteriaTypes type, uint32 timedRequirementId, time_t startTime /*= 0*/)
-{
-    GetAchievementMgr().StartTimedAchievementCriteria(type, timedRequirementId, startTime);
 }
 
 PlayerTalent const* Player::GetKnownTalentById(int32 talentId) const
@@ -23805,23 +23698,6 @@ Object* Player::GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask)
     return NULL;
 }
 
-void Player::CompletedAchievement(AchievementEntry const* entry)
-{
-  GetAchievementMgr().CompletedAchievement(entry);
-}
-
-void Player::CompletedAchievement(uint32 uiAchievementID)
-{
-    AchievementEntry const* achievement = sAchievementStore.LookupEntry(uiAchievementID);
-    if (achievement)
-    {
-        if (!GetAchievementMgr().HasAchievement(uiAchievementID))
-            GetAchievementMgr().CompletedAchievement(achievement);
-    }
-    else
-        sLog.outErrorDb("Player::CompletedAchievement: achievement (ID: %u) not found in sAchievementStore.", uiAchievementID);
-}
-
 void Player::SetRestType(RestType n_r_type, uint32 areaTriggerId /*= 0*/)
 {
     rest_type = n_r_type;
@@ -24107,31 +23983,6 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
             (at->requiredQuestHeroicH && !GetQuestRewardStatus(at->requiredQuestHeroicH))) ||
             (isRegularTargetMap &&
             (at->requiredQuestH && !GetQuestRewardStatus(at->requiredQuestH))))
-            return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
-    }
-
-    uint32 achievCheck = 0;
-    if (difficulty == RAID_DIFFICULTY_10MAN_HEROIC)
-        achievCheck = at->achiev0;
-    else if (difficulty == RAID_DIFFICULTY_25MAN_HEROIC)
-        achievCheck = at->achiev1;
-
-    if (achievCheck)
-    {
-        bool bHasAchiev = false;
-        if (GetAchievementMgr().HasAchievement(achievCheck))
-            bHasAchiev = true;
-        else if (Group* group = GetGroup())
-        {
-            for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-            {
-                Player* member = itr->getSource();
-                if (member && member->IsInWorld())
-                    if (member->GetAchievementMgr().HasAchievement(achievCheck))
-                        bHasAchiev = true;
-            }
-        }
-        if (!bHasAchiev)
             return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
     }
 

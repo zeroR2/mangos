@@ -298,10 +298,6 @@ class BattleGround
         virtual void StartingEventCloseDoors() {}
         virtual void StartingEventOpenDoors() {}
 
-        /* achievement req. */
-        virtual bool IsAllNodesControlledByTeam(Team /*team*/) const { return false; }
-        bool IsTeamScoreInRange(Team team, uint32 minScore, uint32 maxScore) const;
-
         /* Battleground */
         // Get methods:
         char const* GetName() const         { return m_Name; }
@@ -391,8 +387,6 @@ class BattleGround
         uint32 GetPlayerScore(Player* pPlayer, uint32 type);
 
         void StartBattleGround();
-
-        void StartTimedAchievement(AchievementCriteriaTypes type, uint32 entry);
 
         /* Location */
         void SetMapId(uint32 MapID) { m_MapId = MapID; }

@@ -443,17 +443,6 @@ void WorldSession::HandleLootRoll( WorldPacket &recv_data )
     // everything is fine, do it, if false then some cheating problem found
     if(!group->CountRollVote(GetPlayer(), lootedTarget, itemSlot, RollVote(rollType)))
         return;
-
-    switch (rollType)
-    {
-        case ROLL_NEED:
-            GetPlayer()->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ROLL_NEED, 1);
-            break;
-        case ROLL_GREED:
-        case ROLL_DISENCHANT:
-            GetPlayer()->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ROLL_GREED, 1);
-            break;
-    }
 }
 
 void WorldSession::HandleMinimapPingOpcode(WorldPacket& recv_data)

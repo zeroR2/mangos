@@ -207,10 +207,6 @@ class BattleGroundAB : public BattleGround
         /* Nodes occupying */
         virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
 
-        /* achievement req. */
-        bool IsAllNodesControlledByTeam(Team team) const override;
-        bool IsTeamScores500Disadvantage(Team team) const { return m_TeamScores500Disadvantage[GetTeamIndex(team)]; }
-
     private:
         /* Gameobject spawning/despawning */
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
@@ -239,7 +235,5 @@ class BattleGroundAB : public BattleGround
         bool                m_IsInformedNearVictory;
         uint32              m_honorTicks;
         uint32              m_ReputationTicks;
-        // need for achievements
-        bool                m_TeamScores500Disadvantage[PVP_TEAM_COUNT];
 };
 #endif

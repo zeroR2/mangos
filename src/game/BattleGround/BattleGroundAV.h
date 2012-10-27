@@ -343,9 +343,6 @@ class BattleGroundAV : public BattleGround
 
         virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player *plr);
 
-        // for achievement Stormpike/Frostwolf Perfection
-        bool hasAllTowers(TeamIndex team);
-
     private:
         /* Nodes occupying */
         void EventPlayerAssaultsPoint(Player* player, BG_AV_Nodes node);
