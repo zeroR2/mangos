@@ -23,12 +23,7 @@
 #include "../World.h"
 #include "Log.h"
 #include "OutdoorPvPEP.h"
-#include "OutdoorPvPGH.h"
-#include "OutdoorPvPHP.h"
-#include "OutdoorPvPNA.h"
 #include "OutdoorPvPSI.h"
-#include "OutdoorPvPTF.h"
-#include "OutdoorPvPZM.h"
 
 INSTANTIATE_SINGLETON_1(OutdoorPvPMgr);
 
@@ -81,18 +76,6 @@ OutdoorPvP* OutdoorPvPMgr::GetScript(uint32 zoneId)
             return m_scripts[OPVP_ID_SI];
         case ZONE_ID_EASTERN_PLAGUELANDS:
             return m_scripts[OPVP_ID_EP];
-        case ZONE_ID_HELLFIRE_PENINSULA:
-            return m_scripts[OPVP_ID_HP];
-        case ZONE_ID_ZANGARMARSH:
-            return m_scripts[OPVP_ID_ZM];
-        case ZONE_ID_TEROKKAR_FOREST:
-            return m_scripts[OPVP_ID_TF];
-        case ZONE_ID_NAGRAND:
-            return m_scripts[OPVP_ID_NA];
-        case ZONE_ID_GRIZZLY_HILLS:
-            return m_scripts[OPVP_ID_GH];
-        case ZONE_ID_WINTERGRASP:
-            return m_scripts[OPVP_ID_WG];
         default:
             return NULL;
     }
@@ -109,24 +92,6 @@ OutdoorPvP* OutdoorPvPMgr::GetScriptOfAffectedZone(uint32 zoneId)
         case ZONE_ID_STRATHOLME:
         case ZONE_ID_SCHOLOMANCE:
             return m_scripts[OPVP_ID_EP];
-        case ZONE_ID_HELLFIRE_RAMPARTS:
-        case ZONE_ID_HELLFIRE_CITADEL:
-        case ZONE_ID_BLOOD_FURNACE:
-        case ZONE_ID_SHATTERED_HALLS:
-        case ZONE_ID_MAGTHERIDON_LAIR:
-            return m_scripts[OPVP_ID_HP];
-        case ZONE_ID_SERPENTSHRINE_CAVERN:
-        case ZONE_ID_STREAMVAULT:
-        case ZONE_ID_UNDERBOG:
-        case ZONE_ID_SLAVE_PENS:
-            return m_scripts[OPVP_ID_ZM];
-        case ZONE_ID_SHADOW_LABYRINTH:
-        case ZONE_ID_AUCHENAI_CRYPTS:
-        case ZONE_ID_SETHEKK_HALLS:
-        case ZONE_ID_MANA_TOMBS:
-            return m_scripts[OPVP_ID_TF];
-        case ZONE_ID_WINTERGRASP:
-            return m_scripts[OPVP_ID_WG];
         default:
             return NULL;
     }
@@ -209,18 +174,6 @@ uint32 OutdoorPvPMgr::GetZoneOfAffectedScript(OutdoorPvP const* script) const
             return ZONE_ID_SILITHUS;
         case OPVP_ID_EP:
             return ZONE_ID_EASTERN_PLAGUELANDS;
-        case OPVP_ID_HP:
-            return ZONE_ID_HELLFIRE_PENINSULA;
-        case OPVP_ID_ZM:
-            return ZONE_ID_ZANGARMARSH;
-        case OPVP_ID_TF:
-            return ZONE_ID_TEROKKAR_FOREST;
-        case OPVP_ID_NA:
-            return ZONE_ID_NAGRAND;
-        case OPVP_ID_GH:
-            return ZONE_ID_GRIZZLY_HILLS;
-        case OPVP_ID_WG:
-            return ZONE_ID_WINTERGRASP;
 
         case MAX_OPVP_ID:
         default:
