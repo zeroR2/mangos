@@ -191,7 +191,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleCharacterLevelCommand(char* args);
         bool HandleCharacterRenameCommand(char* args);
         bool HandleCharacterReputationCommand(char* args);
-        bool HandleCharacterTitlesCommand(char* args);
 
         bool HandleDebugAnimCommand(char* args);
         bool HandleDebugArenaCommand(char* args);
@@ -311,7 +310,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleLookupSpellCommand(char* args);
         bool HandleLookupTaxiNodeCommand(char* args);
         bool HandleLookupTeleCommand(char* args);
-        bool HandleLookupTitleCommand(char* args);
 
         bool HandleModifyHPCommand(char* args);
         bool HandleModifyManaCommand(char* args);
@@ -510,11 +508,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleTeleDelCommand(char* args);
         bool HandleTeleGroupCommand(char* args);
         bool HandleTeleNameCommand(char* args);
-
-        bool HandleTitlesAddCommand(char* args);
-        bool HandleTitlesCurrentCommand(char* args);
-        bool HandleTitlesRemoveCommand(char* args);
-        bool HandleTitlesSetMaskCommand(char* args);
 
         bool HandleTriggerActiveCommand(char* args);
         bool HandleTriggerNearCommand(char* args);

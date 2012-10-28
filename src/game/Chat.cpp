@@ -197,7 +197,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "level",          SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleCharacterLevelCommand,      "", NULL },
         { "rename",         SEC_GAMEMASTER,     true,  &ChatHandler::HandleCharacterRenameCommand,     "", NULL },
         { "reputation",     SEC_GAMEMASTER,     true,  &ChatHandler::HandleCharacterReputationCommand, "", NULL },
-        { "titles",         SEC_GAMEMASTER,     true,  &ChatHandler::HandleCharacterTitlesCommand,     "", NULL },
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
 
@@ -382,7 +381,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "spell",          SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleLookupSpellCommand,         "", NULL },
         { "taxinode",       SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleLookupTaxiNodeCommand,      "", NULL },
         { "tele",           SEC_MODERATOR,      true,  &ChatHandler::HandleLookupTeleCommand,          "", NULL },
-        { "title",          SEC_GAMEMASTER,     true,  &ChatHandler::HandleLookupTitleCommand,         "", NULL },
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
 
@@ -693,15 +691,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "name",           SEC_MODERATOR,      true,  &ChatHandler::HandleTeleNameCommand,            "", NULL },
         { "group",          SEC_MODERATOR,      false, &ChatHandler::HandleTeleGroupCommand,           "", NULL },
         { "",               SEC_MODERATOR,      false, &ChatHandler::HandleTeleCommand,                "", NULL },
-        { NULL,             0,                  false, NULL,                                           "", NULL }
-    };
-
-    static ChatCommand titlesCommandTable[] =
-    {
-        { "add",            SEC_GAMEMASTER,     false, &ChatHandler::HandleTitlesAddCommand,           "", NULL },
-        { "current",        SEC_GAMEMASTER,     false, &ChatHandler::HandleTitlesCurrentCommand,       "", NULL },
-        { "remove",         SEC_GAMEMASTER,     false, &ChatHandler::HandleTitlesRemoveCommand,        "", NULL },
-        { "setmask",        SEC_GAMEMASTER,     false, &ChatHandler::HandleTitlesSetMaskCommand,       "", NULL },
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
 

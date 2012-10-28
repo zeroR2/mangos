@@ -1252,25 +1252,6 @@ void WorldSession::HandleFarSightOpcode( WorldPacket & recv_data )
     }
 }
 
-void WorldSession::HandleSetTitleOpcode( WorldPacket & recv_data )
-{
-    DEBUG_LOG("CMSG_SET_TITLE");
-
-    int32 title;
-    recv_data >> title;
-
-    // -1 at none
-    if(title > 0 && title < MAX_TITLE_INDEX)
-    {
-        if(!GetPlayer()->HasTitle(title))
-            return;
-    }
-    else
-        title = 0;
-
-    GetPlayer()->SetUInt32Value(PLAYER_CHOSEN_TITLE, title);
-}
-
 void WorldSession::HandleTimeSyncResp( WorldPacket & recv_data )
 {
     DEBUG_LOG("CMSG_TIME_SYNC_RESP");
