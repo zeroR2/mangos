@@ -1062,7 +1062,7 @@ void BattleGround::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
         }
         DecreaseInvitedCount(team);
         // we should update battleground queue, but only if bg isn't ending
-        if (isBattleGround() && GetStatus() < STATUS_WAIT_LEAVE)
+        if (GetStatus() < STATUS_WAIT_LEAVE)
         {
             // a player has left the battleground, so there are free slots -> add to queue
             AddToBGFreeSlotQueue();
@@ -1103,8 +1103,6 @@ void BattleGround::Reset()
 
     // door-event2 is always 0
     m_ActiveEvents[BG_EVENT_DOOR] = 0;
-    m_ActiveEvents[IC_EVENT_BOSS_A] = 0;
-    m_ActiveEvents[IC_EVENT_BOSS_H] = 0;
 
     if (m_InvitedAlliance > 0 || m_InvitedHorde > 0)
         sLog.outError("BattleGround system: bad counter, m_InvitedAlliance: %d, m_InvitedHorde: %d", m_InvitedAlliance, m_InvitedHorde);
@@ -1172,25 +1170,6 @@ void BattleGround::AddPlayer(Player* plr)
     DETAIL_LOG("BATTLEGROUND: Player %s joined the battle.", plr->GetName());
 }
 
-uint32 BattleGround::GetDamageDoneForTeam(Team team)
-{
-    uint32 finaldamage = 0;
-    for (BattleGroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-    {
-        Player* plr = sObjectMgr.GetPlayer(itr->first);
-        if (!plr)
-            continue;
-
-        Team bgTeam = itr->second.PlayerTeam;
-        if (!bgTeam)
-            bgTeam = plr->GetTeam();
-
-        if (bgTeam == team)
-            finaldamage += GetPlayerScore(plr, SCORE_DAMAGE_DONE);
-    }
-    return finaldamage;
-}
-
 /* this method adds player to his team's bg group, or sets his correct group if player is already in bg group */
 void BattleGround::AddOrSetPlayerToCorrectBgGroup(Player* plr, ObjectGuid plr_guid, Team team)
 {
@@ -1252,7 +1231,7 @@ void BattleGround::EventPlayerLoggedOut(Player* player)
 void BattleGround::AddToBGFreeSlotQueue()
 {
     // make sure to add only once
-    if (!m_InBGFreeSlotQueue && isBattleGround())
+    if (!m_InBGFreeSlotQueue)
     {
         sBattleGroundMgr.BGFreeSlotQueue[m_TypeID].push_front(this);
         m_InBGFreeSlotQueue = true;
@@ -1311,7 +1290,7 @@ void BattleGround::UpdatePlayerScore(Player* Source, uint32 type, uint32 value)
             break;
         case SCORE_BONUS_HONOR:                             // Honor bonus
             // reward honor instantly
-            if (Source->RewardHonor(NULL, 1, (float)value))
+            if (Source->AddHonor(value, BONUS_HONOR_UNIT))
                 itr->second->BonusHonor += value;
             break;
         default:
@@ -1432,7 +1411,7 @@ void BattleGround::OnObjectDBLoad(GameObject* obj)
 
 bool BattleGround::IsDoor(uint8 event1, uint8 event2)
 {
-    if (event1 == BG_EVENT_DOOR || event1 == IC_EVENT_BOSS_A || event1 == IC_EVENT_BOSS_H)
+    if (event1 == BG_EVENT_DOOR)
     {
         if (event2 > 0)
         {
@@ -1542,11 +1521,6 @@ void BattleGround::SpawnBGCreature(ObjectGuid guid, uint32 respawntime)
     {
         map->Add(obj);
         obj->SetRespawnDelay(respawntime);
-        if (obj->GetObjectGuid().IsVehicle())
-        {
-            if (obj->GetVehicleKit())
-                obj->GetVehicleKit()->RemoveAllPassengers();
-        }
         obj->SetDeathState(JUST_DIED);
         obj->RemoveCorpse();
 
@@ -1833,10 +1807,6 @@ uint32 BattleGround::GetPlayerScore(Player* pPlayer, uint32 type)
             return itr->second->HonorableKills;
         case SCORE_BONUS_HONOR:                              // Honor bonus
             return itr->second->BonusHonor;
-        case SCORE_DAMAGE_DONE:                              // Damage Done
-            return itr->second->DamageDone;
-        case SCORE_HEALING_DONE:                             // Healing Done
-            return itr->second->HealingDone;
         default:
             sLog.outError("BattleGround: Unknown player score type %u", type);
             return 0;

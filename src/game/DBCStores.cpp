@@ -50,11 +50,14 @@ struct WMOAreaTableTripple
 typedef std::map<WMOAreaTableTripple, WMOAreaTableEntry const*> WMOAreaInfoByTripple;
 typedef std::map<uint32, SimpleFactionsList> FactionTeamMap;
 typedef std::list<std::string> StoreProblemList;
+typedef std::map<uint32,uint32> TalentInspectMap;
 
 static FactionTeamMap sFactionTeamMap;
 static AreaFlagByAreaID sAreaFlagByAreaID;
 static AreaFlagByMapID  sAreaFlagByMapID;                   // for instances without generated *.map files
 static WMOAreaInfoByTripple sWMOAreaInfoByTripple;
+static TalentInspectMap sTalentPosInInspect;
+static TalentInspectMap sTalentTabSizeInInspect;
 static uint32 sTalentTabPages[MAX_CLASSES][3];
 
 SpellCategoryStore sSpellCategoryStore;

@@ -192,6 +192,11 @@ enum SpellSchoolMask
     SPELL_SCHOOL_MASK_ALL     = ( SPELL_SCHOOL_MASK_NORMAL | SPELL_SCHOOL_MASK_MAGIC )
 };
 
+inline SpellSchoolMask GetSchoolMask(uint32 school)
+{
+    return SpellSchoolMask(1 << school);
+}
+
 inline SpellSchools GetFirstSchoolInMask(SpellSchoolMask mask)
 {
     for(int i = 0; i < MAX_SPELL_SCHOOL; ++i)

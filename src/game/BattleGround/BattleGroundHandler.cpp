@@ -100,7 +100,6 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recv_data)
 
     // can do this, since it's battleground
     BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(bgTypeId);
-    BattleGroundQueueTypeId bgQueueTypeIdRandom = BattleGroundMgr::BGQueueTypeId(BATTLEGROUND_RB);
 
     // ignore if player is already in BG
     if (_player->InBattleGround())
@@ -132,24 +131,6 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recv_data)
         {
             WorldPacket data;
             sBattleGroundMgr.BuildGroupJoinedBattlegroundPacket(&data, ERR_GROUP_JOIN_BATTLEGROUND_DESERTERS);
-            _player->GetSession()->SendPacket(&data);
-            return;
-        }
-
-        if (_player->GetBattleGroundQueueIndex(bgQueueTypeIdRandom) < PLAYER_MAX_BATTLEGROUND_QUEUES)
-        {
-            //player is already in random queue
-            WorldPacket data;
-            sBattleGroundMgr.BuildGroupJoinedBattlegroundPacket(&data, ERR_IN_RANDOM_BG);
-            _player->GetSession()->SendPacket(&data);
-            return;
-        }
-
-        if(_player->InBattleGroundQueue() && bgTypeId == BATTLEGROUND_RB)
-        {
-            //player is already in queue, can't start random queue
-            WorldPacket data;
-            sBattleGroundMgr.BuildGroupJoinedBattlegroundPacket(&data, ERR_IN_NON_RANDOM_BG);
             _player->GetSession()->SendPacket(&data);
             return;
         }
@@ -209,7 +190,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recv_data)
         if (err > 0)
         {
             DEBUG_LOG("Battleground: the following players are joining as group:");
-            ginfo = bgQueue.AddGroup(_player, grp, bgTypeId, bracketEntry, isPremade, 0);
+            ginfo = bgQueue.AddGroup(_player, grp, bgTypeId, bracketEntry, isPremade);
             avgTime = bgQueue.GetAverageQueueWaitTime(ginfo, bracketEntry->GetBracketId());
         }
 
