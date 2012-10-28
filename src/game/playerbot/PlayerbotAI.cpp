@@ -4569,7 +4569,6 @@ void PlayerbotAI::UseItem(Item *item, uint32 targetFlag, ObjectGuid targetGUID)
     uint8 slot = item->GetSlot();
     uint8 cast_count = 1;
     ObjectGuid item_guid = item->GetObjectGuid();
-    uint32 glyphIndex = 0;
     uint8 unk_flags = 0;
 
     if (uint32 questid = item->GetProto()->StartQuest)
@@ -4603,7 +4602,7 @@ void PlayerbotAI::UseItem(Item *item, uint32 targetFlag, ObjectGuid targetGUID)
 
     WorldPacket *packet = new WorldPacket(CMSG_USE_ITEM, 28);
     *packet << bagIndex << slot << cast_count << spellId << item_guid
-            << glyphIndex << unk_flags << targetFlag;
+            << unk_flags << targetFlag;
 
     if (targetFlag & (TARGET_FLAG_UNIT | TARGET_FLAG_ITEM | TARGET_FLAG_OBJECT))
         *packet << targetGUID.WriteAsPacked();
@@ -5653,8 +5652,8 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
             m_findNPC.push_back(UNIT_NPC_FLAG_BANKER);
     }
 
-    // Handle talents & glyphs:
-    // talent                           -- Lists bot(s) active talents [TALENT LINK] & glyphs [GLYPH LINK], unspent points & cost to reset
+    // Handle talents:
+    // talent                           -- Lists bot(s) active talents [TALENT LINK], unspent points & cost to reset
     // talent learn [TALENT LINK] ..    -- Learn selected talent from bot client 'inspect' dialog -> 'talent' tab or from talent command (shift click icon/link)
     // talent reset                     -- Resets all talents
     else if (text.size() >= 6 && text.substr(0, 6) == "talent")
@@ -5694,7 +5693,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     m_bot->SendTalentsInfoData();
                     InspectUpdate();
                 }
-                m_bot->MakeTalentGlyphLink(out);
+                m_bot->MakeTalentLink(out);
                 SendWhisper(out.str(), fromPlayer);
 
             }
@@ -5711,7 +5710,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
             if (gold > 0)
                 out << "Cost to reset all Talents is " << gold << " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
 
-            m_bot->MakeTalentGlyphLink(out);
+            m_bot->MakeTalentLink(out);
             SendWhisper(out.str(), fromPlayer);
         }
     }

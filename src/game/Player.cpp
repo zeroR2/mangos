@@ -4290,7 +4290,6 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             CharacterDatabase.PExecute("DELETE FROM character_aura WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_battleground_data WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_gifts WHERE guid = '%u'", lowguid);
-            CharacterDatabase.PExecute("DELETE FROM character_glyphs WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_homebind WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_instance WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM group_instance WHERE leaderGuid = '%u'", lowguid);
@@ -7916,7 +7915,7 @@ void Player::CastItemCombatSpell(Unit* Target, WeaponAttackType attType)
     }
 }
 
-void Player::CastItemUseSpell(Item *item,SpellCastTargets const& targets,uint8 cast_count, uint32 glyphIndex)
+void Player::CastItemUseSpell(Item *item,SpellCastTargets const& targets,uint8 cast_count)
 {
     ItemPrototype const* proto = item->GetProto();
     // special learning case
@@ -7967,7 +7966,6 @@ void Player::CastItemUseSpell(Item *item,SpellCastTargets const& targets,uint8 c
         Spell *spell = new Spell(this, spellInfo, (count > 0));
         spell->m_CastItem = item;
         spell->m_cast_count = cast_count;                   // set count of casts
-        spell->m_glyphIndex = glyphIndex;                   // glyph index
         spell->prepare(&targets);
 
         ++count;
@@ -7996,7 +7994,6 @@ void Player::CastItemUseSpell(Item *item,SpellCastTargets const& targets,uint8 c
             Spell *spell = new Spell(this, spellInfo, (count > 0));
             spell->m_CastItem = item;
             spell->m_cast_count = cast_count;               // set count of casts
-            spell->m_glyphIndex = glyphIndex;               // glyph index
             spell->prepare(&targets);
 
             ++count;
@@ -15805,8 +15802,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     if (m_GrantableLevelsCount > 0)
         SetByteValue(PLAYER_FIELD_BYTES, 1, 0x01);
 
-    _LoadGlyphs(holder->GetResult(PLAYER_LOGIN_QUERY_LOADGLYPHS));
-
     _LoadAuras(holder->GetResult(PLAYER_LOGIN_QUERY_LOADAURAS), time_diff);
 
     // add ghost flag (must be after aura load: PLAYER_FLAGS_GHOST set in aura)
@@ -17346,7 +17341,6 @@ void Player::SaveToDB()
     m_reputationMgr.SaveToDB();
     _SaveEquipmentSets();
     GetSession()->SaveTutorialsData();                      // changed only while character in game
-    _SaveGlyphs();
     _SaveTalents();
 
     CharacterDatabase.CommitTransaction();
@@ -17498,44 +17492,6 @@ void Player::_SaveAuras()
             stmt.addInt32(itr->second->GetAuraDuration());
             stmt.addUInt32(effIndexMask);
             stmt.Execute();
-        }
-    }
-}
-
-void Player::_SaveGlyphs()
-{
-    static SqlStatementID insertGlyph ;
-    static SqlStatementID updateGlyph ;
-    static SqlStatementID deleteGlyph ;
-
-    for (uint8 spec = 0; spec < m_specsCount; ++spec)
-    {
-        for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
-        {
-            switch(m_glyphs[spec][slot].uState)
-            {
-                case GLYPH_NEW:
-                {
-                    SqlStatement stmt = CharacterDatabase.CreateStatement(insertGlyph, "INSERT INTO character_glyphs (guid, spec, slot, glyph) VALUES (?, ?, ?, ?)");
-                    stmt.PExecute(GetGUIDLow(), spec, slot, m_glyphs[spec][slot].GetId());
-                    break;
-                }
-                case GLYPH_CHANGED:
-                {
-                    SqlStatement stmt = CharacterDatabase.CreateStatement(updateGlyph, "UPDATE character_glyphs SET glyph = ? WHERE guid = ? AND spec = ? AND slot = ?");
-                    stmt.PExecute(m_glyphs[spec][slot].GetId(), GetGUIDLow(), spec, slot);
-                    break;
-                }
-                case GLYPH_DELETED:
-                {
-                    SqlStatement stmt = CharacterDatabase.CreateStatement(deleteGlyph, "DELETE FROM character_glyphs WHERE guid = ? AND spec = ? AND slot = ?");
-                    stmt.PExecute(GetGUIDLow(), spec, slot);
-                    break;
-                }
-                case GLYPH_UNCHANGED:
-                    break;
-            }
-            m_glyphs[spec][slot].uState = GLYPH_UNCHANGED;
         }
     }
 }
@@ -20583,11 +20539,6 @@ uint32 Player::GetResurrectionSpellId()
         }
     }
 
-    // Reincarnation (passive spell)                        // prio: 1
-    // Glyph of Renewed Life remove reagent requiremnnt
-    if (prio < 1 && HasSpell(20608) && !HasSpellCooldown(21169) && (HasItemCount(17030,1) || HasAura(58059, EFFECT_INDEX_0)))
-        spell_id = 21169;
-
     return spell_id;
 }
 
@@ -21707,12 +21658,6 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket *data)
             }
 
             data->put<uint8>(pos, talentIdCount);           // put real count
-
-            *data << uint8(MAX_GLYPH_SLOT_INDEX);           // glyphs count
-
-            // GlyphProperties.dbc
-            for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-                *data << uint16(m_glyphs[specIdx][i].GetId());
         }
     }
 }

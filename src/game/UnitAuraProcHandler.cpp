@@ -981,17 +981,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     target = this;
                     break;
                 }
-                // Shadowfiend Death (Gain mana if pet dies with Glyph of Shadowfiend)
-                case 57989:
-                {
-                    Unit *owner = GetOwner();
-                    if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    // Glyph of Shadowfiend (need cast as self cast for owner, no hidden cooldown)
-                    owner->CastSpell(owner,58227,true,castItem,triggeredByAura);
-                    return SPELL_AURA_PROC_OK;
-                }
                 // Kill Command, pet aura
                 case 58914:
                 {
@@ -1043,10 +1032,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     target = SelectRandomUnfriendlyTarget(getVictim());
                     break;
                  }
-                // Glyph of Life Tap
-                case 63320:
-                    triggered_spell_id = 63321;
-                    break;
                 // Meteor Fists
                 case 66725:
                 case 68161:
@@ -1355,45 +1340,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     }
                     return SPELL_AURA_PROC_FAILED;
                 }
-                // Glyph of Ice Block
-                case 56372:
-                {
-                    if (GetTypeId() != TYPEID_PLAYER)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    // not 100% safe with client version switches but for 3.1.3 no spells with cooldown that can have mage player except Frost Nova.
-                    ((Player*)this)->RemoveSpellCategoryCooldown(35, true);
-                    return SPELL_AURA_PROC_OK;
-                }
-                // Glyph of Icy Veins
-                case 56374:
-                {
-                    Unit::AuraList const& hasteAuras = GetAurasByType(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK);
-                    for(Unit::AuraList::const_iterator i = hasteAuras.begin(); i != hasteAuras.end();)
-                    {
-                        if (!IsPositiveSpell((*i)->GetId()))
-                        {
-                            RemoveAurasDueToSpell((*i)->GetId());
-                            i = hasteAuras.begin();
-                        }
-                        else
-                            ++i;
-                    }
-                    RemoveSpellsCausingAura(SPELL_AURA_HASTE_SPELLS);
-                    RemoveSpellsCausingAura(SPELL_AURA_MOD_DECREASE_SPEED);
-                    return SPELL_AURA_PROC_OK;
-                }
-                // Glyph of Polymorph
-                case 56375:
-                {
-                    if (!pVictim || !pVictim->isAlive())
-                        return SPELL_AURA_PROC_FAILED;
-
-                    pVictim->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_DAMAGE);
-                    pVictim->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
-                    pVictim->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_LEECH);
-                    return SPELL_AURA_PROC_OK;
-                }
                 // Blessing of Ancient Kings
                 case 64411:
                 {
@@ -1572,10 +1518,9 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
             }
             switch(dummySpell->Id)
             {
-                // Nightfall & Glyph of Corruption
+                // Nightfall
                 case 18094:
                 case 18095:
-                case 56218:
                 {
                     target = this;
                     triggered_spell_id = 17941;
@@ -1645,17 +1590,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     // mana gain amount (normal for aura 54037 and doubled for 54038)
                     if (GetOwner() && GetOwner()->HasAura(54038))
                         basepoints[0] = 8;
-                    break;
-                }
-                // Siphon Life
-                case 63108:
-                {
-                    // Glyph of Siphon Life
-                    if (Aura *aur = GetAura(56216, EFFECT_INDEX_0))
-                        triggerAmount += triggerAmount * aur->GetModifier()->m_amount / 100;
-
-                    basepoints[0] = int32(damage * triggerAmount / 100);
-                    triggered_spell_id = 63106;
                     break;
                 }
             }
@@ -1852,26 +1786,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     triggered_spell_id = 28810;
                     break;
                 }
-                // Glyph of Dispel Magic
-                case 55677:
-                {
-                    if (!target->IsFriendlyTo(this))
-                        return SPELL_AURA_PROC_FAILED;
-
-                    if (target->GetTypeId() == TYPEID_PLAYER)
-                        basepoints[0] = int32(target->GetMaxHealth() * triggerAmount / 100);
-                    else if (Unit* caster = triggeredByAura->GetCaster())
-                        basepoints[0] = int32(caster->GetMaxHealth() * triggerAmount / 100);
-                    // triggered_spell_id in spell data
-                    break;
-                }
-                // Glyph of Prayer of Healing
-                case 55680:
-                {
-                    basepoints[0] = int32(damage * triggerAmount  / 200);   // 10% each tick
-                    triggered_spell_id = 56161;             // Glyph of Prayer of Healing
-                    break;
-                }
                 // Priest T10 Healer 2P Bonus
                 case 70770:
                 {
@@ -1975,36 +1889,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                 {
                     // Deadly Interrupt Effect
                     triggered_spell_id = 32747;
-                    break;
-                }
-                // Glyph of Rejuvenation
-                case 54754:
-                {
-                   if (!pVictim || pVictim->GetHealthPercent() >= 50.0f)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    target = pVictim;
-                    triggered_spell_id = 54755;
-                    basepoints[0] = int32(damage * triggerAmount  / 100);
-                    break;
-                }
-                // Glyph of Shred
-                case 54815:
-                {
-                    basepoints[1] = triggerAmount;
-                    triggered_spell_id = 63974;
-                    break;
-                }
-                // Glyph of Rake
-                case 54821:
-                {
-                    triggered_spell_id = 54820;
-                    break;
-                }
-                // Glyph of Starfire
-                case 54845:
-                {
-                    triggered_spell_id = 54846;
                     break;
                 }
                 // Item - Druid T10 Restoration 4P Bonus (Rejuvenation)
@@ -2259,12 +2143,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         break;
                 }
                 break;
-            }
-            // Glyph of Mend Pet
-            if ( dummySpell->Id == 57870)
-            {
-                pVictim->CastSpell(pVictim, 57894, true, NULL, NULL, GetObjectGuid());
-                return SPELL_AURA_PROC_OK;
             }
             // Misdirection
             else if (dummySpell->Id == 34477)
@@ -2553,13 +2431,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         CastSpell(target, 53739, true, NULL, triggeredByAura);
                     break;
                 }
-                // Glyph of Holy Light
-                case 54937:
-                {
-                    triggered_spell_id = 54968;
-                    basepoints[0] = triggerAmount * damage / 100;
-                    break;
-                }
                 // Sacred Shield (buff)
                 case 58597:
                 {
@@ -2843,17 +2714,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     triggered_spell_id = 63532;
                     break;
                 }
-                // Glyph of Healing Wave
-                case 55440:
-                {
-                    // Not proc from self heals
-                    if (this==pVictim)
-                        return SPELL_AURA_PROC_FAILED;
-                    basepoints[0] = triggerAmount * damage / 100;
-                    target = this;
-                    triggered_spell_id = 55533;
-                    break;
-                }
                 // Spirit Hunt
                 case 58877:
                 {
@@ -2863,34 +2723,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         return SPELL_AURA_PROC_FAILED;
                     basepoints[0] = triggerAmount * damage / 100;
                     triggered_spell_id = 58879;
-                    break;
-                }
-                // Glyph of Totem of Wrath
-                case 63280:
-                {
-                    Totem* totem = GetTotem(TOTEM_SLOT_FIRE);
-                    if (!totem)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    // find totem aura bonus
-                    AuraList const& spellPower = totem->GetAurasByType(SPELL_AURA_NONE);
-                    for(AuraList::const_iterator i = spellPower.begin();i != spellPower.end(); ++i)
-                    {
-                        // select proper aura for format aura type in spell proto
-                        if ((*i)->GetTarget()==totem && (*i)->GetSpellProto()->EffectApplyAuraName[(*i)->GetEffIndex()] == SPELL_AURA_MOD_HEALING_DONE &&
-                            (*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_SHAMAN && (*i)->GetSpellProto()->GetSpellFamilyFlags().test<CF_SHAMAN_MISC_TOTEM_EFFECTS>())
-                        {
-                            basepoints[0] = triggerAmount * (*i)->GetModifier()->m_amount / 100;
-                            break;
-                        }
-                    }
-
-                    if (!basepoints[0])
-                        return SPELL_AURA_PROC_FAILED;
-
-                    basepoints[1] = basepoints[0];
-                    triggered_spell_id = 63283;             // Totem of Wrath, caster bonus
-                    target = this;
                     break;
                 }
                 // Item - Shaman T8 Elemental 4P Bonus
@@ -3000,16 +2832,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                 originalCaster = triggeredByAura->GetCasterGuid();
                 target = this;
                 basepoints[0] = triggerAmount;
-
-                // Glyph of Earth Shield
-                if(Unit* caster = triggeredByAura->GetCaster())
-                {
-                    if (Aura const* aur = caster->GetDummyAura(63279))
-                    {
-                        int32 aur_mod = aur->GetModifier()->m_amount;
-                        basepoints[0] = int32(basepoints[0] * (aur_mod + 100.0f) / 100.0f);
-                    }
-                }
 
                 triggered_spell_id = 379;
                 break;
@@ -3197,10 +3019,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
             if (dummySpell->Id == 49194)
             {
                 basepoints[0] = damage * triggerAmount / 100;
-
-                // Glyph of Unholy Blight
-                if (Aura const* aura = GetDummyAura(63332))
-                    basepoints[0] += basepoints[0] * aura->GetModifier()->m_amount / 100;
 
                 // Split between 10 ticks
                 basepoints[0] /= 10;
@@ -3937,11 +3755,6 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                 basepoints[0] = damage * triggerAmount / 100 / 3;
                 target = this;
             }
-            // Glyph of Shadow Word: Pain
-            else if (auraSpellInfo->Id == 55681 )
-            {
-                basepoints[0] = GetCreateMana() * triggerAmount / 100;
-            }
             else if (auraSpellInfo->Id == 55689)
             {
                 if(GetShapeshiftForm() != FORM_SHADOW)
@@ -4288,20 +4101,6 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                     default:
                         return SPELL_AURA_PROC_FAILED;
                 }
-            }
-            // Glyph of Death's Embrace
-            else if (auraSpellInfo->Id == 58677)
-            {
-                if (procSpell->Id != 47633)
-                    return SPELL_AURA_PROC_FAILED;
-            }
-            // Glyph of Death Grip
-            if (auraSpellInfo->Id == 62259)
-            {
-                // remove cooldown of Death Grip
-                if (GetTypeId()==TYPEID_PLAYER)
-                    ((Player*)this)->RemoveSpellCooldown(49576, true);
-                return SPELL_AURA_PROC_OK;
             }
             // Item - Death Knight T10 Melee 4P Bonus
             else if (auraSpellInfo->Id == 70656)
@@ -4926,25 +4725,6 @@ SpellAuraProcResult Unit::HandleAddPctModifierAuraProc(Unit* /*pVictim*/, Damage
             if (spellInfo->SpellIconID == 2900)
             {
                 RemoveAurasDueToSpell(spellInfo->Id);
-                return SPELL_AURA_PROC_OK;
-            }
-            break;
-        }
-        case SPELLFAMILY_PALADIN:
-        {
-            // Glyph of Divinity
-            if (spellInfo->Id == 54939)
-            {
-                // Lookup base amount mana restore
-                for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
-                {
-                    if (procSpell->Effect[i] == SPELL_EFFECT_ENERGIZE)
-                    {
-                        int32 mana = procSpell->CalculateSimpleValue(SpellEffectIndex(i));
-                        CastCustomSpell(this, 54986, NULL, &mana, NULL, true, castItem, triggeredByAura);
-                        break;
-                    }
-                }
                 return SPELL_AURA_PROC_OK;
             }
             break;

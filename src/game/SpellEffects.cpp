@@ -132,7 +132,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectPickPocket,                               // 71 SPELL_EFFECT_PICKPOCKET
     &Spell::EffectAddFarsight,                              // 72 SPELL_EFFECT_ADD_FARSIGHT
     &Spell::EffectUntrainTalents,                           // 73 SPELL_EFFECT_UNTRAIN_TALENTS          one spell: Trainer: Untrain Talents
-    &Spell::EffectApplyGlyph,                               // 74 SPELL_EFFECT_APPLY_GLYPH
+    &Spell::EffectNULL,                                     // 74 SPELL_EFFECT_NULL
     &Spell::EffectHealMechanical,                           // 75 SPELL_EFFECT_HEAL_MECHANICAL          one spell: Mechanical Patch Kit
     &Spell::EffectSummonObjectWild,                         // 76 SPELL_EFFECT_SUMMON_OBJECT_WILD
     &Spell::EffectScriptEffect,                             // 77 SPELL_EFFECT_SCRIPT_EFFECT
@@ -256,11 +256,8 @@ void Spell::EffectResurrectNew(SpellEffectIndex eff_idx)
     if (pTarget->isRessurectRequested())       // already have one active request
         return;
 
-    uint32 health = damage;
-    if ( m_caster->HasAura(54733, EFFECT_INDEX_0) ) // Glyph of Rebirth
-        health = pTarget->GetMaxHealth();
     uint32 mana = m_spellInfo->EffectMiscValue[eff_idx];
-    pTarget->setResurrectRequestData(m_caster->GetObjectGuid(), m_caster->GetMapId(), m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ(), health, mana);
+    pTarget->setResurrectRequestData(m_caster->GetObjectGuid(), m_caster->GetMapId(), m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ(), damage, mana);
     SendResurrectRequest(pTarget);
     SendEffectLogExecute(eff_idx, pTarget->GetObjectGuid());
 }
@@ -951,9 +948,6 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                         // 40% of the dot aura damage is dot damage, value stored in basepoints of effect 2
                         m_currentBasePoints[EFFECT_INDEX_1] = basepoints * m_currentBasePoints[EFFECT_INDEX_2] / (100 * GetSpellAuraMaxTicks(m_spellInfo));
 
-                        // Glyph of Conflagrate
-                        if (!m_caster->HasAura(56235))
-                            unitTarget->RemoveAurasByCasterSpell(aura->GetId(), m_caster->GetObjectGuid());
                         break;
                     }
                 }
@@ -964,10 +958,6 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                 // Shadow Word: Death - deals damage equal to damage done to caster
                 if (m_spellInfo->GetSpellFamilyFlags().test<CF_PRIEST_SHADOW_WORD_DEATH_TARGET>())
                 {
-                    // Glyph of Shadow Word: Death
-                    if (Aura* pAura = m_caster->GetAura(55682, EFFECT_INDEX_1))
-                        if (unitTarget->HasAuraState(AURA_STATE_HEALTHLESS_35_PERCENT))
-                            damage += int32(damage / 100 * pAura->GetModifier()->m_amount);
                     m_caster->CastCustomSpell(m_caster, 32409, &damage, 0, 0, true);
                 }
                 // Improved Mind Blast (Mind Blast in shadow form bonus)
@@ -3717,10 +3707,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 31687:                                 // Summon Water Elemental
                 {
-                    if (m_caster->HasAura(70937))           // Glyph of Eternal Water (permanent limited by known spells version)
-                        m_caster->CastSpell(m_caster, 70908, true);
-                    else                                    // temporary version
-                        m_caster->CastSpell(m_caster, 70907, true);
+                    m_caster->CastSpell(m_caster, 70907, true);
 
                     return;
                 }
@@ -3788,13 +3775,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 if (rage > 300)
                     rage = 300;
 
-                // Glyph of Execution bonus
-                uint32 rage_modified = rage;
-
-                if (Aura const* aura = m_caster->GetDummyAura(58367))
-                    rage_modified +=  aura->GetModifier()->m_amount*10;
-
-                int32 basePoints0 = damage+int32(rage_modified * m_spellInfo->DmgMultiplier[eff_idx] +
+                int32 basePoints0 = damage+int32(rage * m_spellInfo->DmgMultiplier[eff_idx] +
                                                  m_caster->GetTotalAttackPowerValue(BASE_ATTACK)*0.2f);
 
                 m_caster->CastCustomSpell(unitTarget, 20647, &basePoints0, NULL, NULL, true, 0);
@@ -4014,7 +3995,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (m_caster->GetTypeId()!=TYPEID_PLAYER)
                         return;
 
-                    bool glyph = m_caster->HasAura(56819);
                     //immediately finishes the cooldown on certain Rogue abilities
                     const SpellCooldowns& cm = ((Player *)m_caster)->GetSpellCooldownMap();
                     for (SpellCooldowns::const_iterator itr = cm.begin(); itr != cm.end();)
@@ -4022,9 +4002,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
 
                         if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && spellInfo->GetSpellFamilyFlags().test<CF_ROGUE_EVASION, CF_ROGUE_SPRINT, CF_ROGUE_VANISH, CF_ROGUE_COLD_BLOOD, CF_ROGUE_SHADOWSTEP>())
-                            ((Player*)m_caster)->RemoveSpellCooldown((itr++)->first,true);
-                        // Glyph of Preparation
-                        else if (glyph && (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && (spellInfo->GetSpellFamilyFlags().test<CF_ROGUE_KICK, CF_ROGUE_MISC>() || spellInfo->Id == 51722)))
                             ((Player*)m_caster)->RemoveSpellCooldown((itr++)->first,true);
                         else
                             ++itr;
@@ -4313,10 +4290,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                             // only its have dummy with specific icon
                             if ((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_SHAMAN && (*i)->GetSpellProto()->SpellIconID == 338)
                                 damage += (*i)->GetModifier()->m_amount * damage / 100;
-
-                        // Glyph of Healing Stream Totem
-                        if (Aura const* dummy = owner->GetDummyAura(55456))
-                            damage += dummy->GetModifier()->m_amount * damage / 100;
                     }
                     m_caster->CastCustomSpell(unitTarget, 52042, &damage, NULL, NULL, true, 0, 0, m_originalCasterGUID);
                 }
@@ -4352,11 +4325,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
             {
                 if (!unitTarget || unitTarget->getPowerType() != POWER_MANA)
                     return;
-
-                // Glyph of Mana Tide
-                if (Unit *owner = m_caster->GetOwner())
-                    if (Aura const* dummy = owner->GetDummyAura(55441))
-                        damage += dummy->GetModifier()->m_amount;
                 // Regenerate 6% of Total Mana Every 3 secs
                 int32 EffectBasePoints0 = unitTarget->GetMaxPower(POWER_MANA)  * damage / 100;
                 m_caster->CastCustomSpell(unitTarget, 39609, &EffectBasePoints0, NULL, NULL, true, NULL, NULL, m_originalCasterGUID);
@@ -4768,13 +4736,6 @@ void Spell::EffectTriggerSpell(SpellEffectIndex effIndex)
             if (Unit *pet = unitTarget->GetPet())
                 pet->CastSpell(pet, 28305, true);
             return;
-        }
-        // Glyph of Mirror Image
-        case 58832:
-        {
-            if (m_caster->HasAura(63093))
-                m_caster->CastSpell(m_caster, 65047, true); // Mirror Image
-            break;
         }
         // Coldflame (Lord Marrowgar - Icecrown Citadel) - have casting time 0.2s, must be casted with triggered=false
         case 69147:
@@ -5459,10 +5420,6 @@ void Spell::EffectHeal(SpellEffectIndex eff_idx)
             int32 tickheal = targetAura->GetModifier()->m_amount;
             int32 tickcount = GetSpellDuration(targetAura->GetSpellProto()) / targetAura->GetSpellProto()->EffectAmplitude[idx] - 1;
 
-            // Glyph of Swiftmend
-            if (!caster->HasAura(54824))
-                unitTarget->RemoveAurasDueToSpell(targetAura->GetId());
-
             addhealth += tickheal * tickcount;
         }
         // Runic Healing Injector & Healing Potion Injector effect increase for engineers
@@ -5791,7 +5748,6 @@ void Spell::EffectEnergize(SpellEffectIndex eff_idx)
         case 31930:                                         // Judgements of the Wise
         case 63375:                                         // Improved Stormstrike
         case 67545:                                         // Empowered Fire
-        case 68082:                                         // Glyph of Seal of Command
             damage = damage * unitTarget->GetCreateMana() / 100;
             break;
         case 67487:                                         // Mana Potion Injector
@@ -6540,11 +6496,6 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
             {
                 int32 heal_amount = m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1);
                 m_caster->CastCustomSpell(m_caster, 19658, &heal_amount, NULL, NULL, true);
-
-                // Glyph of Felhunter
-                if (Unit *owner = m_caster->GetOwner())
-                    if (owner->HasAura(56249))
-                        m_caster->CastCustomSpell(owner, 19658, &heal_amount, NULL, NULL, true);
             }
         }
         // Send fail log to client
@@ -7445,10 +7396,6 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
                 if (!stack || stack < stackMax)
                 {
                     m_caster->CastSpell(unitTarget, 58567, true);
-
-                    // Glyph of Devastate
-                    if (++stack < stackMax && m_caster->GetDummyAura(58388))
-                        m_caster->CastSpell(unitTarget, 58567, true);
                 }
             }
             break;
@@ -7584,28 +7531,6 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
                 if (m_spellInfo->SpellIconID == 3145)
                     if (m_targets.getUnitTarget() != unitTarget)
                         weaponDamagePercentMod /= 2.0f;
-            }
-            // Glyph of Blood Strike
-            if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_BLOOD_STRIKE>() &&
-                m_caster->HasAura(59332) &&
-                unitTarget->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED))
-            {
-                totalDamagePercentMod *= 1.2f;              // 120% if snared
-            }
-            // Glyph of Death Strike
-            if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_DEATH_STRIKE>() &&
-                m_caster->HasAura(59336))
-            {
-                int32 rp = m_caster->GetPower(POWER_RUNIC_POWER) / 10;
-                if (rp > 25)
-                    rp = 25;
-                totalDamagePercentMod *= 1.0f + rp / 100.0f;
-            }
-            // Glyph of Plague Strike
-            if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_PLAGUE_STRIKE>() &&
-                m_caster->HasAura(58657) )
-            {
-                totalDamagePercentMod *= 1.2f;
             }
             // Rune strike
             if ( m_spellInfo->SpellIconID == 3007)
@@ -9431,27 +9356,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveSpellsCausingAura(SPELL_AURA_MOD_STUN);
                     return;
                 }
-                // Glyph of Starfire
-                case 54846:
-                {
-                    Aura* aura = unitTarget->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DRUID, CF_DRUID_MOONFIRE>(m_caster->GetObjectGuid());
-                    if (aura)
-                    {
-                        uint32 countMin = aura->GetAuraMaxDuration();
-                        uint32 countMax = GetSpellMaxDuration(aura->GetSpellProto());
-                        countMax += 9000;
-                        countMax += m_caster->HasAura(38414) ? 3000 : 0;
-                        countMax += m_caster->HasAura(57865) ? 3000 : 0;
-
-                        if (countMin < countMax)
-                        {
-                            aura->GetHolder()->SetAuraDuration(aura->GetAuraDuration() + 3000);
-                            aura->GetHolder()->SetAuraMaxDuration(countMin + 3000);
-                            aura->GetHolder()->SendAuraUpdate(false);
-                        }
-                    }
-                    return;
-                }
                 case 55328:                                    // Stoneclaw Totem I
                 case 55329:                                    // Stoneclaw Totem II
                 case 55330:                                    // Stoneclaw Totem III
@@ -9470,12 +9374,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     for(int itr = 0; itr < MAX_TOTEM_SLOT; ++itr)
                         if (Totem* totem = unitTarget->GetTotem(TotemSlot(itr)))
                             m_caster->CastCustomSpell(totem, 55277, &damage, NULL, NULL, true);
-                    // Glyph of Stoneclaw Totem
-                    if (Aura* auraGlyph = unitTarget->GetAura(63298, EFFECT_INDEX_0))
-                    {
-                        int32 playerAbsorb = damage * auraGlyph->GetModifier()->m_amount;
-                        m_caster->CastCustomSpell(unitTarget, 55277, &playerAbsorb, NULL, NULL, true);
-                    }
                     return;
                 }
                 case 55299:                                 // Galdarah Transform to Troll!
@@ -9688,7 +9586,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 case 61177:                                 // Northrend Inscription Research
                 case 61288:                                 // Minor Inscription Research
                 case 61756:                                 // Northrend Inscription Research (FAST QA VERSION)
-                case 64323:                                 // Book of Glyph Mastery
                 {
                     if (m_caster->GetTypeId() != TYPEID_PLAYER)
                         return;
@@ -10176,32 +10073,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     m_caster->CastSpell(unitTarget, 72588, true);
                     return;
-                }
-                //Glyph of Scourge Strike
-                case 69961:
-                {
-                    Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
-                    for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-                    {
-                        if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE &&
-                            itr->second->GetCasterGuid() == m_caster->GetObjectGuid())
-                        if (Aura* aura =itr->second->GetAuraByEffectIndex(EFFECT_INDEX_0))
-                        {
-                            uint32 countMin = aura->GetAuraMaxDuration();
-                            uint32 countMax = GetSpellMaxDuration(aura->GetSpellProto());
-                            countMax += 9000;
-                            countMax += m_caster->HasAura(49036) ? 3000 : 0; //Epidemic (Rank 1)
-                            countMax += m_caster->HasAura(49562) ? 6000 : 0; //Epidemic (Rank 2)
-
-                            if (countMin < countMax)
-                            {
-                                aura->GetHolder()->SetAuraDuration(aura->GetAuraDuration() + 3000);
-                                aura->GetHolder()->SetAuraMaxDuration(countMin + 3000);
-                                aura->GetHolder()->SendAuraUpdate(false);
-                            }
-                        }
-                    }
-                return;
                 }
                 case 69140:                                 // Coldflame (random target selection)
                 {
@@ -10834,29 +10705,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
         {
             switch(m_spellInfo->Id)
             {
-                case 50842:                                 // Pestilence
-                {
-                    if (!unitTarget)
-                        return;
-
-                    Unit* mainTarget = m_targets.getUnitTarget();
-                    if (!mainTarget)
-                        return;
-
-                    // do only refresh diseases on main target if caster has Glyph of Disease
-                    if (mainTarget == unitTarget && !m_caster->HasAura(63334))
-                        return;
-
-                    // Blood Plague
-                    if (mainTarget->HasAura(55078))
-                        m_caster->CastSpell(unitTarget, 55078, true);
-
-                    // Frost Fever
-                    if (mainTarget->HasAura(55095))
-                        m_caster->CastSpell(unitTarget, 55095, true);
-
-                    break;
-                }
                 // Raise dead script effect
                 case 46584:
                 {
@@ -11783,21 +11631,6 @@ void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
     if (unitTarget->hasUnitState(UNIT_STAT_ROOT))
         return;
 
-    // Typhoon
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DRUID && m_spellInfo->GetSpellFamilyFlags().test<CF_DRUID_TYPHOON>())
-        if (m_caster->HasAura(62135)) // Glyph of Typhoon
-            return;
-
-    // Thunderstorm
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_SHAMAN && m_spellInfo->GetSpellFamilyFlags().test<CF_SHAMAN_THUNDERSTORM>())
-        if (m_caster->HasAura(62132)) // Glyph of Thunderstorm
-            return;
-
-    // Blast Wave
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_MAGE && m_spellInfo->GetSpellFamilyFlags().test<CF_MAGE_BLAST_WAVE2, CF_MAGE_BLAST_WAVE1>())
-        if (m_caster->HasAura(62126)) // Glyph of Blast Wave
-            return;
-
     unitTarget->KnockBackFrom(m_caster, float(m_spellInfo->EffectMiscValue[eff_idx])/10, float(damage)/10);
 }
 
@@ -12509,10 +12342,6 @@ void Spell::EffectRedirectThreat(SpellEffectIndex eff_idx)
     if (!unitTarget)
         return;
 
-    if (m_spellInfo->Id == 59665)                           // Vigilance
-        if (Aura const* glyph = unitTarget->GetDummyAura(63326))  // Glyph of Vigilance
-            damage += glyph->GetModifier()->m_amount;
-
     m_caster->getHostileRefManager().SetThreatRedirection(unitTarget->GetObjectGuid(), uint32(damage));
 }
 
@@ -12710,21 +12539,6 @@ void Spell::EffectServerSide(SpellEffectIndex eff_idx)
                 }
                 default:
                     break;
-            }
-            break;
-        }
-        case 63974: // Synthetic spell for Glyph of shred
-        {
-            if (SpellAuraHolderPtr holder = GetCaster()->GetSpellAuraHolder(m_spellInfo->Id))
-                if (holder->GetStackAmount() > 3)
-                    return;
-
-            if (Aura* aura = unitTarget->GetAura(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DRUID, ClassFamilyMask::create<CF_DRUID_RIP>(), GetCaster()->GetObjectGuid()))
-            {
-                uint32 maxDuration = aura->GetAuraMaxDuration() + (GetCaster()->HasAura(54818) ? 4 * IN_MILLISECONDS : 0) + (GetCaster()->HasAura(60141) ? 4 * IN_MILLISECONDS : 0);
-                uint32 duration    = aura->GetAuraDuration() + damage * IN_MILLISECONDS;
-                aura->GetHolder()->SetAuraDuration(duration < maxDuration ? duration : maxDuration);
-                aura->GetHolder()->SendAuraUpdate(false);
             }
             break;
         }

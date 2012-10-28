@@ -14829,8 +14829,6 @@ INSERT INTO `spell_bonus_data` VALUES
 (31117, 1.8,    0,       0,     0,     'Warlock - Unstable Affliction Dispell'),
 /* Item */
 (64569, 0,      0,       0,     0,     'Item - Blood Reserve'),
-(56131, 0,      0,       0,     0,     'Item - Glyph of Dispel Magic'),
-(56160, 0,      0,       0,     0,     'Item - Glyph of Power Word: Shield'),
 (46567, 0,      0,       0,     0,     'Item - Goblin Rocket Launcher'),
 (31024, 0,      0,       0,     0,     'Item - Living Ruby Pedant'),
 (17712, 0,      0,       0,     0,     'Item - Lifestone Healing'),

@@ -4518,12 +4518,6 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
             else
                 model_id = Creature::ChooseDisplayId(ci);   // Will use the default model here
 
-            // Polymorph (sheep/penguin case)
-            if (GetSpellProto()->SpellFamilyName == SPELLFAMILY_MAGE && GetSpellProto()->SpellIconID == 82)
-                if (Unit* caster = GetCaster())
-                    if (caster->HasAura(52648))             // Glyph of the Penguin
-                        model_id = 26452;
-
             target->SetDisplayId(model_id);
 
             // creature case, need to update equipment if additional provided
@@ -4703,14 +4697,6 @@ void Aura::HandleChannelDeathItem(bool apply, bool Real)
 
         Item* newitem = ((Player*)caster)->StoreNewItem(dest, spellInfo->EffectItemType[m_effIndex], true);
         ((Player*)caster)->SendNewItem(newitem, count, true, true);
-
-        // Soul Shard (glyph bonus)
-        if (spellInfo->EffectItemType[m_effIndex] == 6265)
-        {
-            // Glyph of Soul Shard
-            if (caster->HasAura(58070) && roll_chance_i(40))
-                caster->CastSpell(caster, 58068, true, NULL, this);
-        }
     }
 }
 
@@ -5216,15 +5202,7 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
             {
                 if (Unit* caster = GetCaster())
                 {
-                    if (apply)
-                    {
-                        if (caster->GetOwner() && caster->GetOwner()->HasAura(56250)) // Glyph of Seduction
-                        {
-                            target->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_DAMAGE);
-                            target->RemoveSpellsCausingAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
-                        }
-                    }
-                    else
+                    if (!apply)
                         caster->InterruptSpell(CURRENT_CHANNELED_SPELL, false);
                 }
                 break;
@@ -6209,21 +6187,10 @@ void Aura::HandlePeriodicEnergize(bool apply, bool Real)
     {
         switch (GetId())
         {
-            case 54833:                                     // Glyph of Innervate (value%/2 of casters base mana)
-            {
-                if (Unit* caster = GetCaster())
-                    m_modifier.m_amount = int32(caster->GetCreateMana() * GetBasePoints() / (200 * GetAuraMaxTicks()));
-                break;
-
-            }
             case 29166:                                     // Innervate (value% of casters base mana)
             {
                 if (Unit* caster = GetCaster())
                 {
-                    // Glyph of Innervate
-                    if (caster->HasAura(54832))
-                        caster->CastSpell(caster,54833,true,NULL,this);
-
                     m_modifier.m_amount = int32(caster->GetCreateMana() * GetBasePoints() / (100 * GetAuraMaxTicks()));
                 }
                 break;
@@ -6532,15 +6499,6 @@ void Aura::HandleDamagePercentTaken(bool apply, bool Real)
     {
         if (loading)
             return;
-
-        // Hand of Salvation (only it have this aura and mask)
-        if (GetSpellProto()->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_HAND_OF_SALVATION1>())
-        {
-            // Glyph of Salvation
-            if (target->GetObjectGuid() == GetCasterGuid())
-                if (Aura* aur = target->GetAura(63225, EFFECT_INDEX_0))
-                    m_modifier.m_amount -= aur->GetModifier()->m_amount;
-        }
     }
 }
 
@@ -8727,7 +8685,7 @@ void Aura::PeriodicTick()
             if (pCaster->GetTypeId() == TYPEID_PLAYER && spellProto->SpellFamilyName == SPELLFAMILY_WARLOCK && spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_DRAIN_SOUL>())
             {
                 // Only from non-grey units
-                if (roll_chance_i(10) &&                    // 1-2 from drain with final and without glyph, 0-1 from damage
+                if (roll_chance_i(10) &&                    // 1-2 from drain with final, 0-1 from damage
                     ((Player*)pCaster)->isHonorOrXPTarget(target) &&
                     (target->GetTypeId() != TYPEID_UNIT || ((Player*)pCaster)->isAllowedToLoot((Creature*)target)))
                 {
@@ -11368,20 +11326,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     return;
                 break;
             }
-            else if (m_spellProto->GetSpellFamilyFlags().test<CF_MAGE_FIREBALL>() && GetSpellProto()->SpellVisual == 67)
-            {
-                // Glyph of Fireball
-                if (Unit * caster = GetCaster())
-                    if (caster->HasAura(56368))
-                        m_target->RemoveAurasByCasterSpell(GetId(), caster->GetObjectGuid());
-            }
-            else if (m_spellProto->GetSpellFamilyFlags().test<CF_MAGE_FROSTBOLT>() && GetSpellProto()->SpellVisual == 13)
-            {
-                // Glyph of Frostbolt
-                if (Unit * caster = GetCaster())
-                    if (caster->HasAura(56370))
-                        m_target->RemoveAurasByCasterSpell(GetId(), caster->GetObjectGuid());
-            }
             else if (!apply && m_spellProto->GetSpellFamilyFlags().test<CF_MAGE_ARCANE_MISSILES_CHANNEL>())
             {
                 if (Unit * caster = GetCaster())
@@ -11504,18 +11448,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 else
                     return;
             }
-            // Shadowflame (DoT)
-            else if (m_spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_SHADOWFLAME2>())
-            {
-                // Glyph of Shadowflame
-                Unit* caster;
-                if (!apply)
-                    spellId1 = 63311;
-                else if(((caster = GetCaster())) && caster->HasAura(63310))
-                    spellId1 = 63311;
-                else
-                    return;
-            }
             break;
         }
         case SPELLFAMILY_PRIEST:
@@ -11545,22 +11477,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 }
                 else
                     return;
-            }
-            // Power Word: Shield
-            else if (apply && m_spellProto->GetSpellFamilyFlags().test<CF_PRIEST_POWER_WORD_SHIELD>() && m_spellProto->Mechanic == MECHANIC_SHIELD)
-            {
-                Unit* caster = GetCaster();
-                if (!caster)
-                    return;
-
-                // Glyph of Power Word: Shield
-                if (Aura* glyph = caster->GetAura(55672, EFFECT_INDEX_0))
-                {
-                    Aura *shield = GetAuraByEffectIndex(EFFECT_INDEX_0);
-                    int32 heal = (glyph->GetModifier()->m_amount * shield->GetModifier()->m_amount)/100;
-                    caster->CastCustomSpell(m_target, 56160, &heal, NULL, NULL, true, 0, shield);
-                }
-                return;
             }
 
             switch(GetId())
@@ -11620,19 +11536,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     caster->CastCustomSpell(m_target, 64801, &heal, NULL, NULL, true, NULL);
                 }
             }
-            // Rip
-            else if (GetSpellProto()->GetSpellFamilyFlags().test<CF_DRUID_RIP>())
-            {
-                Unit* caster = GetCaster();
-                if (!caster)
-                    return;
-
-                if (caster->HasAura(63974))                 // Glyph of Shred triggered
-                    caster->RemoveAurasDueToSpell(63974);
-            }
-            // Barkskin
-            else if (GetId()==22812 && m_target->HasAura(63057)) // Glyph of Barkskin
-                spellId1 = 63058;                           // Glyph - Barkskin 01
             // Enrage (Druid Bear)
             else if (GetId() == 5229)
             {
@@ -11681,14 +11584,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     m_target->RemoveAurasDueToSpell(58684); // Savage Combat rank 1
                     m_target->RemoveAurasDueToSpell(58683); // Savage Combat rank 2
                 }
-            }
-            // Sprint (skip non player casted spells by category)
-            else if (GetSpellProto()->GetSpellFamilyFlags().test<CF_ROGUE_SPRINT>() && GetSpellProto()->Category == 44)
-            {
-                if (!apply || m_target->HasAura(58039))      // Glyph of Blurred Speed
-                    spellId1 = 61922;                       // Sprint (waterwalk)
-                else
-                   return;
             }
             else
                 return;
@@ -11748,24 +11643,6 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     spellId1 = 75447;
                     break;
                 default:
-                    // Freezing Trap Effect
-                    if (m_spellProto->GetSpellFamilyFlags().test<CF_HUNTER_FREEZING_TRAP_EFFECT>())
-                    {
-                        if (!apply)
-                        {
-                            Unit *caster = GetCaster();
-                            // Glyph of Freezing Trap
-                            if (caster && caster->HasAura(56845))
-                            {
-                                cast_at_remove = true;
-                                spellId1 = 61394;
-                            }
-                            else
-                                return;
-                        }
-                        else
-                            return;
-                    }
                     // Aspect of the Dragonhawk dodge
                     else if (GetSpellProto()->GetSpellFamilyFlags().test<CF_HUNTER_ASPECT_OF_THE_DRAGONHAWK>())
                     {
@@ -12572,20 +12449,6 @@ uint32 Aura::CalculateCrowdControlBreakDamage()
 
     MAPLOCK_READ(caster,MAP_LOCK_TYPE_AURAS);
 
-    // Glyphs increasing damage cap
-    Unit::AuraList const& overrideClassScripts = caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-    for (Unit::AuraList::const_iterator itr = overrideClassScripts.begin(); itr != overrideClassScripts.end(); ++itr)
-    {
-        if((*itr)->isAffectedOnSpell(GetSpellProto()))
-        {
-            // Glyph of Fear, Glyph of Frost nova and similar auras
-            if ((*itr)->GetMiscValue() == 7801)
-            {
-                damageCap += (int32)(damageCap * (*itr)->GetModifier()->m_amount / 100.0f);
-                break;
-            }
-        }
-    }
     return damageCap;
 }
 

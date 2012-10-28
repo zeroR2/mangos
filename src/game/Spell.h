@@ -320,7 +320,6 @@ class Spell
         void EffectStuck(SpellEffectIndex eff_idx);
         void EffectSummonPlayer(SpellEffectIndex eff_idx);
         void EffectActivateObject(SpellEffectIndex eff_idx);
-        void EffectApplyGlyph(SpellEffectIndex eff_idx);
         void EffectEnchantHeldItem(SpellEffectIndex eff_idx);
         void EffectSummonObject(SpellEffectIndex eff_idx);
         void EffectResurrect(SpellEffectIndex eff_idx);
@@ -481,7 +480,6 @@ class Spell
         int32 m_currentBasePoints[MAX_EFFECT_INDEX];        // cache SpellEntry::CalculateSimpleValue and use for set custom base points
         Item* m_CastItem;
         uint8 m_cast_count;
-        uint32 m_glyphIndex;
         SpellCastTargets m_targets;
 
         int32 GetCastTime() const { return m_casttime; }

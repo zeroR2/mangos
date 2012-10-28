@@ -101,7 +101,6 @@ bool LoginQueryHolder::Initialize()
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADACCOUNTDATA,     "SELECT type, time, data FROM character_account_data WHERE guid='%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADTALENTS,         "SELECT talent_id, current_rank, spec FROM character_talent WHERE guid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADSKILLS,          "SELECT skill, value, max FROM character_skills WHERE guid = '%u'", m_guid.GetCounter());
-    res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADGLYPHS,          "SELECT spec, slot, glyph FROM character_glyphs WHERE guid='%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADMAILS,           "SELECT id,messageType,sender,receiver,subject,body,expire_time,deliver_time,money,cod,checked,stationery,mailTemplateId,has_items FROM mail WHERE receiver = '%u' ORDER BY id DESC", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADMAILEDITEMS,     "SELECT data, text, mail_id, item_guid, item_template FROM mail_items JOIN item_instance ON item_guid = guid WHERE receiver = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADRANDOMBG,        "SELECT guid FROM character_battleground_random WHERE guid = '%u'", m_guid.GetCounter());
@@ -1129,25 +1128,6 @@ void WorldSession::HandleAlterAppearanceOpcode(WorldPacket& recv_data)
         _player->SetByteValue(PLAYER_BYTES, 0, uint8(skinTone_id));
 
     _player->SetStandState(0);                              // stand up
-}
-
-void WorldSession::HandleRemoveGlyphOpcode(WorldPacket& recv_data)
-{
-    uint32 slot;
-    recv_data >> slot;
-
-    if (slot >= MAX_GLYPH_SLOT_INDEX)
-    {
-        DEBUG_LOG("Client sent wrong glyph slot number in opcode CMSG_REMOVE_GLYPH %u", slot);
-        return;
-    }
-
-    if (_player->GetGlyph(slot))
-    {
-        _player->ApplyGlyph(slot, false);
-        _player->SetGlyph(slot, 0);
-        _player->SendTalentsInfoData();
-    }
 }
 
 void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)

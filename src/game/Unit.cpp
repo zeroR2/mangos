@@ -752,13 +752,6 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
     Unit* pVictim = damageInfo->target;
     SpellEntry const* spellProto = damageInfo->GetSpellProto();
 
-    // Divine Storm heal hack
-    if ( spellProto && spellProto->Id == 53385 )
-    {
-        int32 divineDmg = damageInfo->damage * (25 + (HasAura(63220) ? 15 : 0)) / 100; //25%, if has Glyph of Divine Storm -> 40%
-        CastCustomSpell(this, 54171, &divineDmg, NULL, NULL, true);
-    }
-
     // remove affects from attacker at any non-DoT damage (including 0 damage)
     if ( damageInfo->damageType != DOT)
     {
@@ -2538,16 +2531,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                     if (spellProto->Id == 50462)
                     {
                         RemainingDamage -= RemainingDamage * currentAbsorb / 100;
-                        continue;
-                    }
-                    // Unbreakable armor
-                    if (spellProto->Id == 51271)
-                    {
-                        int32 absorbed = GetArmor() * currentAbsorb / 100;
-                        // If we have a glyph
-                        if (Aura const* aur = GetDummyAura(58635))
-                            absorbed += absorbed * aur->GetModifier()->m_amount / 100;
-                        RemainingDamage = (RemainingDamage < absorbed) ? 0 : RemainingDamage - absorbed;
                         continue;
                     }
                     // Anti-Magic Zone
@@ -7718,12 +7701,6 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                 {
                     float multiplier = 3.0f;
 
-                    // if target have higher level
-                    if (pVictim->getLevel() > getLevel())
-                        // Glyph of Ice Lance
-                        if (Aura const* glyph = GetDummyAura(56377))
-                            multiplier = glyph->GetModifier()->m_amount;
-
                     DoneTotalMod *= multiplier;
                 }
             }
@@ -7766,9 +7743,6 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                 // Shadow Word: Pain
                 if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_PRIEST, CF_PRIEST_SHADOW_WORD_PAIN>())
                 {
-                    // Glyph of Mind Flay
-                    if (Aura *aur = GetAura(55687, EFFECT_INDEX_0))
-                        DoneTotalMod *= (aur->GetModifier()->m_amount+100.0f) / 100.0f;
                     // Twisted Faith
                     Unit::AuraList const& tf = GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
                     for(Unit::AuraList::const_iterator i = tf.begin(); i != tf.end(); ++i)
@@ -7779,27 +7753,6 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                             break;
                         }
                     }
-                }
-            }
-            // Smite
-            else if (damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_PRIEST_SMITE>())
-            {
-                // Holy Fire
-                if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_PRIEST, CF_PRIEST_HOLY_FIRE>())
-                    // Glyph of Smite
-                    if (Aura *aur = GetAura(55692, EFFECT_INDEX_0))
-                        DoneTotalMod *= (aur->GetModifier()->m_amount+100.0f) / 100.0f;
-            }
-            // Shadow word: Death
-            else if (damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_PRIEST_SHADOW_WORD_DEATH_TARGET>())
-            {
-                // Glyph of Shadow word: Death
-                if (SpellAuraHolderPtr glyph = GetSpellAuraHolder(55682))
-                {
-                    Aura* hpPct = glyph->GetAuraByEffectIndex(EFFECT_INDEX_0);
-                    Aura* dmPct = glyph->GetAuraByEffectIndex(EFFECT_INDEX_1);
-                    if (hpPct && dmPct && pVictim->GetHealth() * 100 <= pVictim->GetMaxHealth() * hpPct->GetModifier()->m_amount)
-                        DoneTotalMod *= (dmPct->GetModifier()->m_amount + 100.0f) / 100.0f;
                 }
             }
             break;
@@ -8081,10 +8034,6 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                             if (pVictim->isFrozen() || IsIgnoreUnitState(spellProto, IGNORE_UNIT_TARGET_NON_FROZEN))
                                 crit_chance+= 50.0f;
                             break;
-                        case 7917:                          // Glyph of Shadowburn
-                            if (pVictim->HasAuraState(AURA_STATE_HEALTHLESS_35_PERCENT))
-                                crit_chance+=(*i)->GetModifier()->m_amount;
-                            break;
                         case 7997:                          // Renewed Hope
                         case 7998:
                             if (pVictim->HasAura(6788))
@@ -8098,18 +8047,6 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                 // Custom crit by class
                 switch(spellProto->SpellFamilyName)
                 {
-                    case SPELLFAMILY_MAGE:
-                    {
-                        // Fire Blast
-                        if (spellProto->GetSpellFamilyFlags().test<CF_MAGE_FIRE_BLAST>() && spellProto->SpellIconID == 12)
-                        {
-                            // Glyph of Fire Blast
-                            if (pVictim->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED) || pVictim->isInRoots())
-                                if (Aura* aura = GetAura(56369, EFFECT_INDEX_0))
-                                    crit_chance += aura->GetModifier()->m_amount;
-                        }
-                        break;
-                    }
                     case SPELLFAMILY_PRIEST:
                         // Flash Heal
                         if (spellProto->GetSpellFamilyFlags().test<CF_PRIEST_FLASH_HEAL>())
@@ -8368,12 +8305,6 @@ uint32 Unit::SpellHealingBonusDone(Unit *pVictim, SpellEntry const *spellProto, 
                 if (pVictim->GetHealth() < pVictim->GetMaxHealth()/2)
                     DoneTotalMod *=((*i)->GetModifier()->m_amount + 100.0f)/100.0f;
                 break;
-            case 7798: // Glyph of Regrowth
-            {
-                if (pVictim->GetAura<SPELL_AURA_PERIODIC_HEAL, SPELLFAMILY_DRUID, CF_DRUID_REGROWTH>())
-                    DoneTotalMod *= ((*i)->GetModifier()->m_amount+100.0f)/100.0f;
-                break;
-            }
             case 8477: // Nourish Heal Boost
             {
                 int32 stepPercent = (*i)->GetModifier()->m_amount;
@@ -8388,12 +8319,6 @@ uint32 Unit::SpellHealingBonusDone(Unit *pVictim, SpellEntry const *spellProto, 
 
                 if (ownHotCount)
                     DoneTotalMod *= (stepPercent * ownHotCount + 100.0f) / 100.0f;
-                break;
-            }
-            case 7871: // Glyph of Lesser Healing Wave
-            {
-                if (pVictim->GetAura<SPELL_AURA_DUMMY, SPELLFAMILY_SHAMAN, CF_SHAMAN_EARTH_SHIELD>(GetObjectGuid()))
-                    DoneTotalMod *= ((*i)->GetModifier()->m_amount+100.0f)/100.0f;
                 break;
             }
             default:
@@ -8416,9 +8341,6 @@ uint32 Unit::SpellHealingBonusDone(Unit *pVictim, SpellEntry const *spellProto, 
             if (ownHotCount)
             {
                 DoneTotalMod *= 1.2f;                          // base bonus at HoTs
-
-                if (Aura* glyph = GetAura(62971, EFFECT_INDEX_0))// Glyph of Nourish
-                    DoneTotalMod *= (glyph->GetModifier()->m_amount * ownHotCount + 100.0f) / 100.0f;
             }
         }
         // Lifebloom
@@ -8899,15 +8821,6 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                     }
                 }
             }
-        }
-        // Glyph of Steady Shot (Steady Shot check)
-        else if (damageInfo->GetSpellProto()->SpellFamilyName == SPELLFAMILY_HUNTER && damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_HUNTER_STEADY_SHOT>())
-        {
-            // search for glyph dummy aura
-            if (Aura const* aur = GetDummyAura(56826))
-                // check for Serpent Sting at target
-                if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_HUNTER, CF_HUNTER_SERPENT_STING>())
-                    DonePercent *= (aur->GetModifier()->m_amount+100.0f) / 100.0f;
         }
      }
 
@@ -10378,40 +10291,6 @@ int32 Unit::CalculateAuraDuration(SpellEntry const* spellProto, uint32 effectMas
 
         if (duration < 0)
             duration = 0;
-    }
-
-    if (caster == this)
-    {
-        switch(spellProto->SpellFamilyName)
-        {
-            case SPELLFAMILY_DRUID:
-                // Thorns
-                if (spellProto->SpellIconID == 53 && spellProto->GetSpellFamilyFlags().test<CF_DRUID_THORNS>())
-                {
-                    // Glyph of Thorns
-                    if (Aura *aur = GetAura(57862, EFFECT_INDEX_0))
-                        duration += aur->GetModifier()->m_amount * MINUTE * IN_MILLISECONDS;
-                }
-                break;
-            case SPELLFAMILY_PALADIN:
-                // Blessing of Might
-                if (spellProto->SpellIconID == 298 && spellProto->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_MIGHT>())
-                {
-                    // Glyph of Blessing of Might
-                    if (Aura *aur = GetAura(57958, EFFECT_INDEX_0))
-                        duration += aur->GetModifier()->m_amount * MINUTE * IN_MILLISECONDS;
-                }
-                // Blessing of Wisdom
-                else if (spellProto->SpellIconID == 306 && spellProto->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_WISDOM>())
-                {
-                    // Glyph of Blessing of Wisdom
-                    if (Aura *aur = GetAura(57979, EFFECT_INDEX_0))
-                        duration += aur->GetModifier()->m_amount * MINUTE * IN_MILLISECONDS;
-                }
-                break;
-            default:
-                break;
-        }
     }
 
     return duration;

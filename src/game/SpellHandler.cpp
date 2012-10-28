@@ -39,10 +39,9 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
     uint8 unk_flags;                                        // flags (if 0x02 - some additional data are received)
     uint8 cast_count;                                       // next cast if exists (single or not)
     ObjectGuid itemGuid;
-    uint32 glyphIndex;                                      // something to do with glyphs?
     uint32 spellid;                                         // casted spell id
 
-    recvPacket >> bagIndex >> slot >> cast_count >> spellid >> itemGuid >> glyphIndex >> unk_flags;
+    recvPacket >> bagIndex >> slot >> cast_count >> spellid >> itemGuid >> unk_flags;
 
     // TODO: add targets.read() check
     Player* pUser = _player;
@@ -51,14 +50,6 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
     if (!pUser->IsSelfMover())
     {
         recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
-        return;
-    }
-
-    // reject fake data
-    if (glyphIndex >= MAX_GLYPH_SLOT_INDEX)
-    {
-        recvPacket.rpos(recvPacket.wpos());                 // prevent spam at not read packet tail
-        pUser->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL );
         return;
     }
 
@@ -77,7 +68,7 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    DETAIL_LOG("WORLD: CMSG_USE_ITEM packet, bagIndex: %u, slot: %u, cast_count: %u, spellid: %u, Item: %u, glyphIndex: %u, unk_flags: %u, data length = %i", bagIndex, slot, cast_count, spellid, pItem->GetEntry(), glyphIndex, unk_flags, (uint32)recvPacket.size());
+    DETAIL_LOG("WORLD: CMSG_USE_ITEM packet, bagIndex: %u, slot: %u, cast_count: %u, spellid: %u, Item: %u, unk_flags: %u, data length = %i", bagIndex, slot, cast_count, spellid, pItem->GetEntry(), unk_flags, (uint32)recvPacket.size());
 
     ItemPrototype const *proto = pItem->GetProto();
     if (!proto)
@@ -186,7 +177,7 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
     if (!sScriptMgr.OnItemUse(pUser, pItem, targets))
     {
         // no script or script not process request by self
-        pUser->CastItemUseSpell(pItem,targets,cast_count,glyphIndex);
+        pUser->CastItemUseSpell(pItem,targets,cast_count);
     }
 }
 

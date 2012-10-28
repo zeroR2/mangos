@@ -527,7 +527,6 @@ enum SpellAttributesEx7
 
 
 #define MAX_TALENT_SPEC_COUNT   2
-#define MAX_GLYPH_SLOT_INDEX    6
 
 enum SheathTypes
 {
@@ -958,9 +957,6 @@ enum SpellCastResult
     SPELL_FAILED_CUSTOM_ERROR = 172,
     SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW = 173,
     SPELL_FAILED_TOO_MANY_SOCKETS = 174,
-    SPELL_FAILED_INVALID_GLYPH = 175,
-    SPELL_FAILED_UNIQUE_GLYPH = 176,
-    SPELL_FAILED_GLYPH_SOCKET_LOCKED = 177,
     SPELL_FAILED_NO_VALID_TARGETS = 178,
     SPELL_FAILED_ITEM_AT_MAX_CHARGES = 179,
     SPELL_FAILED_NOT_IN_BARBERSHOP = 180,
@@ -2617,8 +2613,7 @@ enum ChatLinkColors
     CHAT_LINK_COLOR_TRADE       = 0xffffd000,   // orange
     CHAT_LINK_COLOR_TALENT      = 0xff4e96f7,   // blue
     CHAT_LINK_COLOR_SPELL       = 0xff71d5ff,   // bright blue
-    CHAT_LINK_COLOR_ENCHANT     = 0xffffd000,   // orange
-    CHAT_LINK_COLOR_GLYPH       = 0xff66bbff
+    CHAT_LINK_COLOR_ENCHANT     = 0xffffd000    // orange
 };
 
 // Values from ItemPetFood (power of (value-1) used for compare with CreatureFamilyEntry.petDietMask

@@ -47,7 +47,6 @@
 // |color|Hgameevent:id|h[name]|h|r
 // |color|Hgameobject:go_guid|h[name]|h|r
 // |color|Hgameobject_entry:go_id|h[name]|h|r
-// |color|Hglyph:glyph_slot_id:glyph_prop_id|h[%s]|h|r                    - client, at shift click in glyphs dialog, GlyphSlot.dbc, GlyphProperties.dbc
 // |color|Hitem:item_id:perm_ench_id:gem1:gem2:gem3:0:0:0:0:reporter_level|h[name]|h|r
 //                                                                        - client, item icon shift click
 // |color|Hitemset:itemset_id|h[name]|h|r
@@ -1464,7 +1463,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
     |cff4e96f7|Htalent:2232:-1|h[Taste for Blood]|h|r
     |cff71d5ff|Hspell:21563|h[Command]|h|r
     |cffffd000|Henchant:3919|h[Engineering: Rough Dynamite]|h|r
-    |cff66bbff|Hglyph:21:762|h[Glyph of Bladestorm]|h|r
 
     | will be escaped to ||
     */
@@ -1819,34 +1817,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
                         c = reader.peek();
                     }
                     linkedSpell = sSpellStore.LookupEntry(spellid);
-                    if (!linkedSpell)
-                        return false;
-                }
-                else if (strcmp(buffer, "glyph") == 0)
-                {
-                    if (color != CHAT_LINK_COLOR_GLYPH)
-                        return false;
-
-                    // first id is slot, drop it
-                    reader.getline(buffer, 256, ':');
-                    if (reader.eof())                       // : must be
-                        return false;
-
-                    uint32 glyphId = 0;
-                    char c = reader.peek();
-                    while (c >= '0' && c <= '9')
-                    {
-                        glyphId *= 10;
-                        glyphId += c - '0';
-                        reader.ignore(1);
-                        c = reader.peek();
-                    }
-                    GlyphPropertiesEntry const* glyph = sGlyphPropertiesStore.LookupEntry(glyphId);
-                    if (!glyph)
-                        return false;
-
-                    linkedSpell = sSpellStore.LookupEntry(glyph->SpellId);
-
                     if (!linkedSpell)
                         return false;
                 }
@@ -2802,8 +2772,7 @@ enum SpellLinkType
     SPELL_LINK_SPELL   = 0,
     SPELL_LINK_TALENT  = 1,
     SPELL_LINK_ENCHANT = 2,
-    SPELL_LINK_TRADE   = 3,
-    SPELL_LINK_GLYPH   = 4,
+    SPELL_LINK_TRADE   = 3
 };
 
 static char const* const spellKeys[] =
@@ -2812,14 +2781,12 @@ static char const* const spellKeys[] =
     "Htalent",                                              // talent spell
     "Henchant",                                             // enchanting recipe spell
     "Htrade",                                               // profession/skill spell
-    "Hglyph",                                               // glyph
     NULL
 };
 
 uint32 ChatHandler::ExtractSpellIdFromLink(char** text)
 {
     // number or [name] Shift-click form |color|Henchant:recipe_spell_id|h[prof_name: recipe_name]|h|r
-    // number or [name] Shift-click form |color|Hglyph:glyph_slot_id:glyph_prop_id|h[%s]|h|r
     // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r
     // number or [name] Shift-click form |color|Htalent:talent_id,rank|h[name]|h|r
     // number or [name] Shift-click form |color|Htrade:spell_id,skill_id,max_value,cur_value|h[name]|h|r
@@ -2855,16 +2822,6 @@ uint32 ChatHandler::ExtractSpellIdFromLink(char** text)
                 rank = 0;
 
             return rank < MAX_TALENT_RANK ? talentEntry->RankID[rank] : 0;
-        }
-        case SPELL_LINK_GLYPH:
-        {
-            uint32 glyph_prop_id;
-
-            if (!ExtractUInt32(&param1_str, glyph_prop_id))
-                return 0;
-
-            GlyphPropertiesEntry const* glyphPropEntry = sGlyphPropertiesStore.LookupEntry(glyph_prop_id);
-            return glyphPropEntry ? glyphPropEntry->SpellId : 0;
         }
     }
 

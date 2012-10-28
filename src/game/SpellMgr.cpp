@@ -2800,14 +2800,6 @@ uint32 SpellMgr::GetSpellTargetsForChainWithCustom(SpellEntry const* spellInfo, 
 
     switch (spellInfo->SpellFamilyName)
     {
-        case SPELLFAMILY_WARRIOR:
-        {
-            // Sunder Armor (triggered spell)
-            if (spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_SUNDER_ARMOR>() && spellInfo->SpellVisual == 0)
-                if (caster->HasAura(58387))               // Glyph of Sunder Armor
-                    effectChainTarget = 2;
-            break;
-        }
         case SPELLFAMILY_PALADIN:
         {
             if (spellInfo->Id == 20424)                   // Seal of Command (2 more target for single targeted spell)

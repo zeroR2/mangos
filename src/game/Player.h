@@ -190,48 +190,6 @@ enum ActionButtonIndex
 
 typedef std::map<uint8,ActionButton> ActionButtonList;
 
-enum GlyphUpdateState
-{
-    GLYPH_UNCHANGED = 0,
-    GLYPH_CHANGED   = 1,
-    GLYPH_NEW       = 2,
-    GLYPH_DELETED   = 3
-};
-
-struct Glyph
-{
-    uint32 id;
-    GlyphUpdateState uState;
-
-    Glyph() : id(0), uState(GLYPH_UNCHANGED) { }
-
-    uint32 GetId() { return id; }
-
-    void SetId(uint32 newId)
-    {
-        if (newId == id)
-            return;
-
-        if (id == 0 && uState == GLYPH_UNCHANGED)            // not exist yet in db and already saved
-        {
-            uState = GLYPH_NEW;
-        }
-        else if (newId == 0)
-        {
-            if (uState == GLYPH_NEW)                         // delete before add new -> no change
-                uState = GLYPH_UNCHANGED;
-            else                                            // delete existing data
-                uState = GLYPH_DELETED;
-        }
-        else if (uState != GLYPH_NEW)                       // if not new data, change current data
-        {
-            uState = GLYPH_CHANGED;
-        }
-
-        id = newId;
-    }
-};
-
 struct PlayerCreateInfoItem
 {
     PlayerCreateInfoItem(uint32 id, uint32 amount) : item_id(id), item_amount(amount) {}
@@ -827,7 +785,6 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADBGDATA,
     PLAYER_LOGIN_QUERY_LOADACCOUNTDATA,
     PLAYER_LOGIN_QUERY_LOADSKILLS,
-    PLAYER_LOGIN_QUERY_LOADGLYPHS,
     PLAYER_LOGIN_QUERY_LOADMAILS,
     PLAYER_LOGIN_QUERY_LOADMAILEDITEMS,
     PLAYER_LOGIN_QUERY_LOADTALENTS,
@@ -1455,7 +1412,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetInGameTime(uint32 time) { m_ingametime = time; }
         void AddTimedQuest(uint32 quest_id) { m_timedquests.insert(quest_id); }
         void RemoveTimedQuest(uint32 quest_id) { m_timedquests.erase(quest_id); }
-        void MakeTalentGlyphLink(std::ostringstream &out);
+        void MakeTalentLink(std::ostringstream &out);
 
         void chompAndTrim(std::string& str);
         bool getNextQuestId(const std::string& pString, unsigned int& pStartPos, unsigned int& pId);
@@ -2013,7 +1970,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void ApplyEquipSpell(SpellEntry const* spellInfo, Item* item, bool apply, bool form_change = false);
         void UpdateEquipSpellsAtFormChange();
         void CastItemCombatSpell(Unit* Target, WeaponAttackType attType);
-        void CastItemUseSpell(Item *item,SpellCastTargets const& targets,uint8 cast_count, uint32 glyphIndex);
+        void CastItemUseSpell(Item *item,SpellCastTargets const& targets,uint8 cast_count);
 
         void ApplyItemOnStoreSpell(Item *item, bool apply);
         void DestroyItemWithOnStoreSpell(Item* item, uint32 spellId);
@@ -2429,7 +2386,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void _LoadDeclinedNames(QueryResult *result);
         void _LoadEquipmentSets(QueryResult *result);
         void _LoadBGData(QueryResult* result);
-        void _LoadGlyphs(QueryResult *result);
         void _LoadIntoDataField(const char* data, uint32 startOffset, uint32 count);
 
         /*********************************************************/
@@ -2448,7 +2404,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void _SaveSpells();
         void _SaveEquipmentSets();
         void _SaveBGData(bool forceClean = false);
-        void _SaveGlyphs();
         void _SaveTalents();
         void _SaveStats();
 
@@ -2513,8 +2468,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint8 m_specsCount;
 
         ActionButtonList m_actionButtons[MAX_TALENT_SPEC_COUNT];
-
-        Glyph m_glyphs[MAX_TALENT_SPEC_COUNT][MAX_GLYPH_SLOT_INDEX];
 
         float m_auraBaseMod[BASEMOD_END][MOD_END];
         int16 m_baseRatingValue[MAX_COMBAT_RATING];

@@ -444,7 +444,6 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
     gameObjTarget = NULL;
     focusObject = NULL;
     m_cast_count = 0;
-    m_glyphIndex = 0;
     m_triggeredByAuraSpell  = NULL;
 
     //Auto Shot & Shoot (wand)
@@ -1857,7 +1856,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             float direction = target->GetOrientation();
             float distance = radius;
 
-            //Glyph of blink or etc this type
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
                 ((Player*)m_caster)->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RADIUS, distance);
 
@@ -2501,9 +2499,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     target = m_caster;
 
                 uint32 count = 5;
-                // Glyph of Circle of Healing
-                if (Aura const* glyph = m_caster->GetDummyAura(55675))
-                    count += glyph->GetModifier()->m_amount;
 
                 FillRaidOrPartyHealthPriorityTargets(targetUnitMap, m_caster, target, radius, count, true, false, true);
             }
@@ -3460,16 +3455,6 @@ void Spell::cast(bool skipCheck)
             // Ice Block
             if (m_spellInfo->GetSpellFamilyFlags().test<CF_MAGE_ICE_BLOCK>())
                 AddPrecastSpell(41425);                     // Hypothermia
-            // Icy Veins
-            else if (m_spellInfo->Id == 12472)
-            {
-                if (m_caster->HasAura(56374))               // Glyph of Icy Veins
-                {
-                    // not exist spell do it so apply directly
-                    m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOD_DECREASE_SPEED);
-                    m_caster->RemoveSpellsCausingAura(SPELL_AURA_HASTE_SPELLS);
-                }
-            }
             // Fingers of Frost
             else if (m_spellInfo->Id == 44544)
                 AddPrecastSpell(74396);                     // Fingers of Frost
@@ -3477,12 +3462,6 @@ void Spell::cast(bool skipCheck)
         }
         case SPELLFAMILY_WARRIOR:
         {
-            // Shield Slam
-            if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_SHIELD_SLAM>() && m_spellInfo->Category==1209)
-            {
-                if (m_caster->HasAura(58375))               // Glyph of Blocking
-                    AddTriggeredSpell(58374);               // Glyph of Blocking
-            }
             // Bloodrage
             if (m_spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_BLOODRAGE>())
             {
@@ -5290,15 +5269,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         if (m_caster->hasUnitState(UNIT_STAT_STUNNED))
-        {
-            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->SpellIconID == 2178)
-            {
-                // Glyph of Desperation
-                if (m_caster->HasAura(63248))
-                    return SPELL_CAST_OK;
-                else return SPELL_FAILED_STUNNED;
-            }
-        }
+            return SPELL_FAILED_STUNNED;
 
         // Disengage-like spells allow use only in combat
         if (m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET) && m_spellInfo->HasAttribute(SPELL_ATTR_EX2_UNK26) && !m_caster->isInCombat())
@@ -5974,13 +5945,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 break;
             }
             case SPELL_EFFECT_APPLY_GLYPH:
-            {
-                uint32 glyphId = m_spellInfo->EffectMiscValue[i];
-                if (GlyphPropertiesEntry const *gp = sGlyphPropertiesStore.LookupEntry(glyphId))
-                    if (m_caster->HasAura(gp->SpellId))
-                        return SPELL_FAILED_UNIQUE_GLYPH;
                 break;
-            }
             case SPELL_EFFECT_FEED_PET:
             {
                 if (m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -6649,13 +6614,6 @@ SpellCastResult Spell::CheckCasterAuras() const
     uint32 unitflag = m_caster->GetUInt32Value(UNIT_FIELD_FLAGS);     // Get unit state
     if (unitflag & UNIT_FLAG_STUNNED)
     {
-        // Pain Suppression (have SPELL_ATTR_EX5_USABLE_WHILE_STUNNED that must be used only with glyph)
-        if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->SpellIconID == 2178)
-        {
-            if (!m_caster->HasAura(63248))                  // Glyph of Pain Suppression
-                spellUsableWhileStunned = false;
-        }
-
         // spell is usable while stunned, check if caster has only mechanic stun auras, another stun types must prevent cast spell
         if (spellUsableWhileStunned)
         {
@@ -8437,11 +8395,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                 }
                 uiPhaseIndex++;
             }
-            break;
-        }
-        case 59754:                    //Rune Tap triggered from Glyph of Rune Tap
-        {
-            FillRaidOrPartyTargets(targetUnitMap, m_caster, m_caster, radius, false, true, false);
             break;
         }
         case 61999: // Raise ally

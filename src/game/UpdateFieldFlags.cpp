@@ -1453,19 +1453,6 @@ uint32 UnitUpdateFieldFlags[PLAYER_END] =
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1+1
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1+2
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPH_SLOTS_1
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPH_SLOTS_1+1
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPH_SLOTS_1+2
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPH_SLOTS_1+3
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPH_SLOTS_1+4
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPH_SLOTS_1+5
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPHS_1
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPHS_1+1
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPHS_1+2
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPHS_1+3
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPHS_1+4
-    UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_GLYPHS_1+5
-    UF_FLAG_PRIVATE,                                        // PLAYER_GLYPHS_ENABLED
     UF_FLAG_PRIVATE,                                        // PLAYER_PET_SPELL_POWER
 };
 

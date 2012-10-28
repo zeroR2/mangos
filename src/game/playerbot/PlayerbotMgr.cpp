@@ -866,11 +866,10 @@ void Player::skill(std::list<uint32>& m_spellsToLearn)
     }
 }
 
-void Player::MakeTalentGlyphLink(std::ostringstream &out)
+void Player::MakeTalentLink(std::ostringstream &out)
 {
 
     // |cff4e96f7|Htalent:1396:4|h[Unleashed Fury]|h|r
-    // |cff66bbff|Hglyph:23:460|h[Glyph of Fortitude]|h|r
 
     if (m_specsCount)
         // loop through all specs (only 1 for now)
@@ -912,21 +911,6 @@ void Player::MakeTalentGlyphLink(std::ostringstream &out)
                 out << "|h|cff00ff00" << freepoints << "|h|r";
             else
                 out << "|h|cffff0000" << freepoints << "|h|r";
-
-            out << "\n" << "Active Glyphs ";
-            // GlyphProperties.dbc
-            for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-            {
-                GlyphPropertiesEntry const* glyph = sGlyphPropertiesStore.LookupEntry(m_glyphs[specIdx][i].GetId());
-                if (!glyph)
-                    continue;
-
-                SpellEntry const* spell_entry = sSpellStore.LookupEntry(glyph->SpellId);
-
-                out << "|cff66bbff|Hglyph:" << GetGlyphSlot(i) << ":" << m_glyphs[specIdx][i].GetId()
-                    << " |h[" << spell_entry->SpellName[GetSession()->GetSessionDbcLocale()] << "]|h|r";
-
-            }
         }
 }
 
