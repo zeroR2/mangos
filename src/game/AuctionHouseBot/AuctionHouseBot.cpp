@@ -409,12 +409,6 @@ bool AuctionBotConfig::Reload()
     return false;
 }
 
-char const* AuctionBotConfig::GetItemClassName(ItemClass itemclass)
-{
-    ItemClassEntry const* itemClassEntry = sItemClassStore.LookupEntry(itemclass);
-    return itemClassEntry ? itemClassEntry->name[sWorld.GetDefaultDbcLocale()] : "";
-}
-
 char const* AuctionBotConfig::GetHouseTypeName(AuctionHouseType houseType)
 {
     char const* names[MAX_AUCTION_HOUSE_TYPE] = { "Alliance", "Horde", "Neutral" };

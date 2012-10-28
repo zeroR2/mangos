@@ -504,8 +504,8 @@ void BattleGround::Update(uint32 diff)
             // Announce BG starting
             if (sWorld.getConfig(CONFIG_BOOL_BATTLEGROUND_QUEUE_ANNOUNCER_START))
             {
-                uint32 q_min_level = Player::GetMinLevelForBattleGroundBracketId(GetBracketId(), GetTypeID());
-                uint32 q_max_level = Player::GetMaxLevelForBattleGroundBracketId(GetBracketId(), GetTypeID());
+                uint32 q_min_level = GetMinLevelForBattleGroundBracketId(GetBracketId(), GetTypeID());
+                uint32 q_max_level = GetMaxLevelForBattleGroundBracketId(GetBracketId(), GetTypeID());
                 if (q_max_level > sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
                     q_max_level = sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
 
@@ -539,6 +539,28 @@ void BattleGround::Update(uint32 diff)
 
     // update start time
     m_StartTime += diff;
+}
+
+uint32 BattleGround::GetMinLevelForBattleGroundBracketId(BattleGroundBracketId bracketId, BattleGroundTypeId bgTypeId)
+{
+    BattleGround *bg = sBattleGroundMgr.GetBattleGroundTemplate(bgTypeId);
+    assert(bg);
+
+    if (bracketId < 1)
+        return bg->GetMinLevel();
+
+    if (bracketId > BG_BRACKET_ID_LAST)
+        bracketId = BG_BRACKET_ID_LAST;
+
+    return 10 * bracketId + bg->GetMinLevel();
+}
+
+uint32 BattleGround::GetMaxLevelForBattleGroundBracketId(BattleGroundBracketId bracketId, BattleGroundTypeId bgTypeId)
+{
+    if (bracketId >= BG_BRACKET_ID_LAST)
+        return 255;                                         // hardcoded max level
+
+    return GetMinLevelForBattleGroundBracketId(bracketId, bgTypeId) + 9;
 }
 
 void BattleGround::SetTeamStartLoc(Team team, float X, float Y, float Z, float O)

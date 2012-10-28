@@ -425,11 +425,9 @@ bool TeleportDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
-// BattleGround events
-BGQueueInviteEvent::BGQueueInviteEvent(ObjectGuid pl_guid, uint32 BgInstanceGUID, BattleGroundTypeId BgTypeId, uint32 removeTime) :
-    BasicEvent(WORLDOBJECT_EVENT_TYPE_COMMON), m_PlayerGuid(pl_guid), m_BgInstanceGUID(BgInstanceGUID), m_BgTypeId(BgTypeId), m_RemoveTime(removeTime)
-{
-};
+/*********************************************************/
+/***            BATTLEGROUND QUEUE EVENTS              ***/
+/*********************************************************/
 
 bool BGQueueInviteEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
@@ -474,11 +472,6 @@ void BGQueueInviteEvent::Abort(uint64 /*e_time*/)
     5. player is invited to bg and he didn't choose what to do and timer expired - only in this condition we should call queue::RemovePlayer
     we must remove player in the 5. case even if battleground object doesn't exist!
 */
-BGQueueRemoveEvent::BGQueueRemoveEvent(ObjectGuid plGuid, uint32 bgInstanceGUID, BattleGroundTypeId BgTypeId, BattleGroundQueueTypeId bgQueueTypeId, uint32 removeTime)
-    : BasicEvent(WORLDOBJECT_EVENT_TYPE_COMMON), m_PlayerGuid(plGuid), m_BgInstanceGUID(bgInstanceGUID), m_RemoveTime(removeTime), m_BgTypeId(BgTypeId), m_BgQueueTypeId(bgQueueTypeId)
-{
-};
-
 bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
     Player* plr = sObjectMgr.GetPlayer( m_PlayerGuid );
@@ -502,7 +495,7 @@ bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
             plr->RemoveBattleGroundQueueId(m_BgQueueTypeId);
             bgQueue.RemovePlayer(m_PlayerGuid, true);
             //update queues if battleground isn't ended
-            if (bg && bg->isBattleGround() && bg->GetStatus() != STATUS_WAIT_LEAVE)
+            if (bg && bg->GetStatus() != STATUS_WAIT_LEAVE)
                 sBattleGroundMgr.ScheduleQueueUpdate(m_BgQueueTypeId, m_BgTypeId, bg->GetBracketId());
 
             WorldPacket data;

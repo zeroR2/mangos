@@ -130,16 +130,6 @@ struct BattleGroundObjectInfo
     uint32      spellid;
 };
 
-// handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
-enum BattleGroundQueueTypeId
-{
-    BATTLEGROUND_QUEUE_NONE     = 0,
-    BATTLEGROUND_QUEUE_AV       = 1,
-    BATTLEGROUND_QUEUE_WS       = 2,
-    BATTLEGROUND_QUEUE_AB       = 3,
-};
-#define MAX_BATTLEGROUND_QUEUE_TYPES 4
-
 enum BattleGroundBracketId                                  // bracketId for level ranges
 {
     BG_BRACKET_ID_TEMPLATE      = -1,
@@ -276,6 +266,9 @@ class BattleGround
         Team GetWinner() const              { return m_Winner; }
         uint32 GetBattlemasterEntry() const;
         uint32 GetBonusHonorFromKill(uint32 kills) const;
+        
+        uint32 GetMinLevelForBattleGroundBracketId(BattleGroundBracketId bracketId, BattleGroundTypeId bgTypeId);
+        uint32 GetMaxLevelForBattleGroundBracketId(BattleGroundBracketId bracketId, BattleGroundTypeId bgTypeId);
 
         // Set methods:
         void SetName(char const* Name)      { m_Name = Name; }

@@ -1242,6 +1242,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool _StoreOrEquipNewItem(uint32 vendorSlot, uint32 item, uint8 count, uint8 bag, uint8 slot, int32 price, ItemPrototype const* pProto, Creature* pVendor, VendorItem const* crItem, bool store);
         bool BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uint32 item, uint8 count, uint8 bag, uint8 slot);
 
+        BattleGroundBracketId GetBattleGroundBracketIdFromLevel(BattleGroundTypeId bgTypeId) const;
         float GetReputationPriceDiscount(Creature const* pCreature) const;
 
         Player* GetTrader() const { return m_trade ? m_trade->GetTrader() : NULL; }

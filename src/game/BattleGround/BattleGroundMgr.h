@@ -35,7 +35,6 @@ typedef UNORDERED_MAP<uint32, BattleGroundTypeId> BattleMastersMap;
 typedef UNORDERED_MAP<uint32, BattleGroundEventIdx> CreatureBattleEventIndexesMap;
 typedef UNORDERED_MAP<uint32, BattleGroundEventIdx> GameObjectBattleEventIndexesMap;
 
-#define BATTLEGROUND_ARENA_POINT_DISTRIBUTION_DAY 86400     // seconds in a day
 #define COUNT_OF_PLAYERS_TO_AVERAGE_WAIT_TIME 10
 
 struct GroupQueueInfo;                                      // type predefinition
@@ -47,20 +46,15 @@ struct PlayerQueueInfo                                      // stores informatio
 
 typedef std::map<ObjectGuid, PlayerQueueInfo*> GroupQueueInfoPlayers;
 
-/*struct GroupQueueInfo                                       // stores information about the group in queue (also used when joined as solo!)
+struct GroupQueueInfo                                       // stores information about the group in queue (also used when joined as solo!)
 {
     GroupQueueInfoPlayers Players;                          // player queue info map
     Team  GroupTeam;                                        // Player team (ALLIANCE/HORDE)
     BattleGroundTypeId BgTypeId;                            // battleground type id
-    bool    IsRated;                                        // rated
-    ArenaType arenaType;                                    // 2v2, 3v3, 5v5 or 0 when BG
-    uint32  ArenaTeamId;                                    // team id if rated match
     uint32  JoinTime;                                       // time when group was added
     uint32  RemoveInviteTime;                               // time when we will remove invite for players in group
     uint32  IsInvitedToBGInstanceGUID;                      // was invited to certain BG
-    uint32  ArenaTeamRating;                                // if rated match, inited to the rating of the team
-    uint32  OpponentsTeamRating;                            // for rated arena matches
-};*/
+};
 
 enum BattleGroundQueueGroupTypes
 {
@@ -71,6 +65,31 @@ enum BattleGroundQueueGroupTypes
 };
 #define BG_QUEUE_GROUP_TYPES_COUNT 4
 
+inline BattleGroundTypeId GetBattleGroundTypeIdByMapId(uint32 mapId)
+{
+    switch(mapId)
+    {
+        case 30:    return BATTLEGROUND_AV;
+        case 489:   return BATTLEGROUND_WS;
+        case 529:   return BATTLEGROUND_AB;
+        default:    return BATTLEGROUND_TYPE_NONE;
+    }
+}
+
+inline uint32 GetBattleGrounMapIdByTypeId(BattleGroundTypeId bgTypeId)
+{
+    switch(bgTypeId)
+    {
+        case BATTLEGROUND_AV:   return 30;
+        case BATTLEGROUND_WS:   return 489;
+        case BATTLEGROUND_AB:   return 529;
+        default:                return 0;   //none
+    }
+
+    // impossible, just make compiler happy
+    return 0;
+}
+
 class BattleGround;
 class BattleGroundQueue
 {
@@ -78,18 +97,17 @@ class BattleGroundQueue
         BattleGroundQueue();
         ~BattleGroundQueue();
 
-        void Update(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id, bool isRated = false, uint32 minRating = 0);
+        void Update(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracketId);
 
-        void FillPlayersToBG(BattleGround* bg, BattleGroundBracketId bracket_id);
-        bool CheckPremadeMatch(BattleGroundBracketId bracket_id, uint32 MinPlayersPerTeam, uint32 MaxPlayersPerTeam);
-        bool CheckNormalMatch(BattleGround* bg_template, BattleGroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers);
-        bool CheckSkirmishForSameFaction(BattleGroundBracketId bracket_id, uint32 minPlayersPerTeam);
+        void FillPlayersToBG(BattleGround* bg, BattleGroundBracketId bracketId);
+        bool CheckPremadeMatch(BattleGroundBracketId bracketId, uint32 MinPlayersPerTeam, uint32 MaxPlayersPerTeam);
+        bool CheckNormalMatch(BattleGroundBracketId bracketId, uint32 minPlayers, uint32 maxPlayers);
         GroupQueueInfo* AddGroup(Player* leader, Group* group, BattleGroundTypeId bgTypeId, BattleGroundBracketId bracketId, bool isPremade);
         void RemovePlayer(ObjectGuid guid, bool decreaseInvitedCount);
+        void PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* ginfo, BattleGroundBracketId bracketId);
+        uint32 GetAverageQueueWaitTime(GroupQueueInfo* ginfo, BattleGroundBracketId bracketId);
         bool IsPlayerInvited(ObjectGuid pl_guid, const uint32 bgInstanceGuid, const uint32 removeTime);
         bool GetPlayerGroupInfoData(ObjectGuid guid, GroupQueueInfo* ginfo);
-        void PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* ginfo, BattleGroundBracketId bracket_id);
-        uint32 GetAverageQueueWaitTime(GroupQueueInfo* ginfo, BattleGroundBracketId bracket_id);
 
     private:
         // mutex that should not allow changing private data, nor allowing to update Queue during private data change.
@@ -106,10 +124,10 @@ class BattleGroundQueue
         This two dimensional array is used to store All queued groups
         First dimension specifies the bgTypeId
         Second dimension specifies the player's group types -
-             BG_QUEUE_PREMADE_ALLIANCE  is used for premade alliance groups and alliance rated arena teams
-             BG_QUEUE_PREMADE_HORDE     is used for premade horde groups and horde rated arena teams
-             BG_QUEUE_NORMAL_ALLIANCE   is used for normal (or small) alliance groups or non-rated arena matches
-             BG_QUEUE_NORMAL_HORDE      is used for normal (or small) horde groups or non-rated arena matches
+             BG_QUEUE_PREMADE_ALLIANCE  is used for premade alliance groups
+             BG_QUEUE_PREMADE_HORDE     is used for premade horde groups
+             BG_QUEUE_NORMAL_ALLIANCE   is used for normal (or small) alliance groups
+             BG_QUEUE_NORMAL_HORDE      is used for normal (or small) horde groups
         */
         GroupsQueueType m_QueuedGroups[MAX_BATTLEGROUND_BRACKETS][BG_QUEUE_GROUP_TYPES_COUNT];
 
@@ -147,7 +165,7 @@ class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassL
         /* Packet Building */
         void BuildPlayerJoinedBattleGroundPacket(WorldPacket* data, Player* plr);
         void BuildPlayerLeftBattleGroundPacket(WorldPacket* data, ObjectGuid guid);
-        void BuildBattleGroundListPacket(WorldPacket* data, ObjectGuid guid, Player* plr, BattleGroundTypeId bgTypeId, uint8 fromWhere);
+        void BuildBattleGroundListPacket(WorldPacket* data, ObjectGuid guid, Player* plr, BattleGroundTypeId bgTypeId);
         void BuildGroupJoinedBattlegroundPacket(WorldPacket* data, GroupJoinBattlegroundResult result);
         void BuildUpdateWorldStatePacket(WorldPacket* data, uint32 field, uint32 value);
         void BuildPvpLogDataPacket(WorldPacket* data, BattleGround* bg);
@@ -159,16 +177,16 @@ class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassL
         BattleGround* GetBattleGround(uint32 InstanceID, BattleGroundTypeId bgTypeId); // there must be uint32 because MAX_BATTLEGROUND_TYPE_ID means unknown
 
         BattleGround* GetBattleGroundTemplate(BattleGroundTypeId bgTypeId);
-        BattleGround* CreateNewBattleGround(BattleGroundTypeId bgTypeId, PvPDifficultyEntry const* bracketEntry, bool isRated);
+        BattleGround* CreateNewBattleGround(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracketId);
 
-        uint32 CreateBattleGround(BattleGroundTypeId bgTypeId, bool IsArena, uint32 MinPlayersPerTeam, uint32 MaxPlayersPerTeam, uint32 LevelMin, uint32 LevelMax, char const* BattleGroundName, uint32 MapID, float Team1StartLocX, float Team1StartLocY, float Team1StartLocZ, float Team1StartLocO, float Team2StartLocX, float Team2StartLocY, float Team2StartLocZ, float Team2StartLocO);
+        uint32 CreateBattleGround(BattleGroundTypeId bgTypeId, uint32 MinPlayersPerTeam, uint32 MaxPlayersPerTeam, uint32 LevelMin, uint32 LevelMax, char const* BattleGroundName, uint32 MapID, float Team1StartLocX, float Team1StartLocY, float Team1StartLocZ, float Team1StartLocO, float Team2StartLocX, float Team2StartLocY, float Team2StartLocZ, float Team2StartLocO);
 
         void AddBattleGround(uint32 InstanceID, BattleGroundTypeId bgTypeId, BattleGround* BG) { m_BattleGrounds[bgTypeId][InstanceID] = BG; };
         void RemoveBattleGround(uint32 instanceID, BattleGroundTypeId bgTypeId) { m_BattleGrounds[bgTypeId].erase(instanceID); }
-        uint32 CreateClientVisibleInstanceId(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id);
-        void DeleteClientVisibleInstanceId(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id, uint32 clientInstanceID)
+        uint32 CreateClientVisibleInstanceId(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracketId);
+        void DeleteClientVisibleInstanceId(BattleGroundTypeId bgTypeId, BattleGroundBracketId bracketId, uint32 clientInstanceID)
         {
-            m_ClientBattleGroundIds[bgTypeId][bracket_id].erase(clientInstanceID);
+            m_ClientBattleGroundIds[bgTypeId][bracketId].erase(clientInstanceID);
         }
 
         void CreateInitialBattleGrounds();
@@ -182,14 +200,9 @@ class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassL
 
         BGFreeSlotQueueType BGFreeSlotQueue[MAX_BATTLEGROUND_TYPE_ID];
 
-        void ScheduleQueueUpdate(BattleGroundQueueTypeId bgQueueTypeId, BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id);
-        uint32 GetMaxRatingDifference() const;
-        uint32 GetRatingDiscardTimer()  const;
+        void ScheduleQueueUpdate(BattleGroundQueueTypeId bgQueueTypeId, BattleGroundTypeId bgTypeId, BattleGroundBracketId bracketId);
         uint32 GetPrematureFinishTime() const;
 
-        void InitAutomaticArenaPointDistribution();
-        void DistributeArenaPoints();
-        void ToggleArenaTesting();
         void ToggleTesting();
 
         void LoadBattleMastersEntry();
@@ -217,11 +230,8 @@ class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassL
             return m_GameObjectBattleEventIndexMap.find(-1)->second;
         }
 
-        bool isArenaTesting() const { return m_ArenaTesting; }
         bool isTesting() const { return m_Testing; }
 
-        static bool IsArenaType(BattleGroundTypeId bgTypeId);
-        static bool IsBattleGroundType(BattleGroundTypeId bgTypeId) { return !BattleGroundMgr::IsArenaType(bgTypeId); }
         static BattleGroundQueueTypeId BGQueueTypeId(BattleGroundTypeId bgTypeId);
         static BattleGroundTypeId BGTemplateId(BattleGroundQueueTypeId bgQueueTypeId);
 
@@ -239,10 +249,7 @@ class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassL
         std::vector<uint64> m_QueueUpdateScheduler;
         typedef std::set<uint32> ClientBattleGroundIdSet;
         ClientBattleGroundIdSet m_ClientBattleGroundIds[MAX_BATTLEGROUND_TYPE_ID][MAX_BATTLEGROUND_BRACKETS]; // the instanceids just visible for the client
-        uint32 m_NextRatingDiscardUpdate;
-        time_t m_NextAutoDistributionTime;
-        uint32 m_AutoDistributionTimeChecker;
-        bool   m_ArenaTesting;
+
         bool   m_Testing;
 };
 

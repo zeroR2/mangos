@@ -20141,6 +20141,20 @@ bool Player::GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const
     return true;
 }
 
+BattleGroundBracketId Player::GetBattleGroundBracketIdFromLevel(BattleGroundTypeId bgTypeId) const
+{
+    BattleGround *bg = sBattleGroundMgr.GetBattleGroundTemplate(bgTypeId);
+    assert(bg);
+    if (getLevel() < bg->GetMinLevel())
+        return BG_BRACKET_ID_FIRST;
+
+    uint32 bracket_id = (getLevel() - bg->GetMinLevel()) / 10;
+    if (bracket_id > MAX_BATTLEGROUND_BRACKETS)
+        return BG_BRACKET_ID_LAST;
+
+    return BattleGroundBracketId(bracket_id);
+}
+
 float Player::GetReputationPriceDiscount(Creature const* pCreature) const
 {
     FactionTemplateEntry const* vendor_faction = pCreature->getFactionTemplateEntry();
