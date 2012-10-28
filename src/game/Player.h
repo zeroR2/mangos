@@ -1531,8 +1531,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SendComboPoints(ObjectGuid targetGuid, uint8 combopoints);
         void SendPetComboPoints(Unit* pet, ObjectGuid targetGuid, uint8 combopoints);
 
-        void SendCalendarResult(CalendarResponseResult result, std::string str);
-
         void SendMailResult(uint32 mailId, MailResponseType mailAction, MailResponseResult mailError, uint32 equipError = 0, uint32 item_guid = 0, uint32 item_count = 0);
         void SendNewMail();
         void UpdateNextMailTimeAndUnreads();
