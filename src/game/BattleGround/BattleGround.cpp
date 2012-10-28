@@ -68,8 +68,6 @@ namespace MaNGOS
                 data << uint8(i_msgtype);
                 data << uint32(LANG_UNIVERSAL);
                 data << ObjectGuid(targetGuid);             // there 0 for BG messages
-                data << uint32(0);                          // can be chat msg group or something
-                data << ObjectGuid(targetGuid);
                 data << uint32(strlen(text) + 1);
                 data << text;
                 data << uint8(i_source ? i_source->GetChatTag() : uint8(CHAT_TAG_NONE));
@@ -113,8 +111,6 @@ namespace MaNGOS
                 data << uint8(CHAT_MSG_RAID_BOSS_EMOTE);
                 data << uint32(LANG_UNIVERSAL);
                 data << uint64(0);             // there 0 for BG messages
-                data << uint32(0);             // can be chat msg group or something
-                data << uint32(1);
                 data << uint8(0);
                 data << uint64(0);
                 data << uint32(strlen(text)+1);
@@ -157,7 +153,6 @@ namespace MaNGOS
                 data << uint8(CHAT_MSG_MONSTER_YELL);
                 data << uint32(i_language);
                 data << ObjectGuid(i_source->GetObjectGuid());
-                data << uint32(0);                          // 2.1.0
                 data << uint32(strlen(i_source->GetName()) + 1);
                 data << i_source->GetName();
                 data << ObjectGuid();                       // Unit Target - isn't important for bgs
@@ -192,8 +187,6 @@ namespace MaNGOS
                 data << uint8(i_msgtype);
                 data << uint32(LANG_UNIVERSAL);
                 data << ObjectGuid(targetGuid);             // there 0 for BG messages
-                data << uint32(0);                          // can be chat msg group or something
-                data << ObjectGuid(targetGuid);
                 data << uint32(strlen(str) + 1);
                 data << str;
                 data << uint8(i_source ? i_source->GetChatTag() : uint8(CHAT_TAG_NONE));
@@ -224,7 +217,6 @@ namespace MaNGOS
                 data << uint8(CHAT_MSG_MONSTER_YELL);
                 data << uint32(i_language);
                 data << ObjectGuid(i_source->GetObjectGuid());
-                data << uint32(0);                          // 2.1.0
                 data << uint32(strlen(i_source->GetName()) + 1);
                 data << i_source->GetName();
                 data << ObjectGuid();                       // Unit Target - isn't important for bgs
@@ -253,7 +245,6 @@ void BattleGround::BroadcastWorker(Do& _do)
 BattleGround::BattleGround()
 {
     m_TypeID            = BattleGroundTypeId(0);
-    m_RandomTypeID      = BattleGroundTypeId(0);
     m_Status            = STATUS_NONE;
     m_ClientInstanceID  = 0;
     m_EndTime           = 0;
@@ -510,16 +501,15 @@ void BattleGround::Update(uint32 diff)
             
             PlaySoundToAll(SOUND_BG_START);
 
-            for (BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-            {
-                Player* plr = sObjectMgr.GetPlayer(itr->first);
-                if (plr)
-                    plr->RemoveAurasDueToSpell(SPELL_PREPARATION);
-            }
             // Announce BG starting
             if (sWorld.getConfig(CONFIG_BOOL_BATTLEGROUND_QUEUE_ANNOUNCER_START))
             {
-                sWorld.SendWorldText(LANG_BG_STARTED_ANNOUNCE_WORLD, GetName(), GetMinLevel(), GetMaxLevel());
+                uint32 q_min_level = Player::GetMinLevelForBattleGroundBracketId(GetBracketId(), GetTypeID());
+                uint32 q_max_level = Player::GetMaxLevelForBattleGroundBracketId(GetBracketId(), GetTypeID());
+                if (q_max_level > sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
+                    q_max_level = sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
+
+                sWorld.SendWorldText(LANG_BG_STARTED_ANNOUNCE_WORLD, GetName(), q_min_level, q_max_level);
             }
         }
     }
@@ -708,36 +698,6 @@ void BattleGround::RewardReputationToTeam(uint32 faction_id, uint32 Reputation, 
     }
 }
 
-void BattleGround::RewardXpToTeam(uint32 Xp, float percentOfLevel, Team team)
-{
-    for(BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-    {
-        if (itr->second.OfflineRemoveTime)
-            continue;
-        Player *plr = sObjectMgr.GetPlayer(itr->first);
-
-        if (!plr)
-        {
-            sLog.outError("BattleGround:RewardXpToTeam: Player (GUID: %s) not found!", itr->first.GetString().c_str());
-            continue;
-        }
-
-        uint32 bgTeam = itr->second.PlayerTeam;
-        if(!team) bgTeam = plr->GetTeam();
-
-        if (bgTeam == team)
-        {
-            uint32 gain = Xp;
-            if (gain == 0 && percentOfLevel != 0)
-            {
-                percentOfLevel = percentOfLevel / 100;
-                gain = uint32(float(plr->GetUInt32Value(PLAYER_NEXT_LEVEL_XP))*percentOfLevel);
-            }
-            plr->GiveXP(gain, NULL);
-        }
-    }
-}
-
 void BattleGround::UpdateWorldState(uint32 stateId, uint32 value)
 {
     sWorldStateMgr.SetWorldStateValueFor(GetBgMap(), stateId, value);
@@ -804,27 +764,10 @@ void BattleGround::EndBattleGround(Team winner)
             plr->getHostileRefManager().deleteReferences();
         }
 
-        uint32 win_kills = plr->GetRandomWinner() ? BG_REWARD_WINNER_HONOR_LAST : BG_REWARD_WINNER_HONOR_FIRST;
-        uint32 loos_kills = plr->GetRandomWinner() ? BG_REWARD_LOOSER_HONOR_LAST : BG_REWARD_LOOSER_HONOR_FIRST;
-
         if (team == winner)
-        {
             RewardMark(plr, ITEM_WINNER_COUNT);
-            RewardQuestComplete(plr);
-
-            if (BattleGroundMgr::IsBGWeekend(GetTypeID()))
-            {
-                UpdatePlayerScore(plr, SCORE_BONUS_HONOR, GetBonusHonorFromKill(win_kills*4));
-                if(!plr->GetRandomWinner())
-                    plr->SetRandomWinner(true);
-            }
-        }
         else
-        {
             RewardMark(plr, ITEM_LOSER_COUNT);
-            if (IsRandom() || BattleGroundMgr::IsBGWeekend(GetTypeID()))
-                UpdatePlayerScore(plr, SCORE_BONUS_HONOR, GetBonusHonorFromKill(loos_kills*4));
-        }
 
         plr->CombatStopWithPets(true);
 
@@ -850,7 +793,7 @@ uint32 BattleGround::GetBonusHonorFromKill(uint32 kills) const
 
 uint32 BattleGround::GetBattlemasterEntry() const
 {
-    switch (GetTypeID(true))
+    switch (GetTypeID())
     {
         case BATTLEGROUND_AV: return 15972;
         case BATTLEGROUND_WS: return 14623;
@@ -861,7 +804,7 @@ uint32 BattleGround::GetBattlemasterEntry() const
 
 void BattleGround::RewardMark(Player* plr, uint32 count)
 {
-    switch (GetTypeID(true))
+    switch (GetTypeID())
     {
         case BATTLEGROUND_AV:
             if (count == ITEM_WINNER_COUNT)
@@ -888,10 +831,6 @@ void BattleGround::RewardMark(Player* plr, uint32 count)
 
 void BattleGround::RewardSpellCast(Player* plr, uint32 spell_id)
 {
-    // 'Inactive' this aura prevents the player from gaining honor points and battleground tokens
-    if (plr->GetDummyAura(SPELL_AURA_PLAYER_INACTIVE))
-        return;
-
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
     if (!spellInfo)
     {
@@ -904,10 +843,6 @@ void BattleGround::RewardSpellCast(Player* plr, uint32 spell_id)
 
 void BattleGround::RewardItem(Player* plr, uint32 item_id, uint32 count)
 {
-    // 'Inactive' this aura prevents the player from gaining honor points and battleground tokens
-    if (plr->GetDummyAura(SPELL_AURA_PLAYER_INACTIVE))
-        return;
-
     ItemPosCountVec dest;
     uint32 no_space_count = 0;
     uint8 msg = plr->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item_id, count, &no_space_count);
@@ -961,27 +896,6 @@ void BattleGround::SendRewardMarkByMail(Player* plr, uint32 mark, uint32 count)
     }
 }
 
-void BattleGround::RewardQuestComplete(Player* plr)
-{
-    uint32 quest;
-    switch (GetTypeID(true))
-    {
-        case BATTLEGROUND_AV:
-            quest = SPELL_AV_QUEST_REWARD;
-            break;
-        case BATTLEGROUND_WS:
-            quest = SPELL_WS_QUEST_REWARD;
-            break;
-        case BATTLEGROUND_AB:
-            quest = SPELL_AB_QUEST_REWARD;
-            break;
-        default:
-            return;
-    }
-
-    RewardSpellCast(plr, quest);
-}
-
 void BattleGround::BlockMovement(Player* plr)
 {
     plr->SetClientControl(plr, 0);                          // movement disabled NOTE: the effect will be automatically removed by client when the player is teleported from the battleground, so no need to send with uint8(1) in RemovePlayerAtLeave()
@@ -1015,8 +929,6 @@ void BattleGround::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
         // should remove spirit of redemption
         if (plr->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
             plr->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
-
-        plr->RemoveAurasDueToSpell(SPELL_BATTLEGROUND_DAMPENING);
 
         if (!plr->isAlive())                                // resurrect on exit
         {
@@ -1154,13 +1066,6 @@ void BattleGround::AddPlayer(Player* plr)
     WorldPacket data;
     sBattleGroundMgr.BuildPlayerJoinedBattleGroundPacket(&data, plr);
     SendPacketToTeam(team, &data, plr, false);
-
-    plr->CastSpell(plr, SPELL_BATTLEGROUND_DAMPENING, true);
-
-    if (GetStatus() == STATUS_WAIT_JOIN)                 // not started yet
-        plr->CastSpell(plr, SPELL_PREPARATION, true);   // reduces all mana cost of spells.
-
-    plr->CastSpell(plr, SPELL_BATTLEGROUND_DAMPENING, true);
 
     // setup BG group membership
     PlayerAddedToBGCheckIfBGIsRunning(plr);
@@ -1479,8 +1384,6 @@ void BattleGround::SpawnBGObject(ObjectGuid guid, uint32 respawntime)
             obj->SetLootState(GO_READY);
         obj->Respawn();
         map->Add(obj);
-        if (obj->GetGOInfo()->type == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
-            obj->Rebuild(NULL);
 
         GameObjectData const *data = sObjectMgr.GetGOData(obj->GetGUIDLow());
         if (data)
@@ -1494,8 +1397,6 @@ void BattleGround::SpawnBGObject(ObjectGuid guid, uint32 respawntime)
         map->Add(obj);
         obj->SetRespawnTime(respawntime);
         obj->SetLootState(GO_JUST_DEACTIVATED);
-        if (obj->GetGOInfo()->type == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
-            obj->Rebuild(NULL);
     }
 }
 
@@ -1775,12 +1676,6 @@ void BattleGround::SetBgRaid(Team team, Group* bg_raid)
 WorldSafeLocsEntry const* BattleGround::GetClosestGraveYard(Player* player)
 {
     return sObjectMgr.GetClosestGraveYard(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetMapId(), player->GetTeam());
-}
-
-void BattleGround::SetBracket(PvPDifficultyEntry const* bracketEntry)
-{
-    m_BracketId  = bracketEntry->GetBracketId();
-    SetLevelRange(bracketEntry->minLevel, bracketEntry->maxLevel);
 }
 
 GameObject* BattleGround::GetBGObject(uint32 type)

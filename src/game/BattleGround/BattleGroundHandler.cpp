@@ -77,24 +77,24 @@ void WorldSession::SendBattlegGroundList(ObjectGuid guid, BattleGroundTypeId bgT
 void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recv_data)
 {
     ObjectGuid guid;
-    uint32 bgTypeId_;
+    uint32 mapId;
     uint32 instanceId;
     uint8 joinAsGroup;
     bool isPremade = false;
     Group* grp;
 
     recv_data >> guid;                                      // battlemaster guid
-    recv_data >> bgTypeId_;                                 // battleground type id (DBC id)
+    recv_data >> mapId;
     recv_data >> instanceId;                                // instance id, 0 if First Available selected
     recv_data >> joinAsGroup;                               // join as group
 
-    if (!sBattlemasterListStore.LookupEntry(bgTypeId_))
+    BattleGroundTypeId bgTypeId = GetBattleGroundTypeIdByMapId(mapId);
+
+    if(bgTypeId == BATTLEGROUND_TYPE_NONE)
     {
-        sLog.outError("Battleground: invalid bgtype (%u) received. possible cheater? player guid %u", bgTypeId_, _player->GetGUIDLow());
+        sLog.outError("Battleground: invalid bgtype (%u) received. possible cheater? player guid %u",bgTypeId,_player->GetGUIDLow());
         return;
     }
-
-    BattleGroundTypeId bgTypeId = BattleGroundTypeId(bgTypeId_);
 
     DEBUG_LOG("WORLD: Recvd CMSG_BATTLEMASTER_JOIN Message from %s", guid.GetString().c_str());
 
@@ -116,12 +116,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recv_data)
         return;
     }
 
-    // expected bracket entry
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->getLevel());
-    if (!bracketEntry)
-        return;
-
-    GroupJoinBattlegroundResult err;
+    BattleGroundBracketId bgBracketId = _player->GetBattleGroundBracketIdFromLevel(bgTypeId);
 
     // check queue conditions
     if (!joinAsGroup)
@@ -387,11 +382,6 @@ void WorldSession::HandleBattleFieldPortOpcode(WorldPacket& recv_data)
         return;
     }
 
-    // expected bracket entry
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->getLevel());
-    if (!bracketEntry)
-        return;
-
     // some checks if player isn't cheating - it is not exactly cheating, but we cannot allow it
     if (action == 1)
     {
@@ -538,11 +528,6 @@ void WorldSession::HandleBattlefieldStatusOpcode(WorldPacket& /*recv_data*/)
         {
             bg = sBattleGroundMgr.GetBattleGroundTemplate(bgTypeId);
             if (!bg)
-                continue;
-
-            // expected bracket entry
-            PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->getLevel());
-            if (!bracketEntry)
                 continue;
 
             uint32 avgTime = bgQueue.GetAverageQueueWaitTime(&ginfo, bracketEntry->GetBracketId());

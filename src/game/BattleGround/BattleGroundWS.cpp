@@ -86,56 +86,6 @@ void BattleGroundWS::Update(uint32 diff)
                 RespawnFlagAfterDrop(HORDE);
             }
         }
-        if (m_FlagState[TEAM_INDEX_ALLIANCE] >= BG_WS_FLAG_STATE_ON_PLAYER && m_FlagState[TEAM_INDEX_HORDE] >= BG_WS_FLAG_STATE_ON_PLAYER)
-        {
-            if (m_FocusedAssault < BG_WS_FIVE_MINUTES)
-            {
-                for (uint8 i = 0; i < PVP_TEAM_COUNT; i++)
-                {
-                    Player* carrier = sObjectMgr.GetPlayer(m_FlagKeepers[i]);
-                    if (!carrier)
-                        continue;
-
-                    if ((!carrier->HasAura(BG_WS_SPELL_FOCUSED_ASSAULT) && !carrier->HasAura(BG_WS_SPELL_BRUTAL_ASSAULT)) ||
-                        (m_FocusedAssaultExtra && m_FocusedAssault < diff))
-                        carrier->CastSpell(carrier, (m_FocusedAssault < diff) ? BG_WS_SPELL_BRUTAL_ASSAULT : BG_WS_SPELL_FOCUSED_ASSAULT, true);
-                }
-                if (m_FocusedAssault < BG_WS_FIVE_MINUTES && m_FocusedAssaultExtra)
-                    m_FocusedAssaultExtra = false;
-
-            }
-            else m_FocusedAssault -= diff;
-        }
-        else
-        {
-            m_FocusedAssault = BG_WS_CARRIER_DEBUFF;
-            m_FocusedAssaultExtra = true;
-        }
-
-        if (m_EndTimer <= diff)
-        {
-            uint32 allianceScore = GetTeamScore(ALLIANCE);
-            uint32 hordeScore    = GetTeamScore(HORDE);
-
-            if (allianceScore > hordeScore)
-                EndBattleGround(ALLIANCE);
-            else if (allianceScore < hordeScore)
-                EndBattleGround(HORDE);
-            else
-            {
-                // if 0 => tie
-                EndBattleGround(m_LastCapturedFlagTeam);
-            }
-        }
-        else
-        {
-            uint32 minutesLeftPrev = GetRemainingTimeInMinutes();
-            m_EndTimer -= diff;
-            uint32 minutesLeft = GetRemainingTimeInMinutes();
-
-            if (minutesLeft != minutesLeftPrev)
-                UpdateWorldState(BG_WS_TIME_REMAINING, minutesLeft);
-        }
     }
 }
 
@@ -215,11 +165,6 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player* source)
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    m_LastCapturedFlagTeam = source->GetTeam();
-
-    if (m_FirstCapturedFlagTeam == TEAM_NONE)
-        m_FirstCapturedFlagTeam = source->GetTeam();
-
     Team winner = TEAM_NONE;
 
     source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
@@ -251,8 +196,8 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player* source)
         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_HORDE);
         RewardReputationToTeam(889, m_ReputationCapture, HORDE);
     }
-    // for flag capture is reward 2 honorable kills
-    RewardHonorToTeam(GetBonusHonorFromKill(2), source->GetTeam());
+    // for flag capture is reward distributed according level range
+    RewardHonorToTeam(BG_WSG_FlagCapturedHonor[GetBracketId()], source->GetTeam());
 
     // despawn flags
     SpawnEvent(WS_EVENT_FLAG_A, 0, false);
@@ -350,7 +295,6 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player* source)
 
     if (set)
     {
-        source->CastSpell(source, SPELL_RECENTLY_DROPPED_FLAG, true);
         UpdateFlagState(source->GetTeam(), 1);
 
         if (source->GetTeam() == ALLIANCE)
@@ -494,6 +438,18 @@ void BattleGroundWS::HandleAreaTrigger(Player* source, uint32 trigger)
                 if (GetAllianceFlagCarrierGuid() == source->GetObjectGuid())
                     EventPlayerCapturedFlag(source);
             break;
+         case 3669: // horde portal
+            if (source->GetTeam() != HORDE)
+                source->GetSession()->SendNotification(LANG_BATTLEGROUND_ONLY_HORDE_USE);
+            else
+                source->LeaveBattleground();
+            break;
+        case 3671: // alliance portal
+            if (source->GetTeam() != ALLIANCE)
+                source->GetSession()->SendNotification(LANG_BATTLEGROUND_ONLY_ALLIANCE_USE);
+            else
+                source->LeaveBattleground();
+            break;
         case 3649:                                          // unk1
         case 3688:                                          // unk2
         case 4628:                                          // unk3
@@ -532,25 +488,25 @@ void BattleGroundWS::Reset()
     m_ReputationCapture = (isBGWeekend) ? 45 : 35;
     m_HonorWinKills = (isBGWeekend) ? 3 : 1;
     m_HonorEndKills = (isBGWeekend) ? 4 : 2;
-
-    m_FocusedAssault = BG_WS_CARRIER_DEBUFF;
-    m_FocusedAssaultExtra = true;
-
-    m_EndTimer = BG_WS_TIME_LIMIT;
-    m_LastCapturedFlagTeam = TEAM_NONE;
-    m_FirstCapturedFlagTeam = TEAM_NONE;
 }
 
 void BattleGroundWS::EndBattleGround(Team winner)
 {
-    // win reward
-    if (winner == ALLIANCE)
-        RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), ALLIANCE);
-    if (winner == HORDE)
-        RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), HORDE);
-    // complete map_end rewards (even if no team wins)
-    RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), ALLIANCE);
-    RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), HORDE);
+    if (BattleGroundMgr::IsBGWeekend(GetTypeID()))
+    {
+        if (winner == ALLIANCE)
+        {
+            RewardHonorToTeam(BG_WSG_WinMatchHonor_Holiday[GetBracketId()], ALLIANCE);
+            RewardHonorToTeam(BG_WSG_LoseMatchHonor_Holiday[GetBracketId()], HORDE);
+        }
+        if (winner == HORDE)
+        {
+            RewardHonorToTeam(BG_WSG_WinMatchHonor_Holiday[GetBracketId()], HORDE);
+            RewardHonorToTeam(BG_WSG_LoseMatchHonor_Holiday[GetBracketId()], ALLIANCE);
+        }
+    }
+    else
+        RewardHonorToTeam(BG_WSG_WinMatchHonor[GetBracketId()], winner);
 
     BattleGround::EndBattleGround(winner);
 }
@@ -572,17 +528,13 @@ void BattleGroundWS::UpdatePlayerScore(Player* source, uint32 type, uint32 value
     if (itr == m_PlayerScores.end())                        // player not found
         return;
 
-    uint32 achCriId;
-
     switch (type)
     {
         case SCORE_FLAG_CAPTURES:                           // flags captured
             ((BattleGroundWGScore*)itr->second)->FlagCaptures += value;
-            achCriId = WS_OBJECTIVE_CAPTURE_FLAG;
             break;
         case SCORE_FLAG_RETURNS:                            // flags returned
             ((BattleGroundWGScore*)itr->second)->FlagReturns += value;
-            achCriId = WS_OBJECTIVE_RETURN_FLAG;
             break;
         default:
             BattleGround::UpdatePlayerScore(source, type, value);
@@ -643,7 +595,4 @@ void BattleGroundWS::FillInitialWorldStates()
         FillInitialWorldState(BG_WS_FLAG_STATE_ALLIANCE, 2);
     else
         FillInitialWorldState(BG_WS_FLAG_STATE_ALLIANCE, 1);
-
-    FillInitialWorldState(BG_WS_TIME_ENABLED, WORLD_STATE_ADD);
-    FillInitialWorldState(BG_WS_TIME_REMAINING, GetRemainingTimeInMinutes());
 }

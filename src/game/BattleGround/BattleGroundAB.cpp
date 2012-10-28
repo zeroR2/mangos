@@ -488,9 +488,6 @@ void BattleGroundAB::EndBattleGround(Team winner)
         RewardHonorToTeam(GetBonusHonorFromKill(1), ALLIANCE);
     if (winner == HORDE)
         RewardHonorToTeam(GetBonusHonorFromKill(1), HORDE);
-    // complete map_end rewards (even if no team wins)
-    RewardHonorToTeam(GetBonusHonorFromKill(1), HORDE);
-    RewardHonorToTeam(GetBonusHonorFromKill(1), ALLIANCE);
 
     BattleGround::EndBattleGround(winner);
 }
@@ -540,17 +537,13 @@ void BattleGroundAB::UpdatePlayerScore(Player* source, uint32 type, uint32 value
     if (itr == m_PlayerScores.end())                        // player not found...
         return;
 
-    uint32 achCriId;
-
     switch (type)
     {
         case SCORE_BASES_ASSAULTED:
             ((BattleGroundABScore*)itr->second)->BasesAssaulted += value;
-            achCriId = AB_OBJECTIVE_ASSAULT_BASE;
             break;
         case SCORE_BASES_DEFENDED:
             ((BattleGroundABScore*)itr->second)->BasesDefended += value;
-            achCriId = AB_OBJECTIVE_DEFEND_BASE;
             break;
         default:
             BattleGround::UpdatePlayerScore(source, type, value);

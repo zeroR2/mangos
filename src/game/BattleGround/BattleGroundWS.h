@@ -24,10 +24,6 @@
 #define BG_WS_MAX_TEAM_SCORE      3
 #define BG_WS_FLAG_RESPAWN_TIME   (23*IN_MILLISECONDS)
 #define BG_WS_FLAG_DROP_TIME      (10*IN_MILLISECONDS)
-#define BG_WS_TIME_LIMIT          (25*MINUTE*IN_MILLISECONDS)
-#define BG_WS_FIVE_MINUTES        (5*MINUTE*IN_MILLISECONDS)
-#define BG_WS_CARRIER_DEBUFF      (15*MINUTE*IN_MILLISECONDS)
-#define BG_WS_EVENT_START_BATTLE  8563
 
 enum BG_WS_Sound
 {
@@ -44,12 +40,8 @@ enum BG_WS_SpellId
 {
     BG_WS_SPELL_WARSONG_FLAG            = 23333,
     BG_WS_SPELL_WARSONG_FLAG_DROPPED    = 23334,
-    BG_WS_SPELL_WARSONG_FLAG_PICKED     = 61266,    // Not real, used to start timed event
     BG_WS_SPELL_SILVERWING_FLAG         = 23335,
-    BG_WS_SPELL_SILVERWING_FLAG_DROPPED = 23336,
-    BG_WS_SPELL_SILVERWING_FLAG_PICKED  = 61265,    // Not real, used to start timed event
-    BG_WS_SPELL_FOCUSED_ASSAULT         = 46392,
-    BG_WS_SPELL_BRUTAL_ASSAULT          = 46393
+    BG_WS_SPELL_SILVERWING_FLAG_DROPPED = 23336
 };
 
 enum BG_WS_WorldStates
@@ -61,9 +53,7 @@ enum BG_WS_WorldStates
     BG_WS_FLAG_CAPTURES_HORDE     = 1582,
     BG_WS_FLAG_CAPTURES_MAX       = 1601,
     BG_WS_FLAG_STATE_HORDE        = 2338,
-    BG_WS_FLAG_STATE_ALLIANCE     = 2339,
-    BG_WS_TIME_ENABLED            = 4247,
-    BG_WS_TIME_REMAINING          = 4248
+    BG_WS_FLAG_STATE_ALLIANCE     = 2339
 };
 
 enum BG_WS_FlagState
@@ -72,12 +62,6 @@ enum BG_WS_FlagState
     BG_WS_FLAG_STATE_WAIT_RESPAWN = 1,
     BG_WS_FLAG_STATE_ON_PLAYER    = 2,
     BG_WS_FLAG_STATE_ON_GROUND    = 3
-};
-
-enum BG_WS_Objectives
-{
-    WS_OBJECTIVE_CAPTURE_FLAG     = 42,
-    WS_OBJECTIVE_RETURN_FLAG      = 44
 };
 
 enum BG_WS_Graveyards
@@ -105,6 +89,14 @@ enum BG_WS_Events
     // spiritguides will spawn (same moment, like WS_EVENT_DOOR_OPEN)
     WS_EVENT_SPIRITGUIDES_SPAWN   = 2
 };
+
+// Honor granted depending on player's level
+const uint32 BG_WSG_FlagCapturedHonor[6] = {48, 82, 136, 226, 378, 396};
+const uint32 BG_WSG_WinMatchHonor[6] = {24, 41, 68, 113, 189, 198};
+
+// At Holiday
+const uint32 BG_WSG_WinMatchHonor_Holiday[6] = {144, 246, 408, 678, 1134, 1188};
+const uint32 BG_WSG_LoseMatchHonor_Holiday[6] = {72, 123, 204, 339, 567, 594};
 
 class BattleGroundWS : public BattleGround
 {
@@ -151,7 +143,6 @@ class BattleGroundWS : public BattleGround
         virtual void Reset();
         void EndBattleGround(Team winner);
         virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
-        uint32 GetRemainingTimeInMinutes() { return m_EndTimer ? (m_EndTimer - 1) / (MINUTE * IN_MILLISECONDS) + 1 : 0; }
 
         void UpdateFlagState(Team team, uint32 value);
         void UpdateTeamScore(Team team);
@@ -167,8 +158,6 @@ class BattleGroundWS : public BattleGround
         void SetTeamPoint(Team team, uint32 Points = 0) { m_TeamScores[GetTeamIndex(team)] = Points; }
         void RemovePoint(Team team, uint32 Points = 1)  { m_TeamScores[GetTeamIndex(team)] -= Points; }
     private:
-        void PickOrReturnFlag(Player* pPlayer, Team forTeam, bool pickedUp, bool fromGround = false);
-
         ObjectGuid m_FlagKeepers[PVP_TEAM_COUNT];
 
         ObjectGuid m_DroppedFlagGuid[PVP_TEAM_COUNT];
@@ -179,13 +168,6 @@ class BattleGroundWS : public BattleGround
         uint32 m_ReputationCapture;
         uint32 m_HonorWinKills;
         uint32 m_HonorEndKills;
-        uint32 m_EndTimer;
-
-        Team   m_LastCapturedFlagTeam;
-        Team   m_FirstCapturedFlagTeam;
-
-        uint32 m_FocusedAssault;
-        bool   m_FocusedAssaultExtra;
 };
 
 #endif

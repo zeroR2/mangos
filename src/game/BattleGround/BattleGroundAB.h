@@ -96,8 +96,8 @@ enum BG_AB_Timers
 
 enum BG_AB_Score
 {
-    BG_AB_WARNING_NEAR_VICTORY_SCORE    = 1400,
-    BG_AB_MAX_TEAM_SCORE                = 1600
+    BG_AB_WARNING_NEAR_VICTORY_SCORE    = 1800,
+    BG_AB_MAX_TEAM_SCORE                = 2000
 };
 
 /* do NOT change the order, else wrong behaviour */
@@ -112,7 +112,6 @@ enum BG_AB_Nodes
 };
 
 #define BG_AB_NODES_MAX   5
-#define BG_AB_EVENT_START_BATTLE 9158
 
 enum BG_AB_NodeStatus
 {
@@ -135,21 +134,18 @@ enum BG_AB_Sounds
     BG_AB_SOUND_NEAR_VICTORY            = 8456
 };
 
-enum BG_AB_Objectives
-{
-    AB_OBJECTIVE_ASSAULT_BASE = 122,
-    AB_OBJECTIVE_DEFEND_BASE  = 123
-};
-
-#define AB_NORMAL_HONOR_INTERVAL        260
-#define AB_WEEKEND_HONOR_INTERVAL       160
-#define AB_NORMAL_REPUTATION_INTERVAL   160
-#define AB_WEEKEND_REPUTATION_INTERVAL  120
-#define AB_EVENT_START_BATTLE           9158
+#define AB_NORMAL_HONOR_INTERVAL        330
+#define AB_WEEKEND_HONOR_INTERVAL       200
+#define AB_NORMAL_REPUTATION_INTERVAL   200
+#define AB_WEEKEND_REPUTATION_INTERVAL  150
 
 // Tick intervals and given points: case 0,1,2,3,4,5 captured nodes
 const uint32 BG_AB_TickIntervals[6] = {0, 12000, 9000, 6000, 3000, 1000};
 const uint32 BG_AB_TickPoints[6] = {0, 10, 10, 10, 10, 30};
+
+// Honor granted depending on player's level
+const uint32 BG_AB_PerTickHonor[6] = {24, 41, 68, 113, 189, 198};
+const uint32 BG_AB_WinMatchHonor[6] = {24, 41, 68, 113, 189, 198};
 
 // WorldSafeLocs ids for 5 nodes, and for ally, and horde starting location
 const uint32 BG_AB_GraveyardIds[7] = {895, 894, 893, 897, 896, 898, 899};

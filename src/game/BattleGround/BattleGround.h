@@ -38,7 +38,6 @@ class Player;
 class WorldPacket;
 class BattleGroundMap;
 
-struct PvPDifficultyEntry;
 struct WorldSafeLocsEntry;
 
 struct BattleGroundEventIdx
@@ -56,9 +55,6 @@ enum BattleGroundSounds
 
 enum BattleGroundQuests
 {
-    SPELL_WS_QUEST_REWARD           = 43483,
-    SPELL_AB_QUEST_REWARD           = 43484,
-    SPELL_AV_QUEST_REWARD           = 43475,
     SPELL_AV_QUEST_KILLED_BOSS      = 23658,
     SPELL_AB_QUEST_REWARD_4_BASES   = 24061,
     SPELL_AB_QUEST_REWARD_5_BASES   = 24064
@@ -71,10 +67,7 @@ enum BattleGroundMarks
     SPELL_AB_MARK_LOSER             = 24952,                // not create marks now
     SPELL_AB_MARK_WINNER            = 24953,                // not create marks now
     SPELL_AV_MARK_LOSER             = 24954,                // not create marks now
-    SPELL_AV_MARK_WINNER            = 24955,                // not create marks now
-
-    SPELL_WG_MARK_VICTORY           = 24955,                // honor + mark
-    SPELL_WG_MARK_DEFEAT            = 58494,                // honor + mark
+    SPELL_AV_MARK_WINNER            = 24955                 // not create marks now
 };
 
 enum BattleGroundMarksCount
@@ -83,23 +76,12 @@ enum BattleGroundMarksCount
     ITEM_LOSER_COUNT                = 1
 };
 
-enum BattleGroundSpells
-{
-    SPELL_ALLIANCE_GOLD_FLAG        = 32724,
-    SPELL_ALLIANCE_GREEN_FLAG       = 32725,
-    SPELL_HORDE_GOLD_FLAG           = 35774,
-    SPELL_HORDE_GREEN_FLAG          = 35775,
-    SPELL_PREPARATION               = 44521,                // Preparation
-    SPELL_RECENTLY_DROPPED_FLAG     = 42792,                // Recently Dropped Flag
-    SPELL_AURA_PLAYER_INACTIVE      = 43681,                // Inactive
-    SPELL_BATTLEGROUND_DAMPENING    = 74411,                // Battleground - Dampening
-};
-
 enum BattleGroundTimeIntervals
 {
     RESURRECTION_INTERVAL           = 30000,                // ms
-    INVITATION_REMIND_TIME          = 20000,                // ms
-    INVITE_ACCEPT_WAIT_TIME         = 40000,                // ms
+    REMIND_INTERVAL                 = 30000,                // ms
+    INVITATION_REMIND_TIME          = 60000,                // ms
+    INVITE_ACCEPT_WAIT_TIME         = 80000,                // ms
     TIME_TO_AUTOREMOVE              = 120000,               // ms
     MAX_OFFLINE_TIME                = 300,                  // secs
     RESPAWN_ONE_DAY                 = 86400,                // secs
@@ -120,14 +102,6 @@ enum BattleGroundBuffObjects
     BG_OBJECTID_SPEEDBUFF_ENTRY     = 179871,
     BG_OBJECTID_REGENBUFF_ENTRY     = 179904,
     BG_OBJECTID_BERSERKERBUFF_ENTRY = 179905
-};
-
-enum BattleGroundRandomRewards
-{
-    BG_REWARD_WINNER_HONOR_FIRST    = 30,
-    BG_REWARD_WINNER_HONOR_LAST     = 15,
-    BG_REWARD_LOOSER_HONOR_FIRST    = 5,
-    BG_REWARD_LOOSER_HONOR_LAST     = 5
 };
 
 const uint32 Buff_Entries[3] = { BG_OBJECTID_SPEEDBUFF_ENTRY, BG_OBJECTID_REGENBUFF_ENTRY, BG_OBJECTID_BERSERKERBUFF_ENTRY };
@@ -156,6 +130,16 @@ struct BattleGroundObjectInfo
     uint32      spellid;
 };
 
+// handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
+enum BattleGroundQueueTypeId
+{
+    BATTLEGROUND_QUEUE_NONE     = 0,
+    BATTLEGROUND_QUEUE_AV       = 1,
+    BATTLEGROUND_QUEUE_WS       = 2,
+    BATTLEGROUND_QUEUE_AB       = 3,
+};
+#define MAX_BATTLEGROUND_QUEUE_TYPES 4
+
 enum BattleGroundBracketId                                  // bracketId for level ranges
 {
     BG_BRACKET_ID_TEMPLATE      = -1,
@@ -182,15 +166,14 @@ enum ScoreType
     SCORE_GRAVEYARDS_DEFENDED   = 10,
     SCORE_TOWERS_ASSAULTED      = 11,
     SCORE_TOWERS_DEFENDED       = 12,
-    SCORE_SECONDARY_OBJECTIVES  = 13,
-    // SA
-    SCORE_GATES_DESTROYED       = 14,
-    SCORE_DEMOLISHERS_DESTROYED = 15
+    SCORE_SECONDARY_OBJECTIVES  = 13
 };
 
-enum BattleGroundType
+enum BattleGroundWinner
 {
-    TYPE_BATTLEGROUND     = 3
+    WINNER_HORDE            = 0,
+    WINNER_ALLIANCE         = 1,
+    WINNER_NONE             = 2
 };
 
 enum BattleGroundStartingEvents
@@ -233,8 +216,7 @@ enum GroupJoinBattlegroundResult
 class BattleGroundScore
 {
     public:
-        BattleGroundScore() : KillingBlows(0), Deaths(0), HonorableKills(0),
-            BonusHonor(0), DamageDone(0), HealingDone(0)
+        BattleGroundScore() : KillingBlows(0), Deaths(0), HonorableKills(0), BonusHonor(0)
         {}
         virtual ~BattleGroundScore() {}                     // virtual destructor is used when deleting score from scores map
 
@@ -242,8 +224,6 @@ class BattleGroundScore
         uint32 Deaths;
         uint32 HonorableKills;
         uint32 BonusHonor;
-        uint32 DamageDone;
-        uint32 HealingDone;
 };
 
 /*
@@ -274,7 +254,7 @@ class BattleGround
         /* Battleground */
         // Get methods:
         char const* GetName() const         { return m_Name; }
-        BattleGroundTypeId GetTypeID(bool GetRandom = false) const { return GetRandom ? m_RandomTypeID : m_TypeID; }
+        BattleGroundTypeId GetTypeID() const { return m_TypeID; }
         BattleGroundBracketId GetBracketId() const { return m_BracketId; }
         // the instanceId check is also used to determine a bg-template
         // that's why the m_map hack is here..
@@ -296,18 +276,11 @@ class BattleGround
         Team GetWinner() const              { return m_Winner; }
         uint32 GetBattlemasterEntry() const;
         uint32 GetBonusHonorFromKill(uint32 kills) const;
-        bool IsRandom() { return m_IsRandom; }
-
-        // Strand of the Ancients related
-        virtual Team   GetDefender()                    const   { return TEAM_NONE; }
-        virtual uint8  GetGydController(uint8 /*gyd*/)  const   { return false; }
 
         // Set methods:
         void SetName(char const* Name)      { m_Name = Name; }
         void SetTypeID(BattleGroundTypeId TypeID) { m_TypeID = TypeID; }
-        void SetRandomTypeID(BattleGroundTypeId TypeID) { m_RandomTypeID = TypeID; }
-        // here we can count minlevel and maxlevel for players
-        void SetBracket(PvPDifficultyEntry const* bracketEntry);
+        void SetBracketId(BattleGroundBracketId ID) { m_BracketId = ID; }
         void SetStatus(BattleGroundStatus Status) { m_Status = Status; }
         void SetClientInstanceID(uint32 InstanceID) { m_ClientInstanceID = InstanceID; }
         void SetStartTime(uint32 Time)      { m_StartTime = Time; }
@@ -328,7 +301,6 @@ class BattleGround
 
         void DecreaseInvitedCount(Team team)      { (team == ALLIANCE) ? --m_InvitedAlliance : --m_InvitedHorde; }
         void IncreaseInvitedCount(Team team)      { (team == ALLIANCE) ? ++m_InvitedAlliance : ++m_InvitedHorde; }
-        void SetRandom(bool isRandom) { m_IsRandom = isRandom; }
 
         uint32 GetInvitedCount(Team team) const
         {
@@ -385,11 +357,9 @@ class BattleGround
         void CastSpellOnTeam(uint32 SpellID, Team team);
         void RewardHonorToTeam(uint32 Honor, Team team);
         void RewardReputationToTeam(uint32 faction_id, uint32 Reputation, Team team);
-        void RewardXpToTeam(uint32 Xp, float percentOfLevel, Team TeamID);
         void RewardMark(Player* plr, uint32 count);
         void SendRewardMarkByMail(Player* plr, uint32 mark, uint32 count);
         void RewardItem(Player* plr, uint32 item_id, uint32 count);
-        void RewardQuestComplete(Player* plr);
         void RewardSpellCast(Player* plr, uint32 spell_id);
         void UpdateWorldState(uint32 Field, uint32 Value);
         void UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player* Source);
@@ -513,8 +483,6 @@ class BattleGround
         // door-events are automaticly added - but _ALL_ other must be in this vector
         std::map<uint8, uint8> m_ActiveEvents;
 
-        uint32 GetDamageDoneForTeam(Team team);
-
     protected:
         // this method is called, when BG cannot spawn its own spirit guide, or something is wrong, It correctly ends BattleGround
         void EndNow();
@@ -538,12 +506,10 @@ class BattleGround
         uint32 m_StartMessageIds[BG_STARTING_EVENT_COUNT];
 
         bool   m_BuffChange;
-        bool   m_IsRandom;
 
     private:
         /* Battleground */
         BattleGroundTypeId m_TypeID;
-        BattleGroundTypeId m_RandomTypeID;
         BattleGroundStatus m_Status;
         uint32 m_ClientInstanceID;                          // the instance-id which is sent to the client and without any other internal use
         uint32 m_StartTime;                        // to cache if arenabuff event is started (cause bool is faster than checking IsActiveEvent)
@@ -588,5 +554,56 @@ class BattleGround
         float m_TeamStartLocZ[PVP_TEAM_COUNT];
         float m_TeamStartLocO[PVP_TEAM_COUNT];
 };
+
+/*
+// helper functions for world state list fill
+inline void FillInitialWorldState(ByteBuffer& data, uint32& count, uint32 state, uint32 value)
+{
+    data << uint32(state);
+    data << uint32(value);
+    ++count;
+}
+
+inline void FillInitialWorldState(ByteBuffer& data, uint32& count, uint32 state, int32 value)
+{
+    data << uint32(state);
+    data << int32(value);
+    ++count;
+}
+
+inline void FillInitialWorldState(ByteBuffer& data, uint32& count, uint32 state, bool value)
+{
+    data << uint32(state);
+    data << uint32(value?1:0);
+    ++count;
+}
+
+struct WorldStatePair
+{
+    uint32 state;
+    uint32 value;
+};
+
+inline void FillInitialWorldState(ByteBuffer& data, uint32& count, WorldStatePair const* array)
+{
+    for(WorldStatePair const* itr = array; itr->state; ++itr)
+    {
+        data << uint32(itr->state);
+        data << uint32(itr->value);
+        ++count;
+    }
+}
+
+// [-ZERO] it's just a workaround , packet values in 1.12 aren't known
+inline void FillInitialDefWorldState(ByteBuffer& data, uint32& count, WorldStatePair const* array)
+{
+    for(WorldStatePair const* itr = array; itr->state; ++itr)
+    {
+        data << uint16(itr->state);
+        data << uint16(itr->value);
+        ++count;
+    }
+}
+*/
 
 #endif
