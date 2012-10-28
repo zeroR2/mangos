@@ -703,9 +703,6 @@ LFGLockStatusType LFGMgr::GetPlayerLockStatus(Player* pPlayer, LFGDungeonEntry c
     if (isRandom && sWorld.IsDungeonMapIdDisable(dungeon->map))
         return LFG_LOCKSTATUS_NOT_IN_SEASON;
 
-    if (dungeon->expansion > pPlayer->GetSession()->Expansion())
-        return LFG_LOCKSTATUS_INSUFFICIENT_EXPANSION;
-
     if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL
         && pPlayer->GetBoundInstance(dungeon->map, Difficulty(dungeon->difficulty)))
         return  LFG_LOCKSTATUS_RAID_LOCKED;
@@ -767,54 +764,6 @@ LFGLockStatusType LFGMgr::GetPlayerLockStatus(Player* pPlayer, LFGDungeonEntry c
         */
 
     return LFG_LOCKSTATUS_OK;
-}
-
-LFGLockStatusType LFGMgr::GetPlayerExpansionLockStatus(Player* pPlayer, LFGDungeonEntry const* dungeon)
-{
-    if (!pPlayer || !pPlayer->IsInWorld() || !dungeon)
-        return LFG_LOCKSTATUS_RAID_LOCKED;
-
-    uint32 randomEntry = 0;
-    if (pPlayer->GetGroup() && pPlayer->GetGroup()->isLFDGroup())
-    {
-        if (pPlayer->GetGroup()->GetLFGGroupState()->GetDungeon())
-        {
-            if (pPlayer->GetGroup()->GetLFGGroupState()->GetType() == LFG_TYPE_RANDOM_DUNGEON)
-                randomEntry = (*pPlayer->GetGroup()->GetLFGGroupState()->GetDungeons()->begin())->ID;
-        }
-    }
-
-    LFGDungeonExpansionEntry const* dungeonExpansion = NULL;
-
-    for (uint32 i = 0; i < sLFGDungeonExpansionStore.GetNumRows(); ++i)
-    {
-        if (LFGDungeonExpansionEntry const* dungeonEx = sLFGDungeonExpansionStore.LookupEntry(i))
-        {
-            if (dungeonEx->dungeonID == dungeon->ID
-                && dungeonEx->expansion == pPlayer->GetSession()->Expansion()
-                && (randomEntry && randomEntry == dungeonEx->randomEntry))
-                dungeonExpansion = dungeonEx;
-        }
-    }
-
-    if (!dungeonExpansion)
-        return LFG_LOCKSTATUS_OK;
-
-    if (dungeonExpansion->minlevelHard > pPlayer->getLevel())
-        return  LFG_LOCKSTATUS_TOO_LOW_LEVEL;
-
-    if (dungeonExpansion->maxlevelHard < pPlayer->getLevel())
-        return LFG_LOCKSTATUS_TOO_HIGH_LEVEL;
-
-/*
-    // need special case for handle attunement
-    if (dungeonExpansion->minlevel > player->getLevel())
-        return  LFG_LOCKSTATUS_ATTUNEMENT_TOO_LOW_LEVEL;
-
-    if (dungeonExpansion->maxlevel < player->getLevel())
-        return LFG_LOCKSTATUS_ATTUNEMENT_TOO_HIGH_LEVEL;
-*/
-        return LFG_LOCKSTATUS_OK;
 }
 
 LFGLockStatusType LFGMgr::GetGroupLockStatus(Group* group, LFGDungeonEntry const* dungeon)

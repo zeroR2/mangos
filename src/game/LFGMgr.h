@@ -56,7 +56,6 @@ enum LFGEventType
 class Group;
 class Player;
 class Map;
-struct LFGDungeonExpansionEntry;
 struct LFGProposal;
 
 // Reward info
@@ -245,7 +244,6 @@ class LFGMgr
 
         // Player status
         LFGLockStatusType GetPlayerLockStatus(Player* pPlayer, LFGDungeonEntry const* pDungeon);
-        LFGLockStatusType GetPlayerExpansionLockStatus(Player* pPlayer, LFGDungeonEntry const* pDungeon);
         LFGLockStatusType GetGroupLockStatus(Group* pGroup, LFGDungeonEntry const* pDungeon);
         LFGLockStatusMap GetPlayerLockMap(Player* pPlayer);
 

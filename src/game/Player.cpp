@@ -17184,7 +17184,7 @@ bool Player::_LoadHomeBind(QueryResult *result)
 
         // accept saved data only for valid position (and non instanceable), and accessable
         if (MapManager::IsValidMapCoord(m_homebindMapId,m_homebindX,m_homebindY,m_homebindZ) &&
-            !bindMapEntry->Instanceable() && GetSession()->Expansion() >= bindMapEntry->Expansion())
+            !bindMapEntry->Instanceable())
         {
             ok = true;
         }
@@ -22467,10 +22467,6 @@ ReferAFriendError Player::GetReferFriendError(Player * target, bool summon)
             return ERR_REFER_A_FRIEND_SUMMON_COOLDOWN;
         if (target->getLevel() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXGRANTLEVEL))
             return ERR_REFER_A_FRIEND_SUMMON_LEVEL_MAX_I;
-
-        if (MapEntry const* mEntry = sMapStore.LookupEntry(GetMapId()))
-            if (mEntry->Expansion() > target->GetSession()->Expansion())
-                return ERR_REFER_A_FRIEND_INSUF_EXPAN_LVL;
     }
     else
     {
@@ -22629,9 +22625,6 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
     if (isGameMaster())
         return AREA_LOCKSTATUS_OK;
 
-    //if (GetSession()->Expansion() < mapEntry->Expansion())
-    //    return AREA_LOCKSTATUS_INSUFFICIENT_EXPANSION;
-
     if (getLevel() < at->requiredLevel && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_LEVEL))
         return AREA_LOCKSTATUS_TOO_LOW_LEVEL;
 
@@ -22740,14 +22733,8 @@ bool Player::CheckTransferPossibility(uint32 mapId)
         }
 
         if (targetMapEntry->IsContinent())
-        {
-            if (GetSession()->Expansion() < targetMapEntry->Expansion())
-            {
-                sLog.outError("Player::CheckTransferPossibility: player %s try teleport to map %u, but not has sufficient expansion (%u instead of %u)", GetGuidStr().c_str(), mapId, GetSession()->Expansion(), targetMapEntry->Expansion());
-                return false;
-            }
             return true;
-        }
+
         sLog.outError("Player::CheckTransferPossibility: player %s try teleport to map %u, but entrance trigger not exists!", GetGuidStr().c_str(), mapId);
         return false;
     }
@@ -22870,9 +22857,6 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
                 SendTransferAborted(at->target_mapId, TRANSFER_ABORT_DIFFICULTY, difficulty > RAID_DIFFICULTY_10MAN_HEROIC ? RAID_DIFFICULTY_10MAN_HEROIC : difficulty);
                 return false;
             }
-        case AREA_LOCKSTATUS_INSUFFICIENT_EXPANSION:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_INSUF_EXPAN_LVL, targetMapEntry->Expansion());
-            return false;
         case AREA_LOCKSTATUS_NOT_ALLOWED:
         case AREA_LOCKSTATUS_HAS_BIND:
             SendTransferAborted(at->target_mapId, TRANSFER_ABORT_MAP_NOT_ALLOWED);
