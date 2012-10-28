@@ -2312,8 +2312,7 @@ GameObject* Player::GetGameObjectIfCanInteractWith(ObjectGuid guid, uint32 gameo
             switch(go->GetGoType())
             {
                 // TODO: find out how the client calculates the maximal usage distance to spellless working
-                // gameobjects like guildbanks and mailboxes - 10.0 is a just an abitrary choosen number
-                case GAMEOBJECT_TYPE_GUILD_BANK:
+                // gameobjects like mailboxes - 10.0 is a just an abitrary choosen number
                 case GAMEOBJECT_TYPE_MAILBOX:
                     maxdist = 10.0f;
                     break;
@@ -4311,7 +4310,6 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             CharacterDatabase.PExecute("DELETE FROM character_pet_declinedname WHERE owner = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_equipmentsets WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM guild_eventlog WHERE PlayerGuid1 = '%u' OR PlayerGuid2 = '%u'", lowguid, lowguid);
-            CharacterDatabase.PExecute("DELETE FROM guild_bank_eventlog WHERE PlayerGuid = '%u'", lowguid);
             CharacterDatabase.CommitTransaction();
             break;
         }
@@ -4722,23 +4720,23 @@ void Player::DurabilityPointLossForEquipSlot(EquipmentSlots slot)
         DurabilityPointsLoss(pItem,1);
 }
 
-uint32 Player::DurabilityRepairAll(bool cost, float discountMod, bool guildBank)
+uint32 Player::DurabilityRepairAll(bool cost, float discountMod)
 {
     uint32 TotalCost = 0;
     // equipped, backpack, bags itself
     for (int i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
-        TotalCost += DurabilityRepair(((INVENTORY_SLOT_BAG_0 << 8) | i),cost,discountMod, guildBank);
+        TotalCost += DurabilityRepair(((INVENTORY_SLOT_BAG_0 << 8) | i),cost,discountMod);
 
     // bank, buyback and keys not repaired
 
     // items in inventory bags
     for (int j = INVENTORY_SLOT_BAG_START; j < INVENTORY_SLOT_BAG_END; ++j)
         for (int i = 0; i < MAX_BAG_SIZE; ++i)
-            TotalCost += DurabilityRepair(((j << 8) | i),cost,discountMod, guildBank);
+            TotalCost += DurabilityRepair(((j << 8) | i),cost,discountMod);
     return TotalCost;
 }
 
-uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod, bool guildBank)
+uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod)
 {
     Item* item = GetItemByPos(pos);
 
@@ -4782,40 +4780,7 @@ uint32 Player::DurabilityRepair(uint16 pos, bool cost, float discountMod, bool g
             if (costs==0)                                   //fix for ITEM_QUALITY_ARTIFACT
                 costs = 1;
 
-            if (guildBank)
-            {
-                if (GetGuildId()==0)
-                {
-                    DEBUG_LOG("You are not member of a guild");
-                    return TotalCost;
-                }
-
-                Guild* pGuild = sGuildMgr.GetGuildById(GetGuildId());
-                if (!pGuild)
-                    return TotalCost;
-
-                if (!pGuild->HasRankRight(GetRank(), GR_RIGHT_WITHDRAW_REPAIR))
-                {
-                    DEBUG_LOG("You do not have rights to withdraw for repairs");
-                    return TotalCost;
-                }
-
-                if (pGuild->GetMemberMoneyWithdrawRem(GetGUIDLow()) < costs)
-                {
-                    DEBUG_LOG("You do not have enough money withdraw amount remaining");
-                    return TotalCost;
-                }
-
-                if (pGuild->GetGuildBankMoney() < costs)
-                {
-                    DEBUG_LOG("There is not enough money in bank");
-                    return TotalCost;
-                }
-
-                pGuild->MemberMoneyWithdraw(costs, GetGUIDLow());
-                TotalCost = costs;
-            }
-            else if (GetMoney() < costs)
+            if (GetMoney() < costs)
             {
                 DEBUG_LOG("You do not have enough money");
                 return TotalCost;

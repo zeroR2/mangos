@@ -597,7 +597,6 @@ enum NPCFlags
     UNIT_NPC_FLAG_BATTLEMASTER          = 0x00100000,       // 100%
     UNIT_NPC_FLAG_AUCTIONEER            = 0x00200000,       // 100%
     UNIT_NPC_FLAG_STABLEMASTER          = 0x00400000,       // 100%
-    UNIT_NPC_FLAG_GUILD_BANKER          = 0x00800000,       // cause client to send 997 opcode
     UNIT_NPC_FLAG_SPELLCLICK            = 0x01000000        // cause client to send 1015 opcode (spell click), dynamic, set at loading and don't must be set in DB
 };
 

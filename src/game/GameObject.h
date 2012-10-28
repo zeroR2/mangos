@@ -381,7 +381,6 @@ struct GameObjectInfo
             uint32 damageEvent;                             //22
             uint32 linkedWorldState;                        //23 Custom value - set linked WorldState for this object
         } destructibleBuilding;
-        //34 GAMEOBJECT_TYPE_GUILDBANK - empty
         //35 GAMEOBJECT_TYPE_TRAPDOOR
         struct
         {

@@ -5001,7 +5001,6 @@ void PlayerbotAI::Repair(const uint32 itemid, Creature* rCreature)
     WorldPacket* const packet = new WorldPacket(CMSG_REPAIR_ITEM, 8 + 8 + 1);
     *packet << rCreature->GetObjectGuid();  // repair npc guid
     *packet << itemGuid; // if item specified then repair this, else repair all
-    *packet << IsInGuild;  // guildbank yes=1 no=0
     m_bot->GetSession()->QueuePacket(packet);  // queue the packet to get around race condition
 }
 
