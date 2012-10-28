@@ -3965,21 +3965,6 @@ void PlayerbotAI::MakeItemLink(const Item *item, std::ostringstream &out, bool I
 
     // Gems
     uint32 g1 = 0, g2 = 0, g3 = 0;
-    for (uint32 slot = SOCK_ENCHANTMENT_SLOT; slot < SOCK_ENCHANTMENT_SLOT + MAX_GEM_SOCKETS; ++slot)
-    {
-        uint32 eId = item->GetEnchantmentId(EnchantmentSlot(slot));
-        if (!eId) continue;
-
-        SpellItemEnchantmentEntry const* entry = sSpellItemEnchantmentStore.LookupEntry(eId);
-        if (!entry) continue;
-
-        switch (slot - SOCK_ENCHANTMENT_SLOT)
-        {
-            case 1: g1 = entry->GemID; break;
-            case 2: g2 = entry->GemID; break;
-            case 3: g3 = entry->GemID; break;
-        }
-    }
     out << g1 << ":" << g2 << ":" << g3 << ":";
 
     // Temp enchantment, Bonus Enchantment, Prismatic Enchantment?

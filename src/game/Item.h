@@ -312,14 +312,10 @@ class MANGOS_DLL_SPEC Item : public Object
         bool HasTriggeredByAuraSpell(SpellEntry const* spellInfo) const;
         bool IsTargetValidForItemUse(Unit* pUnitTarget);
         bool IsLimitedToAnotherMapOrZone(uint32 cur_mapId, uint32 cur_zoneId) const;
-        bool GemsFitSockets() const;
 
         uint32 GetCount() const { return GetUInt32Value(ITEM_FIELD_STACK_COUNT); }
         void SetCount(uint32 value) { SetUInt32Value(ITEM_FIELD_STACK_COUNT, value); }
         uint32 GetMaxStackCount() const { return GetProto()->GetMaxStackSize(); }
-        uint8 GetGemCountWithID(uint32 GemID) const;
-        uint8 GetGemCountWithLimitCategory(uint32 limitCategory) const;
-        uint8 GetJewelcraftingGemCount() const;
         InventoryResult CanBeMergedPartlyWith(ItemPrototype const* proto) const;
 
         uint8 GetSlot() const {return m_slot;}

@@ -2124,9 +2124,6 @@ void ObjectMgr::LoadItemPrototypes()
             }
         }
 
-        if (proto->GemProperties && !sGemPropertiesStore.LookupEntry(proto->GemProperties))
-            sLog.outErrorDb("Item (Entry: %u) has wrong GemProperties (%u)", i, proto->GemProperties);
-
         if (proto->RequiredDisenchantSkill < -1)
         {
             sLog.outErrorDb("Item (Entry: %u) has wrong RequiredDisenchantSkill (%i), set to (-1).", i, proto->RequiredDisenchantSkill);
@@ -7895,7 +7892,7 @@ bool PlayerCondition::Meets(Player const * player) const
         case CONDITION_ITEM:
             return player->HasItemCount(m_value1, m_value2);
         case CONDITION_ITEM_EQUIPPED:
-            return player->HasItemOrGemWithIdEquipped(m_value1,1);
+            return player->HasItemWithIdEquipped(m_value1,1);
         case CONDITION_AREAID:
         {
             uint32 zone, area;
