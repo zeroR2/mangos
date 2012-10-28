@@ -22,7 +22,7 @@
 // Client expected level limitation, like as used in DBC item max levels for "until max player level"
 // use as default max player level, must be fit max level for used client
 // also see MAX_LEVEL and STRONG_MAX_LEVEL define
-#define DEFAULT_MAX_LEVEL 80
+#define DEFAULT_MAX_LEVEL 60
 
 // client supported max level for player/pets/etc. Avoid overflow or client stability affected.
 // also see GT_MAX_LEVEL define
@@ -32,15 +32,8 @@
 // also see MAX_LEVEL and GT_MAX_LEVEL define
 #define STRONG_MAX_LEVEL 255
 
-enum BattleGroundBracketId                                  // bracketId for level ranges
-{
-    BG_BRACKET_ID_TEMPLATE       = -1,                      // used to mark bg as template
-    BG_BRACKET_ID_FIRST          = 0,
-    BG_BRACKET_ID_LAST           = 15
-};
-
 // must be max value in PvPDificulty slot+1
-#define MAX_BATTLEGROUND_BRACKETS  16
+// #define MAX_BATTLEGROUND_BRACKETS  16
 
 enum AreaTeams
 {

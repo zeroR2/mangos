@@ -204,11 +204,11 @@ enum EUnitFields
     PLAYER_QUEST_LOG_LAST_2                    = 0x44 + UNIT_END,
     PLAYER_QUEST_LOG_LAST_3                    = 0x45 + UNIT_END,
     PLAYER_VISIBLE_ITEM_1_CREATOR              = 0x46 + UNIT_END, // Size:2, count = 19
-    PLAYER_VISIBLE_ITEM_1_0                    = 0x48 + UNIT_END, // Size:8
+    PLAYER_VISIBLE_ITEM_1_ENCHANTMENT          = 0x48 + UNIT_END, // Size:8
     PLAYER_VISIBLE_ITEM_1_PROPERTIES           = 0x50 + UNIT_END, // Size:1
     PLAYER_VISIBLE_ITEM_1_PAD                  = 0x51 + UNIT_END, // Size:1
     PLAYER_VISIBLE_ITEM_LAST_CREATOR           = 0x11e + UNIT_END,
-    PLAYER_VISIBLE_ITEM_LAST_0                 = 0x120 + UNIT_END,
+    PLAYER_VISIBLE_ITEM_LAST_ENCHANTMENT       = 0x120 + UNIT_END,
     PLAYER_VISIBLE_ITEM_LAST_PROPERTIES        = 0x128 + UNIT_END,
     PLAYER_VISIBLE_ITEM_LAST_PAD               = 0x129 + UNIT_END,
     PLAYER_FIELD_INV_SLOT_HEAD                 = 0x12a + UNIT_END, // Size:46

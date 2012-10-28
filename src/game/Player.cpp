@@ -7379,10 +7379,6 @@ void Player::_ApplyItemBonuses(ItemPrototype const *proto, uint8 slot, bool appl
             case ITEM_MOD_HEALTH_REGEN:
                 ApplyHealthRegenBonus(int32(val), apply);
                 break;
-            case ITEM_MOD_SPELL_PENETRATION:
-                ApplyModInt32Value(PLAYER_FIELD_MOD_TARGET_RESISTANCE, -int32(val), apply);
-                m_spellPenetrationItemMod += apply ? val : -val;
-                break;
             case ITEM_MOD_BLOCK_VALUE:
                 HandleBaseModValue(SHIELD_BLOCK_VALUE, FLAT_MOD, float(val), apply);
                 break;
@@ -11348,7 +11344,7 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
     {
         SetGuidValue(PLAYER_VISIBLE_ITEM_1_CREATOR + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetGuidValue(ITEM_FIELD_CREATOR));
 
-        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (slot * MAX_VISIBLE_ITEM_OFFSET);
+        int VisibleBase = PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * MAX_VISIBLE_ITEM_OFFSET);
         SetUInt32Value(VisibleBase + 0, pItem->GetEntry());
 
         for(int i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; ++i)
@@ -11362,7 +11358,7 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
     {
         SetGuidValue(PLAYER_VISIBLE_ITEM_1_CREATOR + (slot * MAX_VISIBLE_ITEM_OFFSET), ObjectGuid());
 
-        int VisibleBase = PLAYER_VISIBLE_ITEM_1_0 + (slot * MAX_VISIBLE_ITEM_OFFSET);
+        int VisibleBase = PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + (slot * MAX_VISIBLE_ITEM_OFFSET);
         SetUInt32Value(VisibleBase + 0, 0);
 
         for(int i = 0; i < MAX_INSPECTED_ENCHANTMENT_SLOT; ++i)
@@ -12427,20 +12423,6 @@ void Player::SendEquipError(InventoryResult msg, Item* pItem, Item *pItem2, uint
                         SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
                         if (!enchantEntry)
                             continue;
-
-                        ItemPrototype const* pGem = ObjectMgr::GetItemPrototype(enchantEntry->GemID);
-                        if (!pGem)
-                            continue;
-
-                        // include for check equip another gems with same limit category for not equipped item (and then not counted)
-                        uint32 gem_limit_count = !pItem->IsEquipped() && pGem->ItemLimitCategory
-                            ? pItem->GetGemCountWithLimitCategory(pGem->ItemLimitCategory) : 1;
-
-                        if (msg == CanEquipUniqueItem(pGem, pItem->GetSlot(),gem_limit_count))
-                        {
-                            LimitCategory=pGem->ItemLimitCategory;
-                            break;
-                        }
                     }
 
                 data << uint32(LimitCategory);
@@ -12660,7 +12642,7 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
     if (!pEnchant)
         return;
 
-    if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
+    /*if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
         return;
 
     if (pEnchant->requiredLevel > getLevel())
@@ -12670,7 +12652,7 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
     {
        if (pEnchant->requiredSkillValue > GetSkillValue(pEnchant->requiredSkill))
         return;
-    }
+    }*/
 
     if (!item->IsBroken())
     {
@@ -14126,7 +14108,7 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
 
     // honor reward
     if (uint32 honor = pQuest->CalculateRewardHonor(getLevel()))
-        RewardHonor(NULL, 0, honor);
+        AddHonor(honor, QUEST, NULL);
 
     if (pQuest->GetBonusTalents())
     {
@@ -14560,51 +14542,6 @@ bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg) const
 
     // No previous quest in chain active
     return true;
-}
-
-bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg) const
-{
-    if (!qInfo->IsDaily())
-        return true;
-
-    bool have_slot = false;
-    for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    {
-        uint32 id = GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx);
-        if (qInfo->GetQuestId()==id)
-            return false;
-
-        if (!id)
-            have_slot = true;
-    }
-
-    if (!have_slot)
-    {
-        if (msg)
-            SendCanTakeQuestResponse(INVALIDREASON_QUEST_FAILED_TOO_MANY_DAILY_QUESTS);
-
-        return false;
-    }
-
-    return true;
-}
-
-bool Player::SatisfyQuestWeek(Quest const* qInfo, bool msg) const
-{
-    if (!qInfo->IsWeekly() || m_weeklyquests.empty())
-        return true;
-
-    // if not found in cooldown list
-    return m_weeklyquests.find(qInfo->GetQuestId()) == m_weeklyquests.end();
-}
-
-bool Player::SatisfyQuestMonth(Quest const* qInfo, bool msg) const
-{
-    if (!qInfo->IsMonthly() || m_monthlyquests.empty())
-        return true;
-
-    // if not found in cooldown list
-    return m_monthlyquests.find(qInfo->GetQuestId()) == m_monthlyquests.end();
 }
 
 bool Player::CanGiveQuestSourceItemIfNeed(Quest const *pQuest, ItemPosCountVec* dest) const
@@ -15590,9 +15527,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     MapEntry const* mapEntry = sMapStore.LookupEntry(savedLocation.mapid);
 
-    if (!mapEntry || !MapManager::IsValidMapCoord(savedLocation) ||
-        // client without expansion support
-        GetSession()->Expansion() < mapEntry->Expansion())
+    if (!mapEntry || !MapManager::IsValidMapCoord(savedLocation))
     {
         sLog.outError("Player::LoadFromDB player %s have invalid coordinates (map: %u X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.",
             guid.GetString().c_str(),
@@ -15765,12 +15700,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
             if (transport->GetGUIDLow() == transGUID)
             {
                 MapEntry const* transMapEntry = sMapStore.LookupEntry(transport->GetMapId());
-                // client without expansion support
-                if (GetSession()->Expansion() < transMapEntry->Expansion())
-                {
-                    DEBUG_LOG("Player %s using client without required expansion tried login at transport at non accessible map %u", GetName(), transport->GetMapId());
-                    break;
-                }
 
                 SetTransport(transport);
                 transport->AddPassenger(this);
@@ -15931,7 +15860,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     _LoadGlyphs(holder->GetResult(PLAYER_LOGIN_QUERY_LOADGLYPHS));
 
     _LoadAuras(holder->GetResult(PLAYER_LOGIN_QUERY_LOADAURAS), time_diff);
-    ApplyGlyphs(true);
 
     // add ghost flag (must be after aura load: PLAYER_FLAGS_GHOST set in aura)
     if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
@@ -15965,14 +15893,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     _LoadActions(holder->GetResult(PLAYER_LOGIN_QUERY_LOADACTIONS));
 
     m_social = sSocialMgr.LoadFromDB(holder->GetResult(PLAYER_LOGIN_QUERY_LOADSOCIALLIST), GetObjectGuid());
-
-    // check PLAYER_CHOSEN_TITLE compatibility with PLAYER__FIELD_KNOWN_TITLES
-    // note: PLAYER__FIELD_KNOWN_TITLES updated at quest status loaded
-    uint32 curTitle = fields[46].GetUInt32();
-    if (curTitle && !HasTitle(curTitle))
-        curTitle = 0;
-
-    SetUInt32Value(PLAYER_CHOSEN_TITLE, curTitle);
 
     // Not finish taxi flight path
     if (m_bgData.HasTaxiPath())
@@ -16281,50 +16201,6 @@ void Player::_LoadAuras(QueryResult *result, uint32 timediff)
 
     if (getClass() == CLASS_WARRIOR && !HasAuraType(SPELL_AURA_MOD_SHAPESHIFT))
         CastSpell(this,SPELL_ID_PASSIVE_BATTLE_STANCE,true);
-}
-
-void Player::_LoadGlyphs(QueryResult *result)
-{
-    if (!result)
-        return;
-
-    //         0     1     2
-    // "SELECT spec, slot, glyph FROM character_glyphs WHERE guid='%u'"
-
-    do
-    {
-        Field* fields = result->Fetch();
-        uint8 spec = fields[0].GetUInt8();
-        uint8 slot = fields[1].GetUInt8();
-        uint32 glyph = fields[2].GetUInt32();
-
-        GlyphPropertiesEntry const *gp = sGlyphPropertiesStore.LookupEntry(glyph);
-        if (!gp)
-        {
-            sLog.outError("Player %s has not existing glyph entry %u on index %u, spec %u", m_name.c_str(), glyph, slot, spec);
-            continue;
-        }
-
-        GlyphSlotEntry const *gs = sGlyphSlotStore.LookupEntry(GetGlyphSlot(slot));
-        if (!gs)
-        {
-            sLog.outError("Player %s has not existing glyph slot entry %u on index %u, spec %u", m_name.c_str(), GetGlyphSlot(slot), slot, spec);
-            continue;
-        }
-
-        if (gp->TypeFlags != gs->TypeFlags)
-        {
-            sLog.outError("Player %s has glyph with typeflags %u in slot with typeflags %u, removing.", m_name.c_str(), gp->TypeFlags, gs->TypeFlags);
-            continue;
-        }
-
-        m_glyphs[spec][slot].id = glyph;
-
-    } while(result->NextRow());
-
-    delete result;
-
-
 }
 
 void Player::LoadCorpse()
@@ -16835,13 +16711,6 @@ void Player::_LoadQuestStatus(QueryResult *result)
                     // learn rewarded spell if unknown
                     learnQuestRewardedSpells(pQuest);
 
-                    // set rewarded title if any
-                    if (pQuest->GetCharTitleId())
-                    {
-                        if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(pQuest->GetCharTitleId()))
-                            SetTitle(titleEntry);
-                    }
-
                     if (pQuest->GetBonusTalents())
                         m_questRewardTalentCount += pQuest->GetBonusTalents();
                 }
@@ -16857,105 +16726,6 @@ void Player::_LoadQuestStatus(QueryResult *result)
     // clear quest log tail
     for (uint16 i = slot; i < MAX_QUEST_LOG_SIZE; ++i)
         SetQuestSlot(i, 0);
-}
-
-void Player::_LoadDailyQuestStatus(QueryResult *result)
-{
-    for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-        SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx,0);
-
-    //QueryResult *result = CharacterDatabase.PQuery("SELECT quest FROM character_queststatus_daily WHERE guid = '%u'", GetGUIDLow());
-
-    if (result)
-    {
-        uint32 quest_daily_idx = 0;
-
-        do
-        {
-            if (quest_daily_idx >= PLAYER_MAX_DAILY_QUESTS)  // max amount with exist data in query
-            {
-                sLog.outError("Player (GUID: %u) have more 25 daily quest records in `charcter_queststatus_daily`",GetGUIDLow());
-                break;
-            }
-
-            Field* fields = result->Fetch();
-
-            uint32 quest_id = fields[0].GetUInt32();
-
-            Quest const* pQuest = sObjectMgr.GetQuestTemplate(quest_id);
-            if (!pQuest)
-                continue;
-
-            SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx,quest_id);
-            ++quest_daily_idx;
-
-            DEBUG_LOG("Daily quest {%u} cooldown for player (GUID: %u)", quest_id, GetGUIDLow());
-        }
-        while(result->NextRow());
-
-        delete result;
-    }
-
-    m_DailyQuestChanged = false;
-}
-
-void Player::_LoadWeeklyQuestStatus(QueryResult *result)
-{
-    m_weeklyquests.clear();
-
-    //QueryResult *result = CharacterDatabase.PQuery("SELECT quest FROM character_queststatus_weekly WHERE guid = '%u'", GetGUIDLow());
-
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-
-            uint32 quest_id = fields[0].GetUInt32();
-
-            Quest const* pQuest = sObjectMgr.GetQuestTemplate(quest_id);
-            if (!pQuest)
-                continue;
-
-            m_weeklyquests.insert(quest_id);
-
-            DEBUG_LOG("Weekly quest {%u} cooldown for player (GUID: %u)", quest_id, GetGUIDLow());
-        }
-        while(result->NextRow());
-
-        delete result;
-    }
-    m_WeeklyQuestChanged = false;
-}
-
-void Player::_LoadMonthlyQuestStatus(QueryResult *result)
-{
-    m_monthlyquests.clear();
-
-    //QueryResult *result = CharacterDatabase.PQuery("SELECT quest FROM character_queststatus_weekly WHERE guid = '%u'", GetGUIDLow());
-
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-
-            uint32 quest_id = fields[0].GetUInt32();
-
-            Quest const* pQuest = sObjectMgr.GetQuestTemplate(quest_id);
-            if (!pQuest)
-                continue;
-
-            m_monthlyquests.insert(quest_id);
-
-            DEBUG_LOG("Monthly quest {%u} cooldown for player (GUID: %u)", quest_id, GetGUIDLow());
-        }
-        while(result->NextRow());
-
-        delete result;
-    }
-
-    m_MonthlyQuestChanged = false;
 }
 
 void Player::_LoadSpells(QueryResult *result)
@@ -17572,10 +17342,6 @@ void Player::SaveToDB()
 
     uberInsert.addUInt16(GetUInt16Value(PLAYER_FIELD_KILLS, 1));
 
-    uberInsert.addUInt32(GetUInt32Value(PLAYER_CHOSEN_TITLE));
-
-    uberInsert.addUInt64(GetUInt64Value(PLAYER_FIELD_KNOWN_CURRENCIES));
-
     // FIXME: at this moment send to DB as unsigned, including unit32(-1)
     uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX));
 
@@ -18067,73 +17833,6 @@ void Player::_SaveQuestStatus()
                 break;
         };
     }
-}
-
-void Player::_SaveDailyQuestStatus()
-{
-    if (!m_DailyQuestChanged)
-        return;
-
-    // we don't need transactions here.
-    static SqlStatementID delQuestStatus ;
-    static SqlStatementID insQuestStatus ;
-
-    SqlStatement stmtDel = CharacterDatabase.CreateStatement(delQuestStatus, "DELETE FROM character_queststatus_daily WHERE guid = ?");
-    SqlStatement stmtIns = CharacterDatabase.CreateStatement(insQuestStatus, "INSERT INTO character_queststatus_daily (guid,quest) VALUES (?, ?)");
-
-    stmtDel.PExecute(GetGUIDLow());
-
-    for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-        if (GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx))
-            stmtIns.PExecute(GetGUIDLow(), GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx));
-
-    m_DailyQuestChanged = false;
-}
-
-void Player::_SaveWeeklyQuestStatus()
-{
-    if (!m_WeeklyQuestChanged || m_weeklyquests.empty())
-        return;
-
-    // we don't need transactions here.
-    static SqlStatementID delQuestStatus;
-    static SqlStatementID insQuestStatus;
-
-    SqlStatement stmtDel = CharacterDatabase.CreateStatement(delQuestStatus, "DELETE FROM character_queststatus_weekly WHERE guid = ?");
-    SqlStatement stmtIns =  CharacterDatabase.CreateStatement(insQuestStatus, "INSERT INTO character_queststatus_weekly (guid, quest) VALUES (?, ?)");
-
-    stmtDel.PExecute(GetGUIDLow());
-
-    for (QuestSet::const_iterator iter = m_weeklyquests.begin(); iter != m_weeklyquests.end(); ++iter)
-    {
-        uint32 quest_id = *iter;
-        stmtIns.PExecute(GetGUIDLow(), quest_id);
-    }
-
-    m_WeeklyQuestChanged = false;
-}
-
-void Player::_SaveMonthlyQuestStatus()
-{
-    if (!m_MonthlyQuestChanged || m_monthlyquests.empty())
-        return;
-
-    // we don't need transactions here.
-    static SqlStatementID deleteQuest ;
-    static SqlStatementID insertQuest ;
-
-    SqlStatement stmtDel = CharacterDatabase.CreateStatement(deleteQuest, "DELETE FROM character_queststatus_monthly WHERE guid = ?");
-    SqlStatement stmtIns = CharacterDatabase.CreateStatement(insertQuest, "INSERT INTO character_queststatus_monthly (guid, quest) VALUES (?, ?)");
-
-    stmtDel.PExecute(GetGUIDLow());
-
-    for (QuestSet::const_iterator iter = m_monthlyquests.begin(); iter != m_monthlyquests.end(); ++iter)
-    {
-        uint32 quest_id = *iter;
-        stmtIns.PExecute(GetGUIDLow(), quest_id);
-    }
-
-    m_MonthlyQuestChanged = false;
 }
 
 void Player::_SaveSkills()
@@ -19398,15 +19097,7 @@ void Player::InitDataForForm(bool reapplyMods)
 {
     ShapeshiftForm form = GetShapeshiftForm();
 
-    SpellShapeshiftFormEntry const* ssEntry = sSpellShapeshiftFormStore.LookupEntry(form);
-    if (ssEntry && ssEntry->attackSpeed)
-    {
-        SetAttackTime(BASE_ATTACK,ssEntry->attackSpeed);
-        SetAttackTime(OFF_ATTACK,ssEntry->attackSpeed);
-        SetAttackTime(RANGED_ATTACK, BASE_ATTACK_TIME);
-    }
-    else
-        SetRegularAttackTime();
+    SetRegularAttackTime();
 
     switch(form)
     {
@@ -19869,166 +19560,6 @@ void Player::UpdatePotionCooldown(Spell* spell)
         SendCooldownEvent(spell->m_spellInfo,m_lastPotionId);
 
     m_lastPotionId = 0;
-}
-
-                                                            //slot to be excluded while counting
-bool Player::EnchantmentFitsRequirements(uint32 enchantmentcondition, int8 slot)
-{
-    if (!enchantmentcondition)
-        return true;
-
-    SpellItemEnchantmentConditionEntry const *Condition = sSpellItemEnchantmentConditionStore.LookupEntry(enchantmentcondition);
-
-    if (!Condition)
-        return true;
-
-    uint8 curcount[4] = {0, 0, 0, 0};
-
-    //counting current equipped gem colors
-    for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
-    {
-        if (i == slot)
-            continue;
-        Item *pItem2 = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
-        if (pItem2 && !pItem2->IsBroken() && pItem2->GetProto()->Socket[0].Color)
-        {
-            for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+3; ++enchant_slot)
-            {
-                uint32 enchant_id = pItem2->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-                if (!enchant_id)
-                    continue;
-
-                SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-                if (!enchantEntry)
-                    continue;
-
-                uint32 gemid = enchantEntry->GemID;
-                if (!gemid)
-                    continue;
-
-                ItemPrototype const* gemProto = sItemStorage.LookupEntry<ItemPrototype>(gemid);
-                if (!gemProto)
-                    continue;
-
-                GemPropertiesEntry const* gemProperty = sGemPropertiesStore.LookupEntry(gemProto->GemProperties);
-                if (!gemProperty)
-                    continue;
-
-                uint8 GemColor = gemProperty->color;
-
-                for (uint8 b = 0, tmpcolormask = 1; b < 4; b++, tmpcolormask <<= 1)
-                {
-                    if (tmpcolormask & GemColor)
-                        ++curcount[b];
-                }
-            }
-        }
-    }
-
-    bool activate = true;
-
-    for (int i = 0; i < 5; ++i)
-    {
-        if (!Condition->Color[i])
-            continue;
-
-        uint32 _cur_gem = curcount[Condition->Color[i] - 1];
-
-        // if have <CompareColor> use them as count, else use <value> from Condition
-        uint32 _cmp_gem = Condition->CompareColor[i] ? curcount[Condition->CompareColor[i] - 1]: Condition->Value[i];
-
-        switch(Condition->Comparator[i])
-        {
-            case 2:                                         // requires less <color> than (<value> || <comparecolor>) gems
-                activate &= (_cur_gem < _cmp_gem) ? true : false;
-                break;
-            case 3:                                         // requires more <color> than (<value> || <comparecolor>) gems
-                activate &= (_cur_gem > _cmp_gem) ? true : false;
-                break;
-            case 5:                                         // requires at least <color> than (<value> || <comparecolor>) gems
-                activate &= (_cur_gem >= _cmp_gem) ? true : false;
-                break;
-        }
-    }
-
-    DEBUG_LOG("Checking Condition %u, there are %u Meta Gems, %u Red Gems, %u Yellow Gems and %u Blue Gems, Activate:%s", enchantmentcondition, curcount[0], curcount[1], curcount[2], curcount[3], activate ? "yes" : "no");
-
-    return activate;
-}
-
-void Player::CorrectMetaGemEnchants(uint8 exceptslot, bool apply)
-{
-                                                            //cycle all equipped items
-    for (uint32 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
-    {
-        //enchants for the slot being socketed are handled by Player::ApplyItemMods
-        if (slot == exceptslot)
-            continue;
-
-        Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
-
-        if (!pItem || !pItem->GetProto()->Socket[0].Color)
-            continue;
-
-        for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+3; ++enchant_slot)
-        {
-            uint32 enchant_id = pItem->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-            if (!enchant_id)
-                continue;
-
-            SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-            if (!enchantEntry)
-                continue;
-
-            uint32 condition = enchantEntry->EnchantmentCondition;
-            if (condition)
-            {
-                                                            //was enchant active with/without item?
-                bool wasactive = EnchantmentFitsRequirements(condition, apply ? exceptslot : -1);
-                                                            //should it now be?
-                if (wasactive != EnchantmentFitsRequirements(condition, apply ? -1 : exceptslot))
-                {
-                    // ignore item gem conditions
-                                                            //if state changed, (dis)apply enchant
-                    ApplyEnchantment(pItem, EnchantmentSlot(enchant_slot), !wasactive, true, true);
-                }
-            }
-        }
-    }
-}
-
-                                                            //if false -> then toggled off if was on| if true -> toggled on if was off AND meets requirements
-void Player::ToggleMetaGemsActive(uint8 exceptslot, bool apply)
-{
-    //cycle all equipped items
-    for (int slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
-    {
-        //enchants for the slot being socketed are handled by WorldSession::HandleSocketOpcode(WorldPacket& recv_data)
-        if (slot == exceptslot)
-            continue;
-
-        Item *pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
-
-        if (!pItem || !pItem->GetProto()->Socket[0].Color)   //if item has no sockets or no item is equipped go to next item
-            continue;
-
-        //cycle all (gem)enchants
-        for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+3; ++enchant_slot)
-        {
-            uint32 enchant_id = pItem->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-            if (!enchant_id)                                 //if no enchant go to next enchant(slot)
-                continue;
-
-            SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-            if (!enchantEntry)
-                continue;
-
-            //only metagems to be (de)activated, so only enchants with condition
-            uint32 condition = enchantEntry->EnchantmentCondition;
-            if (condition)
-                ApplyEnchantment(pItem,EnchantmentSlot(enchant_slot), apply);
-        }
-    }
 }
 
 void Player::SetBattleGroundEntryPoint(bool forLFG)
@@ -20715,67 +20246,6 @@ void Player::SendAurasForTarget(Unit *target)
     GetSession()->SendPacket(&data);
 }
 
-void Player::SetDailyQuestStatus(uint32 quest_id)
-{
-    uint32 quest_daily_idx;
-    for (quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    {
-        if (!GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1 + quest_daily_idx))
-        {
-            SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1 + quest_daily_idx, quest_id);
-            m_DailyQuestChanged = true;
-            break;
-        }
-    }
-}
-
-void Player::SetWeeklyQuestStatus(uint32 quest_id)
-{
-    m_weeklyquests.insert(quest_id);
-    m_WeeklyQuestChanged = true;
-}
-
-void Player::SetMonthlyQuestStatus(uint32 quest_id)
-{
-    m_monthlyquests.insert(quest_id);
-    m_MonthlyQuestChanged = true;
-}
-
-void Player::ResetDailyQuestStatus()
-{
-    uint32 dailyQuestCount = 0;
-    for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    {
-        if (GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1 + quest_daily_idx))
-            ++dailyQuestCount;
-
-         SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1 + quest_daily_idx, 0);
-    }
-
-    // DB data deleted in caller
-    m_DailyQuestChanged = false;
-}
-
-void Player::ResetWeeklyQuestStatus()
-{
-    if (m_weeklyquests.empty())
-        return;
-
-    m_weeklyquests.clear();
-    // DB data deleted in caller
-    m_WeeklyQuestChanged = false;
-}
-
-void Player::ResetMonthlyQuestStatus()
-{
-    if (m_monthlyquests.empty())
-        return;
-
-    m_monthlyquests.clear();
-    // DB data deleted in caller
-    m_MonthlyQuestChanged = false;
-}
-
 BattleGround* Player::GetBattleGround() const
 {
     if (GetBattleGroundId()==0)
@@ -21083,9 +20553,9 @@ bool Player::CanNoReagentCast(SpellEntry const* spellInfo) const
         return true;
 
     // Check no reagent use mask
-    ClassFamilyMask noReagentMask(GetUInt64Value(PLAYER_NO_REAGENT_COST_1), GetUInt32Value(PLAYER_NO_REAGENT_COST_1+2));
-    if (spellInfo->IsFitToFamilyMask(noReagentMask))
-        return true;
+    //ClassFamilyMask noReagentMask(GetUInt64Value(PLAYER_NO_REAGENT_COST_1), GetUInt32Value(PLAYER_NO_REAGENT_COST_1+2));
+    //if (spellInfo->IsFitToFamilyMask(noReagentMask))
+    //    return true;
 
     return false;
 }
@@ -21139,7 +20609,7 @@ uint32 Player::GetResurrectionSpellId()
     for (AuraList::const_iterator itr = dummyAuras.begin(); itr != dummyAuras.end(); ++itr)
     {
         // Soulstone Resurrection                           // prio: 3 (max, non death persistent)
-        if (prio < 2 && (*itr)->GetSpellProto()->SpellVisual[0] == 99 && (*itr)->GetSpellProto()->SpellIconID == 92)
+        if (prio < 2 && (*itr)->GetSpellProto()->SpellVisual == 99 && (*itr)->GetSpellProto()->SpellIconID == 92)
         {
             switch((*itr)->GetId())
             {
@@ -21690,69 +21160,6 @@ bool Player::CanUseBattleGroundObject()
             !HasAura(SPELL_RECENTLY_DROPPED_FLAG, EFFECT_INDEX_0));
 }
 
-uint32 Player::GetBarberShopCost(uint8 newhairstyle, uint8 newhaircolor, uint8 newfacialhair, uint8 newskintone)
-{
-    uint32 level = getLevel();
-
-    if (level > GT_MAX_LEVEL)
-        level = GT_MAX_LEVEL;                               // max level in this dbc
-
-    uint8 hairstyle = GetByteValue(PLAYER_BYTES, 2);
-    uint8 haircolor = GetByteValue(PLAYER_BYTES, 3);
-    uint8 facialhair = GetByteValue(PLAYER_BYTES_2, 0);
-    uint8 skintone = GetByteValue(PLAYER_BYTES, 0);
-
-    if ((hairstyle == newhairstyle) && (haircolor == newhaircolor) && (facialhair == newfacialhair) &&
-        ((skintone == newskintone) || (newskintone == -1)))
-        return 0;
-
-    GtBarberShopCostBaseEntry const *bsc = sGtBarberShopCostBaseStore.LookupEntry(level - 1);
-
-    if (!bsc)                                                // shouldn't happen
-        return 0xFFFFFFFF;
-
-    float cost = 0;
-
-    if (hairstyle != newhairstyle)
-        cost += bsc->cost;                                  // full price
-
-    if ((haircolor != newhaircolor) && (hairstyle == newhairstyle))
-        cost += bsc->cost * 0.5f;                           // +1/2 of price
-
-    if (facialhair != newfacialhair)
-        cost += bsc->cost * 0.75f;                          // +3/4 of price
-
-    if (skintone != newskintone && newskintone != -1)        // +1/2 of price
-        cost += bsc->cost * 0.5f;
-
-    return uint32(cost);
-}
-
-void Player::InitGlyphsForLevel()
-{
-    for (uint32 i = 0; i < sGlyphSlotStore.GetNumRows(); ++i)
-        if (GlyphSlotEntry const * gs = sGlyphSlotStore.LookupEntry(i))
-            if (gs->Order)
-                SetGlyphSlot(gs->Order - 1, gs->Id);
-
-    uint32 level = getLevel();
-    uint32 value = 0;
-
-    // 0x3F = 0x01 | 0x02 | 0x04 | 0x08 | 0x10 | 0x20 for 80 level
-    if (level >= 15)
-        value |= (0x01 | 0x02);
-    if (level >= 30)
-        value |= 0x08;
-    if (level >= 50)
-        value |= 0x04;
-    if (level >= 70)
-        value |= 0x10;
-    if (level >= 80)
-        value |= 0x20;
-
-    SetUInt32Value(PLAYER_GLYPHS_ENABLED, value);
-}
-
 bool Player::isTotalImmune()
 {
     AuraList const& immune = GetAurasByType(SPELL_AURA_SCHOOL_IMMUNITY);
@@ -21874,26 +21281,6 @@ uint32 Player::CalculateTalentsPoints() const
     uint32 talentPointsForLevel = base_talent + m_questRewardTalentCount;
 
     return uint32(talentPointsForLevel * sWorld.getConfig(CONFIG_FLOAT_RATE_TALENT));
-}
-
-bool Player::CanStartFlyInArea(uint32 mapid, uint32 zone, uint32 area) const
-{
-    if (isGameMaster())
-        return true;
-    // continent checked in SpellMgr::GetSpellAllowedInLocationError at cast and area update
-    uint32 v_map = GetVirtualMapForMapAndZone(mapid, zone);
-
-    if (v_map == 571 && !HasSpell(54197))   // Cold Weather Flying
-        return false;
-
-    // don't allow flying in Dalaran restricted areas
-    // (no other zones currently has areas with AREA_FLAG_CANNOT_FLY)
-    if (AreaTableEntry const* atEntry = GetAreaEntryByAreaID(area))
-        return (!(atEntry->flags & AREA_FLAG_CANNOT_FLY));
-
-    // TODO: disallow mounting in wintergrasp too when battle is in progress
-    // forced dismount part in Player::UpdateArea()
-    return true;
 }
 
 struct DoPlayerLearnSpell
