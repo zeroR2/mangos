@@ -61,8 +61,8 @@ class AuthSocket: public BufferedSocket
 
         BigNumber N, s, g, v;
         BigNumber b, B;
-        BigNumber K;
-        BigNumber _reconnectProof;
+        BigNumber sessionKey;
+        BigNumber _reconnectServerSeed;
 
         bool _authed;
 

@@ -31,7 +31,6 @@
 #include "PatchHandler.h"
 
 #include <openssl/md5.h>
-//#include "Util.h" -- for commented utf8ToUpperOnlyLatin
 
 #include <ace/OS_NS_unistd.h>
 #include <ace/OS_NS_fcntl.h>
@@ -43,13 +42,6 @@ enum eStatus
 {
     STATUS_CONNECTED = 0,
     STATUS_AUTHED
-};
-
-enum AccountFlags
-{
-    ACCOUNT_FLAG_GM         = 0x00000001,
-    ACCOUNT_FLAG_TRIAL      = 0x00000008,
-    ACCOUNT_FLAG_PROPASS    = 0x00800000,
 };
 
 // GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some paltform
@@ -78,23 +70,6 @@ typedef struct AUTH_LOGON_CHALLENGE_C
     uint8   I[1];
 } sAuthLogonChallenge_C;
 
-//typedef sAuthLogonChallenge_C sAuthReconnectChallenge_C;
-/*
-typedef struct
-{
-    uint8   cmd;
-    uint8   error;
-    uint8   unk2;
-    uint8   B[32];
-    uint8   g_len;
-    uint8   g[1];
-    uint8   N_len;
-    uint8   N[32];
-    uint8   s[32];
-    uint8   unk3[16];
-} sAuthLogonChallenge_S;
-*/
-
 typedef struct AUTH_LOGON_PROOF_C
 {
     uint8   cmd;
@@ -104,41 +79,21 @@ typedef struct AUTH_LOGON_PROOF_C
     uint8   number_of_keys;
     uint8   securityFlags;                                  // 0x00-0x04
 } sAuthLogonProof_C;
-/*
-typedef struct
-{
-    uint16  unk1;
-    uint32  unk2;
-    uint8   unk3[4];
-    uint16  unk4[20];
-}  sAuthLogonProofKey_C;
-*/
+
 typedef struct AUTH_LOGON_PROOF_S
 {
     uint8   cmd;
     uint8   error;
     uint8   M2[20];
-    uint32  accountFlags;                                   // see enum AccountFlags
     uint32  surveyId;                                       // SurveyId
-    uint16  unkFlags;                                       // some flags (AccountMsgAvailable = 0x01)
 } sAuthLogonProof_S;
-
-typedef struct AUTH_LOGON_PROOF_S_BUILD_6005
-{
-    uint8   cmd;
-    uint8   error;
-    uint8   M2[20];
-    //uint32  unk1;
-    uint32  unk2;
-    //uint16  unk3;
-} sAuthLogonProof_S_BUILD_6005;
 
 typedef struct AUTH_RECONNECT_PROOF_C
 {
     uint8   cmd;
-    uint8   R1[16];
-    uint8   R2[20];
-    uint8   R3[20];
+    uint8   ReconnectClientSeed[16];
+    uint8   ReconnectClientDigest[20];
+    uint8   ReconnectClientCRC[20];
     uint8   number_of_keys;
 } sAuthReconnectProof_C;
 
@@ -285,38 +240,17 @@ void AuthSocket::SendProof(Sha1Hash sha)
         case 5875:                                          // 1.12.1
         case 6005:                                          // 1.12.2
         {
-            sAuthLogonProof_S_BUILD_6005 proof;
-            memcpy(proof.M2, sha.GetDigest(), 20);
-            proof.cmd = CMD_AUTH_LOGON_PROOF;
-            proof.error = 0;
-            proof.unk2 = 0x00;
-
-            send((char *)&proof, sizeof(proof));
-            break;
-        }
-        case 8606:                                          // 2.4.3
-        case 10505:                                         // 3.2.2a
-        case 11159:                                         // 3.3.0a
-        case 11403:                                         // 3.3.2
-        case 11723:                                         // 3.3.3a
-        case 12340:                                         // 3.3.5a
-        case 13623:                                         // 4.0.6a
-        case 15050:                                         // 4.3.0
-        case 15595:                                         // 4.3.4
-        case 16057:                                         // 5.0.5b
-        default:                                            // or later
-        {
             sAuthLogonProof_S proof;
             memcpy(proof.M2, sha.GetDigest(), 20);
             proof.cmd = CMD_AUTH_LOGON_PROOF;
             proof.error = 0;
-            proof.accountFlags = ACCOUNT_FLAG_PROPASS;
-            proof.surveyId = 0x00000000;
-            proof.unkFlags = 0x0000;
+            proof.surveyId = 0;
 
             send((char *)&proof, sizeof(proof));
             break;
         }
+        default:
+            break;
     }
 }
 
@@ -481,53 +415,6 @@ bool AuthSocket::_HandleLogonChallenge()
             }
             delete qresult;
         }
-        else if (sConfig.GetBoolDefault("AutoRegistration", false))
-        {
-            if (_safelogin.find_first_of("\t\v\b\f\a\n\r\\\"\'\? <>[](){}_=+-|/!@#$%^&*~`.,\0") == _safelogin.npos && _safelogin.length() > 3)
-            {
-                QueryResult* checkIPresult = LoginDatabase.PQuery("SELECT COUNT(last_ip) FROM account WHERE last_ip = '%s'",get_remote_address().c_str());
-
-                int32 regCount = checkIPresult ? (*checkIPresult)[0].GetUInt32() : 0;
-
-                if (regCount >= sConfig.GetIntDefault("AutoRegistration.Amount", 1))
-                {
-                    BASIC_LOG("[AuthChallenge] Impossible auto-register account %s, number of auto-registered accouts is %u, but allowed only %u",
-                         _safelogin.c_str(),regCount, sConfig.GetIntDefault("AutoRegistration.Amount", 1));
-//                    result = WOW_FAIL_DB_BUSY;
-                    result = WOW_FAIL_DISCONNECTED;
-                }
-                else
-                {
-                    std::transform(_safelogin.begin(), _safelogin.end(), _safelogin.begin(), std::towupper); 
-
-                    Sha1Hash sha;
-                    sha.Initialize();
-                    sha.UpdateData(_safelogin);
-                    sha.UpdateData(":");
-                    sha.UpdateData(_safelogin);
-                    sha.Finalize();
-
-                    std::string encoded;
-                    hexEncodeByteArray(sha.GetDigest(), sha.GetLength(), encoded);
-
-                    LoginDatabase.PExecute("INSERT INTO account(username,sha_pass_hash,joindate) VALUES('%s','%s',NOW())", _safelogin.c_str(), encoded.c_str());
-
-                    _SetVSFields(encoded);
-
-                    BASIC_LOG("[AuthChallenge] account %s auto-registered (count %u)!",_safelogin.c_str(), ++regCount);
-
-                    result = WOW_SUCCESS;
-                    _accountSecurityLevel = SEC_PLAYER;
-
-                    _localizationName.resize(4);
-                    for (int i = 0; i < 4; ++i)
-                        _localizationName[i] = ch->country[4-i-1];
-                }
-
-                if (checkIPresult)
-                    delete checkIPresult;
-            }
-        }
         else
             result = WOW_FAIL_UNKNOWN_ACCOUNT;
     }
@@ -600,12 +487,6 @@ bool AuthSocket::_HandleLogonChallenge()
         case WOW_FAIL_LOCKED_ENFORCED:
         case WOW_FAIL_TRIAL_ENDED:
         case WOW_FAIL_USE_BATTLENET:
-        case WOW_FAIL_TOO_FAST:
-        case WOW_FAIL_CHARGEBACK:
-        case WOW_FAIL_GAME_ACCOUNT_LOCKED:
-        case WOW_FAIL_INTERNET_GAME_ROOM_WITHOUT_BNET:
-        case WOW_FAIL_UNLOCKABLE_LOCK:
-        case WOW_FAIL_DISCONNECTED:
             break;
         default:
             BASIC_LOG("[AuthChallenge] unknown CMD_AUTH_LOGON_CHALLENGE execution result %u!", result);
@@ -730,7 +611,7 @@ bool AuthSocket::_HandleLogonProof()
     {
         vK[i * 2 + 1] = sha.GetDigest()[i];
     }
-    K.SetBinary(vK, 40);
+    sessionKey.SetBinary(vK, 40);
 
     uint8 hash[20];
 
@@ -757,7 +638,7 @@ bool AuthSocket::_HandleLogonProof()
     sha.Initialize();
     sha.UpdateBigNumbers(&t3, NULL);
     sha.UpdateData(t4, SHA_DIGEST_LENGTH);
-    sha.UpdateBigNumbers(&s, &A, &B, &K, NULL);
+    sha.UpdateBigNumbers(&s, &A, &B, &sessionKey, NULL);
     sha.Finalize();
     BigNumber M;
     M.SetBinary(sha.GetDigest(), 20);
@@ -769,13 +650,13 @@ bool AuthSocket::_HandleLogonProof()
 
         ///- Update the sessionkey, last_ip, last login time and reset number of failed logins in the account table for this account
         // No SQL injection (escaped user name) and IP address as received by socket
-        const char* K_hex = K.AsHexStr();
+        const char* sessionKey_hex = sessionKey.AsHexStr();
         LoginDatabase.PExecute("UPDATE account SET sessionkey = '%s', last_ip = '%s', last_login = NOW(), locale = '%u', os = '%s', failed_logins = 0 WHERE username = '%s'", K_hex, get_remote_address().c_str(), GetLocaleByName(_localizationName), _os.c_str(), _safelogin.c_str() );
-        OPENSSL_free((void*)K_hex);
+        OPENSSL_free((void*)sessionKey_hex);
 
         ///- Finish SRP6 and send the final result to the client
         sha.Initialize();
-        sha.UpdateBigNumbers(&A, &M, &K, NULL);
+        sha.UpdateBigNumbers(&A, &M, &sessionKey, NULL);
         sha.Finalize();
 
         SendProof(sha);
@@ -785,17 +666,10 @@ bool AuthSocket::_HandleLogonProof()
     }
     else
     {
-        if (_build > 6005)                                  // > 1.12.2
-        {
-            char data[4] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT, 3, 0};
-            send(data, sizeof(data));
-        }
-        else
-        {
-            // 1.x not react incorrectly at 4-byte message use 3 as real error
-            char data[2] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT};
-            send(data, sizeof(data));
-        }
+        // 1.x not react incorrectly at 4-byte message use 3 as real error
+        char data[2] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT};
+        send(data, sizeof(data));
+
         BASIC_LOG("[AuthChallenge] account %s tried to login with wrong password!",_login.c_str ());
 
         uint32 MaxWrongPassCount = sConfig.GetIntDefault("WrongPass.MaxCount", 0);
@@ -892,15 +766,15 @@ bool AuthSocket::_HandleReconnectChallenge()
     }
 
     Field* fields = result->Fetch ();
-    K.SetHexStr (fields[0].GetString ());
+    sessionKey.SetHexStr (fields[0].GetString ());
     delete result;
 
     ///- Sending response
     ByteBuffer pkt;
     pkt << (uint8)  CMD_AUTH_RECONNECT_CHALLENGE;
     pkt << (uint8)  0x00;
-    _reconnectProof.SetRand(16 * 8);
-    pkt.append(_reconnectProof.AsByteArray(16),16);         // 16 bytes random
+    _reconnectServerSeed.SetRand(16 * 8);
+    pkt.append(_reconnectServerSeed.AsByteArray(16),16);         // 16 bytes random
     pkt << (uint64) 0x00 << (uint64) 0x00;                  // 16 bytes zeros
     send((char const*)pkt.contents(), pkt.size());
     return true;
@@ -915,25 +789,30 @@ bool AuthSocket::_HandleReconnectProof()
     if (!recv((char *)&lp, sizeof(sAuthReconnectProof_C)))
         return false;
 
-    if (_login.empty() || !_reconnectProof.GetNumBytes() || !K.GetNumBytes())
+    if (_login.empty() || !_reconnectServerSeed.GetNumBytes() || !sessionKey.GetNumBytes())
         return false;
 
     BigNumber t1;
-    t1.SetBinary(lp.R1, 16);
+    t1.SetBinary(lp.ReconnectClientSeed, 16);
 
     Sha1Hash sha;
     sha.Initialize();
     sha.UpdateData(_login);
-    sha.UpdateBigNumbers(&t1, &_reconnectProof, &K, NULL);
+    sha.UpdateBigNumbers(&t1, &_reconnectServerSeed, &sessionKey, NULL);
     sha.Finalize();
 
-    if (!memcmp(sha.GetDigest(), lp.R2, SHA_DIGEST_LENGTH))
+    uint8 * reconnectServerDigest = sha.GetDigest();
+
+    // in this place needed session check - is in world
+    //
+
+    // compare clientReconnectSeed - serverReconnectSeed
+    if (!memcmp(reconnectServerDigest, lp.ReconnectClientDigest, SHA_DIGEST_LENGTH))
     {
         ///- Sending response
         ByteBuffer pkt;
         pkt << (uint8)  CMD_AUTH_RECONNECT_PROOF;
         pkt << (uint8)  0x00;
-        pkt << (uint16) 0x00;                               // 2 bytes zeros
         send((char const*)pkt.contents(), pkt.size());
 
         ///- Set _authed to true!
@@ -944,6 +823,12 @@ bool AuthSocket::_HandleReconnectProof()
     else
     {
         sLog.outError("[ERROR] user %s tried to login, but session invalid.", _login.c_str());
+        
+        ByteBuffer pkt;
+        pkt << (uint8)  CMD_AUTH_RECONNECT_PROOF; 
+        pkt << (uint8)  0x01;                                 // AUTH_FAILED
+        send((char const*)pkt.contents(), pkt.size());
+
         close_connection();
         return false;
     }
@@ -961,7 +846,7 @@ bool AuthSocket::_HandleRealmList()
     ///- Get the user id (else close the connection)
     // No SQL injection (escaped user name)
 
-    QueryResult *result = LoginDatabase.PQuery("SELECT id,sha_pass_hash FROM account WHERE username = '%s'",_safelogin.c_str());
+    QueryResult *result = LoginDatabase.PQuery("SELECT id FROM account WHERE username = '%s'",_safelogin.c_str());
     if (!result)
     {
         sLog.outError("[ERROR] user %s tried to login and we cannot find him in the database.",_login.c_str());
@@ -970,7 +855,6 @@ bool AuthSocket::_HandleRealmList()
     }
 
     uint32 id = (*result)[0].GetUInt32();
-    std::string rI = (*result)[1].GetCppString();
     delete result;
 
     ///- Update realm list if need
@@ -1049,76 +933,8 @@ void AuthSocket::LoadRealmlist(ByteBuffer &pkt, uint32 acctid)
             pkt << uint16(0x0002);                          // unused value (why 2?)
             break;
         }
-
-        case 8606:                                          // 2.4.3
-        case 10505:                                         // 3.2.2a
-        case 11159:                                         // 3.3.0a
-        case 11403:                                         // 3.3.2
-        case 11723:                                         // 3.3.3a
-        case 12340:                                         // 3.3.5a
-        case 13623:                                         // 4.0.6a
-        case 15050:                                         // 4.3.0
-        case 15595:                                         // 4.3.4
-        case 16057:                                         // 5.0.5b
-        default:                                            // and later
-        {
-            pkt << uint32(0);                               // unused value
-            pkt << uint16(sRealmList.size());
-
-            for (RealmList::RealmMap::const_iterator  i = sRealmList.begin(); i != sRealmList.end(); ++i)
-            {
-                uint8 AmountOfCharacters;
-
-                // No SQL injection. id of realm is controlled by the database.
-                QueryResult *result = LoginDatabase.PQuery( "SELECT numchars FROM realmcharacters WHERE realmid = '%d' AND acctid='%u'", i->second.m_ID, acctid);
-                if ( result )
-                {
-                    Field *fields = result->Fetch();
-                    AmountOfCharacters = fields[0].GetUInt8();
-                    delete result;
-                }
-                else
-                    AmountOfCharacters = 0;
-
-                bool ok_build = std::find(i->second.realmbuilds.begin(), i->second.realmbuilds.end(), _build) != i->second.realmbuilds.end();
-
-                RealmBuildInfo const* buildInfo = ok_build ? FindBuildInfo(_build) : NULL;
-                if (!buildInfo)
-                    buildInfo = &i->second.realmBuildInfo;
-
-                uint8 lock = (i->second.allowedSecurityLevel > _accountSecurityLevel) ? 1 : 0;
-
-                RealmFlags realmFlags = i->second.realmflags;
-
-                // Show offline state for unsupported client builds
-                if (!ok_build)
-                    realmFlags = RealmFlags(realmFlags | REALM_FLAG_OFFLINE);
-
-                if (!buildInfo)
-                    realmFlags = RealmFlags(realmFlags & ~REALM_FLAG_SPECIFYBUILD);
-
-                pkt << uint8(i->second.icon);               // realm type (this is second column in Cfg_Configs.dbc)
-                pkt << uint8(lock);                         // flags, if 0x01, then realm locked
-                pkt << uint8(realmFlags);                   // see enum RealmFlags
-                pkt << i->first;                            // name
-                pkt << i->second.address;                   // address
-                pkt << float(i->second.populationLevel);
-                pkt << uint8(AmountOfCharacters);
-                pkt << uint8(i->second.timezone);           // realm category (Cfg_Categories.dbc)
-                pkt << uint8(0x2C);                         // unk, may be realm number/id?
-
-                if (realmFlags & REALM_FLAG_SPECIFYBUILD)
-                {
-                    pkt << uint8(buildInfo->major_version);
-                    pkt << uint8(buildInfo->minor_version);
-                    pkt << uint8(buildInfo->bugfix_version);
-                    pkt << uint16(_build);
-                }
-            }
-
-            pkt << uint16(0x0010);                          // unused value (why 10?)
+        default:
             break;
-        }
     }
 }
 

@@ -37,12 +37,6 @@ extern DatabaseType LoginDatabase;
 
 static RealmBuildInfo ExpectedRealmdClientBuilds[] =
 {
-    {16057, 5, 0, 5, 'b'},                                  // highest supported build, also auto accept all above for simplify future supported builds testing
-    {15595, 4, 3, 4, ' '},
-    {15050, 4, 3, 0, ' '},
-    {13623, 4, 0, 6, 'a'},
-    {12340, 3, 3, 5, 'a'},
-    {8606,  2, 4, 3, ' '},
     {6005,  1,12, 2, ' '},
     {5875,  1,12, 1, ' '},
     {0,     0, 0, 0, ' '}                                   // terminator
