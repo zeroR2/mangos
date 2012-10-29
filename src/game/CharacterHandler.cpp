@@ -316,24 +316,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
         return;
     }
 
-    // speedup check for heroic class disabled case
-    uint32 heroic_free_slots = sWorld.getConfig(CONFIG_UINT32_HEROIC_CHARACTERS_PER_REALM);
-    if (heroic_free_slots == 0 && GetSecurity() == SEC_PLAYER && class_ == CLASS_DEATH_KNIGHT)
-    {
-        data << (uint8)CHAR_CREATE_UNIQUE_CLASS_LIMIT;
-        SendPacket(&data);
-        return;
-    }
-
-    // speedup check for heroic class disabled case
-    uint32 req_level_for_heroic = sWorld.getConfig(CONFIG_UINT32_MIN_LEVEL_FOR_HEROIC_CHARACTER_CREATING);
-    if (GetSecurity() == SEC_PLAYER && class_ == CLASS_DEATH_KNIGHT && req_level_for_heroic > sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
-    {
-        data << (uint8)CHAR_CREATE_LEVEL_REQUIREMENT;
-        SendPacket(&data);
-        return;
-    }
-
     bool AllowTwoSideAccounts = sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_ACCOUNTS) || GetSecurity() > SEC_PLAYER;
     CinematicsSkipMode skipCinematics = CinematicsSkipMode(sWorld.getConfig(CONFIG_UINT32_SKIP_CINEMATICS));
 
@@ -342,41 +324,16 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
     // if 0 then allowed creating without any characters
     bool have_req_level_for_heroic = (req_level_for_heroic == 0);
 
-    if (!AllowTwoSideAccounts || skipCinematics == CINEMATICS_SKIP_SAME_RACE || class_ == CLASS_DEATH_KNIGHT)
+    if (!AllowTwoSideAccounts || skipCinematics == CINEMATICS_SKIP_SAME_RACE)
     {
         QueryResult* result2 = CharacterDatabase.PQuery("SELECT level,race,class FROM characters WHERE account = '%u' %s",
-                               GetAccountId(), (skipCinematics == CINEMATICS_SKIP_SAME_RACE || class_ == CLASS_DEATH_KNIGHT) ? "" : "LIMIT 1");
+                               GetAccountId(), (skipCinematics == CINEMATICS_SKIP_SAME_RACE) ? "" : "LIMIT 1");
         if (result2)
         {
             Team team_ = Player::TeamForRace(race_);
 
             Field* field = result2->Fetch();
             uint8 acc_race  = field[1].GetUInt32();
-
-            if (GetSecurity() == SEC_PLAYER && class_ == CLASS_DEATH_KNIGHT)
-            {
-                uint8 acc_class = field[2].GetUInt32();
-                if (acc_class == CLASS_DEATH_KNIGHT)
-                {
-                    if (heroic_free_slots > 0)
-                        --heroic_free_slots;
-
-                    if (heroic_free_slots == 0)
-                    {
-                        data << (uint8)CHAR_CREATE_UNIQUE_CLASS_LIMIT;
-                        SendPacket(&data);
-                        delete result2;
-                        return;
-                    }
-                }
-
-                if (!have_req_level_for_heroic)
-                {
-                    uint32 acc_level = field[0].GetUInt32();
-                    if (acc_level >= req_level_for_heroic)
-                        have_req_level_for_heroic = true;
-                }
-            }
 
             // need to check team only for first character
             // TODO: what to if account already has characters of both races?
@@ -393,7 +350,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
 
             // search same race for cinematic or same class if need
             // TODO: check if cinematic already shown? (already logged in?; cinematic field)
-            while ((skipCinematics == CINEMATICS_SKIP_SAME_RACE && !have_same_race) || class_ == CLASS_DEATH_KNIGHT)
+            while ((skipCinematics == CINEMATICS_SKIP_SAME_RACE && !have_same_race))
             {
                 if (!result2->NextRow())
                     break;
@@ -404,40 +361,9 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
                 if (!have_same_race)
                     have_same_race = race_ == acc_race;
 
-                if (GetSecurity() == SEC_PLAYER && class_ == CLASS_DEATH_KNIGHT)
-                {
-                    uint8 acc_class = field[2].GetUInt32();
-                    if (acc_class == CLASS_DEATH_KNIGHT)
-                    {
-                        if (heroic_free_slots > 0)
-                            --heroic_free_slots;
-
-                        if (heroic_free_slots == 0)
-                        {
-                            data << (uint8)CHAR_CREATE_UNIQUE_CLASS_LIMIT;
-                            SendPacket(&data);
-                            delete result2;
-                            return;
-                        }
-                    }
-
-                    if (!have_req_level_for_heroic)
-                    {
-                        uint32 acc_level = field[0].GetUInt32();
-                        if (acc_level >= req_level_for_heroic)
-                            have_req_level_for_heroic = true;
-                    }
-                }
             }
             delete result2;
         }
-    }
-
-    if (GetSecurity() == SEC_PLAYER && class_ == CLASS_DEATH_KNIGHT && !have_req_level_for_heroic)
-    {
-        data << (uint8)CHAR_CREATE_LEVEL_REQUIREMENT;
-        SendPacket(&data);
-        return;
     }
 
     Player pNewChar(this);
@@ -1297,8 +1223,6 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
             case RACE_TAUREN:
             case RACE_UNDEAD:
             case RACE_TROLL:
-            case RACE_BLOODELF:
-            //case RACE_GOBLIN: for cataclysm
                 team = TEAM_INDEX_HORDE;
                 break;
             default: break;

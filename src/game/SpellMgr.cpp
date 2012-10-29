@@ -540,11 +540,6 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
 
         case SPELLFAMILY_POTION:
             return sSpellMgr.GetSpellElixirSpecific(spellInfo->Id);
-
-        case SPELLFAMILY_DEATHKNIGHT:
-            if (spellInfo->Category == 47)
-                return SPELL_PRESENCE;
-            break;
     }
 
     // Tracking spells (exclude Well Fed, some other always allowed cases)
@@ -2311,15 +2306,6 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
             }
 
             break;
-        case SPELLFAMILY_DEATHKNIGHT:
-            if (spellInfo_2->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT)
-            {
-                // Crypt Fever and Ebon Plague
-                if((spellInfo_1->SpellIconID == 264 && spellInfo_2->SpellIconID == 1933) ||
-                   (spellInfo_2->SpellIconID == 264 && spellInfo_1->SpellIconID == 1933))
-                    return true;
-            }
-            break;
         case SPELLFAMILY_MAGE:
             if (spellInfo_2->SpellFamilyName == SPELLFAMILY_MAGE)
             {
@@ -2693,12 +2679,6 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
             // Starfall
             if (spellInfo->GetSpellFamilyFlags().test<CF_DRUID_STARFALL2>())
                 unMaxTargets = 2;
-            break;
-        }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            if (spellInfo->SpellIconID == 1737)           // Corpse Explosion // TODO - spell 50445?
-                unMaxTargets = 1;
             break;
         }
         default:
@@ -5004,13 +4984,6 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
         {
             // Shackle Undead
             if (spellproto->SpellIconID == 27)
-                return DIMINISHING_DISORIENT;
-            break;
-        }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Hungering Cold (no flags)
-            if (spellproto->SpellIconID == 2797)
                 return DIMINISHING_DISORIENT;
             break;
         }

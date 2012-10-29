@@ -837,50 +837,6 @@ bool ChatHandler::HandleModifyRageCommand(char* args)
     return true;
 }
 
-// Edit Player Runic Power
-bool ChatHandler::HandleModifyRunicPowerCommand(char* args)
-{
-    if (!*args)
-        return false;
-
-    int32 rune = atoi(args) * 10;
-    int32 runem = atoi(args) * 10;
-
-    if (rune <= 0 || runem <= 0 || runem < rune)
-    {
-        SendSysMessage(LANG_BAD_VALUE);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    Unit* target = getSelectedUnit();
-    if (!target)
-    {
-        SendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (target->GetTypeId() == TYPEID_PLAYER)
-    {
-        Player* plr = (Player*)target;
-
-        // check online security
-        if (HasLowerSecurity(plr))
-            return false;
-
-        PSendSysMessage(LANG_YOU_CHANGE_RUNIC_POWER, GetNameLink(plr).c_str(), rune, runem);
-
-        if (needReportToTarget(plr))
-            ChatHandler(plr).PSendSysMessage(LANG_YOURS_RUNIC_POWER_CHANGED, GetNameLink().c_str(), rune, runem);
-    }
-
-    target->SetMaxPower(POWER_RUNIC_POWER, runem*10);
-    target->SetPower(POWER_RUNIC_POWER, rune*10);
-
-    return true;
-}
-
 // Edit Player Faction
 bool ChatHandler::HandleModifyFactionCommand(char* args)
 {

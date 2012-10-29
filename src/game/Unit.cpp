@@ -2508,62 +2508,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                     }
                     break;
                 }
-                case SPELLFAMILY_DEATHKNIGHT:
-                {
-                    // Shadow of Death
-                    if (spellProto->SpellIconID == 1958)
-                    {
-                        // TODO: absorb only while transform
-                        continue;
-                    }
-                    // Anti-Magic Shell (on self)
-                    if (spellProto->Id == 48707)
-                    {
-                        // damage absorbed by Anti-Magic Shell energizes the DK with additional runic power.
-                        // This, if I'm not mistaken, shows that we get back ~2% of the absorbed damage as runic power.
-                        int32 absorbed = RemainingDamage * currentAbsorb / 100;
-                        int32 regen = absorbed * 2 / 10;
-                        CastCustomSpell(this, 49088, &regen, NULL, NULL, true, NULL, (*i)());
-                        RemainingDamage -= absorbed;
-                        continue;
-                    }
-                    // Anti-Magic Shell (on single party/raid member)
-                    if (spellProto->Id == 50462)
-                    {
-                        RemainingDamage -= RemainingDamage * currentAbsorb / 100;
-                        continue;
-                    }
-                    // Anti-Magic Zone
-                    if (spellProto->Id == 50461)
-                    {
-                        Unit* caster = (*i)->GetCaster();
-                        if (!caster)
-                            continue;
-
-                        uint32 absorbed = std::min(uint32(RemainingDamage * currentAbsorb / 100), caster->GetHealth());
-
-                        RemainingDamage -= absorbed;
-
-                        DamageInfo amDamageInfo(pCaster, caster, damageInfo->GetSpellProto(), absorbed);
-                        amDamageInfo.damageType = damageInfo->damageType;
-                        amDamageInfo.durabilityLoss = false;
-                        pCaster->DealDamageMods(&amDamageInfo);
-                        pCaster->DealDamage(&amDamageInfo);
-                        continue;
-                    }
-                    // Will of Necropolis
-                    if (spellProto->SpellIconID == 857)
-                    {
-                        // Apply absorb only on damage below 35% hp
-                        int32 absorbableDamage = RemainingDamage + 0.35f * GetMaxHealth() - GetHealth();
-                        if (absorbableDamage > RemainingDamage)
-                            absorbableDamage = RemainingDamage;
-                        if (absorbableDamage > 0)
-                            RemainingDamage -= absorbableDamage * currentAbsorb / 100;
-                        continue;
-                    }
-                    break;
-                }
                 default:
                     break;
             }
@@ -7393,13 +7337,6 @@ int32 Unit::SpellBonusWithCoeffs(SpellEntry const *spellProto, int32 total, int3
         {
             float ap_bonus = damagetype == DOT ? bonus->ap_dot_bonus : bonus->ap_bonus;
 
-            // Impurity
-            if (GetTypeId() == TYPEID_PLAYER && spellProto->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT)
-            {
-                if (SpellEntry const* spell = ((Player*)this)->GetKnownTalentRankById(2005))
-                    ap_bonus += ((spell->CalculateSimpleValue(EFFECT_INDEX_0) * ap_bonus) / 100.0f);
-            }
-
             total += int32(ap_bonus * (GetTotalAttackPowerValue(IsSpellRequiresRangedAP(spellProto) ? RANGED_ATTACK : BASE_ATTACK) + ap_benefit));
         }
     }
@@ -7616,31 +7553,6 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                 DoneTotal+=(*i)->GetModifier()->m_amount;
                 break;
             }
-            // Tundra Stalker
-            // Merciless Combat
-            case 7277:
-            {
-                // Merciless Combat
-                if ((*i)->GetSpellProto()->SpellIconID == 2656)
-                {
-                    if (pVictim->HasAuraState(AURA_STATE_HEALTHLESS_35_PERCENT))
-                        DoneTotalMod *= (100.0f+(*i)->GetModifier()->m_amount)/100.0f;
-                }
-                else // Tundra Stalker
-                {
-                    // Frost Fever (target debuff)
-                    if (pVictim->GetAura<SPELL_AURA_MOD_MELEE_HASTE, SPELLFAMILY_DEATHKNIGHT, CF_DEATHKNIGHT_FF_BP_ACTIVE>())
-                        DoneTotalMod *= ((*i)->GetModifier()->m_amount+100.0f)/100.0f;
-                    break;
-                }
-                break;
-            }
-            case 7293: // Rage of Rivendare
-            {
-                if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DEATHKNIGHT, CF_DEATHKNIGHT_BLOOD_PLAGUE>())
-                    DoneTotalMod *= ((*i)->GetSpellProto()->CalculateSimpleValue(EFFECT_INDEX_1)*2+100.0f)/100.0f;
-                break;
-            }
             // Twisted Faith
             case 7377:
             {
@@ -7775,43 +7687,6 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                         }
                     }
                 }
-            }
-            break;
-        }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Icy Touch and Howling Blast
-            if (damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_ICY_TOUCH_TALONS, CF_DEATHKNIGHT_HOWLING_BLAST>())
-            {
-                // search disease
-                bool found = false;
-                Unit::SpellAuraHolderMap const& auras = pVictim->GetSpellAuraHolderMap();
-                for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-                {
-                    if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                // search for Glacier Rot and  Improved Icy Touch dummy aura
-                bool isIcyTouch = damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_ICY_TOUCH_TALONS>();
-                Unit::AuraList const& dummyAuras = GetAurasByType(SPELL_AURA_DUMMY);
-                for(Unit::AuraList::const_iterator i = dummyAuras.begin(); i != dummyAuras.end(); ++i)
-                {
-                    if ((found && (*i)->GetSpellProto()->EffectMiscValue[(*i)->GetEffIndex()] == 7244) || //Glacier Rot
-                        (isIcyTouch && (*i)->GetSpellProto()->SpellIconID == 2721))                       //Improved Icy Touch
-                    {
-                        DoneTotalMod *= ((*i)->GetModifier()->m_amount+100.0f) / 100.0f;
-                    }
-                }
-            }
-            // Death Coil (bonus from Item - Death Knight T8 DPS Relic)
-            else if (damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_DEATH_COIL>())
-            {
-                 if (Aura const* sigil = GetDummyAura(64962))
-                    DoneTotal += sigil->GetModifier()->m_amount;
             }
             break;
         }
@@ -8719,31 +8594,6 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
 
             switch((*i)->GetModifier()->m_miscvalue)
             {
-                // Tundra Stalker
-                // Merciless Combat
-                case 7277:
-                {
-                    // Merciless Combat
-                    if ((*i)->GetSpellProto()->SpellIconID == 2656)
-                    {
-                        if (pVictim->HasAuraState(AURA_STATE_HEALTHLESS_35_PERCENT))
-                            DonePercent *= (100.0f+(*i)->GetModifier()->m_amount)/100.0f;
-                    }
-                    else // Tundra Stalker
-                    {
-                        // Frost Fever (target debuff)
-                        if (pVictim->GetAura<SPELL_AURA_MOD_MELEE_HASTE, SPELLFAMILY_DEATHKNIGHT, CF_DEATHKNIGHT_FF_BP_ACTIVE>())
-                            DonePercent *= ((*i)->GetModifier()->m_amount+100.0f)/100.0f;
-                        break;
-                    }
-                    break;
-                }
-                case 7293: // Rage of Rivendare
-                {
-                    if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DEATHKNIGHT, CF_DEATHKNIGHT_BLOOD_PLAGUE>())
-                        DonePercent *= ((*i)->GetSpellProto()->CalculateSimpleValue(EFFECT_INDEX_1)*2+100.0f)/100.0f;
-                    break;
-                }
                 // Marked for Death
                 case 7598:
                 case 7599:
@@ -8790,39 +8640,6 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
                 break;
         }
     }
-
-    if (damageInfo->GetSpellProto())
-    {
-        // Frost Strike
-        if (damageInfo->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_FROST_STRIKE>())
-        {
-            // search disease
-            bool found = false;
-            Unit::SpellAuraHolderMap const& auras = pVictim->GetSpellAuraHolderMap();
-            for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-            {
-                if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                // search for Glacier Rot dummy aura
-                Unit::AuraList const& dummyAuras = GetAurasByType(SPELL_AURA_DUMMY);
-                for(Unit::AuraList::const_iterator i = dummyAuras.begin(); i != dummyAuras.end(); ++i)
-                {
-                    if ((*i)->GetSpellProto()->EffectMiscValue[(*i)->GetEffIndex()] == 7244)
-                    {
-                        DonePercent *= ((*i)->GetModifier()->m_amount+100.0f) / 100.0f;
-                        break;
-                    }
-                }
-            }
-        }
-     }
 
     // final calculation
     // =================
@@ -10496,9 +10313,7 @@ bool Unit::HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, f
         case UNIT_MOD_RAGE:
         case UNIT_MOD_FOCUS:
         case UNIT_MOD_ENERGY:
-        case UNIT_MOD_HAPPINESS:
-        case UNIT_MOD_RUNE:
-        case UNIT_MOD_RUNIC_POWER:         UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod)); break;
+        case UNIT_MOD_HAPPINESS:           UpdateMaxPower(GetPowerTypeByAuraGroup(unitMod)); break;
 
         case UNIT_MOD_RESISTANCE_HOLY:
         case UNIT_MOD_RESISTANCE_FIRE:
@@ -10627,8 +10442,6 @@ Powers Unit::GetPowerTypeByAuraGroup(UnitMods unitMod) const
         case UNIT_MOD_FOCUS:      return POWER_FOCUS;
         case UNIT_MOD_ENERGY:     return POWER_ENERGY;
         case UNIT_MOD_HAPPINESS:  return POWER_HAPPINESS;
-        case UNIT_MOD_RUNE:       return POWER_RUNE;
-        case UNIT_MOD_RUNIC_POWER:return POWER_RUNIC_POWER;
         default:                  return POWER_MANA;
     }
 }
@@ -10866,8 +10679,6 @@ uint32 Unit::GetCreatePowers( Powers power ) const
         case POWER_FOCUS:       return (GetTypeId() == TYPEID_PLAYER || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : 100);
         case POWER_ENERGY:      return 100;
         case POWER_HAPPINESS:   return (GetTypeId() == TYPEID_PLAYER || !((Creature const*)this)->IsPet() || ((Pet const*)this)->getPetType() != HUNTER_PET ? 0 : 1050000);
-        case POWER_RUNE:        return (GetTypeId() == TYPEID_PLAYER && ((Player const*)this)->getClass() == CLASS_DEATH_KNIGHT ? 8 : 0);
-        case POWER_RUNIC_POWER: return (GetTypeId() == TYPEID_PLAYER && ((Player const*)this)->getClass() == CLASS_DEATH_KNIGHT ? 1000 : 0);
     }
 
     return 0;

@@ -697,7 +697,7 @@ void Pet::Update(uint32 update_diff, uint32 diff)
 
 void Pet::RegenerateAll( uint32 update_diff )
 {
-    //regenerate focus for hunter pets or energy for deathknight's ghoul
+    //regenerate focus for hunter pets
     if(m_regenTimer <= update_diff)
     {
         Regenerate(getPowerType(), REGEN_TIME_FULL);
@@ -1880,8 +1880,6 @@ bool Pet::IsPermanentPetFor(Player* owner)
                 // i.e. does not unsummon at mounting, gets dismissed at teleport etc.
                 case CLASS_WARLOCK:
                     return GetCreatureInfo()->type == CREATURE_TYPE_DEMON;
-                case CLASS_DEATH_KNIGHT:
-                    return GetCreatureInfo()->type == CREATURE_TYPE_UNDEAD;
                 case CLASS_MAGE:
                     // both permanent and temporary water elementals should be in spellbook
                     return GetCreatureInfo()->Entry == (owner->HasAura(70937) ? 37994 : 510);
@@ -2173,9 +2171,6 @@ void Pet::ApplyAttackPowerScalingBonus(bool apply)
                     newAPBonus = std::max(owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SHADOW),owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE));
                     break;
                 }
-                case CLASS_DEATH_KNIGHT:
-                    newAPBonus = owner->GetTotalAttackPowerValue(BASE_ATTACK);
-                    break;
                 case CLASS_PRIEST:
                     newAPBonus = owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SHADOW);
                     break;
@@ -2248,9 +2243,6 @@ void Pet::ApplyDamageScalingBonus(bool apply)
         {
             switch(owner->getClass())
             {
-                case CLASS_DEATH_KNIGHT:
-                    newDamageBonus = owner->GetTotalAttackPowerValue(BASE_ATTACK);
-                    break;
                 case CLASS_PRIEST:
                     newDamageBonus = owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SHADOW);
                     break;
@@ -2322,9 +2314,6 @@ void Pet::ApplySpellDamageScalingBonus(bool apply)
                     break;
                 case CLASS_PRIEST:
                     newDamageBonus = owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SHADOW);
-                    break;
-                case CLASS_DEATH_KNIGHT:
-                    newDamageBonus = owner->GetTotalAttackPowerValue(BASE_ATTACK);
                     break;
                 case CLASS_SHAMAN:
                     newDamageBonus = owner->GetTotalAttackPowerValue(BASE_ATTACK);
@@ -2892,8 +2881,6 @@ void Pet::Regenerate(Powers power, uint32 diff)
             ApplyHappinessBonus(true);
             break;
         }
-        case POWER_RUNIC_POWER:
-        case POWER_RUNE:
         case POWER_HEALTH:
         default:
             addvalue = 0.0f;

@@ -42,19 +42,7 @@ enum Races
     RACE_TAUREN             = 6,
     RACE_GNOME              = 7,
     RACE_TROLL              = 8,
-    RACE_GOBLIN             = 9,
-    RACE_BLOODELF           = 10,
-    RACE_DRAENEI            = 11,
-    RACE_FEL_ORC            = 12,
-    RACE_NAGA               = 13,
-    RACE_BROKEN             = 14,
-    RACE_SKELETON           = 15,
-    RACE_VRYKUL             = 16,
-    RACE_TUSKARR            = 17,
-    RACE_FOREST_TROLL       = 18,
-    RACE_TAUNKA             = 19,
-    RACE_NORTHREND_SKELETON = 20,
-    RACE_ICE_TROLL          = 21
+    RACE_GOBLIN             = 9
 };
 
 // max+1 for player race
@@ -63,17 +51,16 @@ enum Races
 #define RACEMASK_ALL_PLAYABLE \
     ((1<<(RACE_HUMAN-1))    |(1<<(RACE_ORC-1))      |(1<<(RACE_DWARF-1))   | \
     (1<<(RACE_NIGHTELF-1))  |(1<<(RACE_UNDEAD-1))   |(1<<(RACE_TAUREN-1))  | \
-    (1<<(RACE_GNOME-1))     |(1<<(RACE_TROLL-1))    |(1<<(RACE_BLOODELF-1))| \
-    (1<<(RACE_DRAENEI-1)))
+    (1<<(RACE_GNOME-1))     |(1<<(RACE_TROLL-1)))
 
 // for most cases batter use ChrRace data for team check as more safe, but when need full mask of team can be use this defines.
 #define RACEMASK_ALLIANCE \
     ((1<<(RACE_HUMAN-1))    |(1<<(RACE_DWARF-1))    |(1<<(RACE_NIGHTELF-1))| \
-    (1<<(RACE_GNOME-1))     |(1<<(RACE_DRAENEI-1)))
+    (1<<(RACE_GNOME-1)))
 
 #define RACEMASK_HORDE \
     ((1<<(RACE_ORC-1))      |(1<<(RACE_UNDEAD-1))   |(1<<(RACE_TAUREN-1))  | \
-    (1<<(RACE_TROLL-1))     |(1<<(RACE_BLOODELF-1)))
+    (1<<(RACE_TROLL-1)))
 
 // Class value is index in ChrClasses.dbc
 enum Classes
@@ -83,11 +70,9 @@ enum Classes
     CLASS_HUNTER        = 3,
     CLASS_ROGUE         = 4,
     CLASS_PRIEST        = 5,
-    CLASS_DEATH_KNIGHT  = 6,
     CLASS_SHAMAN        = 7,
     CLASS_MAGE          = 8,
     CLASS_WARLOCK       = 9,
-    // CLASS_UNK2       = 10,unused
     CLASS_DRUID         = 11,
 };
 
@@ -97,8 +82,7 @@ enum Classes
 #define CLASSMASK_ALL_PLAYABLE \
     ((1<<(CLASS_WARRIOR-1))|(1<<(CLASS_PALADIN-1))|(1<<(CLASS_HUNTER-1))| \
     (1<<(CLASS_ROGUE-1))  |(1<<(CLASS_PRIEST-1)) |(1<<(CLASS_SHAMAN-1))| \
-    (1<<(CLASS_MAGE-1))   |(1<<(CLASS_WARLOCK-1))|(1<<(CLASS_DRUID-1)) | \
-    (1<<(CLASS_DEATH_KNIGHT-1)) )
+    (1<<(CLASS_MAGE-1))   |(1<<(CLASS_WARLOCK-1))|(1<<(CLASS_DRUID-1)))
 
 #define CLASSMASK_ALL_CREATURES ((1<<(CLASS_WARRIOR-1)) | (1<<(CLASS_PALADIN-1)) | (1<<(CLASS_ROGUE-1)) | (1<<(CLASS_MAGE-1)) )
 
@@ -148,12 +132,10 @@ enum Powers
     POWER_FOCUS                         = 2,
     POWER_ENERGY                        = 3,
     POWER_HAPPINESS                     = 4,
-    POWER_RUNE                          = 5,
-    POWER_RUNIC_POWER                   = 6,
     POWER_HEALTH                        = 0xFFFFFFFE    // (-2 as signed value)
 };
 
-#define MAX_POWERS                        7
+#define MAX_POWERS                        6
 
 enum SpellSchools
 {
@@ -2286,7 +2268,6 @@ inline uint8 ClassByQuestSort(int32 QuestSort)
         case QUEST_SORT_HUNTER:         return CLASS_HUNTER;
         case QUEST_SORT_PRIEST:         return CLASS_PRIEST;
         case QUEST_SORT_DRUID:          return CLASS_DRUID;
-        case QUEST_SORT_DEATH_KNIGHT:   return CLASS_DEATH_KNIGHT;
     }
     return 0;
 }

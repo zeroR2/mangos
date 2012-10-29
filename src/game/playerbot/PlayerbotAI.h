@@ -40,7 +40,6 @@ class PlayerbotMgr;
 enum RacialTraits
 {
     ARCANE_TORRENT_MANA_CLASSES    = 28730,
-    ARCANE_TORRENT_DEATH_KNIGHT    = 50613,
     ARCANE_TORRENT_ROGUE           = 25046,
     BERSERKING_ALL                 = 26297,
     BLOOD_FURY_MELEE_CLASSES       = 20572,
@@ -48,7 +47,6 @@ enum RacialTraits
     BLOOD_FURY_SHAMAN              = 33697,
     ESCAPE_ARTIST_ALL              = 20589,
     EVERY_MAN_FOR_HIMSELF_ALL      = 59752,
-    GIFT_OF_THE_NAARU_DEATH_KNIGHT = 59545,
     GIFT_OF_THE_NAARU_HUNTER       = 59543,
     GIFT_OF_THE_NAARU_MAGE         = 59548,
     GIFT_OF_THE_NAARU_PALADIN      = 59542,
@@ -311,8 +309,6 @@ public:
     uint8 GetRageAmount() const;
     uint8 GetEnergyAmount(const Unit& target) const;
     uint8 GetEnergyAmount() const;
-    uint8 GetRunicPower(const Unit& target) const;
-    uint8 GetRunicPower() const;
 
     Item* FindFood() const;
     Item* FindDrink() const;

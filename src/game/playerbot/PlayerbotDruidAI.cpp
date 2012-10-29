@@ -549,9 +549,6 @@ void PlayerbotDruidAI::DoNextCombatManeuver(Unit *pTarget)
                 else if (FEROCIOUS_BITE > 0 && pTarget->getClass() == CLASS_PALADIN && ai->GetEnergyAmount() >= 35)
                     ai->CastSpell(FEROCIOUS_BITE, *pTarget);
                 //ai->TellMaster("Paladin Ferocious Bite");
-                else if (FEROCIOUS_BITE > 0 && pTarget->getClass() == CLASS_DEATH_KNIGHT && ai->GetEnergyAmount() >= 25)
-                    ai->CastSpell(FEROCIOUS_BITE, *pTarget);
-                //ai->TellMaster("DK Ferocious Bite");
                 else if (MAIM > 0 && pTarget->getClass() == CLASS_MAGE && ai->GetEnergyAmount() >= 35)
                     ai->CastSpell(MAIM, *pTarget);
                 //ai->TellMaster("Mage Maim");

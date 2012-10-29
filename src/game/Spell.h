@@ -50,7 +50,6 @@ enum SpellCastFlags
     CAST_FLAG_UNKNOWN9          = 0x00000100,
     CAST_FLAG_UNKNOWN10         = 0x00000200,
     CAST_FLAG_UNKNOWN11         = 0x00000400,
-    CAST_FLAG_PREDICTED_POWER   = 0x00000800,               // wotlk, trigger rune cooldown
     CAST_FLAG_UNKNOWN13         = 0x00001000,
     CAST_FLAG_UNKNOWN14         = 0x00002000,
     CAST_FLAG_UNKNOWN15         = 0x00004000,
@@ -60,7 +59,6 @@ enum SpellCastFlags
     CAST_FLAG_UNKNOWN19         = 0x00040000,               // spell cooldown related (may be category cooldown)
     CAST_FLAG_VISUAL_CHAIN      = 0x00080000,               // wotlk
     CAST_FLAG_UNKNOWN21         = 0x00100000,
-    CAST_FLAG_PREDICTED_RUNES   = 0x00200000,               // wotlk, rune cooldown list
     CAST_FLAG_IMMUNITY          = 0x04000000                // spell cast school imminity info
 };
 
@@ -368,7 +366,6 @@ class Spell
         void EffectKillCreditGroup(SpellEffectIndex eff_idx);
         void EffectQuestFail(SpellEffectIndex eff_idx);
         void EffectQuestOffer(SpellEffectIndex eff_idx);
-        void EffectActivateRune(SpellEffectIndex eff_idx);
         void EffectSuspendGravity(SpellEffectIndex eff_idx);
         void EffectUntrainTalents(SpellEffectIndex eff_idx);
         void EffectTeachTaxiNode(SpellEffectIndex eff_idx);
@@ -414,7 +411,6 @@ class Spell
         SpellCastResult CheckItems();
         SpellCastResult CheckRange(bool strict, WorldObject* target = NULL);
         SpellCastResult CheckPower();
-        SpellCastResult CheckOrTakeRunePower(bool take);
         SpellCastResult CheckCasterAuras() const;
         SpellCastResult CheckCastTargets() const;
 
@@ -566,7 +562,6 @@ class Spell
         bool m_canReflect;                                  // can reflect this spell?
         uint8 m_spellFlags;                                 // for spells whose target was changed in cast i.e. due to reflect
         bool m_autoRepeat;
-        uint8 m_runesState;
 
         uint8 m_delayAtDamageCount;
         bool isDelayableNoMore()

@@ -174,8 +174,6 @@ enum MangosStrings
     LANG_SOUND_NOT_EXIST                = 170,
     LANG_CANT_TELEPORT_SELF             = 171,
     LANG_CONSOLE_COMMAND                = 172,
-    LANG_YOU_CHANGE_RUNIC_POWER         = 173,
-    LANG_YOURS_RUNIC_POWER_CHANGED      = 174,
     LANG_LIQUID_STATUS                  = 175,
     // Room for more level 1              176-199 not used
 

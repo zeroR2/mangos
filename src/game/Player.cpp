@@ -156,8 +156,6 @@ void PlayerTaxi::InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint32 leve
         case RACE_TAUREN:   SetTaximaskNode(22); break;     // Tauren
         case RACE_GNOME:    SetTaximaskNode(6);  break;     // Gnome
         case RACE_TROLL:    SetTaximaskNode(23); break;     // Troll
-        case RACE_BLOODELF: SetTaximaskNode(82); break;     // Blood Elf
-        case RACE_DRAENEI:  SetTaximaskNode(94); break;     // Draenei
     }
 
     // new continent starting masks (It will be accessible only at new map)
@@ -728,9 +726,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     //SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
 
     // set starting level
-    uint32 start_level = getClass() != CLASS_DEATH_KNIGHT
-        ? sWorld.getConfig(CONFIG_UINT32_START_PLAYER_LEVEL)
-        : sWorld.getConfig(CONFIG_UINT32_START_HEROIC_PLAYER_LEVEL);
+    uint32 start_level = sWorld.getConfig(CONFIG_UINT32_START_PLAYER_LEVEL);
 
     if (GetSession()->GetSecurity() >= SEC_MODERATOR)
     {
@@ -817,7 +813,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
                 switch(iProto->Spells[0].SpellCategory)
                 {
                     case 11:                                // food
-                        count = getClass()==CLASS_DEATH_KNIGHT ? 10 : 4;
+                        count = 4;
                         break;
                     case 59:                                // drink
                         count = 2;
@@ -1589,7 +1585,7 @@ bool Player::BuildEnumData(QueryResult * result, WorldPacket * p_data)
         uint32 petFamily  = 0;
 
         // show pet at selection character in character list only for non-ghost character
-        if (result && !(playerFlags & PLAYER_FLAGS_GHOST) && (pClass == CLASS_WARLOCK || pClass == CLASS_HUNTER || pClass == CLASS_DEATH_KNIGHT))
+        if (result && !(playerFlags & PLAYER_FLAGS_GHOST) && (pClass == CLASS_WARLOCK || pClass == CLASS_HUNTER))
         {
             uint32 entry = fields[16].GetUInt32();
             CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(entry);
@@ -2109,17 +2105,12 @@ void Player::RegenerateAll(uint32 diff)
         if (!isInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
         {
             Regenerate(POWER_RAGE, diff);
-            if (getClass() == CLASS_DEATH_KNIGHT)
-                Regenerate(POWER_RUNIC_POWER, diff);
         }
     }
 
     Regenerate(POWER_ENERGY, diff);
 
     Regenerate(POWER_MANA, diff);
-
-    if (getClass() == CLASS_DEATH_KNIGHT)
-        Regenerate(POWER_RUNE, diff);
 
     m_regenTimer = IsUnderLastManaUseEffect() ? REGEN_TIME_PRECISE : REGEN_TIME_FULL;
 }
@@ -2161,13 +2152,7 @@ void Player::Regenerate(Powers power, uint32 diff)
             float EnergyRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
             addvalue += 20 * EnergyRate;
             break;
-        }
-        case POWER_RUNIC_POWER:
-        {
-            float RunicPowerDecreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RUNICPOWER_LOSS);
-            addvalue += 30 * RunicPowerDecreaseRate;         // 3 RunicPower by tick
-            break;
-        }        
+        }   
         case POWER_FOCUS:
         case POWER_HAPPINESS:
         case POWER_HEALTH:
@@ -2188,7 +2173,7 @@ void Player::Regenerate(Powers power, uint32 diff)
     // addvalue computed on a 2sec basis. => update to diff time
     uint32 _addvalue = ceil(fabs(addvalue * float(diff) / (float)REGEN_TIME_FULL));
 
-    if (power != POWER_RAGE && power != POWER_RUNIC_POWER)
+    if (power != POWER_RAGE)
     {
         curValue += _addvalue;
         if (curValue > maxValue)
@@ -2905,7 +2890,6 @@ void Player::InitStatsForLevel(bool reapplyMods)
         SetPower(POWER_RAGE, GetMaxPower(POWER_RAGE));
     SetPower(POWER_FOCUS, 0);
     SetPower(POWER_HAPPINESS, 0);
-    SetPower(POWER_RUNIC_POWER, 0);
 
     // update level to hunter/summon pet
     if (Pet* pet = GetPet())
@@ -3375,8 +3359,8 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool dependen
                 continue;
 
             if (_spell_idx->second->learnOnGetSkill == ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL ||
-                // lockpicking/runeforging special case, not have ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL
-                ((pSkill->id==SKILL_LOCKPICKING || pSkill->id==SKILL_RUNEFORGING) && _spell_idx->second->max_value==0))
+                // lockpicking special case, not have ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL
+                (pSkill->id==SKILL_LOCKPICKING && _spell_idx->second->max_value==0))
             {
                 switch(GetSkillRangeType(pSkill, _spell_idx->second->racemask != 0))
                 {
@@ -3592,8 +3576,8 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank, bo
 
             if ((_spell_idx->second->learnOnGetSkill == ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL &&
                 pSkill->categoryId != SKILL_CATEGORY_CLASS) ||// not unlearn class skills (spellbook/talent pages)
-                // lockpicking/runeforging special case, not have ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL
-                ((pSkill->id == SKILL_LOCKPICKING || pSkill->id == SKILL_RUNEFORGING) && _spell_idx->second->max_value == 0))
+                // lockpicking special case, not have ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL
+                (pSkill->id == SKILL_LOCKPICKING && _spell_idx->second->max_value == 0))
             {
                 // not reset skills for professions and racial abilities
                 if ((pSkill->categoryId == SKILL_CATEGORY_SECONDARY || pSkill->categoryId == SKILL_CATEGORY_PROFESSION) &&
@@ -8877,8 +8861,6 @@ uint8 Player::FindEquipSlot(ItemPrototype const* proto, uint32 slot, bool swap) 
                         slots[0] = EQUIPMENT_SLOT_RANGED;
                     break;
                 case ITEM_SUBCLASS_ARMOR_SIGIL:
-                    if (pClass == CLASS_DEATH_KNIGHT)
-                        slots[0] = EQUIPMENT_SLOT_RANGED;
                     break;
             }
             break;
@@ -21153,7 +21135,7 @@ Item* Player::ConvertItem(Item* item, uint32 newItemId)
 
 uint32 Player::CalculateTalentsPoints() const
 {
-    uint32 base_level = getClass() == CLASS_DEATH_KNIGHT ? 55 : 9;
+    uint32 base_level = 9;
     uint32 base_talent = getLevel() <= base_level ? 0 : getLevel() - base_level;
 
     uint32 talentPointsForLevel = base_talent + m_questRewardTalentCount;
@@ -21243,34 +21225,6 @@ void Player::_LoadSkills(QueryResult *result)
         SetUInt32Value(PLAYER_SKILL_INDEX(count), 0);
         SetUInt32Value(PLAYER_SKILL_VALUE_INDEX(count),0);
         SetUInt32Value(PLAYER_SKILL_BONUS_INDEX(count),0);
-    }
-
-    // special settings
-    if (getClass()==CLASS_DEATH_KNIGHT)
-    {
-        uint32 base_level = std::min(getLevel(),sWorld.getConfig (CONFIG_UINT32_START_HEROIC_PLAYER_LEVEL));
-        if (base_level < 1)
-            base_level = 1;
-        uint32 base_skill = (base_level-1)*5;               // 270 at starting level 55
-        if (base_skill < 1)
-            base_skill = 1;                                 // skill mast be known and then > 0 in any case
-
-        if (GetPureSkillValue (SKILL_FIRST_AID) < base_skill)
-            SetSkill(SKILL_FIRST_AID, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_AXES) < base_skill)
-            SetSkill(SKILL_AXES, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_DEFENSE) < base_skill)
-            SetSkill(SKILL_DEFENSE, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_POLEARMS) < base_skill)
-            SetSkill(SKILL_POLEARMS, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_SWORDS) < base_skill)
-            SetSkill(SKILL_SWORDS, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_2H_AXES) < base_skill)
-            SetSkill(SKILL_2H_AXES, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_2H_SWORDS) < base_skill)
-            SetSkill(SKILL_2H_SWORDS, base_skill, base_skill);
-        if (GetPureSkillValue (SKILL_UNARMED) < base_skill)
-            SetSkill(SKILL_UNARMED, base_skill, base_skill);
     }
 }
 

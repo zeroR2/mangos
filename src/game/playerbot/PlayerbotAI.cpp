@@ -28,7 +28,6 @@
 #include "../CellImpl.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotMgr.h"
-#include "PlayerbotDeathKnightAI.h"
 #include "PlayerbotDruidAI.h"
 #include "PlayerbotHunterAI.h"
 #include "PlayerbotMageAI.h"
@@ -150,10 +149,6 @@ PlayerbotAI::PlayerbotAI(PlayerbotMgr* const mgr, Player* const bot) :
         case CLASS_HUNTER:
             m_combatStyle = COMBAT_RANGED;
             m_classAI = (PlayerbotClassAI *) new PlayerbotHunterAI(GetMaster(), m_bot, this);
-            break;
-        case CLASS_DEATH_KNIGHT:
-            m_combatStyle = COMBAT_MELEE;
-            m_classAI = (PlayerbotClassAI *) new PlayerbotDeathKnightAI(GetMaster(), m_bot, this);
             break;
     }
 
@@ -709,11 +704,6 @@ void PlayerbotAI::ReloadAI()
             if (m_classAI) delete m_classAI;
             m_combatStyle = COMBAT_RANGED;
             m_classAI = (PlayerbotClassAI *) new PlayerbotHunterAI(GetMaster(), m_bot, this);
-            break;
-        case CLASS_DEATH_KNIGHT:
-            if (m_classAI) delete m_classAI;
-            m_combatStyle = COMBAT_MELEE;
-            m_classAI = (PlayerbotClassAI *) new PlayerbotDeathKnightAI(GetMaster(), m_bot, this);
             break;
     }
 }
@@ -1632,16 +1622,6 @@ uint8 PlayerbotAI::GetEnergyAmount(const Unit& target) const
 uint8 PlayerbotAI::GetEnergyAmount() const
 {
     return GetEnergyAmount(*m_bot);
-}
-
-uint8 PlayerbotAI::GetRunicPower(const Unit& target) const
-{
-    return (static_cast<float>(target.GetPower(POWER_RUNIC_POWER)));
-}
-
-uint8 PlayerbotAI::GetRunicPower() const
-{
-    return GetRunicPower(*m_bot);
 }
 
 bool PlayerbotAI::HasAura(uint32 spellId, const Unit& player) const
@@ -3130,22 +3110,6 @@ void PlayerbotAI::Announce(AnnounceFlags msg)
             {
                 case CANT_AFFORD: m_bot->getGender() == GENDER_MALE ? PlaySound(1853) : PlaySound(1963); break;
                 case INVENTORY_FULL: m_bot->getGender() == GENDER_MALE ? PlaySound(1820) : PlaySound(1930); break;
-                default: break;
-            }
-            break;
-        case RACE_BLOODELF:
-            switch (msg)
-            {
-                case CANT_AFFORD: m_bot->getGender() == GENDER_MALE ? PlaySound(9583) : PlaySound(9584); break;
-                case INVENTORY_FULL: m_bot->getGender() == GENDER_MALE ? PlaySound(9549) : PlaySound(9550); break;
-                default: break;
-            }
-            break;
-        case RACE_DRAENEI:
-            switch (msg)
-            {
-                case CANT_AFFORD: m_bot->getGender() == GENDER_MALE ? PlaySound(9498) : PlaySound(9499); break;
-                case INVENTORY_FULL: m_bot->getGender() == GENDER_MALE ? PlaySound(9465) : PlaySound(9466); break;
                 default: break;
             }
             break;

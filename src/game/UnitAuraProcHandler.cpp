@@ -1674,9 +1674,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
 
                     switch(pVictim->getPowerType())
                     {
-                        case POWER_RUNIC_POWER:
-                            triggered_spell_id = 63652;
-                            break;
                         case POWER_RAGE:
                             triggered_spell_id = 63653;
                             break;
@@ -2526,9 +2523,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         case POWER_MANA:
                             triggered_spell_id = 71881;
                             break;
-                        case POWER_RUNIC_POWER:
-                            triggered_spell_id = 71884;
-                            break;
                         default:
                             return SPELL_AURA_PROC_FAILED;
                     }
@@ -2550,9 +2544,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                             break;
                         case POWER_MANA:
                             triggered_spell_id = 71888;
-                            break;
-                        case POWER_RUNIC_POWER:
-                            triggered_spell_id = 71885;
                             break;
                         default:
                             return SPELL_AURA_PROC_FAILED;
@@ -2977,272 +2968,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
             }
             break;
         }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Butchery
-            if (dummySpell->SpellIconID == 2664)
-            {
-                basepoints[0] = triggerAmount;
-                triggered_spell_id = 50163;
-                target = this;
-                break;
-            }
-            // Dancing Rune Weapon
-            if (dummySpell->Id == 49028)
-            {
-                // 1 dummy aura for dismiss rune blade
-                if (effIndex != EFFECT_INDEX_1)
-                    return SPELL_AURA_PROC_FAILED;
-
-                Pet* runeBlade = FindGuardianWithEntry(27893);
-
-                if (runeBlade && pVictim && damage && procSpell)
-                {
-                    int32 procDmg = damage * 0.5;
-                    runeBlade->CastCustomSpell(pVictim, procSpell->Id, &procDmg, NULL, NULL, true, NULL, NULL, runeBlade->GetObjectGuid());
-                    SendSpellNonMeleeDamageLog(pVictim, procSpell->Id, procDmg, SPELL_SCHOOL_MASK_NORMAL, 0, 0, false, 0, false);
-                    break;
-                }
-                else
-                    return SPELL_AURA_PROC_FAILED;
-            }
-            // Mark of Blood
-            if (dummySpell->Id == 49005)
-            {
-                if (!target || target->GetTypeId() != TYPEID_PLAYER)
-                    return SPELL_AURA_PROC_FAILED;
-                // TODO: need more info (cooldowns/PPM)
-                target->CastSpell(target, 61607, true, NULL, triggeredByAura);
-                return SPELL_AURA_PROC_OK;
-            }
-            // Unholy Blight
-            if (dummySpell->Id == 49194)
-            {
-                basepoints[0] = damage * triggerAmount / 100;
-
-                // Split between 10 ticks
-                basepoints[0] /= 10;
-                triggered_spell_id = 50536;
-                break;
-            }
-            // Vendetta
-            if (dummySpell->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_VENDETTA1>())
-            {
-                basepoints[0] = triggerAmount * GetMaxHealth() / 100;
-                triggered_spell_id = 50181;
-                target = this;
-                break;
-            }
-            // Necrosis
-            if (dummySpell->SpellIconID == 2709)
-            {
-                // only melee auto attack affected and Rune Strike
-                if (procSpell && procSpell->Id != 56815)
-                    return SPELL_AURA_PROC_FAILED;
-
-                basepoints[0] = triggerAmount * damage / 100;
-                triggered_spell_id = 51460;
-                break;
-            }
-            // Threat of Thassarian
-            if (dummySpell->SpellIconID == 2023)
-            {
-                // Must Dual Wield
-                if (!procSpell || !haveOffhandWeapon())
-                    return SPELL_AURA_PROC_FAILED;
-                // Chance as basepoints for dummy aura
-                if (!roll_chance_i(triggerAmount))
-                    return SPELL_AURA_PROC_FAILED;
-
-                switch (procSpell->Id)
-                {
-                    // Obliterate
-                    case 49020:                             // Rank 1
-                        triggered_spell_id = 66198; break;
-                    case 51423:                             // Rank 2
-                        triggered_spell_id = 66972; break;
-                    case 51424:                             // Rank 3
-                        triggered_spell_id = 66973; break;
-                    case 51425:                             // Rank 4
-                        triggered_spell_id = 66974; break;
-                    // Frost Strike
-                    case 49143:                             // Rank 1
-                        triggered_spell_id = 66196; break;
-                    case 51416:                             // Rank 2
-                        triggered_spell_id = 66958; break;
-                    case 51417:                             // Rank 3
-                        triggered_spell_id = 66959; break;
-                    case 51418:                             // Rank 4
-                        triggered_spell_id = 66960; break;
-                    case 51419:                             // Rank 5
-                        triggered_spell_id = 66961; break;
-                    case 55268:                             // Rank 6
-                        triggered_spell_id = 66962; break;
-                    // Plague Strike
-                    case 45462:                             // Rank 1
-                        triggered_spell_id = 66216; break;
-                    case 49917:                             // Rank 2
-                        triggered_spell_id = 66988; break;
-                    case 49918:                             // Rank 3
-                        triggered_spell_id = 66989; break;
-                    case 49919:                             // Rank 4
-                        triggered_spell_id = 66990; break;
-                    case 49920:                             // Rank 5
-                        triggered_spell_id = 66991; break;
-                    case 49921:                             // Rank 6
-                        triggered_spell_id = 66992; break;
-                    // Death Strike
-                    case 49998:                             // Rank 1
-                        triggered_spell_id = 66188; break;
-                    case 49999:                             // Rank 2
-                        triggered_spell_id = 66950; break;
-                    case 45463:                             // Rank 3
-                        triggered_spell_id = 66951; break;
-                    case 49923:                             // Rank 4
-                        triggered_spell_id = 66952; break;
-                    case 49924:                             // Rank 5
-                        triggered_spell_id = 66953; break;
-                    // Rune Strike
-                    case 56815:
-                        triggered_spell_id = 66217; break;
-                    // Blood Strike
-                    case 45902:                             // Rank 1
-                        triggered_spell_id = 66215; break;
-                    case 49926:                             // Rank 2
-                        triggered_spell_id = 66975; break;
-                    case 49927:                             // Rank 3
-                        triggered_spell_id = 66976; break;
-                    case 49928:                             // Rank 4
-                        triggered_spell_id = 66977; break;
-                    case 49929:                             // Rank 5
-                        triggered_spell_id = 66978; break;
-                    case 49930:                             // Rank 6
-                        triggered_spell_id = 66979; break;
-                    default:
-                        return SPELL_AURA_PROC_FAILED;
-                }
-                break;
-            }
-            // Runic Power Back on Snare/Root
-            if (dummySpell->Id == 61257)
-            {
-                // only for spells and hit/crit (trigger start always) and not start from self casted spells
-                if (procSpell == 0 || !(procEx & (PROC_EX_NORMAL_HIT|PROC_EX_CRITICAL_HIT)) || this == pVictim)
-                    return SPELL_AURA_PROC_FAILED;
-                // Need snare or root mechanic
-                if (!(GetAllSpellMechanicMask(procSpell) & IMMUNE_TO_ROOT_AND_SNARE_MASK))
-                    return SPELL_AURA_PROC_FAILED;
-                triggered_spell_id = 61258;
-                target = this;
-                break;
-            }
-            // Sudden Doom
-            if (dummySpell->SpellIconID == 1939)
-            {
-                if (!target || !target->isAlive() || this->GetTypeId() != TYPEID_PLAYER)
-                    return SPELL_AURA_PROC_FAILED;
-
-                // get highest rank of Death Coil spell
-                const PlayerSpellMap& sp_list = ((Player*)this)->GetSpellMap();
-                for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
-                {
-                    if(!itr->second.active || itr->second.disabled || itr->second.state == PLAYERSPELL_REMOVED)
-                        continue;
-
-                    SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
-                    if (!spellInfo)
-                        continue;
-
-                    if (spellInfo->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_DEATH_COIL>())
-                    {
-                        triggered_spell_id = spellInfo->Id;
-                        break;
-                    }
-                }
-                break;
-            }
-            // Wandering Plague
-            if (dummySpell->SpellIconID == 1614)
-            {
-                if (!roll_chance_f(GetUnitCriticalChance(BASE_ATTACK, pVictim)))
-                    return SPELL_AURA_PROC_FAILED;
-                basepoints[0] = triggerAmount * damage / 100;
-                triggered_spell_id = 50526;
-                break;
-            }
-            // Blood of the North and Reaping
-            if (dummySpell->SpellIconID == 3041 || dummySpell->SpellIconID == 22)
-            {
-                if (GetTypeId()!=TYPEID_PLAYER)
-                    return SPELL_AURA_PROC_FAILED;
-
-                Player *player = (Player*)this;
-                for (uint32 i = 0; i < MAX_RUNES; ++i)
-                {
-                    if (player->GetCurrentRune(i) == RUNE_BLOOD)
-                    {
-                        if(!player->GetRuneCooldown(i))
-                            player->ConvertRune(i, RUNE_DEATH, dummySpell->Id);
-                        else
-                        {
-                            // search for another rune that might be available
-                            for (uint32 iter = i; iter < MAX_RUNES; ++iter)
-                            {
-                                if (player->GetCurrentRune(iter) == RUNE_BLOOD && !player->GetRuneCooldown(iter))
-                                {
-                                    player->ConvertRune(iter, RUNE_DEATH, dummySpell->Id);
-                                    const_cast<Aura*>(triggeredByAura)->SetAuraPeriodicTimer(0);
-                                    return SPELL_AURA_PROC_OK;
-                                }
-                            }
-                            player->SetNeedConvertRune(i, true, dummySpell->Id);
-                        }
-                        const_cast<Aura*>(triggeredByAura)->SetAuraPeriodicTimer(0);
-                        return SPELL_AURA_PROC_OK;
-                    }
-                }
-                return SPELL_AURA_PROC_FAILED;
-            }
-            // Death Rune Mastery
-            if (dummySpell->SpellIconID == 2622)
-            {
-                if (GetTypeId()!=TYPEID_PLAYER)
-                    return SPELL_AURA_PROC_FAILED;
-
-                Player *player = (Player*)this;
-                for (uint32 i = 0; i < MAX_RUNES; ++i)
-                {
-                    RuneType currRune = player->GetCurrentRune(i);
-                    if (currRune == RUNE_UNHOLY || currRune == RUNE_FROST)
-                    {
-                        uint16 cd = player->GetRuneCooldown(i);
-                        if(!cd)
-                            player->ConvertRune(i, RUNE_DEATH, dummySpell->Id);
-                        else // there is a cd
-                            player->SetNeedConvertRune(i, true, dummySpell->Id);
-                        // no break because it converts all
-                    }
-                }
-                const_cast<Aura*>(triggeredByAura)->SetAuraPeriodicTimer(0);
-                return SPELL_AURA_PROC_OK;
-            }
-            // Blood-Caked Blade
-            if (dummySpell->SpellIconID == 138)
-            {
-                // only melee auto attack affected and Rune Strike & Offhand Rune Strike
-                if ( procSpell && !procSpell->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_RUNE_STRIKE>())
-                    return SPELL_AURA_PROC_FAILED;
-                if (procFlag & PROC_FLAG_SUCCESSFUL_OFFHAND_HIT)
-                    triggered_spell_id=61895; // Offhand Blood-Caked Strike
-                break;
-            }
-            // Hungering Cold - not proc from dummy
-            if (dummySpell->SpellIconID == 2797)
-            {
-                return SPELL_AURA_PROC_CANT_TRIGGER;
-            }
-            break;
-        }
         case SPELLFAMILY_PET:
         {
             switch (dummySpell->SpellIconID)
@@ -3551,13 +3276,6 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                 {
                     target = this;
                     trigger_spell_id = 72195;
-                    break;
-                }
-                case 72408:                                 // Rune of Blood (Saurfang)
-                {
-                    // Proc on targets with dummy aura (debuff cast by Saurfang)
-                    if (pVictim && !pVictim->HasAura(72410))
-                        return SPELL_AURA_PROC_FAILED;
                     break;
                 }
             }
@@ -4081,54 +3799,6 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
             }
             break;
         }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Acclimation
-            if (auraSpellInfo->SpellIconID == 1930)
-            {
-                if (!procSpell)
-                    return SPELL_AURA_PROC_FAILED;
-                switch(GetFirstSchoolInMask(GetSpellSchoolMask(procSpell)))
-                {
-                    case SPELL_SCHOOL_NORMAL:
-                        return SPELL_AURA_PROC_FAILED;                   // ignore
-                    case SPELL_SCHOOL_HOLY:   trigger_spell_id = 50490; break;
-                    case SPELL_SCHOOL_FIRE:   trigger_spell_id = 50362; break;
-                    case SPELL_SCHOOL_NATURE: trigger_spell_id = 50488; break;
-                    case SPELL_SCHOOL_FROST:  trigger_spell_id = 50485; break;
-                    case SPELL_SCHOOL_SHADOW: trigger_spell_id = 50489; break;
-                    case SPELL_SCHOOL_ARCANE: trigger_spell_id = 50486; break;
-                    default:
-                        return SPELL_AURA_PROC_FAILED;
-                }
-            }
-            // Item - Death Knight T10 Melee 4P Bonus
-            else if (auraSpellInfo->Id == 70656)
-            {
-                if (GetTypeId() != TYPEID_PLAYER || getClass() != CLASS_DEATH_KNIGHT)
-                    return SPELL_AURA_PROC_FAILED;
-
-                for(uint32 i = 0; i < MAX_RUNES; ++i)
-                    if (((Player*)this)->GetRuneCooldown(i) == 0)
-                        return SPELL_AURA_PROC_FAILED;
-            }
-            // Blade Barrier
-            else if (auraSpellInfo->SpellIconID == 85)
-            {
-                if (GetTypeId() != TYPEID_PLAYER || getClass() != CLASS_DEATH_KNIGHT ||
-                    !((Player*)this)->IsBaseRuneSlotsOnCooldown(RUNE_BLOOD))
-                    return SPELL_AURA_PROC_FAILED;
-            }
-            // Improved Blood Presence
-            else if (auraSpellInfo->Id == 63611)
-            {
-                if (!damage)
-                    return SPELL_AURA_PROC_FAILED;
-                basepoints[0] = triggerAmount * damage / 100;
-                trigger_spell_id = 50475;
-            }
-            break;
-        }
         default:
             break;
     }
@@ -4499,7 +4169,6 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, Damag
                 case POWER_MANA:        triggered_spell_id = 48542; break;
                 case POWER_RAGE:        triggered_spell_id = 48541; break;
                 case POWER_ENERGY:      triggered_spell_id = 48540; break;
-                case POWER_RUNIC_POWER: triggered_spell_id = 48543; break;
                 default: return SPELL_AURA_PROC_FAILED;
             }
             break;
@@ -4816,67 +4485,6 @@ SpellAuraProcResult Unit::HandlePeriodicDummyAuraProc(Unit* /*pVictim*/, DamageI
                     CastSpell(this, 66359, true, NULL, triggeredByAura);
                     break;
                 }
-            }
-            break;
-        }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            switch (spellProto->SpellIconID)
-            {
-                // Reaping
-                // Death Rune Mastery
-                // Blood of the North
-                case 22:
-                case 2622:
-                case 3041:
-                {
-                    if(!procSpell)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    if (getClass() != CLASS_DEATH_KNIGHT)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    Player * plr = GetTypeId() == TYPEID_PLAYER? ((Player*)this) : NULL;
-                    if (!plr)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    //get spell rune cost
-                    SpellRuneCostEntry const *runeCost = sSpellRuneCostStore.LookupEntry(procSpell->runeCostID);
-                    if (!runeCost)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    //convert runes to death
-                    for (uint32 i = 0; i < NUM_RUNE_TYPES -1/*don't count death rune*/; ++i)
-                    {
-                        uint32 remainingCost = runeCost->RuneCost[i];
-
-                        while(remainingCost)
-                        {
-                            int32  convertedRuneCooldown = -1;
-                            uint32 convertedRune = i;
-                            for(uint32 j = 0; j < MAX_RUNES; ++j)
-                            {
-                                // convert only valid runes
-                                if (RuneType(i) != plr->GetCurrentRune(j) &&
-                                    RuneType(i) != plr->GetBaseRune(j))
-                                    continue;
-
-                                // select rune with longest cooldown
-                                if (convertedRuneCooldown < plr->GetRuneCooldown(j))
-                                {
-                                    convertedRuneCooldown = int32(plr->GetRuneCooldown(j));
-                                    convertedRune = j;
-                                }
-                            }
-                            if (convertedRuneCooldown >= 0)
-                                plr->ConvertRune(convertedRune, RUNE_DEATH);
-                            --remainingCost;
-                        }
-                    }
-                    return SPELL_AURA_PROC_OK;
-                }
-                default:
-                    break;
             }
             break;
         }

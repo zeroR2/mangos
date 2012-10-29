@@ -410,7 +410,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "hp",             SEC_MODERATOR,      false, &ChatHandler::HandleModifyHPCommand,            "", NULL },
         { "mana",           SEC_MODERATOR,      false, &ChatHandler::HandleModifyManaCommand,          "", NULL },
         { "rage",           SEC_MODERATOR,      false, &ChatHandler::HandleModifyRageCommand,          "", NULL },
-        { "runicpower",     SEC_MODERATOR,      false, &ChatHandler::HandleModifyRunicPowerCommand,    "", NULL },
         { "energy",         SEC_MODERATOR,      false, &ChatHandler::HandleModifyEnergyCommand,        "", NULL },
         { "powertype",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleModifyPowerTypeCommand,     "", NULL },
         { "money",          SEC_MODERATOR,      false, &ChatHandler::HandleModifyMoneyCommand,         "", NULL },
@@ -3321,8 +3320,6 @@ static RaceMaskName const raceMaskNames[] =
     { "tauren",   (1 << (RACE_TAUREN - 1))  },
     { "gnome",    (1 << (RACE_GNOME - 1))   },
     { "troll",    (1 << (RACE_TROLL - 1))   },
-    { "bloodelf", (1 << (RACE_BLOODELF - 1))},
-    { "draenei",  (1 << (RACE_DRAENEI - 1)) },
 
     // masks
     { "alliance", RACEMASK_ALLIANCE },

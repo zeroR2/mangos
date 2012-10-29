@@ -244,8 +244,6 @@ void PlayerbotRogueAI::DoNextCombatManeuver(Unit *pTarget)
                     out << " > Dismantle";
                 else if (SHADOWSTEP > 0 && ai->GetEnergyAmount() >= 10 && ai->CastSpell(SHADOWSTEP, *pTarget))
                     out << " > Shadowstep";
-                else if (m_bot->getRace() == RACE_BLOODELF && !pTarget->HasAura(ARCANE_TORRENT, EFFECT_INDEX_0) && ai->CastSpell(ARCANE_TORRENT, *pTarget))
-                    out << " > Arcane Torrent";
                 else if ((m_bot->getRace() == RACE_HUMAN && m_bot->hasUnitState(UNIT_STAT_STUNNED)) || m_bot->HasAuraType(SPELL_AURA_MOD_FEAR) || m_bot->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED) || (m_bot->HasAuraType(SPELL_AURA_MOD_CHARM) && ai->CastSpell(EVERY_MAN_FOR_HIMSELF, *m_bot)))
                     out << " > Every Man for Himself";
                 else if ((m_bot->getRace() == RACE_UNDEAD && m_bot->HasAuraType(SPELL_AURA_MOD_FEAR)) || (m_bot->HasAuraType(SPELL_AURA_MOD_CHARM) && ai->CastSpell(WILL_OF_THE_FORSAKEN, *m_bot)))
@@ -277,8 +275,6 @@ void PlayerbotRogueAI::DoNextCombatManeuver(Unit *pTarget)
                     out << " > Warrior Expose Armor";
                 else if (EXPOSE_ARMOR > 0 && pTarget->getClass() == CLASS_PALADIN && !pTarget->HasAura(EXPOSE_ARMOR, EFFECT_INDEX_0) && ai->GetEnergyAmount() >= 25 && ai->CastSpell(EXPOSE_ARMOR, *pTarget))
                     out << " > Paladin Expose Armor";
-                else if (EXPOSE_ARMOR > 0 && pTarget->getClass() == CLASS_DEATH_KNIGHT && !pTarget->HasAura(EXPOSE_ARMOR, EFFECT_INDEX_0) && ai->GetEnergyAmount() >= 25 && ai->CastSpell(EXPOSE_ARMOR, *pTarget))
-                    out << " > DK Expose Armor";
                 else if (RUPTURE > 0 && pTarget->getClass() == CLASS_MAGE && ai->GetEnergyAmount() >= 25 && ai->CastSpell(RUPTURE, *pTarget))
                     out << " > Mage Rupture";
                 else if (RUPTURE > 0 && pTarget->getClass() == CLASS_PRIEST && ai->GetEnergyAmount() >= 25 && ai->CastSpell(RUPTURE, *pTarget))

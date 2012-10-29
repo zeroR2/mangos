@@ -471,7 +471,6 @@ bool PlayerbotPaladinAI::BuffPlayer(Player* target)
                 return true;
             else
                 return false;
-        case CLASS_DEATH_KNIGHT:
         case CLASS_HUNTER:
             if (petCanBeBlessed)
             {

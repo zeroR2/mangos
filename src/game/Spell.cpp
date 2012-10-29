@@ -449,7 +449,6 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
     //Auto Shot & Shoot (wand)
     m_autoRepeat = IsAutoRepeatRangedSpell(m_spellInfo);
 
-    m_runesState = 0;
     m_powerCost = 0;                                        // setup to correct value in Spell::prepare, don't must be used before.
     m_casttime = 0;                                         // setup to correct value in Spell::prepare, don't must be used before.
     m_timer = 0;                                            // will set to cast time in prepare
@@ -1340,29 +1339,6 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
             ((Player*)caster)->GetAntiCheat()->DoAntiCheatCheck(CHECK_DAMAGE_SPELL, m_spellInfo->Id, 0, damageInfo.damage);
 
         caster->DealSpellDamage(&damageInfo, true);
-
-        // Scourge Strike, here because needs to use final damage in second part of the spell
-        if (m_spellInfo->IsFitToFamily<SPELLFAMILY_DEATHKNIGHT, CF_DEATHKNIGHT_SCOURGE_STRIKE>())
-        {
-            uint32 count = 0;
-            Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
-            for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-            {
-                if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE &&
-                    itr->second->GetCasterGuid() == caster->GetObjectGuid())
-                    ++count;
-            }
-
-            if (count)
-            {
-                int32 bp = count * CalculateDamage(EFFECT_INDEX_2, unitTarget) * damageInfo.damage / 100;
-                if (Aura const* dummy = caster->GetDummyAura(64736)) // Item - Death Knight T8 Melee 4P Bonus
-                    bp *= ((dummy->GetModifier()->m_amount * count) + 100.0f) / 100.0f;
-
-                if (bp)
-                    caster->CastCustomSpell(unitTarget, 70890, &bp, NULL, NULL, true);
-            }
-        }
     }
     // Passive spell hits/misses or active spells only misses (only triggers if proc flags set)
     else if (damageInfo.procAttacker || damageInfo.procVictim)
@@ -3605,13 +3581,6 @@ void Spell::cast(bool skipCheck)
                 AddTriggeredSpell(30708);                   // Totem of Wrath
             break;
         }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Chains of Ice
-            if (m_spellInfo->Id == 45524)
-                AddTriggeredSpell(55095);                   // Frost Fever
-            break;
-        }
         default:
             break;
     }
@@ -4240,9 +4209,6 @@ void Spell::SendSpellStart()
     if (IsRangedSpell())
         castFlags |= CAST_FLAG_AMMO;
 
-    if (m_spellInfo->runeCostID)
-        castFlags |= CAST_FLAG_UNKNOWN19;
-
     Unit *caster = m_triggeredByAuraSpell && IsChanneledSpell(m_triggeredByAuraSpell) ? GetAffectiveCaster() : m_caster;
 
     WorldPacket data(SMSG_SPELL_START, (8+8+4+4+2));
@@ -4261,21 +4227,6 @@ void Spell::SendSpellStart()
 
     if (castFlags & CAST_FLAG_PREDICTED_POWER)              // predicted power
         data << uint32(0);
-
-    if (castFlags & CAST_FLAG_PREDICTED_RUNES)              // predicted runes
-    {
-        uint8 v1 = 0;//m_runesState;
-        uint8 v2 = 0;//((Player*)m_caster)->GetRunesState();
-        data << uint8(v1);                                  // runes state before
-        data << uint8(v2);                                  // runes state after
-        for(uint8 i = 0; i < MAX_RUNES; ++i)
-        {
-            uint8 m = (1 << i);
-            if (m & v1)                                      // usable before...
-                if(!(m & v2))                               // ...but on cooldown now...
-                    data << uint8(0);                       // some unknown byte (time?)
-        }
-    }
 
     if (castFlags & CAST_FLAG_AMMO)                         // projectile info
         WriteAmmoToPacket(&data);
@@ -4300,13 +4251,6 @@ void Spell::SendSpellGo()
     uint32 castFlags = CAST_FLAG_UNKNOWN9;
     if (IsRangedSpell())
         castFlags |= CAST_FLAG_AMMO;                        // arrows/bullets visual
-
-    if ((m_caster->GetTypeId() == TYPEID_PLAYER) && (m_caster->getClass() == CLASS_DEATH_KNIGHT) && m_spellInfo->runeCostID)
-    {
-        castFlags |= CAST_FLAG_UNKNOWN19;                   // same as in SMSG_SPELL_START
-        castFlags |= CAST_FLAG_PREDICTED_POWER;             // makes cooldowns visible
-        castFlags |= CAST_FLAG_PREDICTED_RUNES;             // rune cooldowns list
-    }
 
     if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) && (m_targets.GetSpeed() > M_NULL_F || m_targets.GetElevation() > M_NULL_F))
         castFlags |= CAST_FLAG_ADJUST_MISSILE;             // spell has trajectory (guess parameters)
@@ -4335,21 +4279,6 @@ void Spell::SendSpellGo()
 
     if (castFlags & CAST_FLAG_PREDICTED_POWER)              // predicted power
         data << uint32(m_caster->GetPower(m_caster->getPowerType())); // Yes, it is really predicted power.
-
-    if (castFlags & CAST_FLAG_PREDICTED_RUNES)              // predicted runes
-    {
-        uint8 v1 = m_runesState;
-        uint8 v2 =  m_caster->getClass() == CLASS_DEATH_KNIGHT ? ((Player*)m_caster)->GetRunesState() : 0;
-        data << uint8(v1);                                  // runes state before
-        data << uint8(v2);                                  // runes state after
-        for(uint8 i = 0; i < MAX_RUNES; ++i)
-        {
-            uint8 m = (1 << i);
-            if (m & v1)                                      // usable before...
-                if(!(m & v2))                               // ...but on cooldown now...
-                    data << uint8(0);                       // some unknown byte (time?)
-        }
-    }
 
     if (castFlags & CAST_FLAG_ADJUST_MISSILE)               // adjust missile trajectory duration
     {
@@ -4863,12 +4792,6 @@ void Spell::TakePower()
 
     Powers powerType = Powers(m_spellInfo->powerType);
 
-    if (powerType == POWER_RUNE)
-    {
-        CheckOrTakeRunePower(true);
-        return;
-    }
-
     bool needApplyMod = false;
     for (TargetList::const_iterator itr = m_UniqueTargetInfo.begin(); itr != m_UniqueTargetInfo.end(); ++itr)
     {
@@ -4896,105 +4819,6 @@ void Spell::TakePower()
 
         m_caster->AddEvent(new ManaUseEvent(*m_caster), delay);
     }
-}
-
-SpellCastResult Spell::CheckOrTakeRunePower(bool take)
-{
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-        return SPELL_CAST_OK;
-
-    Player *plr = (Player*)m_caster;
-
-    if (plr->getClass() != CLASS_DEATH_KNIGHT)
-        return SPELL_CAST_OK;
-
-    SpellRuneCostEntry const *src = sSpellRuneCostStore.LookupEntry(m_spellInfo->runeCostID);
-
-    if(!src)
-        return SPELL_CAST_OK;
-
-    if (src->NoRuneCost() && (!take || src->NoRunicPowerGain()))
-        return SPELL_CAST_OK;
-
-    if (take)
-        m_runesState = plr->GetRunesState();                // store previous state
-
-    // at this moment for rune cost exist only no cost mods, and no percent mods
-    int32 runeCostMod = 10000;
-    if (Player* modOwner = plr->GetSpellModOwner())
-        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_COST, runeCostMod);
-
-    if (runeCostMod > 0)
-    {
-        int32 runeCost[NUM_RUNE_TYPES];                         // blood, frost, unholy, death
-
-        // init cost data and apply mods
-        for(uint32 i = 0; i < RUNE_DEATH; ++i)
-            runeCost[i] = runeCostMod > 0 ? src->RuneCost[i] : 0;
-
-        runeCost[RUNE_DEATH] = 0;                               // calculated later
-
-        // scan non-death runes (death rune not used explicitly in rune costs)
-        for(uint32 i = 0; i < MAX_RUNES; ++i)
-        {
-            RuneType rune = plr->GetCurrentRune(i);
-            if (runeCost[rune] <= 0)
-                continue;
-
-            // already used
-            if (plr->GetRuneCooldown(i) != 0)
-                continue;
-
-            if (take)
-                plr->SetRuneCooldown(i, RUNE_COOLDOWN);         // 5*2=10 sec
-
-            --runeCost[rune];
-        }
-
-        // collect all not counted rune costs to death runes cost
-        for(uint32 i = 0; i < RUNE_DEATH; ++i)
-            if (runeCost[i] > 0)
-                runeCost[RUNE_DEATH] += runeCost[i];
-
-        // scan death runes
-        if (runeCost[RUNE_DEATH] > 0)
-        {
-            for(uint32 i = 0; i < MAX_RUNES && runeCost[RUNE_DEATH]; ++i)
-            {
-                RuneType rune = plr->GetCurrentRune(i);
-                if (rune != RUNE_DEATH)
-                    continue;
-
-                // already used
-                if (plr->GetRuneCooldown(i) != 0)
-                    continue;
-
-                if (take)
-                    plr->SetRuneCooldown(i, RUNE_COOLDOWN); // 5*2=10 sec
-
-                --runeCost[rune];
-
-                if (take)
-                {
-                    plr->ConvertRune(i, plr->GetBaseRune(i));
-                    plr->ClearConvertedBy(i);
-                }
-            }
-        }
-
-        if(!take && runeCost[RUNE_DEATH] > 0)
-            return SPELL_FAILED_NO_POWER;                       // not sure if result code is correct
-    }
-
-    if (take)
-    {
-        // you can gain some runic power when use runes
-        float rp = float(src->runePowerGain);
-        rp *= sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RUNICPOWER_INCOME);
-        plr->ModifyPower(POWER_RUNIC_POWER, (int32)rp);
-    }
-
-    return SPELL_CAST_OK;
 }
 
 void Spell::TakeReagents()
@@ -5782,12 +5606,6 @@ SpellCastResult Spell::CheckCast(bool strict)
                 {
                     if (m_caster->IsInWater())
                         return SPELL_FAILED_ONLY_ABOVEWATER;
-                }
-                else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_DEATH_COIL>()) // Death Coil (DeathKnight)
-                {
-                    Unit* target = m_targets.getUnitTarget();
-                    if (!target || (target->IsFriendlyTo(m_caster) && target->GetCreatureType() != CREATURE_TYPE_UNDEAD))
-                        return SPELL_FAILED_BAD_TARGETS;
                 }
                 else if (m_spellInfo->SpellIconID == 156)    // Holy Shock
                 {
@@ -6952,10 +6770,6 @@ int32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell
             case POWER_HAPPINESS:
                 powerCost += spellInfo->ManaCostPercentage * caster->GetMaxPower(Powers(spellInfo->powerType)) / 100;
                 break;
-            case POWER_RUNE:
-            case POWER_RUNIC_POWER:
-                DEBUG_LOG("Spell::CalculateManaCost: Not implemented yet!");
-                break;
             default:
                 sLog.outError("Spell::CalculateManaCost: Unknown power type '%d' in spell %d", spellInfo->powerType, spellInfo->Id);
                 return 0;
@@ -7010,14 +6824,6 @@ SpellCastResult Spell::CheckPower()
     {
         sLog.outError("Spell::CheckMana: Unknown power type '%d'", m_spellInfo->powerType);
         return SPELL_FAILED_UNKNOWN;
-    }
-
-    //check rune cost only if a spell has PowerType == POWER_RUNE
-    if (m_spellInfo->powerType == POWER_RUNE)
-    {
-        SpellCastResult failReason = CheckOrTakeRunePower(false);
-        if (failReason != SPELL_CAST_OK)
-            return failReason;
     }
 
     // Check power amount

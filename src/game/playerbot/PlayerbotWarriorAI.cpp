@@ -297,8 +297,6 @@ void PlayerbotWarriorAI::DoNextCombatManeuver(Unit *pTarget)
                 out << " > Blood Fury";
             else if (m_bot->getRace() == RACE_TROLL && !m_bot->HasAura(BERSERKING, EFFECT_INDEX_0) && ai->CastSpell(BERSERKING, *m_bot))
                 out << " > Berserking";
-            else if (m_bot->getRace() == RACE_DRAENEI && ai->GetHealthPercent() < 25 && !m_bot->HasAura(GIFT_OF_THE_NAARU, EFFECT_INDEX_0) && ai->CastSpell(GIFT_OF_THE_NAARU, *m_bot))
-                out << " > Gift of the Naaru";
             else
                 out << " > NONE";
             break;
@@ -376,12 +374,6 @@ void PlayerbotWarriorAI::DoNonCombatActions()
     {
         ai->TellMaster("I could use first aid.");
         ai->UseItem(fItem);
-        return;
-    }
-    else if (pItem == NULL && fItem == NULL && m_bot->getRace() == RACE_DRAENEI && !m_bot->HasAura(GIFT_OF_THE_NAARU, EFFECT_INDEX_0) && ai->GetHealthPercent() < 70)
-    {
-        ai->TellMaster("I'm casting gift of the naaru.");
-        ai->CastSpell(GIFT_OF_THE_NAARU, *m_bot);
         return;
     }
 } // end DoNonCombatActions

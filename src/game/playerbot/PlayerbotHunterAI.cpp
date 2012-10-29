@@ -251,14 +251,10 @@ void PlayerbotHunterAI::DoNextCombatManeuver(Unit *pTarget)
             out << " > Deterrence";
         else if (m_bot->getRace() == RACE_TAUREN && !pTarget->HasAura(WAR_STOMP, EFFECT_INDEX_0) && ai->CastSpell(WAR_STOMP, *pTarget))
             out << " > War Stomp";
-        else if (m_bot->getRace() == RACE_BLOODELF && !pTarget->HasAura(ARCANE_TORRENT, EFFECT_INDEX_0) && ai->CastSpell(ARCANE_TORRENT, *pTarget))
-            out << " > Arcane Torrent";
         else if (m_bot->getRace() == RACE_DWARF && m_bot->HasAuraState(AURA_STATE_DEADLY_POISON) && ai->CastSpell(STONEFORM, *m_bot))
             out << " > Stoneform";
         else if (m_bot->getRace() == RACE_NIGHTELF && pVictim == m_bot && ai->GetHealthPercent() < 25 && !m_bot->HasAura(SHADOWMELD, EFFECT_INDEX_0) && ai->CastSpell(SHADOWMELD, *m_bot))
             out << " > Shadowmeld";
-        else if (m_bot->getRace() == RACE_DRAENEI && ai->GetHealthPercent() < 25 && !m_bot->HasAura(GIFT_OF_THE_NAARU, EFFECT_INDEX_0) && ai->CastSpell(GIFT_OF_THE_NAARU, *m_bot))
-            out << " > Gift of the Naaru";
         else if ((pet && !pet->getDeathState() != ALIVE)
                  && (MISDIRECTION > 0 && pVictim == m_bot && !m_bot->HasAura(MISDIRECTION, EFFECT_INDEX_0) && ai->GetManaPercent() >= 9 && ai->CastSpell(MISDIRECTION, *pet)))
             out << " > Misdirection";  // give threat to pet
@@ -327,12 +323,6 @@ void PlayerbotHunterAI::DoNonCombatActions()
     {
         ai->TellMaster("I could use first aid.");
         ai->UseItem(fItem);
-        return;
-    }
-    else if (pItem == NULL && fItem == NULL && m_bot->getRace() == RACE_DRAENEI && !m_bot->HasAura(GIFT_OF_THE_NAARU, EFFECT_INDEX_0) && ai->GetHealthPercent() < 70)
-    {
-        ai->TellMaster("I'm casting gift of the naaru.");
-        ai->CastSpell(GIFT_OF_THE_NAARU, *m_bot);
         return;
     }
 

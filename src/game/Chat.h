@@ -314,7 +314,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleModifyHPCommand(char* args);
         bool HandleModifyManaCommand(char* args);
         bool HandleModifyRageCommand(char* args);
-        bool HandleModifyRunicPowerCommand(char* args);
         bool HandleModifyEnergyCommand(char* args);
         bool HandleModifyMoneyCommand(char* args);
         bool HandleModifyASpeedCommand(char* args);

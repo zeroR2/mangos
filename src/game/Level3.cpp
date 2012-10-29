@@ -4625,9 +4625,7 @@ bool ChatHandler::HandleResetLevelCommand(char* args)
         return false;
 
     // set starting level
-    uint32 start_level = target->getClass() != CLASS_DEATH_KNIGHT
-                         ? sWorld.getConfig(CONFIG_UINT32_START_PLAYER_LEVEL)
-                         : sWorld.getConfig(CONFIG_UINT32_START_HEROIC_PLAYER_LEVEL);
+    uint32 start_level = sWorld.getConfig(CONFIG_UINT32_START_PLAYER_LEVEL);
 
     target->_ApplyAllLevelScaleItemMods(false);
 

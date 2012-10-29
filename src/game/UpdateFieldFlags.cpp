@@ -1446,10 +1446,6 @@ uint32 UnitUpdateFieldFlags[PLAYER_END] =
     UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_DAILY_QUESTS_1+22
     UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_DAILY_QUESTS_1+23
     UF_FLAG_PRIVATE,                                        // PLAYER_FIELD_DAILY_QUESTS_1+24
-    UF_FLAG_PRIVATE,                                        // PLAYER_RUNE_REGEN_1
-    UF_FLAG_PRIVATE,                                        // PLAYER_RUNE_REGEN_1+1
-    UF_FLAG_PRIVATE,                                        // PLAYER_RUNE_REGEN_1+2
-    UF_FLAG_PRIVATE,                                        // PLAYER_RUNE_REGEN_1+3
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1+1
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1+2

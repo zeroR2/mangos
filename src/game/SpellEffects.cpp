@@ -1213,16 +1213,6 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                 }
                 break;
             }
-            case SPELLFAMILY_DEATHKNIGHT:
-            {
-                // Blood Boil - bonus for diseased targets
-                if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_BLOOD_BOIL>() && unitTarget->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DEATHKNIGHT, CF_DEATHKNIGHT_FF_BP_ACTIVE>(m_caster->GetObjectGuid()))
-                {
-                    damage += damage / 2;
-                    damage += int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK)* 0.035f);
-                }
-                break;
-            }
         }
 
         if (damage >= 0)
@@ -2625,17 +2615,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     return;
                 }
-                case 49859:                                 // Rune of Command
-                {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
-                        return;
-
-                    // Captive Stone Giant Kill Credit
-                    unitTarget->CastSpell(m_caster, 43564, true);
-                    // Is it supposed to despawn?
-                    ((Creature*)unitTarget)->ForcedDespawn();
-                    return;
-                }
                 case 50133:                                 // Scourging Crystal Controller
                 {
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
@@ -3013,13 +2992,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                             // Brewfest Riding Kodo, 60% Kodo
                             m_caster->CastSpell(m_caster, 49378, true);
                     }
-                    return;
-                }
-                case 53341:                                 // Rune of Cinderglacier
-                case 53343:                                 // Rune of Razorice
-                {
-                    // Runeforging Credit
-                    m_caster->CastSpell(m_caster, 54586, true);
                     return;
                 }
                 case 53475:                                 // Set Oracle Faction Friendly
@@ -3439,7 +3411,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     switch(m_caster->getClass())
                     {
                         case CLASS_WARRIOR:
-                        case CLASS_DEATH_KNIGHT:
                             spell_id = 67018;               // STR for Warriors, Death Knights
                             break;
                         case CLASS_ROGUE:
@@ -4385,153 +4356,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
             }
             break;
         }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Corpse Explosion
-            if (m_spellInfo->SpellIconID == 1737)
-            {
-                // Living ghoul as a target
-                if (unitTarget->isAlive() && unitTarget->GetObjectGuid().IsPet() && unitTarget->GetEntry() == 26125)
-                {
-                    int32 bp = int32(unitTarget->GetMaxHealth()/4.0f);
-                    unitTarget->CastCustomSpell(unitTarget,47496,&bp,NULL,NULL,true);
-                    unitTarget->CastSpell(unitTarget, 53730, true, NULL, NULL, m_caster->GetObjectGuid());
-                    unitTarget->CastSpell(unitTarget,43999,true);
-                    ((Pet*)unitTarget)->Unsummon(PET_SAVE_AS_DELETED);
-                }
-                else if (!unitTarget->isAlive())
-                {
-                    m_caster->CastSpell(unitTarget, 50444, true, NULL, NULL, m_caster->GetObjectGuid());
-                    m_caster->CastSpell(unitTarget, 53730, true, NULL, NULL, m_caster->GetObjectGuid());
-                    if (unitTarget->GetTypeId() == TYPEID_UNIT && unitTarget->getDeathState() == CORPSE)
-                        ((Creature*)unitTarget)->RemoveCorpse();
-                }
-                return;
-            }
-            // Death Coil
-            if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_DEATH_COIL>())
-            {
-                if (m_caster->IsFriendlyTo(unitTarget))
-                {
-                    if (!unitTarget || unitTarget->GetCreatureType() != CREATURE_TYPE_UNDEAD)
-                        return;
-
-                    int32 bp = int32(damage * 1.5f);
-                    m_caster->CastCustomSpell(unitTarget, 47633, &bp, NULL, NULL, true);
-                }
-                else
-                {
-                    int32 bp = damage;
-                    m_caster->CastCustomSpell(unitTarget, 47632, &bp, NULL, NULL, true);
-                }
-                return;
-            }
-            // Hungering Cold
-            else if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_HUNGERING_COLD>())
-            {
-                m_caster->CastSpell(m_caster, 51209, true);
-                return;
-            }
-            // Death Strike
-            else if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_DEATH_STRIKE>())
-            {
-                uint32 count = 0;
-                Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
-                for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-                {
-                    if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE &&
-                        itr->second->GetCasterGuid() == m_caster->GetObjectGuid())
-                    {
-                        ++count;
-                        // max. 15%
-                        if (count == 3)
-                            break;
-                    }
-                }
-
-                int32 bp = int32(count * m_caster->GetMaxHealth() * m_spellInfo->DmgMultiplier[EFFECT_INDEX_0] / 100);
-
-                // Improved Death Strike (percent stored in nonexistent EFFECT_INDEX_2 effect base points)
-                Unit::AuraList const& auraMod = m_caster->GetAurasByType(SPELL_AURA_ADD_FLAT_MODIFIER);
-                for(Unit::AuraList::const_iterator iter = auraMod.begin(); iter != auraMod.end(); ++iter)
-                {
-                    // only required spell have spellicon for SPELL_AURA_ADD_FLAT_MODIFIER
-                    if ((*iter)->GetSpellProto()->SpellIconID == 2751 && (*iter)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT)
-                    {
-                        bp += (*iter)->GetSpellProto()->CalculateSimpleValue(EFFECT_INDEX_2) * bp / 100;
-                        break;
-                    }
-                }
-
-                m_caster->CastCustomSpell(m_caster, 45470, &bp, NULL, NULL, true);
-                return;
-            }
-            // Death Grip
-            else if (m_spellInfo->Id == 49576)
-            {
-                if (!unitTarget)
-                    return;
-
-                m_caster->CastSpell(unitTarget, 49560, true);
-                return;
-            }
-            else if (m_spellInfo->Id == 49560)
-            {
-                if (!unitTarget || unitTarget == m_caster)
-                    return;
-
-                uint32 spellId = m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_0);
-                float dest_x, dest_y;
-                m_caster->GetNearPoint2D(dest_x, dest_y, m_caster->GetObjectBoundingRadius() + unitTarget->GetObjectBoundingRadius(), m_caster->GetOrientation());
-                unitTarget->CastSpell(dest_x, dest_y, m_caster->GetPositionZ()+0.5f, spellId, true,NULL,NULL,m_caster->GetObjectGuid(),m_spellInfo);
-                return;
-            }
-            // Corpse Explosion. Execute for Effect1 only
-            else if (m_spellInfo->SpellIconID == 1737 && eff_idx == EFFECT_INDEX_1)
-            {
-                if (!unitTarget)
-                    return;
-
-                // casting on a ghoul-pet makes it explode! :D
-                // target validation is done in Spell:SetTargetMap
-                if (unitTarget->GetEntry() == 26125 && unitTarget->isAlive() )
-                {
-                    int32 bp0 = int32(unitTarget->GetMaxHealth() * 0.25); // AoE dmg
-                    int32 bp1 = int32(unitTarget->GetHealth() ); // self damage
-                    unitTarget->InterruptNonMeleeSpells(false);
-                    unitTarget->CastCustomSpell(unitTarget, 47496, &bp0, &bp1, 0, false);
-                }
-                else
-                {
-                    int32 damage = m_spellInfo->CalculateSimpleValue(SpellEffectIndex(EFFECT_INDEX_0));
-                    uint32 spell = m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1);
-
-                    m_caster->CastSpell(unitTarget, 51270, true); // change modelId (is this generic spell for this kind of spells?)
-                    m_caster->CastCustomSpell(unitTarget, spell, &damage, NULL, NULL, true);
-                }
-                return;
-            }
-            // Obliterate
-            else if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_OBLITERATE>())
-            {
-                // search for Annihilation
-                Unit::AuraList const& dummyList = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
-                for (Unit::AuraList::const_iterator itr = dummyList.begin(); itr != dummyList.end(); ++itr)
-                {
-                    if ((*itr)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT && (*itr)->GetSpellProto()->SpellIconID == 2710)
-                    {
-                        if (roll_chance_i((*itr)->GetModifier()->m_amount)) // don't consume if found
-                            return;
-                        else
-                            break;
-                    }
-                }
-
-                // consume diseases
-                unitTarget->RemoveAurasWithDispelType(DISPEL_DISEASE, m_caster->GetObjectGuid());
-            }
-            break;
-        }
     }
 
     // Linked spells (DUMMYEFFECT chain)
@@ -5422,13 +5246,6 @@ void Spell::EffectHeal(SpellEffectIndex eff_idx)
 
             addhealth += tickheal * tickcount;
         }
-        // Runic Healing Injector & Healing Potion Injector effect increase for engineers
-        else if ((m_spellInfo->Id == 67486 || m_spellInfo->Id == 67489) && unitTarget->GetTypeId() == TYPEID_PLAYER)
-        {
-            Player* player = (Player*)unitTarget;
-            if (player->HasSkill(SKILL_ENGINEERING))
-                addhealth += int32(addhealth * 0.25);
-        }
 
         // Chain Healing
         if (m_spellInfo->SpellFamilyName == SPELLFAMILY_SHAMAN && m_spellInfo->GetSpellFamilyFlags().test<CF_SHAMAN_CHAIN_HEAL>())
@@ -5750,17 +5567,6 @@ void Spell::EffectEnergize(SpellEffectIndex eff_idx)
         case 67545:                                         // Empowered Fire
             damage = damage * unitTarget->GetCreateMana() / 100;
             break;
-        case 67487:                                         // Mana Potion Injector
-        case 67490:                                         // Runic Mana Injector
-        {
-            if (unitTarget->GetTypeId() == TYPEID_PLAYER)
-            {
-                Player* player = (Player*)unitTarget;
-                if (player->HasSkill(SKILL_ENGINEERING))
-                    damage += int32(damage * 0.25);
-            }
-            break;
-        }
         default:
             break;
     }
@@ -7492,54 +7298,6 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
             }
             break;
         }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            // Blood Strike, Heart Strike, Obliterate
-            // Blood-Caked Strike
-            if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_BLOOD_STRIKE, CF_DEATHKNIGHT_HEART_STRIKE, CF_DEATHKNIGHT_OBLITERATE>() ||
-                m_spellInfo->SpellIconID == 1736)
-            {
-                uint32 count = 0;
-                Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
-                for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-                {
-                    if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE &&
-                        itr->second->GetCasterGuid() == m_caster->GetObjectGuid())
-                        ++count;
-                }
-
-                if (count)
-                {
-                    float bonus;
-                    if (m_spellInfo->SpellIconID != 1736) // Blood Strike, Heart Strike, Obliterate
-                    {
-                        // Effect 3 damage is bonus
-                        bonus = count * CalculateDamage(EFFECT_INDEX_2, unitTarget) / 100.0f;
-                        // Blood Strike and Obliterate store bonus*2
-                        if (m_spellInfo->GetSpellFamilyFlags().test<CF_DEATHKNIGHT_BLOOD_STRIKE, CF_DEATHKNIGHT_OBLITERATE>())
-                            bonus /= 2.0f;
-                        if (Aura const* dummy = m_caster->GetDummyAura(64736)) // Item - Death Knight T8 Melee 4P Bonus
-                            bonus += (dummy->GetModifier()->m_amount * count) / 100.0f;
-                    }
-                    else // Blood-Caked Blade damage info taken from http://www.wowhead.com/forums&topic=54152.2 and Dr.Damage addon.
-                       bonus= count * 0.5f;//Blood-Caked Blade damage = (0.25(base) + diseaseCount * 0.125)= 0.25*(1+diseaseCount * 0.5)
-
-                    totalDamagePercentMod *= 1.0f + bonus;
-                }
-
-                // Heart Strike secondary target
-                if (m_spellInfo->SpellIconID == 3145)
-                    if (m_targets.getUnitTarget() != unitTarget)
-                        weaponDamagePercentMod /= 2.0f;
-            }
-            // Rune strike
-            if ( m_spellInfo->SpellIconID == 3007)
-            {
-                int32 count = CalculateDamage(EFFECT_INDEX_2, unitTarget);
-                spell_bonus += int32(count * m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 100.0f);
-            }
-            break;
-        }
     }
 
     int32 fixed_bonus = 0;
@@ -7954,7 +7712,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                                 case RACE_DWARF:            spellId = 24107; break;
                                 case RACE_NIGHTELF:         spellId = 24108; break;
                                 case RACE_GNOME:            spellId = 24106; break;
-                                case RACE_DRAENEI:          spellId = 69533; break;
                             }
                             break;
                         case 24195:
@@ -7964,7 +7721,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                                 case RACE_UNDEAD:           spellId = 24103; break;
                                 case RACE_TAUREN:           spellId = 24102; break;
                                 case RACE_TROLL:            spellId = 24101; break;
-                                case RACE_BLOODELF:         spellId = 69530; break;
                             }
                             break;
                     }
@@ -9151,27 +8907,16 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         case RACE_DWARF:    spellId = isMale ? 51538 : 51537; break;
                         case RACE_NIGHTELF: spellId = isMale ? 51535 : 51536; break;
                         case RACE_GNOME:    spellId = isMale ? 51539 : 51540; break;
-                        case RACE_DRAENEI:  spellId = isMale ? 51541 : 51542; break;
                         case RACE_ORC:      spellId = isMale ? 51543 : 51544; break;
                         case RACE_UNDEAD:   spellId = isMale ? 51549 : 51550; break;
                         case RACE_TAUREN:   spellId = isMale ? 51547 : 51548; break;
                         case RACE_TROLL:    spellId = isMale ? 51546 : 51545; break;
-                        case RACE_BLOODELF: spellId = isMale ? 51551 : 51552; break;
                         default:
                             return;
                     }
 
                     unitTarget->CastSpell(unitTarget, spellId, true);
                     return;
-                }
-                case 51770:                                 // Emblazon Runeblade
-                {
-                    Unit* caster = GetAffectiveCaster();
-                    if (!caster)
-                        return;
-
-                    caster->CastSpell(caster, damage, false);
-                    break;
                 }
                 case 51864:                                 // Player Summon Nass
                 {
@@ -9252,15 +8997,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         return;
                     m_caster->RemoveAurasDueToSpell(530);
                     return;
-                }
-                case 52751:                                 // Death Gate
-                {
-                    if (!unitTarget || unitTarget->getClass() != CLASS_DEATH_KNIGHT)
-                        return;
-
-                    // triggered spell is stored in m_spellInfo->EffectBasePoints[0]
-                    unitTarget->CastSpell(unitTarget, damage, false);
-                    break;
                 }
                 case 52941:                                 // Song of Cleansing
                 {
@@ -9491,11 +9227,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     switch (unitTarget->getPowerType())
                     {
-                        case POWER_RUNIC_POWER:
-                        {
-                            unitTarget->CastSpell(unitTarget, 59812, true);
-                            break;
-                        }
                         case POWER_MANA:
                         {
                             int32 manapool = unitTarget->GetMaxPower(POWER_MANA) * 0.05;
@@ -9855,7 +9586,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         switch (((Player*)unitTarget)->getRace())
                         {
                             case RACE_TAUREN: spellId = 66124; break;
-                            case RACE_DRAENEI: spellId = 66123; break;
                         }
                     }
 
@@ -10698,77 +10428,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 28721, true);
                     break;
                 }
-            }
-            break;
-        }
-        case SPELLFAMILY_DEATHKNIGHT:
-        {
-            switch(m_spellInfo->Id)
-            {
-                // Raise dead script effect
-                case 46584:
-                {
-                    if (!unitTarget || m_caster->GetTypeId() != TYPEID_PLAYER)
-                        return;
-
-                    // If have 52143 spell - summoned pet from dummy effect
-                    // Another case summoned guardian from script effect
-                    uint32 triggered_spell_id = m_spellInfo->CalculateSimpleValue(SpellEffectIndex(m_caster->HasSpell(52143) ? EFFECT_INDEX_2 : EFFECT_INDEX_1));
-
-                    float x,y,z;
-
-                    m_caster->GetClosePoint(x, y, z, m_caster->GetObjectBoundingRadius(), PET_FOLLOW_DIST);
-
-                    if (unitTarget != (Unit*)m_caster)
-                    {
-                        m_caster->CastSpell(unitTarget->GetPositionX(),unitTarget->GetPositionY(),unitTarget->GetPositionZ(),triggered_spell_id, true, NULL, NULL, m_caster->GetObjectGuid(), m_spellInfo);
-                        //if (unitTarget->GetTypeId() == TYPEID_UNIT) // By user information, corpse not removed after ghoul summon.
-                        //    ((Creature*)unitTarget)->RemoveCorpse();
-                    }
-                    else if (m_caster->HasAura(60200))
-                    {
-                        m_caster->CastSpell(x,y,z,triggered_spell_id, true, NULL, NULL, m_caster->GetObjectGuid(), m_spellInfo);
-                    }
-                    else  if (((Player*)m_caster)->HasItemCount(37201,1))
-                    {
-                        m_caster->CastSpell(m_caster,48289,true);
-                        m_caster->CastSpell(x,y,z,triggered_spell_id, true, NULL, NULL, m_caster->GetObjectGuid(), m_spellInfo);
-                    }
-                    else
-                    {
-                        SendCastResult(SPELL_FAILED_REAGENTS);
-                        finish(true);
-                        CancelGlobalCooldown();
-                        return;
-                    }
-                    finish(true);
-                    ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_2),true);
-                    ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1),true);
-                    CancelGlobalCooldown();
-                    return;
-                }
-
-                // Raise ally
-                case 61999:
-                {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-                        return;
-
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER || unitTarget->isAlive())
-                    {
-                        SendCastResult(SPELL_FAILED_TARGET_NOT_DEAD);
-                        finish(true);
-                        CancelGlobalCooldown();
-                        return;
-                    }
-
-                    // hack remove death
-                    unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_0), true);
-                    CancelGlobalCooldown();
-                    return;
-                }
-                default:
-                    break;
             }
             break;
         }
@@ -12169,21 +11828,6 @@ void Spell::EffectQuestFail(SpellEffectIndex eff_idx)
         return;
 
     ((Player*)unitTarget)->FailQuest(m_spellInfo->EffectMiscValue[eff_idx]);
-}
-
-void Spell::EffectActivateRune(SpellEffectIndex eff_idx)
-{
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    Player *plr = (Player*)m_caster;
-
-    if (plr->getClass() != CLASS_DEATH_KNIGHT)
-        return;
-
-    int32 count = damage;                                   // max amount of reset runes
-    if (plr->ActivateRunes(RuneType(m_spellInfo->EffectMiscValue[eff_idx]), count))
-        plr->ResyncRunes();
 }
 
 void Spell::EffectTitanGrip(SpellEffectIndex eff_idx)
