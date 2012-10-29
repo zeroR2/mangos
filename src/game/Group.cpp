@@ -1701,8 +1701,6 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
 
     uint32 allowedPlayerCount = 0;
 
-    BattleGroundQueueTypeId bgQueueTypeIdRandom = BattleGroundMgr::BGQueueTypeId(BATTLEGROUND_RB);
-
     // check every member of the group to be able to join
     for(GroupReference *itr = GetFirstMember(); itr != NULL; itr = itr->next())
     {
@@ -1720,14 +1718,8 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
         // don't let join if someone from the group is already in that bg queue
         if(member->InBattleGroundQueueForBattleGroundQueueType(bgQueueTypeId))
             return ERR_BATTLEGROUND_JOIN_FAILED;            // not blizz-like
-        // don't let join if someone from the group is in bg queue random
-        if(member->InBattleGroundQueueForBattleGroundQueueType(bgQueueTypeIdRandom))
-            return ERR_IN_RANDOM_BG;
-        // don't let join to bg queue random if someone from the group is already in bg queue
-        if(bgOrTemplate->GetTypeID() == BATTLEGROUND_RB && member->InBattleGroundQueue())
-            return ERR_IN_NON_RANDOM_BG;
         // check for deserter debuff
-        if(bgOrTemplate->GetTypeID() != BATTLEGROUND_AA && !member->CanJoinToBattleground())
+        if(!member->CanJoinToBattleground())
             return ERR_GROUP_JOIN_BATTLEGROUND_DESERTERS;
         // check if member can join any more battleground queues
         if(!member->HasFreeBattleGroundQueueId())
@@ -1860,7 +1852,7 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
         }
 
         // TODO - Adapt here when clear how difficulty changes must be handled
-        if (isEmpty || method == INSTANCE_RESET_GROUP_DISBAND || method == INSTANCE_RESET_CHANGE_DIFFICULTY)
+        if (isEmpty || method == INSTANCE_RESET_GROUP_DISBAND)
         {
             // do not reset the instance, just unbind if others are permanently bound to it
             if (state->CanReset())

@@ -120,8 +120,7 @@ void PetAI::Reset()
         }
 
         // don't have SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY !
-        if (spellInfo->HasAttribute(SPELL_ATTR_EX_CANT_REFLECTED) ||
-            spellInfo->HasAttribute(SPELL_ATTR_EX7_HAS_CHARGE_EFFECT))
+        if (spellInfo->HasAttribute(SPELL_ATTR_EX_CANT_REFLECTED))
         {
             m_spellType[PET_SPELL_ATTACKSTART].insert(spellID);
             continue;
@@ -176,8 +175,6 @@ void PetAI::Reset()
     }
 
     // define initial AI type
-    if (m_creature->GetObjectGuid().IsVehicle())
-        m_AIType = PET_AI_PASSIVE;
     if (m_spellType[PET_SPELL_RANGED].size() > 0 && (m_spellType[PET_SPELL_MELEE].size() < m_spellType[PET_SPELL_RANGED].size()))
     {
         m_AIType = PET_AI_RANGED;
@@ -276,12 +273,6 @@ bool PetAI::UpdateAIType()
 
     if (!inCombat)
         return false;
-
-    if (m_creature->GetObjectGuid().IsVehicle() && m_creature->GetCharmerOrOwner())
-    {
-        m_AIType = PET_AI_PASSIVE;
-        return false;
-    }
 
     if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI_SLACKER) &&
         m_AIType != PET_AI_SLACKER &&

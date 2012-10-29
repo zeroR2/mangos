@@ -1941,7 +1941,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetCanDualWield(bool value) { m_canDualWield = value; }
         bool CanTitanGrip() const { return m_canTitanGrip; }
         void SetCanTitanGrip(bool value) { m_canTitanGrip = value; }
-        bool CanTameExoticPets() const { return isGameMaster() || HasAuraType(SPELL_AURA_ALLOW_TAME_PET_TYPE); }
 
         void SetRegularAttackTime();
         void SetBaseModValue(BaseModGroup modGroup, BaseModType modType, float value) { m_auraBaseMod[modGroup][modType] = value; }
@@ -2174,7 +2173,6 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool CanFly() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_CAN_FLY); }
         bool IsFlying() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_FLYING); }
-        bool IsFreeFlying() const { return HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED) || HasAuraType(SPELL_AURA_FLY); }
         bool CanStartFlyInArea(uint32 mapid, uint32 zone, uint32 area) const;
 
         void SetClientControl(Unit* target, uint8 allowMove);
@@ -2459,7 +2457,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         PlayerMails m_mail;
         PlayerSpellMap m_spells;
-        PlayerTalentMap m_talents[MAX_TALENT_SPEC_COUNT];
+        PlayerTalentMap m_talents;
         SpellCooldowns m_spellCooldowns;
         uint32 m_lastPotionId;                              // last used health/mana potion in combat, that block next potion use
 
@@ -2468,7 +2466,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint8 m_activeSpec;
         uint8 m_specsCount;
 
-        ActionButtonList m_actionButtons[MAX_TALENT_SPEC_COUNT];
+        ActionButtonList m_actionButtons;
 
         float m_auraBaseMod[BASEMOD_END][MOD_END];
         int16 m_baseRatingValue[MAX_COMBAT_RATING];

@@ -555,10 +555,6 @@ bool PlayerbotAI::IsItemUseful(uint32 itemid)
                     if (m_bot->HasSkill(SKILL_ENGINEERING))
                         return true;
                     break;
-                case ITEM_SUBCLASS_JEWELCRAFTING:
-                    if (m_bot->HasSkill(SKILL_JEWELCRAFTING))
-                        return true;
-                    break;
                 case ITEM_SUBCLASS_CLOTH:
                     if (m_bot->HasSkill(SKILL_TAILORING))
                         return true;
@@ -578,9 +574,8 @@ bool PlayerbotAI::IsItemUseful(uint32 itemid)
                         return true;
                     break;
                 case ITEM_SUBCLASS_HERB:
-                    if ((m_bot->HasSkill(SKILL_HERBALISM) ||
-                         m_bot->HasSkill(SKILL_ALCHEMY) ||
-                         m_bot->HasSkill(SKILL_INSCRIPTION)))
+                    if (m_bot->HasSkill(SKILL_HERBALISM) ||
+                        m_bot->HasSkill(SKILL_ALCHEMY))
                         return true;
                     break;
                 case ITEM_SUBCLASS_ELEMENTAL:
@@ -638,10 +633,6 @@ bool PlayerbotAI::IsItemUseful(uint32 itemid)
                     break;
                 case ITEM_SUBCLASS_FISHING_MANUAL:
                     if (m_bot->HasSkill(SKILL_FISHING))
-                        return true;
-                    break;
-                case ITEM_SUBCLASS_JEWELCRAFTING_RECIPE:
-                    if (m_bot->HasSkill(SKILL_JEWELCRAFTING))
                         return true;
                     break;
                 default:

@@ -581,7 +581,7 @@ void WorldSession::HandleGuildRankOpcode(WorldPacket& recvPacket)
 {
     std::string rankname;
     uint32 rankId;
-    uint32 rights, MoneyPerDay;
+    uint32 rights;
 
     DEBUG_LOG("WORLD: Received CMSG_GUILD_RANK");
 

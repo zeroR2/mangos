@@ -547,35 +547,6 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                     }
                     break;
                 }
-                case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
-                {
-                    if (CheckWorldState(goInfo->destructibleBuilding.linkedWorldState))
-                    {
-                        WorldState const* _state = NULL;
-                        WorldStateTemplate const* tmpl = FindTemplate(goInfo->destructibleBuilding.linkedWorldState, WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT, object->GetZoneId());
-                        MANGOS_ASSERT(tmpl);
-                        if (_state  = GetWorldState(tmpl, instanceId))
-                        {
-                            if (_state->GetValue() != OBJECT_STATE_NONE)
-                                DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
-                                    goInfo->destructibleBuilding.linkedWorldState,
-                                    guid.GetString().c_str(),
-                                    _state->GetValue(),
-                                    OBJECT_STATE_NONE
-                                );
-                        }
-                        else
-                            _state = CreateWorldState(tmpl, instanceId);
-
-                        if (_state)
-                            const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
-                        else
-                            sLog.outDetail("WorldStateMgr::CreateLinkedWorldStatesIfNeed unsupported state id %u for %s found",goInfo->destructibleBuilding.linkedWorldState, guid.GetString().c_str());
-                    }
-                    else
-                        return;
-                    break;
-                }
                 default:
                 {
                     sLog.outError("WorldStateMgr::CreateLinkedWorldStatesIfNeed try create linked WorldStates for %s, but currently this GameObject type (%u) not supported!", guid.GetString().c_str(), goInfo->type);
@@ -1136,9 +1107,7 @@ void WorldStateMgr::SetWorldStateValueFor(WorldObject* object, uint32 stateId, u
 
     GameObjectInfo const* goInfo = ((GameObject*)object)->GetGOInfo();
 
-    if (!goInfo || 
-        (goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT &&
-        goInfo->type != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING))
+    if (!goInfo || goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
     {
         SetWorldStateValueFor(object->GetMap(), stateId, value);
         return;

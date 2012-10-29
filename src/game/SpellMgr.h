@@ -109,11 +109,7 @@ inline bool IsAuraApplyEffect(SpellEntry const *spellInfo, SpellEffectIndex effe
     {
         case SPELL_EFFECT_APPLY_AURA:
         case SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
-        case SPELL_EFFECT_APPLY_AREA_AURA_RAID:
         case SPELL_EFFECT_APPLY_AREA_AURA_PET:
-        case SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
-        case SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
-        case SPELL_EFFECT_APPLY_AREA_AURA_OWNER:
             return true;
     }
     return false;
@@ -293,10 +289,6 @@ inline bool IsCasterSourceTarget(uint32 target)
         case TARGET_TOTEM_FIRE:
         case TARGET_AREAEFFECT_GO_AROUND_DEST:
         case TARGET_ALL_RAID_AROUND_CASTER:
-        case TARGET_SELF2:
-        case TARGET_DIRECTLY_FORWARD:
-        case TARGET_NONCOMBAT_PET:
-        case TARGET_IN_FRONT_OF_CASTER_30:
             return true;
         default:
             break;
@@ -331,19 +323,6 @@ inline bool IsTargetExplicitRequired(uint32 target)
     {
         case TARGET_NONE:
         case TARGET_IN_FRONT_OF_CASTER:
-        case TARGET_IN_FRONT_OF_CASTER_30:
-        case TARGET_GO_IN_FRONT_OF_CASTER_90:
-        //case TARGET_AREAEFFECT_INSTANT:
-        //case TARGET_AREAEFFECT_CUSTOM:
-        //case TARGET_INNKEEPER_COORDINATES:
-        //case TARGET_LARGE_FRONTAL_CONE:
-        //case TARGET_LEAP_FORWARD:
-        //case TARGET_NARROW_FRONTAL_CONE:
-        //case TARGET_AREAEFFECT_PARTY_AND_CLASS:
-        //case TARGET_DIRECTLY_FORWARD:
-        //case TARGET_RANDOM_NEARBY_LOC:
-        //case TARGET_RANDOM_CIRCUMFERENCE_POINT:
-        //case TARGET_DEST_RADIUS:
             return false;
         default:
             break;
@@ -387,15 +366,6 @@ inline bool IsPointEffectTarget( Targets target )
         case TARGET_SCRIPT_COORDINATES:
         case TARGET_CURRENT_ENEMY_COORDINATES:
         case TARGET_DUELVSPLAYER_COORDINATES:
-        case TARGET_DYNAMIC_OBJECT_COORDINATES:
-        case TARGET_POINT_AT_NORTH:
-        case TARGET_POINT_AT_SOUTH:
-        case TARGET_POINT_AT_EAST:
-        case TARGET_POINT_AT_WEST:
-        case TARGET_POINT_AT_NE:
-        case TARGET_POINT_AT_NW:
-        case TARGET_POINT_AT_SE:
-        case TARGET_POINT_AT_SW:
             return true;
         default:
             break;
@@ -441,7 +411,6 @@ inline bool IsAreaEffectTarget( Targets target )
         case TARGET_AREAEFFECT_GO_AROUND_DEST:
         case TARGET_ALL_RAID_AROUND_CASTER:
         case TARGET_AREAEFFECT_PARTY_AND_CLASS:
-        case TARGET_IN_FRONT_OF_CASTER_30:
             return true;
         default:
             break;
@@ -462,12 +431,8 @@ inline bool IsAreaOfEffectSpell(SpellEntry const *spellInfo)
 
 inline bool IsAreaAuraEffect(uint32 effect)
 {
-    if ( effect == SPELL_EFFECT_APPLY_AREA_AURA_PARTY    ||
-        effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID     ||
-        effect == SPELL_EFFECT_APPLY_AREA_AURA_FRIEND   ||
-        effect == SPELL_EFFECT_APPLY_AREA_AURA_ENEMY    ||
-        effect == SPELL_EFFECT_APPLY_AREA_AURA_PET      ||
-        effect == SPELL_EFFECT_APPLY_AREA_AURA_OWNER)
+    if (effect == SPELL_EFFECT_APPLY_AREA_AURA_PARTY ||
+        effect == SPELL_EFFECT_APPLY_AREA_AURA_PET)
         return true;
     return false;
 }
@@ -489,7 +454,6 @@ inline bool HasAuraWithTriggerEffect(SpellEntry const *spellInfo)
             case SPELL_AURA_PERIODIC_TRIGGER_SPELL:
             case SPELL_AURA_PROC_TRIGGER_SPELL:
             case SPELL_AURA_PROC_TRIGGER_DAMAGE:
-            case SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE:
                 return true;
         }
     }

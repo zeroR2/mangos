@@ -745,7 +745,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "reset",          SEC_ADMINISTRATOR,  true,  NULL,                                           "", resetCommandTable    },
         { "server",         SEC_PLAYER,         true,  NULL,                                           "", serverCommandTable   },
         { "tele",           SEC_MODERATOR,      true,  NULL,                                           "", teleCommandTable     },
-        { "titles",         SEC_GAMEMASTER,     false, NULL,                                           "", titlesCommandTable   },
         { "trigger",        SEC_GAMEMASTER,     false, NULL,                                           "", triggerCommandTable  },
         { "wp",             SEC_GAMEMASTER,     false, NULL,                                           "", wpCommandTable       },
 
@@ -1754,33 +1753,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
                         c = reader.peek();
                     }
                 }
-                else if (strcmp(buffer, "talent") == 0)
-                {
-                    // talent links are always supposed to be blue
-                    if (color != CHAT_LINK_COLOR_TALENT)
-                        return false;
-
-                    // read talent entry
-                    reader.getline(buffer, 256, ':');
-                    if (reader.eof())                       // : must be
-                        return false;
-
-                    TalentEntry const* talentInfo = sTalentStore.LookupEntry(atoi(buffer));
-                    if (!talentInfo)
-                        return false;
-
-                    linkedSpell = sSpellStore.LookupEntry(talentInfo->RankID[0]);
-                    if (!linkedSpell)
-                        return false;
-
-                    char c = reader.peek();
-                    // skillpoints? whatever, drop it
-                    while (c != '|' && c != '\0')
-                    {
-                        reader.ignore(1);
-                        c = reader.peek();
-                    }
-                }
                 else if (strcmp(buffer, "spell") == 0)
                 {
                     if (color != CHAT_LINK_COLOR_SPELL)
@@ -1998,7 +1970,6 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
     {
         case CHAT_MSG_SAY:
         case CHAT_MSG_PARTY:
-        case CHAT_MSG_PARTY_LEADER:
         case CHAT_MSG_RAID:
         case CHAT_MSG_GUILD:
         case CHAT_MSG_OFFICER:
@@ -2021,7 +1992,6 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         case CHAT_MSG_MONSTER_EMOTE:
         case CHAT_MSG_RAID_BOSS_WHISPER:
         case CHAT_MSG_RAID_BOSS_EMOTE:
-        case CHAT_MSG_BATTLENET:
         {
             *data << ObjectGuid(speaker->GetObjectGuid());
             *data << uint32(0);                             // 2.1.0

@@ -85,25 +85,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
         SendNotification(LANG_UNKNOWN_LANGUAGE);
         return;
     }
-    if (langDesc->skill_id != 0 && !_player->HasSkill(langDesc->skill_id))
-    {
-        // also check SPELL_AURA_COMPREHEND_LANGUAGE (client offers option to speak in that language)
-        Unit::AuraList const& langAuras = _player->GetAurasByType(SPELL_AURA_COMPREHEND_LANGUAGE);
-        bool foundAura = false;
-        for (Unit::AuraList::const_iterator i = langAuras.begin(); i != langAuras.end(); ++i)
-        {
-            if ((*i)->GetModifier()->m_miscvalue == int32(lang))
-            {
-                foundAura = true;
-                break;
-            }
-        }
-        if (!foundAura)
-        {
-            SendNotification(LANG_NOT_LEARNED_LANGUAGE);
-            return;
-        }
-    }
 
     if (lang == LANG_ADDON)
     {
@@ -253,7 +234,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
         } break;
 
         case CHAT_MSG_PARTY:
-        case CHAT_MSG_PARTY_LEADER:
         {
             std::string msg;
             recv_data >> msg;
@@ -280,9 +260,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
                 if (!group || group->isBGGroup())
                     return;
             }
-
-            if ((type == CHAT_MSG_PARTY_LEADER) && !group->IsLeader(_player->GetObjectGuid()))
-                return;
 
             // Playerbot mod: broadcast message to bot members
             for(GroupReference* itr = group->GetFirstMember(); itr != NULL; itr=itr->next())

@@ -101,7 +101,7 @@ void GameObject::AddToWorld()
 void GameObject::RemoveFromWorld()
 {
     // store the slider value for non instance, non locked capture points
-    if (!GetMap()->IsBattleGroundOrArena())
+    if (!GetMap()->IsBattleGround())
     {
         if (GetGOInfo()->type == GAMEOBJECT_TYPE_CAPTURE_POINT && m_lootState == GO_ACTIVATED)
             sOutdoorPvPMgr.SetCapturePointSlider(GetEntry(), m_captureSlider);
@@ -195,7 +195,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
         iData->OnObjectCreate(this);
 
     // Notify the battleground/OPvP scripts
-    if (map->IsBattleGroundOrArena())
+    if (map->IsBattleGround())
         ((BattleGroundMap*)map)->GetBG()->HandleGameObjectCreate(this);
     // Notify the outdoor pvp script
     else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
@@ -203,15 +203,6 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
 
     switch (goinfo->type)
     {
-        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
-        {
-            m_health = GetMaxHealth();
-            // destructible GO's show their "HP" as their animprogress
-            SetGoAnimProgress(255);
-            if (WorldStateMgr::CheckWorldState(goinfo->destructibleBuilding.linkedWorldState))
-                sWorldStateMgr.CreateLinkedWorldStatesIfNeed(this);
-            break;
-        }
         case GAMEOBJECT_TYPE_TRANSPORT:
         {
             SetFlag(GAMEOBJECT_FLAGS, (GO_FLAG_TRANSPORT | GO_FLAG_NODESPAWN));
@@ -929,7 +920,7 @@ bool GameObject::ActivateToQuest(Player* pTarget) const
                 // look for battlegroundAV for some objects which are only activated after mine gots captured by own team
                 if (GetEntry() == BG_AV_OBJECTID_MINE_N || GetEntry() == BG_AV_OBJECTID_MINE_S)
                     if (BattleGround* bg = pTarget->GetBattleGround())
-                        if (bg->GetTypeID(true) == BATTLEGROUND_AV && !(((BattleGroundAV*)bg)->PlayerCanDoMineQuest(GetEntry(), pTarget->GetTeam())))
+                        if (bg->GetTypeID() == BATTLEGROUND_AV && !(((BattleGroundAV*)bg)->PlayerCanDoMineQuest(GetEntry(), pTarget->GetTeam())))
                             return false;
                 return true;
             }
@@ -1318,15 +1309,6 @@ void GameObject::Use(Unit* user)
 
                     if (!sScriptMgr.OnProcessEvent(info->goober.eventId, player, this, true))
                         GetMap()->ScriptsStart(sEventScripts, info->goober.eventId, player, this);
-
-                    if (player->CanUseBattleGroundObject())
-                    {
-                        if (BattleGround *bg = player->GetBattleGround())
-                        {
-                            if (bg->GetTypeID(true) == BATTLEGROUND_SA)
-                                bg->EventPlayerDamageGO(player, this, info->goober.eventId, 0);
-                        }
-                    }
                 }
 
                 // possible quest objective for active quests
@@ -1648,8 +1630,6 @@ void GameObject::Use(Unit* user)
                 BattleGround* bg = player->GetBattleGround();
                 if (!bg)
                     return;
-                if (player->GetVehicle())
-                    return;
                 // BG flag click
                 // AB:
                 // 15001
@@ -1685,8 +1665,6 @@ void GameObject::Use(Unit* user)
                 BattleGround* bg = player->GetBattleGround();
                 if (!bg)
                     return;
-                if (player->GetVehicle())
-                    return;
                 // BG flag dropped
                 // WS:
                 // 179785 - Silverwing Flag
@@ -1701,7 +1679,7 @@ void GameObject::Use(Unit* user)
                         case 179785:                        // Silverwing Flag
                         case 179786:                        // Warsong Flag
                             // check if it's correct bg
-                            if (bg->GetTypeID(true) == BATTLEGROUND_WS)
+                            if (bg->GetTypeID() == BATTLEGROUND_WS)
                                 bg->EventPlayerClickedOnFlag(player, this);
                             break;
                     }
@@ -1711,26 +1689,6 @@ void GameObject::Use(Unit* user)
                 Delete();
             }
             break;
-        }
-        case GAMEOBJECT_TYPE_BARBER_CHAIR:                  // 32
-        {
-            GameObjectInfo const* info = GetGOInfo();
-            if (!info)
-                return;
-
-            if (user->GetTypeId() != TYPEID_PLAYER)
-                return;
-
-            Player* player = (Player*)user;
-
-            // fallback, will always work
-            player->TeleportTo(GetMapId(), GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation(), TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET);
-
-            WorldPacket data(SMSG_ENABLE_BARBER_SHOP, 0);
-            player->GetSession()->SendPacket(&data);
-
-            player->SetStandState(UNIT_STAND_STATE_SIT_LOW_CHAIR + info->barberChair.chairheight);
-            return;
         }
         default:
             sLog.outError("GameObject::Use unhandled GameObject type %u (entry %u).", GetGoType(), GetEntry());
@@ -1785,7 +1743,7 @@ bool GameObject::IsInRange(float x, float y, float z, float radius) const
 
 void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
 {
-    if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING || !m_health)
+    if (!m_health)
         return;
 
     if (IsFriendlyTo(pDoneBy))
@@ -1864,9 +1822,6 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
 
 void GameObject::Rebuild(Unit* pWho)
 {
-    if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
-        return;
-
     RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
     SetDisplayId(GetGOInfo()->displayId);
     m_health = GetMaxHealth();
@@ -2668,27 +2623,6 @@ Team GameObject::GetTeam() const
 
     switch (GetGOInfo()->type)
     {
-        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
-        {
-            switch (wsValue)
-            {
-                case OBJECT_STATE_HORDE_INTACT:
-                case OBJECT_STATE_HORDE_DAMAGE:
-                case OBJECT_STATE_HORDE_DESTROY:
-                    return HORDE;
-                case OBJECT_STATE_ALLIANCE_INTACT:
-                case OBJECT_STATE_ALLIANCE_DAMAGE:
-                case OBJECT_STATE_ALLIANCE_DESTROY:
-                    return ALLIANCE;
-                case OBJECT_STATE_NONE:
-                case OBJECT_STATE_NEUTRAL_INTACT:
-                case OBJECT_STATE_NEUTRAL_DAMAGE:
-                case OBJECT_STATE_NEUTRAL_DESTROY:
-                default:
-                    break;
-            }
-            break;
-        }
         case GAMEOBJECT_TYPE_CAPTURE_POINT:
         {
             switch (wsValue)
@@ -2739,39 +2673,6 @@ bool GameObject::SetTeam(Team team)
     if (wsValue == UINT32_MAX)
         return false;
 
-    switch (GetGOInfo()->type)
-    {
-        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
-        {
-            switch (wsValue)
-            {
-                case OBJECT_STATE_NONE:
-                case OBJECT_STATE_NEUTRAL_INTACT:
-                case OBJECT_STATE_HORDE_INTACT:
-                case OBJECT_STATE_ALLIANCE_INTACT:
-                    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
-                    return true;
-
-                case OBJECT_STATE_HORDE_DAMAGE:
-                case OBJECT_STATE_ALLIANCE_DAMAGE:
-                case OBJECT_STATE_NEUTRAL_DAMAGE:
-                    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DAMAGE);
-                    return true;
-
-                case OBJECT_STATE_HORDE_DESTROY:
-                case OBJECT_STATE_ALLIANCE_DESTROY:
-                case OBJECT_STATE_NEUTRAL_DESTROY:
-                    SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
-                    return true;
-
-                default:
-                    break;
-            }
-            break;
-        }
-        default:
-            break;
-    }
     return false;
 }
 

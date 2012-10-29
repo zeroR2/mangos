@@ -147,7 +147,7 @@ static bool LoadDBC_assert_print(uint32 fsize, uint32 rsize, const std::string& 
 }
 
 template<class T>
-inline void LoadDBC(LocalData& localeData, BarGoLink& bar, StoreProblemList& errlist, DBCStorage<T>& storage, const std::string& dbc_path, const std::string& filename)
+inline void LoadDBC(uint32& availableDbcLocales, BarGoLink& bar, StoreProblemList& errlist, DBCStorage<T>& storage, const std::string& dbc_path, const std::string& filename)
 {
     // compatibility format and C++ structure sizes
     MANGOS_ASSERT(DBCFileLoader::GetFormatRecordSize(storage.GetFormat()) == sizeof(T) || LoadDBC_assert_print(DBCFileLoader::GetFormatRecordSize(storage.GetFormat()), sizeof(T), filename));
@@ -158,7 +158,7 @@ inline void LoadDBC(LocalData& localeData, BarGoLink& bar, StoreProblemList& err
         bar.step();
         for (uint8 i = 0; fullLocaleNameList[i].name; ++i)
         {
-            if (!(localeData.availableDbcLocales & (1 << i)))
+            if (!(availableDbcLocales & (1 << i)))
                 continue;
 
 

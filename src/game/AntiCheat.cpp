@@ -299,11 +299,6 @@ void AntiCheat::DoAntiCheatAction(AntiCheatCheck checkType, std::string reason)
                         }
                         GetPlayer()->_AddAura(sheepAura,config->actionParam[i]);
 
-                        if (checkType == CHECK_MOVEMENT_FLY ||
-                            GetPlayer()->HasAuraType(SPELL_AURA_FLY))
-                            {
-                                GetPlayer()->CastSpell(GetPlayer(), 55001, true);
-                            }
                     }
                 break;
 
@@ -916,20 +911,6 @@ bool AntiCheat::CheckMeleeDamage()
 
     m_currentCheckResult.clear();
     m_currentCheckResult.append(buffer);
-    return false;
-}
-
-bool AntiCheat::isCanFly()
-{
-    if (   GetMover()->HasAuraType(SPELL_AURA_FLY)
-        || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED)
-        || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED)
-        || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACKING)
-        || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_STACKING)
-        || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_NOT_STACKING)
-       )
-        return true;
-
     return false;
 }
 

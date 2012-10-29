@@ -300,7 +300,7 @@ enum SpellAttributesEx
 
 enum SpellAttributesEx2
 {
-    SPELL_ATTR_EX2_UNK0                      = 0x00000001,           // 0
+    SPELL_ATTR_EX2_ALLOW_DEAD_TARGET         = 0x00000001,           // 0
     SPELL_ATTR_EX2_UNK1                      = 0x00000002,           // 1
     SPELL_ATTR_EX2_IGNORE_LOS                = 0x00000004,           // 2 do not need LOS
     SPELL_ATTR_EX2_UNK3                      = 0x00000008,           // 3 auto targeting? (e.g. fishing skill enhancement items since 3.3.3)
@@ -2695,6 +2695,6 @@ enum ActivateTaxiReply
 // others will not and opposite
 // will only support 1.12.1 client (build 5875) and 1.12.2 client (build 6005)..
 
-#define EXPECTED_ANATHEMA_CLIENT_BUILD        {5875, 6005, 0}
+#define EXPECTED_MANGOSD_CLIENT_BUILD        {5875, 6005, 0}
 
 #endif

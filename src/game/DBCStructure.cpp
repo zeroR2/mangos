@@ -34,16 +34,12 @@ SpellEffectEntry::SpellEffectEntry(const SpellEntry* spellEntry, SpellEffectInde
     EffectItemType              = spellEntry->EffectItemType[i];
     EffectMechanic              = spellEntry->EffectMechanic[i];
     EffectMiscValue             = spellEntry->EffectMiscValue[i];
-    EffectMiscValueB            = spellEntry->EffectMiscValueB[i];
     EffectPointsPerComboPoint   = spellEntry->EffectPointsPerComboPoint[i];
     EffectRadiusIndex           = spellEntry->EffectRadiusIndex[i];
     EffectRealPointsPerLevel    = spellEntry->EffectRealPointsPerLevel[i];
-    EffectSpellClassMask        = spellEntry->GetEffectSpellClassMask(i);
     EffectTriggerSpell          = spellEntry->EffectTriggerSpell[i];
     EffectImplicitTargetA       = spellEntry->EffectImplicitTargetA[i];
     EffectImplicitTargetB       = spellEntry->EffectImplicitTargetB[i];
-    EffectSpellId               = spellEntry->Id;
-    EffectIndex                 = i;
 };
 
 SpellEffectEntry::SpellEffectEntry(SpellEffectEntry const& effect)
@@ -59,16 +55,12 @@ SpellEffectEntry::SpellEffectEntry(SpellEffectEntry const& effect)
     EffectItemType              = effect.EffectItemType;
     EffectMechanic              = effect.EffectMechanic;
     EffectMiscValue             = effect.EffectMiscValue;
-    EffectMiscValueB            = effect.EffectMiscValueB;
     EffectPointsPerComboPoint   = effect.EffectPointsPerComboPoint;
     EffectRadiusIndex           = effect.EffectRadiusIndex;
     EffectRealPointsPerLevel    = effect.EffectRealPointsPerLevel;
-    EffectSpellClassMask        = effect.EffectSpellClassMask;
     EffectTriggerSpell          = effect.EffectTriggerSpell;
     EffectImplicitTargetA       = effect.EffectImplicitTargetA;
     EffectImplicitTargetB       = effect.EffectImplicitTargetB;
-    EffectSpellId               = effect.EffectSpellId;
-    EffectIndex                 = effect.EffectIndex;
 };
 
 SpellEffectEntry const* SpellEntry::GetSpellEffect(SpellEffectIndex eff) const

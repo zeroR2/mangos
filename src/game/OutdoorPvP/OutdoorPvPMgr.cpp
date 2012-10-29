@@ -55,11 +55,6 @@ void OutdoorPvPMgr::InitOutdoorPvP()
 
     LOAD_OPVP_ZONE(SI);
     LOAD_OPVP_ZONE(EP);
-    LOAD_OPVP_ZONE(HP);
-    LOAD_OPVP_ZONE(ZM);
-    LOAD_OPVP_ZONE(TF);
-    LOAD_OPVP_ZONE(NA);
-    LOAD_OPVP_ZONE(GH);
 
 // currently disabled, be enabled after finish development phase
 //    LOAD_OPVP_ZONE(WG);
