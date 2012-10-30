@@ -33,8 +33,6 @@ enum DumpTableType
                                                             // character_reputation, character_skills, character_spell,
                                                             // character_spell_cooldown, character_talent, character_ticket
 
-    DTT_CHAR_NAME_TABLE,// <- guid, name                    // character_declinedname
-
     DTT_EQSET_TABLE,    // <- guid                          // character_equipmentsets
 
     DTT_INVENTORY,      //    -> item guids collection      // character_inventory
@@ -52,8 +50,7 @@ enum DumpTableType
     DTT_ITEM_LOOT,      // <- item guids                    // item_loot
 
     DTT_PET,            //    -> pet guids collection       // character_pet
-    DTT_PET_TABLE,      // <- pet guids                     // pet_aura, pet_spell, pet_spell_cooldown
-    DTT_PET_DECL,       // <- pet guids                     // character_pet_declinedname
+    DTT_PET_TABLE       // <- pet guids                     // pet_aura, pet_spell, pet_spell_cooldown
 };
 
 enum DumpReturn

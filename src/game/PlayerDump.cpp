@@ -40,13 +40,11 @@ static DumpTable dumpTables[] =
     { "character_account_data",           DTT_CHAR_TABLE },
     { "character_action",                 DTT_CHAR_TABLE },
     { "character_aura",                   DTT_CHAR_TABLE },
-    { "character_declinedname",           DTT_CHAR_NAME_TABLE },
     { "character_equipmentsets",          DTT_EQSET_TABLE},
     { "character_homebind",               DTT_CHAR_TABLE },
     { "character_inventory",              DTT_INVENTORY  }, // -> item guids
     { "character_queststatus",            DTT_CHAR_TABLE },
     { "character_pet",                    DTT_PET        }, // -> pet number
-    { "character_pet_declinedname",       DTT_PET_DECL   }, //                  <- pet number
     { "character_reputation",             DTT_CHAR_TABLE },
     { "character_skills",                 DTT_CHAR_TABLE },
     { "character_spell",                  DTT_CHAR_TABLE },
@@ -528,17 +526,6 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
                     ROLLBACK(DUMP_FILE_BROKEN);
                 break;
 
-            case DTT_CHAR_NAME_TABLE:
-                if (nameInvalidated)                        // ignore declined names if name will changed in some way
-                {
-                    execute_ok = false;
-                    break;
-                }
-
-                if (!changenth(line, 1, newguid))           // character_*.guid update
-                    ROLLBACK(DUMP_FILE_BROKEN);
-                break;
-
             case DTT_CHARACTER:
             {
                 if (!changenth(line, 1, newguid))           // characters.guid update
@@ -657,25 +644,6 @@ DumpReturn PlayerDumpReader::LoadDump(const std::string& file, uint32 account, s
                 snprintf(newpetid, 20, "%d", petids_iter->second);
 
                 if (!changenth(line, 1, newpetid))          // pet_*.guid -> petid in fact
-                    ROLLBACK(DUMP_FILE_BROKEN);
-
-                break;
-            }
-            case DTT_PET_DECL:                              // character_pet_declinedname
-            {
-                snprintf(currpetid, 20, "%s", getnth(line, 1).c_str());
-
-                // lookup currpetid and match to new inserted pet id
-                std::map<uint32, uint32> :: const_iterator petids_iter = petids.find(atoi(currpetid));
-                if (petids_iter == petids.end())            // couldn't find new inserted id
-                    ROLLBACK(DUMP_FILE_BROKEN);
-
-                snprintf(newpetid, 20, "%d", petids_iter->second);
-
-                if (!changenth(line, 1, newpetid))          // character_pet_declinedname.id
-                    ROLLBACK(DUMP_FILE_BROKEN);
-
-                if (!changenth(line, 2, newguid))           // character_pet_declinedname.owner update
                     ROLLBACK(DUMP_FILE_BROKEN);
 
                 break;

@@ -779,7 +779,6 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADSOCIALLIST,
     PLAYER_LOGIN_QUERY_LOADHOMEBIND,
     PLAYER_LOGIN_QUERY_LOADSPELLCOOLDOWNS,
-    PLAYER_LOGIN_QUERY_LOADDECLINEDNAMES,
     PLAYER_LOGIN_QUERY_LOADGUILD,
     PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS,
     PLAYER_LOGIN_QUERY_LOADBGDATA,
@@ -2309,8 +2308,6 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool isAllowedToLoot(Creature* creature);
 
-        DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
-
         bool canSeeSpellClickOn(Creature const* creature) const;
 
         // Playerbot mod:
@@ -2382,7 +2379,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void _LoadTalents(QueryResult *result);
         void _LoadFriendList(QueryResult *result);
         bool _LoadHomeBind(QueryResult *result);
-        void _LoadDeclinedNames(QueryResult *result);
         void _LoadEquipmentSets(QueryResult *result);
         void _LoadBGData(QueryResult* result);
         void _LoadIntoDataField(const char* data, uint32 startOffset, uint32 count);
@@ -2557,7 +2553,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         float  m_summon_y;
         float  m_summon_z;
 
-        DeclinedName* m_declinedname;
         EquipmentSets m_EquipmentSets;
 
         // Refer-A-Friend

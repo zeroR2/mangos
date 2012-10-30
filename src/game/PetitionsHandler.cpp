@@ -471,35 +471,6 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket & recv_data)
         owner->GetSession()->SendPacket(&data);
 }
 
-void WorldSession::HandlePetitionDeclineOpcode(WorldPacket & recv_data)
-{
-    DEBUG_LOG("Received opcode MSG_PETITION_DECLINE");  // ok
-    //recv_data.hexlike();
-
-    ObjectGuid petitionGuid;
-    recv_data >> petitionGuid;                              // petition guid
-
-    DEBUG_LOG("Petition %s declined by %s", petitionGuid.GetString().c_str(), _player->GetGuidStr().c_str());
-
-    uint32 petitionLowGuid = petitionGuid.GetCounter();
-
-    QueryResult *result = CharacterDatabase.PQuery("SELECT ownerguid FROM petition WHERE petitionguid = '%u'", petitionLowGuid);
-    if (!result)
-        return;
-
-    Field *fields = result->Fetch();
-    ObjectGuid ownerguid = ObjectGuid(HIGHGUID_PLAYER, fields[0].GetUInt32());
-    delete result;
-
-    Player *owner = sObjectMgr.GetPlayer(ownerguid);
-    if(owner)                                               // petition owner online
-    {
-        WorldPacket data(MSG_PETITION_DECLINE, 8);
-        data << _player->GetObjectGuid();
-        owner->GetSession()->SendPacket(&data);
-    }
-}
-
 void WorldSession::HandleOfferPetitionOpcode(WorldPacket & recv_data)
 {
     DEBUG_LOG("Received opcode CMSG_OFFER_PETITION");   // ok

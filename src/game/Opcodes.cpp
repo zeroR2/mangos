@@ -1040,8 +1040,6 @@ OpcodeHandler opcodeTable[NUM_MSG_TYPES] =
     /*0x416*/ { "CMSG_NO_SPELL_VARIANCE",                       STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x417*/ { "CMSG_QUESTGIVER_STATUS_MULTIPLE_QUERY",        STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleQuestgiverStatusMultipleQuery},
     /*0x418*/ { "SMSG_QUESTGIVER_STATUS_MULTIPLE",              STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
-    /*0x419*/ { "CMSG_SET_PLAYER_DECLINED_NAMES",               STATUS_AUTHED,   PROCESS_THREADUNSAFE, &WorldSession::HandleSetPlayerDeclinedNamesOpcode},
-    /*0x41A*/ { "SMSG_SET_PLAYER_DECLINED_NAMES_RESULT",        STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x41B*/ { "CMSG_QUERY_SERVER_BUCK_DATA",                  STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x41C*/ { "CMSG_CLEAR_SERVER_BUCK_DATA",                  STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x41D*/ { "SMSG_SERVER_BUCK_DATA",                        STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },

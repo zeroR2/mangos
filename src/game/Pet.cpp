@@ -34,8 +34,7 @@ Creature(CREATURE_SUBTYPE_PET),
 m_usedTalentCount(0),
 m_removed(false), m_updated(false), m_happinessTimer(7500), m_petType(type), m_duration(0),
 m_auraUpdateMask(0), m_loading(true), m_needSave(true), m_petFollowAngle(PET_FOLLOW_ANGLE),
-m_petCounter(0), m_PetScalingData(NULL), m_createSpellID(0),m_HappinessState(0),
-m_declinedname(NULL)
+m_petCounter(0), m_PetScalingData(NULL), m_createSpellID(0),m_HappinessState(0)
 {
     SetName("Pet");
     m_regenTimer = REGEN_TIME_FULL;
@@ -57,8 +56,6 @@ m_declinedname(NULL)
 Pet::~Pet()
 {
     m_spells.clear();
-
-    delete m_declinedname;
 
     if (m_PetScalingData)
         delete m_PetScalingData;
@@ -365,24 +362,6 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     }
 
-    if (owner->GetTypeId() == TYPEID_PLAYER && getPetType() == HUNTER_PET)
-    {
-        result = CharacterDatabase.PQuery("SELECT genitive, dative, accusative, instrumental, prepositional FROM character_pet_declinedname WHERE owner = '%u' AND id = '%u'", owner->GetGUIDLow(), GetCharmInfo()->GetPetNumber());
-
-        if(result)
-        {
-            if(m_declinedname)
-                delete m_declinedname;
-
-            m_declinedname = new DeclinedName;
-            Field *fields2 = result->Fetch();
-            for(int i = 0; i < MAX_DECLINED_NAME_CASES; ++i)
-                m_declinedname->name[i] = fields2[i].GetCppString();
-
-            delete result;
-        }
-    }
-
     return true;
 }
 
@@ -513,9 +492,6 @@ void Pet::DeleteFromDB(uint32 guidlow, bool separate_transaction)
     static SqlStatementID delSpellCD ;
 
     SqlStatement stmt = CharacterDatabase.CreateStatement(delPet, "DELETE FROM character_pet WHERE id = ?");
-    stmt.PExecute(guidlow);
-
-    stmt = CharacterDatabase.CreateStatement(delDeclName, "DELETE FROM character_pet_declinedname WHERE id = ?");
     stmt.PExecute(guidlow);
 
     stmt = CharacterDatabase.CreateStatement(delAuras, "DELETE FROM pet_aura WHERE guid = ?");

@@ -36,7 +36,6 @@
 struct ItemPrototype;
 struct AuctionEntry;
 struct AuctionHouseEntry;
-struct DeclinedName;
 
 class ObjectGuid;
 class Creature;
@@ -210,7 +209,7 @@ class MANGOS_DLL_SPEC WorldSession
         void SendPacket(WorldPacket const* packet);
         void SendNotification(const char *format,...) ATTR_PRINTF(2,3);
         void SendNotification(int32 string_id,...);
-        void SendPetNameInvalid(uint32 error, const std::string& name, DeclinedName *declinedName);
+        void SendPetNameInvalid(uint32 error, const std::string& name);
         void SendPartyResult(PartyOperation operation, const std::string& member, PartyResult res);
         void SendGroupInvite(Player* player, bool alreadyInGroup = false);
         void SendAreaTriggerMessage(const char* Text, ...) ATTR_PRINTF(2, 3);
@@ -731,7 +730,6 @@ class MANGOS_DLL_SPEC WorldSession
 
         void HandleCharRenameOpcode(WorldPacket& recv_data);
         static void HandleChangePlayerNameOpcodeCallBack(QueryResult *result, uint32 accountId, std::string newname);
-        void HandleSetPlayerDeclinedNamesOpcode(WorldPacket& recv_data);
 
         void HandleTotemDestroyed(WorldPacket& recv_data);
 

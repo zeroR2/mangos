@@ -292,8 +292,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         // overwrite Creature function for name localization back to WorldObject version without localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const { return WorldObject::GetNameForLocaleIdx(locale_idx); }
 
-        DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
-
         bool    m_removed;                                  // prevent overwrite pet state in DB at next Pet::Update if pet already removed(saved)
         bool    m_updated;                                  // pet updated now
     protected:
@@ -310,8 +308,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         uint32  m_createSpellID;
         std::queue<ScalingAction> m_scalingQueue;
         uint8   m_HappinessState;
-
-        DeclinedName *m_declinedname;
 
     private:
         void SaveToDB(uint32, uint8, uint32)                // overwrited of Creature::SaveToDB     - don't must be called

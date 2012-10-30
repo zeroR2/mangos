@@ -23,6 +23,7 @@
 #include "BattleGroundAV.h"
 #include "BattleGroundAB.h"
 #include "BattleGroundWS.h"
+#include "Language.h"
 #include "MapManager.h"
 #include "Map.h"
 #include "ObjectMgr.h"

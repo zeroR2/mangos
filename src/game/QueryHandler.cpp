@@ -39,22 +39,13 @@ void WorldSession::SendNameQueryOpcode(Player *p)
     if(!p)
         return;
                                                             // guess size
-    WorldPacket data( SMSG_NAME_QUERY_RESPONSE, (8+1+1+1+1+1+10) );
-    data << p->GetPackGUID();                               // player guid
-    data << uint8(0);                                       // added in 3.1; if > 1, then end of packet
-    data << p->GetName();                                   // played name
+    WorldPacket data( SMSG_NAME_QUERY_RESPONSE, (8+1+4+4+4+10) );
+    data << ObjectGuid(p->GetObjectGuid());
+    data << p->GetName();
     data << uint8(0);                                       // realm name for cross realm BG usage
-    data << uint8(p->getRace());
-    data << uint8(p->getGender());
-    data << uint8(p->getClass());
-    if(DeclinedName const* names = p->GetDeclinedNames())
-    {
-        data << uint8(1);                                   // is declined
-        for(int i = 0; i < MAX_DECLINED_NAME_CASES; ++i)
-            data << names->name[i];
-    }
-    else
-        data << uint8(0);                                   // is not declined
+    data << uint32(p->getRace());
+    data << uint32(p->getGender());
+    data << uint32(p->getClass());
 
     SendPacket(&data);
 }
@@ -62,18 +53,9 @@ void WorldSession::SendNameQueryOpcode(Player *p)
 void WorldSession::SendNameQueryOpcodeFromDB(ObjectGuid guid)
 {
     CharacterDatabase.AsyncPQuery(&WorldSession::SendNameQueryOpcodeFromDBCallBack, GetAccountId(),
-        !sWorld.getConfig(CONFIG_BOOL_DECLINED_NAMES_USED) ?
-    //   ------- Query Without Declined Names --------
     //          0     1     2     3       4
         "SELECT guid, name, race, gender, class "
-        "FROM characters WHERE guid = '%u'"
-        :
-    //   --------- Query With Declined Names ---------
-    //          0                1     2     3       4
-        "SELECT characters.guid, name, race, gender, class, "
-    //   5         6       7           8             9
-        "genitive, dative, accusative, instrumental, prepositional "
-        "FROM characters LEFT JOIN character_declinedname ON characters.guid = character_declinedname.guid WHERE characters.guid = '%u'",
+        "FROM characters WHERE guid = '%u'",
         guid.GetCounter());
 }
 
@@ -102,24 +84,13 @@ void WorldSession::SendNameQueryOpcodeFromDBCallBack(QueryResult *result, uint32
         pClass       = fields[4].GetUInt8();
     }
                                                             // guess size
-    WorldPacket data( SMSG_NAME_QUERY_RESPONSE, (8+1+1+1+1+1+1+10) );
-    data << ObjectGuid(HIGHGUID_PLAYER, lowguid).WriteAsPacked();
-    data << uint8(0);                                       // added in 3.1; if > 1, then end of packet
+    WorldPacket data( SMSG_NAME_QUERY_RESPONSE, (8+1+4+4+4+10) );
+    data << ObjectGuid(HIGHGUID_PLAYER, lowguid);
     data << name;
     data << uint8(0);                                       // realm name for cross realm BG usage
-    data << uint8(pRace);                                   // race
-    data << uint8(pGender);                                 // gender
-    data << uint8(pClass);                                  // class
-
-    // if the first declined name field (5) is empty, the rest must be too
-    if(sWorld.getConfig(CONFIG_BOOL_DECLINED_NAMES_USED) && fields[5].GetCppString() != "")
-    {
-        data << uint8(1);                                   // is declined
-        for(int i = 5; i < MAX_DECLINED_NAME_CASES+5; ++i)
-            data << fields[i].GetCppString();
-    }
-    else
-        data << uint8(0);                                   // is not declined
+    data << uint32(pRace);                                  // race
+    data << uint32(pGender);                                // gender
+    data << uint32(pClass);                                 // class
 
     session->SendPacket( &data );
     delete result;
