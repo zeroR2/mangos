@@ -326,12 +326,21 @@ struct FactionTemplateEntry
     bool IsContestedGuardFaction() const { return (factionFlags & FACTION_TEMPLATE_FLAG_CONTESTED_GUARD)!=0; }
 };
 
+// using bounds from 3.3.5a
 struct GameObjectDisplayInfoEntry
 {
     uint32      Displayid;                                  // 0        m_ID
     char* filename;                                         // 1        m_modelName
-                                                            // 2-11     m_Sound
+    // uint32 unknown2[10];                                 // 2-11     m_Sound
+    float       minX;                                       // 12       m_geoBoxMinX (use first value as interact dist, mostly in hacks way)
+    float       minY;                                       // 13       m_geoBoxMinY
+    float       minZ;                                       // 14       m_geoBoxMinZ
+    float       maxX;                                       // 15       m_geoBoxMaxX
+    float       maxY;                                       // 16       m_geoBoxMaxY
+    float       maxZ;                                       // 17       m_geoBoxMaxZ
+    // uint32 unknown18;                                    // 18       m_objectEffectPackageID
 };
+
 // All Gt* DBC store data for 100 levels, some by 100 per class/race
 #define GT_MAX_LEVEL    100
 
