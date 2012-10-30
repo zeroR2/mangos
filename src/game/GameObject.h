@@ -341,53 +341,6 @@ struct GameObjectInfo
             uint32 conditionID2;                            //5
             uint32 serverOnly;                              //6
         } auraGenerator;
-        //31 GAMEOBJECT_TYPE_DUNGEON_DIFFICULTY
-        struct
-        {
-            uint32 mapID;                                   //0
-            uint32 difficulty;                              //1
-        } dungeonDifficulty;
-        //32 GAMEOBJECT_TYPE_BARBER_CHAIR
-        struct
-        {
-            uint32 chairheight;                             //0
-            uint32 heightOffset;                            //1
-        } barberChair;
-        //33 GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING
-        struct
-        {
-            uint32 intactNumHits;                           //0
-            uint32 creditProxyCreature;                     //1
-            uint32 empty1;                                  //2
-            uint32 intactEvent;                             //3
-            uint32 damagedDisplayId;                        //4
-            uint32 damagedNumHits;                          //5
-            uint32 empty2;                                  //6
-            uint32 empty3;                                  //7
-            uint32 empty4;                                  //8
-            uint32 damagedEvent;                            //9
-            uint32 destroyedDisplayId;                      //10
-            uint32 empty5;                                  //11
-            uint32 empty6;                                  //12
-            uint32 empty7;                                  //13
-            uint32 destroyedEvent;                          //14
-            uint32 empty8;                                  //15
-            uint32 debuildingTimeSecs;                      //16
-            uint32 empty9;                                  //17
-            uint32 destructibleData;                        //18
-            uint32 rebuildingEvent;                         //19
-            uint32 empty10;                                 //20
-            uint32 empty11;                                 //21
-            uint32 damageEvent;                             //22
-            uint32 linkedWorldState;                        //23 Custom value - set linked WorldState for this object
-        } destructibleBuilding;
-        //35 GAMEOBJECT_TYPE_TRAPDOOR
-        struct
-        {
-            uint32 whenToPause;                             // 0
-            uint32 startOpen;                               // 1
-            uint32 autoClose;                               // 2
-        } trapDoor;
 
         // not use for specific field access (only for output with loop by all filed), also this determinate max union size
         struct
@@ -793,7 +746,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void Rebuild(Unit *pWho);
 
         uint32 GetHealth() const { return m_health; }
-        uint32 GetMaxHealth() const { return m_goInfo->destructibleBuilding.intactNumHits + m_goInfo->destructibleBuilding.damagedNumHits; }
 
         float GetDeterminativeSize(bool b_priorityZ = false) const;
         uint32 GetLinkedWorldState(bool stateId = false);

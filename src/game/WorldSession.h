@@ -812,10 +812,7 @@ class MANGOS_DLL_SPEC WorldSession
         void HandleSpellClick(WorldPacket& recv_data);
         void HandleUpdateProjectilePosition(WorldPacket & recv_data);
         void HandleGetMirrorimageData(WorldPacket& recv_data);
-        void HandleAlterAppearanceOpcode(WorldPacket& recv_data);
-        void HandleRemoveGlyphOpcode(WorldPacket& recv_data);
         void HandleCharCustomizeOpcode(WorldPacket& recv_data);
-        void HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data);
         void HandleQueryInspectAchievementsOpcode(WorldPacket& recv_data);
         void HandleEquipmentSetSaveOpcode(WorldPacket& recv_data);
         void HandleEquipmentSetDeleteOpcode(WorldPacket& recv_data);

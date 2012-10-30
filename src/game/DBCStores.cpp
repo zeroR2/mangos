@@ -69,7 +69,6 @@ TaxiPathNodesByPath sTaxiPathNodesByPath;
 TaxiMask sTaxiNodesMask;
 
 DBCStorage <AreaTableEntry> sAreaStore(AreaTableEntryfmt);
-DBCStorage <AreaGroupEntry> sAreaGroupStore(AreaGroupEntryfmt);
 DBCStorage <AreaTriggerEntry> sAreaTriggerStore(AreaTriggerEntryfmt);
 DBCStorage <AuctionHouseEntry> sAuctionHouseStore(AuctionHouseEntryfmt);
 DBCStorage <BankBagSlotPricesEntry> sBankBagSlotPricesStore(BankBagSlotPricesEntryfmt);
@@ -109,7 +108,7 @@ DBCStorage <SpellDurationEntry> sSpellDurationStore(SpellDurationfmt);
 DBCStorage <SpellFocusObjectEntry> sSpellFocusObjectStore(SpellFocusObjectfmt);
 DBCStorage <SpellRadiusEntry> sSpellRadiusStore(SpellRadiusfmt);
 DBCStorage <SpellRangeEntry> sSpellRangeStore(SpellRangefmt);
-DBCStorage <SpellShapeshiftFormEntry> sSpellShapeshiftFormStore(SpellShapeshiftFormfmt);
+DBCStorage <SpellShapeshiftFormEntry> sSpellShapeshiftFormStore(SpellShapeshiftfmt);
 DBCStorage <StableSlotPricesEntry> sStableSlotPricesStore(StableSlotPricesfmt);
 DBCStorage <TalentEntry> sTalentStore(TalentEntryfmt);
 DBCStorage <TalentTabEntry> sTalentTabStore(TalentTabEntryfmt);

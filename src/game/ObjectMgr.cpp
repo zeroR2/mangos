@@ -6357,9 +6357,6 @@ void ObjectMgr::LoadGameobjectInfo()
                 CheckAndFixGOCaptureMinTime(goInfo, goInfo->capturePoint.minTime, 16);
                 break;
             }
-            case GAMEOBJECT_TYPE_BARBER_CHAIR:              //32
-                CheckAndFixGOChairHeightId(goInfo,goInfo->barberChair.chairheight,0);
-                break;
         }
     }
 

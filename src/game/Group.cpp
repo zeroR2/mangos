@@ -1693,10 +1693,6 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
     if(!reference)
         return ERR_BATTLEGROUND_JOIN_FAILED;
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bgOrTemplate->GetMapId(), reference->getLevel());
-    if(!bracketEntry)
-        return ERR_BATTLEGROUND_JOIN_FAILED;
-
     Team team = reference->GetTeam();
 
     uint32 allowedPlayerCount = 0;
@@ -1711,10 +1707,6 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
         // don't allow cross-faction join as group
         if(member->GetTeam() != team)
             return ERR_BATTLEGROUND_JOIN_TIMED_OUT;
-        // not in the same battleground level bracket, don't let join
-        PvPDifficultyEntry const* memberBracketEntry = GetBattlegroundBracketByLevel(bracketEntry->mapId, member->getLevel());
-        if(memberBracketEntry != bracketEntry)
-            return ERR_BATTLEGROUND_JOIN_RANGE_INDEX;
         // don't let join if someone from the group is already in that bg queue
         if(member->InBattleGroundQueueForBattleGroundQueueType(bgQueueTypeId))
             return ERR_BATTLEGROUND_JOIN_FAILED;            // not blizz-like

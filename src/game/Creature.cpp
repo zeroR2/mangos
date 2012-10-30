@@ -236,26 +236,11 @@ bool Creature::InitEntry(uint32 Entry, CreatureData const* data /*=NULL*/, GameE
     if (eventData && eventData->entry_id)
         Entry = eventData->entry_id;
 
-    CreatureInfo const* normalInfo = ObjectMgr::GetCreatureTemplate(Entry);
-    if (!normalInfo)
+    CreatureInfo const* cinfo = ObjectMgr::GetCreatureTemplate(Entry);
+    if (!cinfo)
     {
         sLog.outErrorDb("Creature::UpdateEntry creature entry %u does not exist.", Entry);
         return false;
-    }
-
-    CreatureInfo const* cinfo = normalInfo;
-    for (Difficulty diff = GetMap()->GetDifficulty(); diff > REGULAR_DIFFICULTY; diff = GetPrevDifficulty(diff, GetMap()->IsRaid()))
-    {
-        // we already have valid Map pointer for current creature!
-        if (normalInfo->DifficultyEntry[diff - 1])
-        {
-            cinfo = ObjectMgr::GetCreatureTemplate(normalInfo->DifficultyEntry[diff - 1]);
-            if (cinfo)
-                break;                                      // template found
-
-            // check and reported at startup, so just ignore (restore normalInfo)
-            cinfo = normalInfo;
-        }
     }
 
     SetEntry(Entry);                                        // normal entry always
@@ -1898,14 +1883,6 @@ CreatureDataAddon const* Creature::GetCreatureAddon() const
     if (CreatureDataAddon const* addon = ObjectMgr::GetCreatureAddon(GetGUIDLow()))
         return addon;
 
-    // dependent from difficulty mode entry
-    if (GetEntry() != GetCreatureInfo()->Entry)
-    {
-        // If CreatureTemplateAddon for difficulty_entry_N exist, it's there for a reason
-        if (CreatureDataAddon const* addon =  ObjectMgr::GetCreatureTemplateAddon(GetCreatureInfo()->Entry))
-            return addon;
-    }
-
     // Return CreatureTemplateAddon when nothing else exist
     return ObjectMgr::GetCreatureTemplateAddon(GetEntry());
 }
@@ -1966,11 +1943,6 @@ bool Creature::LoadCreatureAddon(bool reload)
             }
 
             SpellEntry const* spellInfo = sSpellStore.LookupEntry(*cAura);  // Already checked on load
-
-            // Get Difficulty mode for initial case (npc not yet added to world)
-            if (spellInfo->SpellDifficultyId && !reload && GetMap()->IsDungeon())
-                if (SpellEntry const* spellEntry = GetSpellEntryByDifficulty(spellInfo->SpellDifficultyId, GetMap()->GetDifficulty(), GetMap()->IsRaid()))
-                    spellInfo = spellEntry;
 
             CastSpell(this, spellInfo, true);
         }
