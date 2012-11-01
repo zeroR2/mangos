@@ -1959,7 +1959,6 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
 bool Player::TeleportToBGEntryPoint()
 {
     RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
-    RemoveSpellsCausingAura(SPELL_AURA_FLY);
 
     ScheduleDelayedOperation(DELAYED_BG_MOUNT_RESTORE);
     ScheduleDelayedOperation(DELAYED_BG_TAXI_RESTORE);
@@ -2533,21 +2532,6 @@ void Player::GiveXP(uint32 xp, Unit* victim)
     // XP to money conversion processed in Player::RewardQuest
     if (level >= sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
         return;
-
-    if (victim)
-    {
-        // handle SPELL_AURA_MOD_KILL_XP_PCT auras
-        Unit::AuraList const& ModXPPctAuras = GetAurasByType(SPELL_AURA_MOD_KILL_XP_PCT);
-        for (Unit::AuraList::const_iterator i = ModXPPctAuras.begin();i != ModXPPctAuras.end(); ++i)
-            xp = uint32(xp*(1.0f + (*i)->GetModifier()->m_amount / 100.0f));
-    }
-    else
-    {
-        // handle SPELL_AURA_MOD_QUEST_XP_PCT auras
-        Unit::AuraList const& ModXPPctAuras = GetAurasByType(SPELL_AURA_MOD_QUEST_XP_PCT);
-        for (Unit::AuraList::const_iterator i = ModXPPctAuras.begin();i != ModXPPctAuras.end(); ++i)
-            xp = uint32(xp*(1.0f + (*i)->GetModifier()->m_amount / 100.0f));
-    }
 
     uint32 bonus_xp = 0;
     bool ReferAFriend = false;
