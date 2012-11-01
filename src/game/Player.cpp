@@ -2366,12 +2366,18 @@ void Player::SetGameMaster(bool on)
 
         getHostileRefManager().setOnlineOfflineState(false);
         CombatStopWithPets();
+
+        SetPhaseMask(PHASEMASK_ANYWHERE,false);             // see and visible in all phases
     }
     else
     {
         m_ExtraFlags &= ~ PLAYER_EXTRA_GM_ON;
         setFactionForRace(getRace());
         RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+
+        // restore phase
+        AuraList const& phases = GetAurasByType(SPELL_AURA_PHASE);
+        SetPhaseMask(!phases.empty() ? phases.front()->GetMiscValue() : PHASEMASK_NORMAL,false);
 
         CallForAllControlledUnits(SetGameMasterOffHelper(getFaction()), CONTROLLED_PET|CONTROLLED_TOTEMS|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);
 
@@ -19643,6 +19649,20 @@ template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Corpse*  
 template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, GameObject*    target, UpdateData& data, std::set<WorldObject*>& visibleNow);
 template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, DynamicObject* target, UpdateData& data, std::set<WorldObject*>& visibleNow);
 
+void Player::SetPhaseMask(uint32 newPhaseMask, bool update)
+{
+    // GM-mode have mask PHASEMASK_ANYWHERE always
+    if (isGameMaster())
+        newPhaseMask = PHASEMASK_ANYWHERE;
+
+    // phase auras normally not expected at BG but anyway better check
+    if (BattleGround *bg = GetBattleGround())
+        bg->EventPlayerDroppedFlag(this);
+
+    Unit::SetPhaseMask(newPhaseMask, update);
+    GetSession()->SendSetPhaseShift(GetPhaseMask());
+}
+
 void Player::InitPrimaryProfessions()
 {
     uint32 maxProfs = GetSession()->GetSecurity() < AccountTypes(sWorld.getConfig(CONFIG_UINT32_TRADE_SKILL_GMIGNORE_MAX_PRIMARY_COUNT))
@@ -21159,6 +21179,25 @@ void Player::_LoadSkills(QueryResult *result)
         SetUInt32Value(PLAYER_SKILL_VALUE_INDEX(count),0);
         SetUInt32Value(PLAYER_SKILL_BONUS_INDEX(count),0);
     }
+}
+
+uint32 Player::GetPhaseMaskForSpawn() const
+{
+    uint32 phase = PHASEMASK_NORMAL;
+    if (!isGameMaster())
+        phase = GetPhaseMask();
+    else
+    {
+        AuraList const& phases = GetAurasByType(SPELL_AURA_PHASE);
+        if (!phases.empty())
+            phase = phases.front()->GetMiscValue();
+    }
+
+    // some aura phases include 1 normal map in addition to phase itself
+    if (uint32 n_phase = phase & ~PHASEMASK_NORMAL)
+        return n_phase;
+
+    return PHASEMASK_NORMAL;
 }
 
 InventoryResult Player::CanEquipUniqueItem(Item* pItem, uint8 eslot, uint32 limit_count) const

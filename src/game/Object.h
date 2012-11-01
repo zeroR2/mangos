@@ -451,7 +451,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         virtual void Update(uint32 /*update_diff*/, uint32 /*time_diff*/) {}
 
-        void _Create(ObjectGuid guid);
+        void _Create(ObjectGuid guid, uint32 phaseMask);
 
         TransportInfo* GetTransportInfo() const { return m_transportInfo; }
         bool IsBoarded() const { return m_transportInfo != NULL; }
@@ -500,6 +500,11 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         uint32 GetMapId() const { return m_mapId; }
         uint32 GetInstanceId() const { return m_InstanceId; }
+
+        virtual void SetPhaseMask(uint32 newPhaseMask, bool update);
+        uint32 GetPhaseMask() const { return m_phaseMask; }
+        bool InSamePhase(WorldObject const* obj) const { return InSamePhase(obj->GetPhaseMask()); }
+        bool InSamePhase(uint32 phasemask) const { return (GetPhaseMask() & phasemask); }
 
         uint32 GetZoneId() const;
         uint32 GetAreaId() const;

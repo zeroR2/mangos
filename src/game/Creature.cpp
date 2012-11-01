@@ -113,7 +113,7 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
             float ox, oy, oz;
             m_closeObject->GetPosition(ox, oy, oz);
             m_closeObject->UpdateAllowedPositionZ(ox, oy, oz);
-            m_map->GetHitPosition(ox, oy, oz, m_pos.x, m_pos.y, m_pos.z, -0.5f);
+            m_map->GetHitPosition(ox, oy, oz, m_pos.x, m_pos.y, m_pos.z, GetPhaseMask(), -0.5f);
         }
         else
             m_closeObject->GetClosePoint(m_pos.x, m_pos.y, m_pos.z, cr->GetObjectBoundingRadius(), m_dist, m_angle);
@@ -745,6 +745,7 @@ bool Creature::AIM_Initialize()
 bool Creature::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, Team team /*= TEAM_NONE*/, const CreatureData* data /*= NULL*/, GameEventCreatureData const* eventData /*= NULL*/)
 {
     SetMap(cPos.GetMap());
+    SetPhaseMask(cPos.GetPhaseMask(), false);
 
     if (!CreateFromProto(guidlow, cinfo, team, data, eventData))
         return false;
@@ -1006,10 +1007,10 @@ void Creature::SaveToDB()
         return;
     }
 
-    SaveToDB(GetMapId(), data->spawnMask);
+    SaveToDB(GetMapId(), data->spawnMask, GetPhaseMask());
 }
 
-void Creature::SaveToDB(uint32 mapid, uint8 spawnMask)
+void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
 {
     // update in loaded data
     CreatureData& data = sObjectMgr.NewOrExistCreatureData(GetGUIDLow());
@@ -1037,6 +1038,7 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask)
     data.id = GetEntry();
     data.mapid = mapid;
     data.spawnMask = spawnMask;
+    data.phaseMask = phaseMask;
     data.modelid_override = displayId;
     data.equipmentId = GetEquipmentId();
     data.posX = GetPositionX();
@@ -1065,6 +1067,7 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask)
        << data.id << ","
        << data.mapid << ","
        << uint32(data.spawnMask) << ","                    // cast to prevent save as symbol
+       << uint16(data.phaseMask) << ","                    // prevent out of range error
        << data.modelid_override << ","
        << data.equipmentId << ","
        << data.posX << ","
@@ -1248,7 +1251,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     if (map->GetCreature(cinfo->GetObjectGuid(guidlow)))
         return false;
 
-    CreatureCreatePos pos(map, data->posX, data->posY, data->posZ, data->orientation);
+    CreatureCreatePos pos(map, data->posX, data->posY, data->posZ, data->orientation, data->phaseMask);
 
     if (!Create(guidlow, pos, cinfo, TEAM_NONE, data, eventData))
         return false;
@@ -1266,7 +1269,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
         m_deathState = DEAD;
         if (CanFly())
         {
-            float tz = GetMap()->GetHeight(data->posX, data->posY, data->posZ, false);
+            float tz = GetMap()->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ, false);
             if (data->posZ - tz > 0.1)
                 Relocate(data->posX, data->posY, tz);
         }
@@ -1296,7 +1299,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
             // Just set to dead, so need to relocate like above
             if (CanFly())
             {
-                float tz = GetMap()->GetHeight(data->posX, data->posY, data->posZ, false);
+                float tz = GetMap()->GetHeight(data->phaseMask, data->posX, data->posY, data->posZ, false);
                 if (data->posZ - tz > 0.1)
                     Relocate(data->posX, data->posY, tz);
             }

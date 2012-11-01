@@ -12331,6 +12331,32 @@ void Unit::RemoveAurasBySpellMechanic(uint32 mechMask)
     }
 }
 
+struct SetPhaseMaskHelper
+{
+    explicit SetPhaseMaskHelper(uint32 _phaseMask) : phaseMask(_phaseMask) {}
+    void operator()(Unit* unit) const { unit->SetPhaseMask(phaseMask, true); }
+    uint32 phaseMask;
+};
+
+void Unit::SetPhaseMask(uint32 newPhaseMask, bool update)
+{
+    if (newPhaseMask==GetPhaseMask())
+        return;
+
+    // first move to both phase for proper update controlled units
+    WorldObject::SetPhaseMask(GetPhaseMask() | newPhaseMask, false);
+
+    if (IsInWorld())
+    {
+        RemoveNotOwnSingleTargetAuras(newPhaseMask);        // we can lost access to caster or target
+
+        // all controlled except not owned charmed units
+        CallForAllControlledUnits(SetPhaseMaskHelper(newPhaseMask), CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_MINIPET|CONTROLLED_TOTEMS|CONTROLLED_CHARM);
+    }
+
+    WorldObject::SetPhaseMask(newPhaseMask, update);
+}
+
 void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool casting /*= false*/ )
 {
     DisableSpline();

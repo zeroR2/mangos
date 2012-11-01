@@ -182,6 +182,7 @@ struct CreatureData
 {
     uint32 id;                                              // entry in creature_template
     uint16 mapid;
+    uint16 phaseMask;
     uint32 modelid_override;                                // overrides any model defined in creature_template
     int32 equipmentId;
     float posX;
@@ -413,14 +414,15 @@ struct CreatureCreatePos
 {
     public:
         // exactly coordinates used
-        CreatureCreatePos(Map* map, float x, float y, float z, float o)
-            : m_map(map), m_closeObject(NULL), m_angle(0.0f), m_dist(0.0f) { m_pos.x = x; m_pos.y = y; m_pos.z = z; m_pos.o = o; }
+        CreatureCreatePos(Map* map, float x, float y, float z, float o, uint32 phaseMask)
+            : m_map(map), m_phaseMask(phaseMask), m_closeObject(NULL), m_angle(0.0f), m_dist(0.0f) { m_pos.x = x; m_pos.y = y; m_pos.z = z; m_pos.o = o; }
         // if dist == 0.0f -> exactly object coordinates used, in other case close point to object (CONTACT_DIST can be used as minimal distances)
         CreatureCreatePos(WorldObject* closeObject, float ori, float dist = 0.0f, float angle = 0.0f)
-            : m_map(closeObject->GetMap()),
+            : m_map(closeObject->GetMap()), m_phaseMask(closeObject->GetPhaseMask()),
               m_closeObject(closeObject), m_angle(angle), m_dist(dist) { m_pos.o = ori; }
     public:
         Map* GetMap() const { return m_map; }
+        uint32 GetPhaseMask() const { return m_phaseMask; }
         void SelectFinalPoint(Creature* cr, bool checkLOS = false);
         bool Relocate(Creature* cr) const;
 
@@ -428,6 +430,7 @@ struct CreatureCreatePos
         Position m_pos;
     private:
         Map* m_map;
+        uint32 m_phaseMask;
         WorldObject* m_closeObject;
         float m_angle;
         float m_dist;
@@ -594,7 +597,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         bool LoadFromDB(uint32 guid, Map* map);
         void SaveToDB();
         // overwrited in Pet
-        virtual void SaveToDB(uint32 mapid, uint8 spawnMask);
+        virtual void SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask);
         virtual void DeleteFromDB();                        // overwrited in Pet
         static void DeleteFromDB(uint32 lowguid, CreatureData const* data);
 

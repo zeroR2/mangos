@@ -1881,6 +1881,7 @@ bool Pet::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* ci
     m_loading = true;
 
     SetMap(cPos.GetMap());
+    SetPhaseMask(cPos.GetPhaseMask(), false);
     m_originalEntry = cinfo->Entry;
 
     if (!guidlow)

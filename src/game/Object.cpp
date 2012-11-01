@@ -1071,7 +1071,7 @@ void Object::MarkForClientUpdate()
 
 WorldObject::WorldObject()
     : m_groupLootTimer(0), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL),
-    m_currMap(NULL), m_mapId(0), m_InstanceId(0), m_viewPoint(*this), m_isActiveObject(false),
+    m_currMap(NULL), m_mapId(0), m_InstanceId(0), m_phaseMask(PHASEMASK_NORMAL), m_viewPoint(*this), m_isActiveObject(false),
     m_LastUpdateTime(WorldTimer::getMSTime())
 {
 }
@@ -1081,9 +1081,10 @@ void WorldObject::CleanupsBeforeDelete()
     RemoveFromWorld();
 }
 
-void WorldObject::_Create(ObjectGuid guid)
+void WorldObject::_Create(ObjectGuid guid, uint32 phaseMask)
 {
     Object::_Create(guid);
+    m_phaseMask = phaseMask;
 }
 
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
@@ -1242,7 +1243,7 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
 {
     float x,y,z;
     GetPosition(x,y,z);
-    return GetMap()->IsInLineOfSight(x, y, z + 2.0f, ox, oy, oz + 2.0f);
+    return GetMap()->IsInLineOfSight(x, y, z + 2.0f, ox, oy, oz + 2.0f, GetPhaseMask());
 }
 
 bool WorldObject::GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D /* = true */) const
@@ -1444,7 +1445,7 @@ void WorldObject::GetRandomPoint( float x, float y, float z, float distance, flo
 
 void WorldObject::UpdateGroundPositionZ(float x, float y, float &z) const
 {
-    float new_z = GetMap()->GetHeight(x, y, z, true);
+    float new_z = GetMap()->GetHeight(GetPhaseMask(),x,y,z,true);
     if (new_z > INVALID_HEIGHT)
         z = new_z+ 0.05f;                                   // just to be sure that we are not a few pixel under the surface
 }
@@ -1470,7 +1471,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
                 float ground_z = z;
                 float max_z = canSwim
                     ? GetTerrain()->GetWaterOrGroundLevel(x, y, z, &ground_z, !((Unit const*)this)->HasAuraType(SPELL_AURA_WATER_WALK))
-                    : ((ground_z = GetMap()->GetHeight(x, y, z, true)));
+                    : ((ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true)));
                 if (max_z > INVALID_HEIGHT)
                 {
                     if (z > max_z)
@@ -1481,7 +1482,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             }
             else
             {
-                float ground_z = GetMap()->GetHeight(x, y, z, true);
+                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true);
                 if (z < ground_z)
                     z = ground_z;
             }
@@ -1504,7 +1505,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             }
             else
             {
-                float ground_z = GetMap()->GetHeight(x, y, z, true);
+                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true);
                 if (z < ground_z)
                     z = ground_z;
             }
@@ -1512,7 +1513,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
         }
         default:
         {
-            float ground_z = GetMap()->GetHeight(x, y, z, true);
+            float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true);
             if (ground_z > INVALID_HEIGHT)
                 z = ground_z;
             break;
@@ -1735,7 +1736,7 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
     if (GetTypeId()==TYPEID_PLAYER)
         team = ((Player*)this)->GetTeam();
 
-    CreatureCreatePos pos(GetMap(), x, y, z, ang);
+    CreatureCreatePos pos(GetMap(), x, y, z, ang, GetPhaseMask());
 
     if (fabs(x) < M_NULL_F && fabs(y) < M_NULL_F && fabs(z) < M_NULL_F)
         pos = CreatureCreatePos(this, GetOrientation(), CONTACT_DISTANCE, ang);
@@ -1773,7 +1774,8 @@ GameObject* WorldObject::SummonGameobject(uint32 id, float x, float y, float z, 
     if (!map)
         return NULL;
 
-    if(!pGameObj->Create(map->GenerateLocalLowGuid(HIGHGUID_GAMEOBJECT), id, map, x, y, z, angle))
+    if(!pGameObj->Create(map->GenerateLocalLowGuid(HIGHGUID_GAMEOBJECT), id, map,
+        GetPhaseMask(), x, y, z, angle))
     {
         delete pGameObj;
         return NULL;
@@ -1980,6 +1982,14 @@ void WorldObject::GetNearPoint(WorldObject const* searcher, float &x, float &y, 
         searcher->UpdateAllowedPositionZ(x, y, z);          // update to LOS height if available
     else
         UpdateGroundPositionZ(x, y, z);
+}
+
+void WorldObject::SetPhaseMask(uint32 newPhaseMask, bool update)
+{
+    m_phaseMask = newPhaseMask;
+
+    if (update && IsInWorld())
+        UpdateVisibilityAndView();
 }
 
 void WorldObject::PlayDistanceSound( uint32 sound_id, Player* target /*= NULL*/ )

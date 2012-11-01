@@ -1853,6 +1853,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         // common function for visibility checks for player/creatures with detection code
         bool isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, bool detect, bool inVisibleList = false, bool is3dDistance = true, bool skipLOScheck = false) const;
         bool canDetectInvisibilityOf(Unit const* u) const;
+        void SetPhaseMask(uint32 newPhaseMask, bool update);// overwrite WorldObject::SetPhaseMask
         bool IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* spellInfo) const;
 
         // virtual functions for all world objects types

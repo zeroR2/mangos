@@ -1095,6 +1095,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void RemovePet(PetSaveMode mode);
 
+        uint32 GetPhaseMaskForSpawn() const;                // used for proper set phase for DB at GM-mode creature/GO spawn
+
         void Say(const std::string& text, const uint32 language);
         void Yell(const std::string& text, const uint32 language);
         void TextEmote(const std::string& text);
@@ -2215,6 +2217,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         // Stealth detection system
         void HandleStealthedUnitsDetection();
+
+        virtual void SetPhaseMask(uint32 newPhaseMask, bool update);// overwrite Unit::SetPhaseMask
 
         uint8 m_forced_speed_changes[MAX_MOVE_TYPE];
 
