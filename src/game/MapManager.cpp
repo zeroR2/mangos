@@ -342,7 +342,7 @@ Map* MapManager::CreateInstance(uint32 id, Player * player)
         map = FindMap(id, NewInstanceId);
         // it is possible that the save exists but the map doesn't
         if (!map)
-            pNewMap = CreateDungeonMap(id, NewInstanceId, pSave->GetDifficulty(), pSave);
+            pNewMap = CreateDungeonMap(id, NewInstanceId, pSave);
     }
     else
     {
@@ -350,8 +350,7 @@ Map* MapManager::CreateInstance(uint32 id, Player * player)
         // the instance will be created for the first time
         NewInstanceId = sObjectMgr.GenerateInstanceLowGuid();
 
-        Difficulty diff = player->GetGroup() ? player->GetGroup()->GetDifficulty(entry->IsRaid()) : player->GetDifficulty(entry->IsRaid());
-        pNewMap = CreateDungeonMap(id, NewInstanceId, diff);
+        pNewMap = CreateDungeonMap(id, NewInstanceId);
     }
 
     //add a new map object into the registry
@@ -364,7 +363,7 @@ Map* MapManager::CreateInstance(uint32 id, Player * player)
     return map;
 }
 
-DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState *save)
+DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, DungeonPersistentState *save)
 {
     // make sure we have a valid map id
     if (!sMapStore.LookupEntry(id))
@@ -378,13 +377,7 @@ DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficult
         MANGOS_ASSERT(false);
     }
 
-    // some instances only have one difficulty
-    if (!GetMapDifficultyData(id, difficulty))
-        difficulty = DUNGEON_DIFFICULTY_NORMAL;
-
-    DEBUG_LOG("MapInstanced::CreateDungeonMap: %s map instance %d for %d created with difficulty %d", save?"":"new ", InstanceId, id, difficulty);
-
-    DungeonMap *map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty);
+    DungeonMap *map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId);
 
     // Dungeons can have saved instance data
     bool load_data = save != NULL;
@@ -397,11 +390,7 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
 {
     DEBUG_LOG("MapInstanced::CreateBattleGroundMap: instance:%d for map:%d and bgType:%d created.", InstanceId, id, bg->GetTypeID());
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(),bg->GetMinLevel());
-
-    uint8 spawnMode = bracketEntry ? bracketEntry->difficulty : REGULAR_DIFFICULTY;
-
-    BattleGroundMap *map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId, spawnMode);
+    BattleGroundMap *map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId);
     MANGOS_ASSERT(map->IsBattleGround());
     map->SetBG(bg);
     bg->SetBgMap(map);

@@ -506,8 +506,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
     SetPlayer(pCurrChar);
 
-    pCurrChar->SendDungeonDifficulty(false);
-
     WorldPacket data(SMSG_LOGIN_VERIFY_WORLD, 20);
     data << pCurrChar->GetMapId();
     data << pCurrChar->GetPositionX();
@@ -616,7 +614,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         }
     }
 
-    AreaLockStatus lockStatus = pCurrChar->GetAreaTriggerLockStatus(sObjectMgr.GetMapEntranceTrigger(pCurrChar->GetMapId()), pCurrChar->GetDifficulty(pCurrChar->GetMap()->IsRaid()));
+    AreaLockStatus lockStatus = pCurrChar->GetAreaTriggerLockStatus(sObjectMgr.GetMapEntranceTrigger(pCurrChar->GetMapId()));
     if (lockStatus != AREA_LOCKSTATUS_OK || !pCurrChar->GetMap()->Add(pCurrChar))
     {
         // normal delayed teleport protection not applied (and this correct) for this case (Player object just created)

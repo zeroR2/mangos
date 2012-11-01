@@ -208,21 +208,15 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         virtual bool CanEnter(Player* /*player*/) { return true; }
         const char* GetMapName() const;
 
-        // have meaning only for instanced map (that have set real difficulty), NOT USE its for BaseMap
-        // _currently_ spawnmode == difficulty, but this can be changes later, so use appropriate spawmmode/difficult functions
-        // for simplify later code support
-        // regular difficulty = continent/dungeon normal/first raid normal difficulty
         uint8 GetSpawnMode() const { return (i_spawnMode); }
-        Difficulty GetDifficulty() const { return Difficulty(GetSpawnMode()); }
-        bool IsRegularDifficulty() const { return GetDifficulty() == REGULAR_DIFFICULTY; }
-        uint32 GetMaxPlayers() const;                       // dependent from map difficulty
-        uint32 GetMaxResetDelay() const;                    // dependent from map difficulty
+
+        uint32 GetMaxPlayers() const;
+        uint32 GetMaxResetDelay() const;
 
         bool Instanceable() const { return i_mapEntry && i_mapEntry->Instanceable(); }
         // NOTE: this duplicate of Instanceable(), but Instanceable() can be changed when BG also will be instanceable
         bool IsDungeon() const { return i_mapEntry && i_mapEntry->IsDungeon(); }
         bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
-        bool IsRaidOrHeroicDungeon() const { return IsRaid() || GetDifficulty() > DUNGEON_DIFFICULTY_NORMAL; }
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
 
         // can't be NULL for loaded map
@@ -453,7 +447,7 @@ class MANGOS_DLL_SPEC WorldMap : public Map
     private:
         using Map::GetPersistentState;                      // hide in subclass for overwrite
     public:
-        WorldMap(uint32 id, time_t expiry) : Map(id, expiry, 0, REGULAR_DIFFICULTY) {}
+        WorldMap(uint32 id, time_t expiry) : Map(id, expiry, 0) {}
         ~WorldMap() {}
 
         // can't be NULL for loaded map

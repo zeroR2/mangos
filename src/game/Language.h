@@ -863,7 +863,6 @@ enum MangosStrings
     LANG_SCRIPTS_WRONG_API              = 1167,
     LANG_SCRIPTS_RELOADED_OK            = 1168,
     LANG_SCRIPTS_OUTDATED               = 1169,
-    LANG_NPCINFO_CHAR_DIFFICULTY        = 1170,
     LANG_AHBOT_RELOAD_OK                = 1171,
     LANG_AHBOT_RELOAD_FAIL              = 1172,
     LANG_AHBOT_STATUS_BAR_CONSOLE       = 1173,

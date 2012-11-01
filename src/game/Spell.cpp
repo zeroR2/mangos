@@ -375,15 +375,7 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
     MANGOS_ASSERT( caster != NULL && info != NULL );
     MANGOS_ASSERT( info == sSpellStore.LookupEntry( info->Id ) && "`info` must be pointer to sSpellStore element");
 
-    if (info->SpellDifficultyId && caster->IsInWorld() && caster->GetMap()->IsDungeon())
-    {
-        if (SpellEntry const* spellEntry = GetSpellEntryByDifficulty(info->SpellDifficultyId, caster->GetMap()->GetDifficulty(), caster->GetMap()->IsRaid()))
-            m_spellInfo = spellEntry;
-        else
-            m_spellInfo = info;
-    }
-    else
-        m_spellInfo = info;
+    m_spellInfo = info;
 
     m_triggeredBySpellInfo = triggeredBy;
     m_caster = caster;
@@ -3402,30 +3394,6 @@ void Spell::cast(bool skipCheck)
     // different triggered (for caster and main target after main cast) and pre-cast (casted before apply effect to each target) cases
     switch(m_spellInfo->SpellFamilyName)
     {
-        case SPELLFAMILY_GENERIC:
-        {
-            // Stoneskin
-            if (m_spellInfo->Id == 20594)
-                AddTriggeredSpell(65116);                   // Stoneskin - armor 10% for 8 sec
-            // Chaos Bane strength buff
-            else if (m_spellInfo->Id == 71904)
-                AddTriggeredSpell(73422);
-            else if (m_spellInfo->Id == 74607)
-                AddTriggeredSpell(74610);                  // Fiery combustion
-            else if (m_spellInfo->Id == 74799)
-                AddTriggeredSpell(74800);                  // Soul consumption
-            else if (m_spellInfo->Id == 61968)             // Flash Freeze (Hodir: Ulduar)
-                AddTriggeredSpell(62148);                  // visual effect
-            else if (m_spellInfo->Id == 69839)             // Unstable Ooze Explosion (Rotface)
-                AddPrecastSpell(69832);                    // cast "cluster" before silence and pacify
-            else if (m_spellInfo->Id == 58672)             // Impale, damage and loose threat effect (Vault of Archavon, Archavon the Stone Watcher)
-                AddPrecastSpell(m_caster->GetMap()->IsRegularDifficulty() ? 58666 : 60882);
-            else if (m_spellInfo->Id == 71265)             // Swarming Shadows DoT (Queen Lana'thel ICC)
-                AddPrecastSpell(71277);
-            else if (m_spellInfo->Id == 70923)             // Uncontrollable Frenzy (Queen Lana'thel ICC)
-                AddTriggeredSpell(70924); // health buff etc.
-            break;
-        }
         case SPELLFAMILY_MAGE:
         {
             // Ice Block
@@ -8536,12 +8504,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         {
             unMaxTargets = 2;
 
-            if (m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
-                m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
-            {
-                unMaxTargets = 6;
-            }
-
             UnitList tempTargetUnitMap;
             FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
@@ -8828,33 +8790,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             unMaxTargets = 1;
             break;
         }
-        case 71336:                                     // Pact of the Darkfallen
-        {
-            UnitList tempTargetUnitMap;
-            radius = 100.0f;
-            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-            for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
-            {
-                if (!(*iter)->GetObjectGuid().IsPlayer() ||
-                    m_caster->getVictim() == (*iter) ||         // don't target the tank
-                    (*iter)->HasAuraOfDifficulty(70451))        // don't target offtank linked with Blood Mirror
-                {
-                    continue;
-                }
-
-                targetUnitMap.push_back((*iter));
-            }
-
-            if (m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
-                m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
-            {
-                unMaxTargets = 3;
-            }
-            else
-                unMaxTargets = 2;
-
-            break;
-        }
         case 71341:                                     // Pact of the Darkfallen (dmg part)
         case 71390:                                     // Pact of the Darkfallen (visual link part)
         {
@@ -8865,24 +8800,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                 if ((*iter)->HasAura(71340))
                     targetUnitMap.push_back((*iter));
             }
-            break;
-        }
-        case 71445:                                 // Twilight Bloodbolt (Lana'thel)
-        case 71471:
-        {
-            radius = DEFAULT_VISIBILITY_INSTANCE;
-            UnitList tempTargetUnitMap;
-            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
-            for (UnitList::iterator itr = tempTargetUnitMap.begin(); itr != tempTargetUnitMap.end();++itr)
-            {
-                if ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER &&
-                    !(*itr)->HasAuraOfDifficulty(70445) && !(*itr)->HasAuraOfDifficulty(70451)) // Blood Mirror
-                {
-                    targetUnitMap.push_back(*itr);
-                }
-            }
-
-            unMaxTargets = 2;
             break;
         }
         case 71447:                                 // Bloodbolt Splash 10N

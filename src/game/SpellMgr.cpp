@@ -5182,32 +5182,6 @@ bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32
     return true;
 }
 
-SpellEntry const* GetSpellEntryByDifficulty(uint32 id, Difficulty difficulty, bool isRaid)
-{
-    SpellDifficultyEntry const* spellDiff = sSpellDifficultyStore.LookupEntry(id);
-
-    if (!spellDiff)
-        return NULL;
-
-    DEBUG_LOG("Searching spell %u in SpellDifficulty.dbc: Result is: %u/%u/%u/%u ",id,
-    spellDiff->spellId[RAID_DIFFICULTY_10MAN_NORMAL],
-    spellDiff->spellId[RAID_DIFFICULTY_25MAN_NORMAL],
-    spellDiff->spellId[RAID_DIFFICULTY_10MAN_HEROIC],
-    spellDiff->spellId[RAID_DIFFICULTY_25MAN_HEROIC]);
-
-
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellDiff->spellId[RAID_DIFFICULTY_10MAN_NORMAL]);
-    bool _isRaid = spellInfo ? (spellInfo->HasAttribute(SPELL_ATTR_EX6_NORMAL_DIFFICULTY) ? false : isRaid) : isRaid;
-
-    for (Difficulty diff = difficulty; diff >= REGULAR_DIFFICULTY; diff = GetPrevDifficulty(diff, _isRaid))
-    {
-        if (spellDiff->spellId[diff])
-            return sSpellStore.LookupEntry(spellDiff->spellId[diff]);
-    }
-
-    return NULL;
-}
-
 uint32 GetProcFlag(SpellEntry const* spellInfo)
 {
     if (!spellInfo)

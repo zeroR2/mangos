@@ -1532,7 +1532,7 @@ void Aura::TriggerSpell()
                     case 27819:
                     {
                         // 33% Mana Burn on normal mode, 50% on heroic mode
-                        int32 bpDamage = (int32)triggerTarget->GetPower(POWER_MANA) / (triggerTarget->GetMap()->GetDifficulty() ? 2 : 3);
+                        int32 bpDamage = (int32)triggerTarget->GetPower(POWER_MANA) / 3);
                         triggerTarget->ModifyPower(POWER_MANA, -bpDamage);
                         triggerTarget->CastCustomSpell(triggerTarget, 27820, &bpDamage, NULL, NULL, true, NULL, this, triggerTarget->GetObjectGuid());
                         return;
@@ -2363,15 +2363,6 @@ void Aura::TriggerSpell()
                 triggerTarget->CastCustomSpell(triggerTarget, trigger_spell_id, &mana, NULL, NULL, true, NULL, this);
                 return;
             }
-            case 71340:                                     // Pact of the Darkfallen (Lana'thel)
-            {
-                // growing damage, every tenth tick is 1k higher
-                int32 multiplier = GetModifier()->m_miscvalue += 1;
-                int32 bp0 = triggerTarget->GetMap()->GetDifficulty() >= RAID_DIFFICULTY_10MAN_HEROIC ? 4600 : 1610;
-                bp0 = int32(bp0 + (floor(multiplier / 10.0f)) * 1000);
-                triggerTarget->CastCustomSpell(triggerTarget, 71341, &bp0, 0, 0, true);
-                break;
-            }
         }
     }
 
@@ -3137,16 +3128,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     target->CastSpell(target, 43984, true);
                 return;
             }
-            case 44191:                                     // Flame Strike
-            {
-                if (target->GetMap()->IsDungeon())
-                {
-                    uint32 spellId = target->GetMap()->IsRegularDifficulty() ? 44190 : 46163;
-
-                    target->CastSpell(target, spellId, true, NULL, this);
-                }
-                return;
-            }
             case 45934:                                     // Dark Fiend
             {
                 // Kill target if dispelled
@@ -3224,11 +3205,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     }
                 }
                 break;
-            }
-            case 48385:                                     // Create Spirit Fount Beam
-            {
-                target->CastSpell(target, target->GetMap()->IsRegularDifficulty() ? 48380 : 59320, true);
-                return;
             }
             case 49356:                                     // Flesh Decay - Tharonja
             {
@@ -3374,25 +3350,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 int32 damage = GetModifier()->m_amount;
                 target->CastCustomSpell(target, 69770, &damage, 0, 0, true, 0, this, GetCasterGuid(), GetSpellProto());
-                return;
-            }
-            case 70308:                                     // Mutated Transformation (Putricide)
-            {
-                uint32 entry = 37672;
-
-                if (target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
-                    target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
-                {
-                    entry = 38285;
-                }
-
-                if (Creature *pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
-                {
-                    pAbomination->setFaction(target->getFaction());
-                    target->CastSpell(pAbomination, 46598, true);
-                    pAbomination->CastSpell(pAbomination, 70405, true);
-                }
-
                 return;
             }
             case 70955:                                     // Unbound Plague Bounce Protection (Putricide)
@@ -9592,101 +9549,6 @@ void Aura::PeriodicDummyTick()
                 {
                     uint32 triggerSpells[8] = {68898, 68904, 68886, 68905, 68896, 68906, 68897, 68907};
                     target->CastSpell(target, triggerSpells[GetAuraTicks() % 8], true);
-                    return;
-                }
-                case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak)
-                {
-                    if (!target->GetMap()->Instanceable())
-                        return;
-
-                    if (InstanceData* data = target->GetInstanceData())
-                    {
-                        if (Creature* pSpike = target->GetMap()->GetCreature(data->GetGuid(34660)))
-                            pSpike->AddThreat(target, 1000000.0f);
-                    }
-                    return;
-                }
-                case 66118:                                 // Leeching Swarm 10 man
-                case 68646:
-                {
-                    int32 damage = (m_modifier.m_amount * target->GetHealth()) / 100;
-                    if (damage < 250)
-                        damage = 250;
-                    int32 heal = damage * 68 / 100;
-                    target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
-                    if (Unit* caster = GetCaster())
-                        target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
-                    return;
-                }
-                case 67630:                                 // Leeching Swarm 25 man
-                case 68647:
-                {
-                    int32 damage = (m_modifier.m_amount * target->GetHealth()) / 100;
-                    if (damage < 250)
-                        damage = 250;
-                    int32 heal = damage * 155 / 100;
-                    target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
-                    if (Unit* caster = GetCaster())
-                        target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
-                    return;
-                }
-                case 68875:                                 // Wailing Souls
-                case 68876:                                 // Wailing Souls
-                {
-                    // Sweep around
-                    float newAngle = target->GetOrientation() + (spell->Id == 68875 ? 0.09f : 2*M_PI_F - 0.09f);
-
-                    newAngle = MapManager::NormalizeOrientation(newAngle);
-
-                    target->SetFacingTo(newAngle);
-
-                    // Should actually be SMSG_SPELL_START, too
-                    target->CastSpell(target, 68873, true);
-                    return;
-                }
-                case 69397:                                   // Soul Rip (Lich King)
-                {
-                    Unit *caster = GetCaster();
-                    if (target && caster)
-                    {
-                        int32 bp0;
-                        if (!GetModifier()->m_amount)
-                            GetModifier()->m_amount = 1750;
-                        else
-                            GetModifier()->m_amount *= 2;
-
-                        bp0 = GetModifier()->m_amount;
-                        caster->CastCustomSpell(target, 69398, &bp0, 0, 0, true);
-                    }
-                    return;
-                }
-                case 70069:                                   // Ooze Flood Periodic Trigger (Rotface)
-                {
-                    if (target)
-                        target->CastSpell(target, spell->CalculateSimpleValue(GetEffIndex()), true);
-                    return;
-                }
-                case 70498:                                   // Vile Spirits (Lich King)
-                {
-                    if (target)
-                    {
-                        if (target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_NORMAL)
-                        {
-                            // on 10man normal max 8 spirits
-                            if (GetModifier()->m_miscvalue > 7)
-                                return;
-                        }
-
-                        target->CastSpell(target, 70497, true);
-                    }
-                    return;
-                }
-                case 73001:                                   // Shadow Prison (Blood Council)
-                {
-                    // cast dmg spell when moving
-                    if (target->GetTypeId() == TYPEID_PLAYER && ((Player*)target)->isMoving())
-                        target->CastSpell(target, 72999, true);
-
                     return;
                 }
 // Exist more after, need add later

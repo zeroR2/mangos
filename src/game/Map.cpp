@@ -99,7 +99,7 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
     //add reference for TerrainData object
     m_TerrainData->AddRef();
 
-    MapPersistentState* persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), GetDifficulty(), 0, IsDungeon());
+    MapPersistentState* persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), 0, IsDungeon());
     persistentState->SetUsedByMapState(this);
     SetBroken(false);
 }
@@ -109,8 +109,8 @@ MapPersistentState* Map::GetPersistentState() const
     MapPersistentState* state = sMapPersistentStateMgr.GetPersistentState(GetId(), GetInstanceId());
     if (!state)
     {
-        sLog.outError("Map::GetPersistentState requested, but map ( id %u, instance %u, difficulty %u ) not have this!", GetId(), GetInstanceId(), GetDifficulty());
-        state = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), GetDifficulty(), 0, IsDungeon());
+        sLog.outError("Map::GetPersistentState requested, but map ( id %u, instance %u ) not have this!", GetId(), GetInstanceId());
+        state = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), 0, IsDungeon());
         state->SetUsedByMapState(const_cast<Map*>(this));
     }
     return state;
@@ -922,11 +922,6 @@ void Map::UnloadAll(bool pForce)
     }
 }
 
-MapDifficultyEntry const* Map::GetMapDifficulty() const
-{
-    return GetMapDifficultyData(GetId(),GetDifficulty());
-}
-
 uint32 Map::GetMaxPlayers() const
 {
     if(MapDifficultyEntry const* mapDiff = GetMapDifficulty())
@@ -945,7 +940,7 @@ uint32 Map::GetMaxPlayers() const
 
 uint32 Map::GetMaxResetDelay() const
 {
-    return DungeonResetScheduler::GetMaxResetTimeFor(GetMapDifficulty());
+    return DungeonResetScheduler::GetMaxResetTimeFor();
 }
 
 bool Map::CheckGridIntegrity(Creature* c, bool moved) const
@@ -1374,7 +1369,7 @@ bool DungeonMap::Add(Player *player)
         return false;
 
     // check for existing instance binds
-    InstancePlayerBind *playerBind = player->GetBoundInstance(GetId(), GetDifficulty());
+    InstancePlayerBind *playerBind = player->GetBoundInstance(GetId());
     if (playerBind && playerBind->perm)
     {
         // cannot enter other instances if bound permanently
@@ -1401,7 +1396,7 @@ bool DungeonMap::Add(Player *player)
         if (pGroup)
         {
             // solo saves should be reset when entering a group
-            InstanceGroupBind* groupBind = pGroup->GetBoundInstance(this,GetDifficulty());
+            InstanceGroupBind* groupBind = pGroup->GetBoundInstance(this);
             if (playerBind)
             {
                 DEBUG_LOG("DungeonMap::Add: %s enter to instance %d,%d,%d,%d,%d,%d but he is in group (Id: %d) and has non-permanent bind to instance %d,%d,%d,%d,%d,%d!",
@@ -1418,7 +1413,7 @@ bool DungeonMap::Add(Player *player)
                         groupBind->state->GetPlayerCount(), groupBind->state->GetGroupCount(), groupBind->state->CanReset());
 
                 // no reason crash if we can fix state
-                player->UnbindInstance(GetId(), GetDifficulty());
+                player->UnbindInstance(GetId());
             }
 
             // bind to the group or keep using the group save
@@ -1559,7 +1554,7 @@ void DungeonMap::PermBindAllPlayers(Player *player, bool permanent)
         Player* plr = itr->getSource();
         // players inside an instance cannot be bound to other instances
         // some players may already be permanently bound, in this case nothing happens
-        InstancePlayerBind *bind = plr->GetBoundInstance(GetId(), GetDifficulty());
+        InstancePlayerBind *bind = plr->GetBoundInstance(GetId());
         if (!bind || !bind->perm)
         {
             plr->BindToInstance(GetPersistanceState(), permanent);
@@ -1598,7 +1593,7 @@ void DungeonMap::UnloadAll(bool pForce)
 void DungeonMap::SendResetWarnings(uint32 timeLeft) const
 {
     for(MapRefManager::const_iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
-        itr->getSource()->SendInstanceResetWarning(GetId(), itr->getSource()->GetDifficulty(IsRaid()), timeLeft);
+        itr->getSource()->SendInstanceResetWarning(GetId(), timeLeft);
 }
 
 void DungeonMap::SetResetSchedule(bool on)
@@ -1607,7 +1602,7 @@ void DungeonMap::SetResetSchedule(bool on)
     // the reset time is only scheduled when there are no payers inside
     // it is assumed that the reset time will rarely (if ever) change while the reset is scheduled
     if(!HavePlayers() && !IsRaidOrHeroicDungeon())
-        sMapPersistentStateMgr.GetScheduler().ScheduleReset(on, GetPersistanceState()->GetResetTime(), DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, GetId(), Difficulty(GetSpawnMode()), GetInstanceId()));
+        sMapPersistentStateMgr.GetScheduler().ScheduleReset(on, GetPersistanceState()->GetResetTime(), DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, GetId(), GetInstanceId()));
 }
 
 DungeonPersistentState* DungeonMap::GetPersistanceState() const

@@ -33,7 +33,6 @@
 
 struct InstanceTemplate;
 struct MapEntry;
-struct MapDifficultyEntry;
 struct GameObjectData;
 struct CreatureData;
 
@@ -88,7 +87,7 @@ class MapPersistentState
 {
     friend class MapPersistentStateManager;
     protected:
-        MapPersistentState(uint16 MapId, uint32 InstanceId, Difficulty difficulty);
+        MapPersistentState(uint16 MapId, uint32 InstanceId);
 
     public:
 
@@ -104,10 +103,6 @@ class MapPersistentState
         uint32 GetMapId() const { return m_mapid; }
 
         MapEntry const* GetMapEntry() const;
-
-        /* currently it is possible to omit this information from this structure
-           but that would depend on a lot of things that can easily change in future */
-        Difficulty GetDifficulty() const { return m_difficulty; }
 
         bool IsUsedByMap() const { return m_usedByMap; }
         Map* GetMap() const { return m_usedByMap; }         // Can be NULL if map not loaded for persistent state
@@ -160,7 +155,6 @@ class MapPersistentState
 
         uint32 m_instanceid;
         uint32 m_mapid;
-        Difficulty m_difficulty;
         Map* m_usedByMap;                                   // NULL if map not loaded, non-NULL lock MapPersistentState from unload
 
         // persistent data
@@ -185,7 +179,7 @@ class WorldPersistentState : public MapPersistentState
            - any new non-instanceable map created
            - respawn data loading for non-instanceable map
         */
-        explicit WorldPersistentState(uint16 MapId) : MapPersistentState(MapId, 0, REGULAR_DIFFICULTY) {}
+        explicit WorldPersistentState(uint16 MapId) : MapPersistentState(MapId, 0) {}
 
         ~WorldPersistentState() {}
 
@@ -213,7 +207,7 @@ class DungeonPersistentState : public MapPersistentState
            - any new instance is being generated
            - the first time a player bound to InstanceId logs in
            - when a group bound to the instance is loaded */
-        DungeonPersistentState(uint16 MapId, uint32 InstanceId, Difficulty difficulty, time_t resetTime, bool canReset, uint32 completedEncountersMask);
+        DungeonPersistentState(uint16 MapId, uint32 InstanceId, time_t resetTime, bool canReset, uint32 completedEncountersMask);
 
         ~DungeonPersistentState();
 
@@ -299,8 +293,8 @@ class BattleGroundPersistentState : public MapPersistentState
         /* Created either when:
            - any new BG is being generated
         */
-        BattleGroundPersistentState(uint16 MapId, uint32 InstanceId, Difficulty difficulty)
-            : MapPersistentState(MapId, InstanceId, difficulty) {}
+        BattleGroundPersistentState(uint16 MapId, uint32 InstanceId)
+            : MapPersistentState(MapId, InstanceId) {}
 
         ~BattleGroundPersistentState() {}
 
@@ -328,14 +322,13 @@ enum ResetEventType
 struct DungeonResetEvent
 {
     ResetEventType type   :8;                               // if RESET_EVENT_NORMAL_DUNGEON then InstanceID == 0 and applied to all instances for pair (map,diff)
-    Difficulty difficulty :8;                               // used with mapid used as for select reset for global cooldown instances (instamceid==0 for event)
     uint16 mapid;
     uint32 instanceId;                                      // used for select reset for normal dungeons
 
-    DungeonResetEvent() : type(RESET_EVENT_NORMAL_DUNGEON), difficulty(DUNGEON_DIFFICULTY_NORMAL), mapid(0), instanceId(0) {}
-    DungeonResetEvent(ResetEventType t, uint32 _mapid, Difficulty d, uint32 _instanceid)
-        : type(t), difficulty(d), mapid(_mapid), instanceId(_instanceid) {}
-    bool operator == (const DungeonResetEvent& e) { return e.mapid == mapid && e.difficulty == difficulty && e.instanceId == instanceId; }
+    DungeonResetEvent() : type(RESET_EVENT_NORMAL_DUNGEON), mapid(0), instanceId(0) {}
+    DungeonResetEvent(ResetEventType t, uint32 _mapid, uint32 _instanceid)
+        : type(t), mapid(_mapid), instanceId(_instanceid) {}
+    bool operator == (const DungeonResetEvent& e) { return e.mapid == mapid && e.instanceId == instanceId; }
 };
 
 class DungeonResetScheduler
@@ -345,19 +338,16 @@ class DungeonResetScheduler
         void LoadResetTimes();
 
     public:                                                 // accessors
-        time_t GetResetTimeFor(uint32 mapid, Difficulty d) const
+        time_t GetResetTimeFor(uint32 mapid) const
         {
-            ResetTimeByMapDifficultyMap::const_iterator itr  = m_resetTimeByMapDifficulty.find(MAKE_PAIR32(mapid,d));
-            return itr != m_resetTimeByMapDifficulty.end() ? itr->second : 0;
         }
 
-        static uint32 GetMaxResetTimeFor(MapDifficultyEntry const* mapDiff);
-        static time_t CalculateNextResetTime(MapDifficultyEntry const* mapDiff);
+        static uint32 GetMaxResetTimeFor();
+        static time_t CalculateNextResetTime();
 
     public:                                                 // modifiers
-        void SetResetTimeFor(uint32 mapid, Difficulty d, time_t t)
+        void SetResetTimeFor(uint32 mapid, time_t t)
         {
-            m_resetTimeByMapDifficulty[MAKE_PAIR32(mapid,d)] = t;
         }
 
         void ScheduleReset(bool add, time_t time, DungeonResetEvent event);
@@ -366,10 +356,6 @@ class DungeonResetScheduler
 
     private:                                                // fields
         MapPersistentStateManager& m_InstanceSaves;
-
-        // fast lookup for reset times (always use existing functions for access/set)
-        typedef UNORDERED_MAP<uint32 /*PAIR32(map,difficulty)*/,time_t /*resetTime*/> ResetTimeByMapDifficultyMap;
-        ResetTimeByMapDifficultyMap m_resetTimeByMapDifficulty;
 
         typedef std::multimap<time_t /*resetTime*/, DungeonResetEvent> ResetTimeQueue;
         ResetTimeQueue m_resetTimeQueue;
@@ -391,7 +377,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
 
         // auto select appropriate MapPersistentState (sub)class by MapEntry, and autoselect appropriate way store (by instance/map id)
         // always return != NULL
-        MapPersistentState* AddPersistentState(MapEntry const* mapEntry, uint32 instanceId, Difficulty difficulty, time_t resetTime, bool canReset, bool load = false, bool initPools = true, uint32 completedEncountersMask = 0);
+        MapPersistentState* AddPersistentState(MapEntry const* mapEntry, uint32 instanceId, time_t resetTime, bool canReset, bool load = false, bool initPools = true, uint32 completedEncountersMask = 0);
 
         // search stored state, can be NULL in result
         MapPersistentState *GetPersistentState(uint32 mapId, uint32 InstanceId);
@@ -416,7 +402,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
         typedef UNORDERED_MAP<uint32 /*InstanceId or MapId*/, MapPersistentState*> PersistentStateMap;
 
         //  called by scheduler for DungeonPersistentStates
-        void _ResetOrWarnAll(uint32 mapid, Difficulty difficulty, bool warn, time_t resetTime);
+        void _ResetOrWarnAll(uint32 mapid, bool warn, time_t resetTime);
         void _ResetInstance(uint32 mapid, uint32 instanceId);
         void _CleanupExpiredInstancesAtTime(time_t t);
 

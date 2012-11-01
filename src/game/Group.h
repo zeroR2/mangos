@@ -326,12 +326,6 @@ class MANGOS_DLL_SPEC Group
 
         void SetTargetIcon(uint8 id, ObjectGuid whoGuid, ObjectGuid targetGuid);
 
-        Difficulty GetDifficulty(bool isRaid) const { return isRaid ? GetRaidDifficulty() : GetDungeonDifficulty(); }
-        uint32 GetDifficulty() const { return m_Difficulty; }
-        Difficulty GetDungeonDifficulty() const { return Difficulty(m_Difficulty & 0x00FF); }
-        Difficulty GetRaidDifficulty() const { return Difficulty((m_Difficulty & 0xFF00) >> 8);}
-        void SetDungeonDifficulty(Difficulty difficulty);
-        void SetRaidDifficulty(Difficulty difficulty);
         uint16 InInstance();
         bool InCombatToInstance(uint32 instanceId);
         void ResetInstances(InstanceResetMethod method, bool isRaid, Player* SendMsgTo);
@@ -367,10 +361,10 @@ class MANGOS_DLL_SPEC Group
         void DelinkMember(GroupReference* /*pRef*/ ) { }
 
         InstanceGroupBind* BindToInstance(DungeonPersistentState *save, bool permanent, bool load = false);
-        void UnbindInstance(uint32 mapid, uint8 difficulty, bool unload = false);
+        void UnbindInstance(uint32 mapid, bool unload = false);
         InstanceGroupBind* GetBoundInstance(uint32 mapId, Player* player);
-        InstanceGroupBind* GetBoundInstance(Map* aMap, Difficulty difficulty);
-        BoundInstancesMap& GetBoundInstances(Difficulty difficulty) { return m_boundInstances[difficulty]; }
+        InstanceGroupBind* GetBoundInstance(Map* aMap);
+        BoundInstancesMap& GetBoundInstances() { return m_boundInstances; }
 
         // LFG
         LFGGroupState* GetLFGGroupState() { return m_LFGState; };
@@ -452,15 +446,13 @@ class MANGOS_DLL_SPEC Group
         std::string         m_leaderName;
         GroupType           m_groupType;
 
-        uint32              m_Difficulty;                             // contains both dungeon (first byte) and raid (second byte) difficultyes of player. bytes 2,3 not used.
-
         BattleGround*       m_bgGroup;
         ObjectGuid          m_targetIcons[TARGET_ICON_COUNT];
         LootMethod          m_lootMethod;
         ItemQualities       m_lootThreshold;
         ObjectGuid          m_looterGuid;
         Rolls               RollId;
-        BoundInstancesMap   m_boundInstances[MAX_DIFFICULTY];
+        BoundInstancesMap   m_boundInstances;
         uint8*              m_subGroupsCounts;
         LFGGroupState*      m_LFGState;
 };

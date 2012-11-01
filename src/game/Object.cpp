@@ -686,9 +686,6 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                 // send in current format (float as float, uint32 as uint32)
                 if (index == GAMEOBJECT_DYNAMIC)
                 {
-                    // GAMEOBJECT_TYPE_DUNGEON_DIFFICULTY can have lo flag = 2
-                    //      most likely related to "can enter map" and then should be 0 if can not enter
-
                     if (IsActivateToQuest)
                     {
                         switch(((GameObject*)this)->GetGoType())
