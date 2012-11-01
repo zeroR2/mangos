@@ -119,7 +119,7 @@ void MessageDelivererExcept::Visit(CameraMapType& m)
     {
         Player* owner = iter->getSource()->GetOwner();
 
-        if (!owner->InSamePhase(i_phaseMask) || owner == i_skipped_receiver)
+        if (owner == i_skipped_receiver)
             continue;
 
         if (WorldSession* session = owner->GetSession())
@@ -131,9 +131,6 @@ void ObjectMessageDeliverer::Visit(CameraMapType& m)
 {
     for (CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
-        if (!iter->getSource()->GetBody()->InSamePhase(i_phaseMask))
-            continue;
-
         if (WorldSession* session = iter->getSource()->GetOwner()->GetSession())
             session->SendPacket(i_message);
     }

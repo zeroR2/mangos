@@ -179,10 +179,10 @@ If intersection is found within pMaxDist, sets pMaxDist to intersection distance
 Else, pMaxDist is not modified and returns false;
 */
 
-bool DynamicMapTree::getIntersectionTime(const uint32 phasemask, const G3D::Ray& ray, const Vector3& endPos, float& pMaxDist) const
+bool DynamicMapTree::getIntersectionTime(const G3D::Ray& ray, const Vector3& endPos, float& pMaxDist) const
 {
     float distance = pMaxDist;
-    DynamicTreeIntersectionCallback callback(phasemask);
+    DynamicTreeIntersectionCallback callback();
     impl.intersectRay(ray, callback, distance, endPos);
     if (callback.didHit())
         pMaxDist = distance;
@@ -190,7 +190,7 @@ bool DynamicMapTree::getIntersectionTime(const uint32 phasemask, const G3D::Ray&
 }
 //=========================================================
 
-bool DynamicMapTree::getObjectHitPos(uint32 phasemask, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz,float pModifyDist) const
+bool DynamicMapTree::getObjectHitPos(float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz,float pModifyDist) const
 {
     // Don't calculate hit position, if wrong src/dest points provided!
     if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
@@ -198,7 +198,7 @@ bool DynamicMapTree::getObjectHitPos(uint32 phasemask, float x1, float y1, float
     Vector3 pos1 = Vector3(x1, y1, z1);
     Vector3 pos2 = Vector3(x2, y2, z2);
     Vector3 resultPos;
-    bool result = getObjectHitPos(phasemask, pos1, pos2, resultPos, pModifyDist);
+    bool result = getObjectHitPos(pos1, pos2, resultPos, pModifyDist);
     rx = resultPos.x;
     ry = resultPos.y;
     rz = resultPos.z;
@@ -210,7 +210,7 @@ bool DynamicMapTree::getObjectHitPos(uint32 phasemask, float x1, float y1, float
 When moving from pos1 to pos2 check if we hit an object. Return true and the position if we hit one
 Return the hit pos or the original dest pos
 */
-bool DynamicMapTree::getObjectHitPos(const uint32 phasemask, const Vector3& pPos1, const Vector3& pPos2, Vector3& pResultHitPos, float pModifyDist) const
+bool DynamicMapTree::getObjectHitPos(const Vector3& pPos1, const Vector3& pPos2, Vector3& pResultHitPos, float pModifyDist) const
 {
     bool result = false;
     float maxDist = (pPos2 - pPos1).magnitude();
@@ -225,7 +225,7 @@ bool DynamicMapTree::getObjectHitPos(const uint32 phasemask, const Vector3& pPos
     Vector3 dir = (pPos2 - pPos1)/maxDist;              // direction with length of 1
     G3D::Ray ray(pPos1, dir);
     float dist = maxDist;
-    if (getIntersectionTime(phasemask, ray, pPos2, dist))
+    if (getIntersectionTime(ray, pPos2, dist))
     {
         pResultHitPos = pPos1 + dir * dist;
         if (pModifyDist < 0)
@@ -253,7 +253,7 @@ bool DynamicMapTree::getObjectHitPos(const uint32 phasemask, const Vector3& pPos
     return result;
 }
 
-bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const
+bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2) const
 {
     // Don't calculate hit position, if wrong src/dest points provided!
     if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
@@ -267,13 +267,13 @@ bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, flo
         return true;
 
     G3D::Ray r(v1, (v2-v1) / maxDist);
-    DynamicTreeIntersectionCallback callback(phasemask);
+    DynamicTreeIntersectionCallback callback();
     impl.intersectRay(r, callback, maxDist, v2);
 
     return !callback.did_hit;
 }
 
-float DynamicMapTree::getHeight(float x, float y, float z, float maxSearchDist, uint32 phasemask) const
+float DynamicMapTree::getHeight(float x, float y, float z, float maxSearchDist) const
 {
     // Don't calculate hit position, if wrong src/dest points provided!
     if (!VMAP::CheckPosition(x,y,z))

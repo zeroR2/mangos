@@ -36,7 +36,6 @@ namespace VMAP
 
 class GameObjectModel
 {
-    uint32 phasemask;
     G3D::AABox iBound;
     G3D::Matrix3 iInvRot;
     G3D::Vector3 iPos;
@@ -45,7 +44,7 @@ class GameObjectModel
     float iScale;
     VMAP::WorldModel *iModel;
 
-    GameObjectModel() : phasemask(0), iModel(NULL) {}
+    GameObjectModel() : iModel(NULL) {}
     bool initialize(const GameObject* const pGo, const GameObjectDisplayInfoEntry* info);
 
 public:
@@ -58,8 +57,8 @@ public:
     const G3D::Vector3& getPosition() const { return iPos;}
 
     /**	Enables\disables collision. */
-    void disable() { phasemask = 0;}
-    void enable(uint32 ph_mask) { phasemask = ph_mask;}
+    //void disable() { phasemask = 0;}
+    //void enable(uint32 ph_mask) { phasemask = ph_mask;}
 
     bool intersectRay(const G3D::Ray& Ray, float& MaxDist, bool StopAtFirstHit, uint32 ph_mask) const;
 

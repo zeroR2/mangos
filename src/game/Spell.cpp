@@ -1846,7 +1846,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             Map* pMap = target->GetMap();
             if (pMap)
             {
-                if (!pMap->GetHitPosition(ox,oy,oz + 2.0f,fx,fy,fz, target->GetPhaseMask(), -0.5f))
+                if (!pMap->GetHitPosition(ox,oy,oz + 2.0f,fx,fy,fz, -0.5f))
                     DEBUG_LOG("Spell::EffectLeap/Teleport unit %u forwarded on %f", target->GetObjectGuid().GetCounter(), target->GetDistance(fx,fy,fz));
                 else
                     DEBUG_LOG("Spell::EffectLeap/Teleport unit %u NOT forwarded on %f, real distance is %f", target->GetObjectGuid().GetCounter(), distance, target->GetDistance(fx,fy,fz));
@@ -6579,7 +6579,7 @@ SpellCastResult Spell::CheckCastTargets() const
                     if (fabs(m_caster->GetPositionZ() - z) > 8.0f)
                         return SPELL_FAILED_NOPATH;
 
-                    float pz  = m_caster->GetMap()->GetHeight(m_caster->GetPhaseMask(), x, y, z, true);
+                    float pz  = m_caster->GetMap()->GetHeight(x, y, z, true);
 
                     if (fabs(pz - z) > 8.0f)
                         return SPELL_FAILED_NOPATH;

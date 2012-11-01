@@ -3825,7 +3825,6 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     uint32 npcflags = target->GetUInt32Value(UNIT_NPC_FLAGS);
     uint32 displayid = target->GetDisplayId();
     uint32 nativeid = target->GetNativeDisplayId();
-    uint32 phaseMask = target->GetPhaseMask();
     uint32 Entry = target->GetEntry();
     CreatureInfo const* cInfo = target->GetCreatureInfo();
     uint32 difficulty_entry_1 = cInfo ? cInfo->DifficultyEntry[0] : 0;
@@ -3867,8 +3866,7 @@ bool ChatHandler::HandleNpcInfoCommand(char* /*args*/)
     else if (target->HasAIName())
         PSendSysMessage("AI name: %s", target->GetAIName().c_str());
 
-    PSendSysMessage("Phasemask %u, has %u active events, %u SpellAuraHolders, %u unit states",
-        phaseMask,
+    PSendSysMessage("Has %u active events, %u SpellAuraHolders, %u unit states",
         target->GetEvents()->size(),
         target->GetSpellAuraHolderMap().size(),
         target->GetUnitStateMgr().GetActions().size());

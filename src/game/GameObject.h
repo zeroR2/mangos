@@ -516,7 +516,6 @@ struct GameObjectData
 {
     uint32 id;                                              // entry in gamobject_template
     uint16 mapid;
-    uint16 phaseMask;
     float posX;
     float posY;
     float posZ;
@@ -588,7 +587,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void AddToWorld();
         void RemoveFromWorld();
 
-        bool Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMask, float x, float y, float z, float ang,
+        bool Create(uint32 guidlow, uint32 name_id, Map* map, float x, float y, float z, float ang,
                     QuaternionData rotation = QuaternionData(), uint8 animprogress = GO_ANIMPROGRESS_DEFAULT, GOState go_state = GO_STATE_READY);
         void Update(uint32 update_diff, uint32 p_time) override;
         GameObjectInfo const* GetGOInfo() const;
@@ -609,7 +608,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         const char* GetNameForLocaleIdx(int32 locale_idx) const;
 
         void SaveToDB();
-        void SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask);
+        void SaveToDB(uint32 mapid, uint8 spawnMask);
         bool LoadFromDB(uint32 guid, Map* map);
         void DeleteFromDB();
 
@@ -674,7 +673,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void SetGoAnimProgress(uint8 animprogress) { SetByteValue(GAMEOBJECT_TYPE_ID, 3, animprogress); }
         uint32 GetDisplayId() const { return GetUInt32Value(GAMEOBJECT_DISPLAYID); }
         void SetDisplayId(uint32 modelId);
-        void SetPhaseMask(uint32 newPhaseMask, bool update);
         void EnableCollision(bool enable);
         bool CalculateCurrentCollisionState() const;
 

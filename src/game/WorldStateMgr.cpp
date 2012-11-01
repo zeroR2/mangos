@@ -217,7 +217,7 @@ void WorldStateMgr::LoadTemplatesFromDBC()
             if (!tmpl)
             {
                 m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId,
-                    WorldStateTemplate(stateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, 0, phasemask)));
+                    WorldStateTemplate(stateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, 0)));
                 ++count;
             }
             else
@@ -255,7 +255,7 @@ void WorldStateMgr::LoadTemplatesFromDBC()
                     else
                     {
                         m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(linkedstateId,
-                            WorldStateTemplate(linkedstateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, stateId, tmpl->m_phasemask)));
+                            WorldStateTemplate(linkedstateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, stateId)));
                         ++count;
                         const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(linkedstateId);
                     }

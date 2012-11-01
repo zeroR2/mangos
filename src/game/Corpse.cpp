@@ -75,7 +75,7 @@ bool Corpse::Create(uint32 guidlow, Player* owner)
 {
     MANGOS_ASSERT(owner);
 
-    WorldObject::_Create(ObjectGuid(HIGHGUID_CORPSE, guidlow), owner->GetPhaseMask());
+    WorldObject::_Create(ObjectGuid(HIGHGUID_CORPSE, guidlow));
     Relocate(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ(), owner->GetOrientation());
 
     // we need to assign owner's map for corpse
@@ -107,7 +107,7 @@ void Corpse::SaveToDB()
     DeleteFromDB();
 
     std::ostringstream ss;
-    ss  << "INSERT INTO corpse (guid,player,position_x,position_y,position_z,orientation,map,time,corpse_type,instance,phaseMask) VALUES ("
+    ss  << "INSERT INTO corpse (guid,player,position_x,position_y,position_z,orientation,map,time,corpse_type,instance) VALUES ("
         << GetGUIDLow() << ", "
         << GetOwnerGuid().GetCounter() << ", "
         << GetPositionX() << ", "
@@ -117,8 +117,7 @@ void Corpse::SaveToDB()
         << GetMapId() << ", "
         << uint64(m_time) << ", "
         << uint32(GetType()) << ", "
-        << int(GetInstanceId()) << ", "
-        << uint16(GetPhaseMask()) << ")";           // prevent out of range error
+        << int(GetInstanceId()) << ")";           // prevent out of range error
     CharacterDatabase.Execute(ss.str().c_str());
     CharacterDatabase.CommitTransaction();
 }
@@ -153,8 +152,8 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
 {
     ////                                                    0            1       2                  3                  4                  5                   6
     // QueryResult *result = CharacterDatabase.Query("SELECT corpse.guid, player, corpse.position_x, corpse.position_y, corpse.position_z, corpse.orientation, corpse.map,"
-    ////   7     8            9         10         11      12    13     14           15            16              17       18
-    //    "time, corpse_type, instance, phaseMask, gender, race, class, playerBytes, playerBytes2, equipmentCache, guildId, playerFlags FROM corpse"
+    ////   7     8            9         10         11      12    13        14           15              16              17       18
+    //    "time, corpse_type, instance, gender, race, class, playerBytes, playerBytes2, equipmentCache, guildId, playerFlags FROM corpse"
     uint32 playerLowGuid = fields[1].GetUInt32();
     float positionX     = fields[2].GetFloat();
     float positionY     = fields[3].GetFloat();
@@ -174,14 +173,13 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     }
 
     uint32 instanceid   = fields[9].GetUInt32();
-    uint32 phaseMask    = fields[10].GetUInt32();
-    uint8 gender        = fields[11].GetUInt8();
-    uint8 race          = fields[12].GetUInt8();
-    uint8 _class        = fields[13].GetUInt8();
-    uint32 playerBytes  = fields[14].GetUInt32();
-    uint32 playerBytes2 = fields[15].GetUInt32();
-    uint32 guildId      = fields[17].GetUInt32();
-    uint32 playerFlags  = fields[18].GetUInt32();
+    uint8 gender        = fields[10].GetUInt8();
+    uint8 race          = fields[11].GetUInt8();
+    uint8 _class        = fields[12].GetUInt8();
+    uint32 playerBytes  = fields[13].GetUInt32();
+    uint32 playerBytes2 = fields[14].GetUInt32();
+    uint32 guildId      = fields[15].GetUInt32();
+    uint32 playerFlags  = fields[16].GetUInt32();
 
     ObjectGuid guid = ObjectGuid(HIGHGUID_CORPSE, lowguid);
     ObjectGuid playerGuid = ObjectGuid(HIGHGUID_PLAYER, playerLowGuid);
@@ -201,7 +199,7 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     SetUInt32Value(CORPSE_FIELD_DISPLAY_ID, gender == GENDER_FEMALE ? info->displayId_f : info->displayId_m);
 
     // Load equipment
-    Tokens data(fields[16].GetCppString(), ' ');
+    Tokens data(fields[15].GetCppString(), ' ');
     for (uint8 slot = 0; slot < EQUIPMENT_SLOT_END; ++slot)
     {
         uint32 visualbase = slot * 2;
@@ -238,7 +236,6 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     // place
     SetLocationInstanceId(instanceid);
     SetLocationMapId(mapid);
-    SetPhaseMask(phaseMask, false);
     Relocate(positionX, positionY, positionZ, orientation);
 
     if (!IsPositionValid())
