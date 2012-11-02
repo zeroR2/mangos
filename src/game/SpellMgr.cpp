@@ -453,8 +453,8 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
         }
         case SPELLFAMILY_MAGE:
         {
-            // family flags 18(Molten), 25(Frost/Ice), 28(Mage)
-            if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_MOLTEN_ARMOR1, CF_MAGE_ELEMENTAL_ARMOR, CF_MAGE_MAGE_ARMOR>())
+            // family flags 25(Frost/Ice), 28(Mage)
+            if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_ELEMENTAL_ARMOR, CF_MAGE_MAGE_ARMOR>())
                 return SPELL_MAGE_ARMOR;
 
             if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_POLYMORPH>() && spellInfo->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_MOD_CONFUSE)
