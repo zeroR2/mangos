@@ -716,7 +716,6 @@ enum Opcodes
     SMSG_SUMMON_REQUEST                             = 0x2AB,
     CMSG_SUMMON_RESPONSE                            = 0x2AC,
     MSG_DEV_SHOWLABEL                               = 0x2AD,
-    SMSG_MONSTER_MOVE_TRANSPORT                     = 0x2AE,
     SMSG_PET_BROKEN                                 = 0x2AF,
     MSG_MOVE_FEATHER_FALL                           = 0x2B0,
     MSG_MOVE_WATER_WALK                             = 0x2B1,

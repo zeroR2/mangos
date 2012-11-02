@@ -526,57 +526,6 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     return relocate || turn;
 }
 
-void Unit::SendMonsterMoveTransport(WorldObject *transport, SplineType type, SplineFlags flags, uint32 moveTime, ...)
-{
-    va_list vargs;
-    va_start(vargs, moveTime);
-
-    WorldPacket data(SMSG_MONSTER_MOVE_TRANSPORT, 60);
-    data << GetPackGUID();
-    data << transport->GetPackGUID();
-    data << uint8(GetTypeId() == TYPEID_PLAYER ? 1 : 0);       // bool, new in 3.1
-    data << float(transport->GetPositionX());
-    data << float(transport->GetPositionY());
-    data << float(transport->GetPositionZ());
-    data << uint32(WorldTimer::getMSTime());
-
-    data << uint8(type);                                    // spline type
-
-    switch(type)
-    {
-        case SPLINETYPE_NORMAL:                             // normal packet
-            break;
-        case SPLINETYPE_STOP:                               // stop packet (raw pos?)
-            va_end(vargs);
-            SendMessageToSet(&data, true);
-            return;
-        case SPLINETYPE_FACINGSPOT:                         // facing spot
-            data << float(va_arg(vargs,double));
-            data << float(va_arg(vargs,double));
-            data << float(va_arg(vargs,double));
-            break;
-        case SPLINETYPE_FACINGTARGET:
-            data << uint64(va_arg(vargs,uint64));
-            break;
-        case SPLINETYPE_FACINGANGLE:
-            data << float(va_arg(vargs,double));            // facing angle
-            break;
-    }
-
-    va_end(vargs);
-
-    data << uint32(flags);
-
-    data << uint32(moveTime);                               // Time in between points
-    data << uint32(1);                                      // 1 single waypoint
-
-    data << float(m_movementInfo.GetTransportPos()->x);
-    data << float(m_movementInfo.GetTransportPos()->y);
-    data << float(m_movementInfo.GetTransportPos()->z);
-
-    SendMessageToSet(&data, true);
-}
-
 void Unit::SendHeartBeat()
 {
     m_movementInfo.UpdateTime(WorldTimer::getMSTime());
