@@ -112,6 +112,7 @@ extern TaxiPathNodesByPath                       sTaxiPathNodesByPath;
 extern DBCStorage <WMOAreaTableEntry>            sWMOAreaTableStore;
 extern DBCStorage <WorldMapOverlayEntry>         sWorldMapOverlayStore;
 extern DBCStorage <WorldSafeLocsEntry>           sWorldSafeLocsStore;
+extern DBCStorage <WorldStateEntry>              sWorldStateStore;
 
 void LoadDBCStores(const std::string& dataPath);
 

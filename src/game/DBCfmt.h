@@ -70,5 +70,7 @@ const char WMOAreaTableEntryfmt[]="niiixxxxxiixxxxxxxxx";
 const char WorldMapAreaEntryfmt[]="xinxffff";
 const char WorldMapOverlayEntryfmt[]="nxiiiixxxxxxxxxxx";
 const char WorldSafeLocsEntryfmt[]="nifffxxxxxxxxx";
+const char WorldStateEntryfmt[]="niixssssssssxxxxxxxxxxxixxxxxxxxxxxsiix";
+
 
 #endif

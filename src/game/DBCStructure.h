@@ -1256,21 +1256,21 @@ struct WorldStateEntry
     uint32    ID;                                           // 0        m_ID
     uint32    map_id;                                       // 1        WorldState bind map
     uint32    m_zone;                                       // 2        WorldState bind zone (0 - on battlegrounds)
-    uint32    m_flags;                                      // 3
-//    char*     m_uiIcon;                                   // 4
-    char*     m_uiMessage1[8];                              // 5-12
-//    uint32    m_flags1;                                   // 13       string flags
-//    char*     m_uiMessage2[8]                             // 14-21
-//    uint32    m_flags2;                                   // 22       string flags
+//    char*     m_uiIcon;                                   // 3
+    char*     m_uiMessage1[8];                              // 4-11
+//    uint32    m_flags1;                                   // 12       string flags
+//    char*     m_uiMessage2[8]                             // 13-20
+//    uint32    m_flags2;                                   // 21       string flags
+//    uint32    m_unk22;                                    // 22
     uint32    m_state;                                      // 23       WorldState ID (not unique!) 0 - for battleground states.
-//    char*     m_uiIcon1;                                  // 24
-//    char*     m_uiIcon2;                                  // 25
+//    uint32    m_unk24;                                    // 24       0 - BG state with vars, 1 - world state with vars, 2 - all without vars
+//    uint32    m_unk25;                                    // 25
 //    char*     m_uiMessage3[8]                             // 26-33
 //    uint32    m_flags3;                                   // 34       string flags
     char*     m_uiType;                                     // 35       only CAPTUREPOINT type, or NULL
     uint32    m_linked1;                                    // 36
     uint32    m_linked2;                                    // 37
-//    uint32    m_unk62;                                    // 38       only 0
+//    uint32    m_unk38;                                    // 38       only 0
 };
 
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
