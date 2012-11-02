@@ -708,6 +708,7 @@ OpcodeHandler opcodeTable[NUM_MSG_TYPES] =
     /*0x2AB*/ { "SMSG_SUMMON_REQUEST",                          STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x2AC*/ { "CMSG_SUMMON_RESPONSE",                         STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleSummonResponseOpcode      },
     /*0x2AD*/ { "MSG_DEV_SHOWLABEL",                            STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
+    /*0x2AE*/ { "SMSG_MONSTER_MOVE_TRANSPORT",                  STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x2AF*/ { "SMSG_PET_BROKEN",                              STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_ServerSide               },
     /*0x2B0*/ { "MSG_MOVE_FEATHER_FALL",                        STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
     /*0x2B1*/ { "MSG_MOVE_WATER_WALK",                          STATUS_NEVER,    PROCESS_INPLACE,      &WorldSession::Handle_NULL                     },
