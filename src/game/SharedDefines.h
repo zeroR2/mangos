@@ -228,7 +228,7 @@ enum SpellAttributes
     SPELL_ATTR_RANGED                        = 0x00000002,           // 1 All ranged abilites have this flag
     SPELL_ATTR_ON_NEXT_SWING_1               = 0x00000004,           // 2 on next swing
     SPELL_ATTR_UNK3                          = 0x00000008,           // 3 not set in 2.4.2
-    SPELL_ATTR_IS_SPELL_ABILITY              = 0x00000010,           // 4 isAbility
+    SPELL_ATTR_ABILITY                       = 0x00000010,           // 4 isAbility
     SPELL_ATTR_TRADESPELL                    = 0x00000020,           // 5 trade spells, will be added by client to a sublist of profession spell
     SPELL_ATTR_PASSIVE                       = 0x00000040,           // 6 Passive spell
     SPELL_ATTR_HIDDEN_CLIENTSIDE             = 0x00000080,           // 7 Spells with this attribute are not visible in spellbook or aura bar

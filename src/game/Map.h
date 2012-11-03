@@ -129,7 +129,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
     friend class ObjectWorldLoader;
 
     protected:
-        Map(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode);
+        Map(uint32 id, time_t, uint32 InstanceId);
 
     public:
         virtual ~Map();

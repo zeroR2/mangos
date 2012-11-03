@@ -220,13 +220,6 @@ bool ChatHandler::HandleDebugPlayMovieCommand(char* args)
     if (!ExtractUInt32(&args, dwId))
         return false;
 
-    if (!sMovieStore.LookupEntry(dwId))
-    {
-        PSendSysMessage(LANG_MOVIE_NOT_EXIST, dwId);
-        SetSentErrorMessage(true);
-        return false;
-    }
-
     m_session->GetPlayer()->SendMovieStart(dwId);
     return true;
 }

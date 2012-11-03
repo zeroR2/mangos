@@ -670,7 +670,7 @@ enum ClassFlag
     CF_SHAMAN_FIRE_NOVA_EFFECT              = 50,   // CM1 00040000 damage part casted from totem
     CF_SHAMAN_EARTHLIVING                   = 51,   // CM1 00080000
     CF_SHAMAN_EARTHLIVING_WEAPON_PASSIVE    = 52,   // CM1 00100000
-    CF_SHAMAN_WINDFURY_TOTEM                = 53,   // CM1 00200000
+    //CF_SHAMAN_WINDFURY_TOTEM                = 53,   // CM1 00200000
     CF_SHAMAN_EARTH_ELEMENTAL_TOTEM         = 54,   // CM1 00400000
     CF_SHAMAN_FIRE_ELEMENTAL_TOTEM          = 55,   // CM1 00800000
     CF_SHAMAN_STORMSTRIKE2                  = 56,   // CM1 01000000

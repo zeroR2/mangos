@@ -301,9 +301,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
 
     bool have_same_race = false;
 
-    // if 0 then allowed creating without any characters
-    bool have_req_level_for_heroic = (req_level_for_heroic == 0);
-
     if (!AllowTwoSideAccounts || skipCinematics == CINEMATICS_SKIP_SAME_RACE)
     {
         QueryResult* result2 = CharacterDatabase.PQuery("SELECT level,race,class FROM characters WHERE account = '%u' %s",

@@ -157,14 +157,14 @@ void GameEventMgr::LoadFromDB()
                 continue;
             }
 
-            if (pGameEvent.holiday_id != HOLIDAY_NONE)
-            {
-                if (!sHolidaysStore.LookupEntry(pGameEvent.holiday_id))
-                {
-                    sLog.outErrorDb("`game_event` game event id (%i) have nonexistent holiday id %u.", event_id, pGameEvent.holiday_id);
-                    pGameEvent.holiday_id = HOLIDAY_NONE;
-                }
-            }
+//             if (pGameEvent.holiday_id != HOLIDAY_NONE)
+//             {
+//                 if (!sHolidaysStore.LookupEntry(pGameEvent.holiday_id))
+//                 {
+//                     sLog.outErrorDb("`game_event` game event id (%i) have nonexistent holiday id %u.", event_id, pGameEvent.holiday_id);
+//                     pGameEvent.holiday_id = HOLIDAY_NONE;
+//                 }
+//             }
 
             pGameEvent.description  = fields[6].GetCppString();
 

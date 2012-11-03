@@ -409,6 +409,16 @@ enum VirtualItemSlot
 
 #define MAX_VIRTUAL_ITEM_SLOT 3
 
+enum VirtualItemInfoByteOffset
+{
+    VIRTUAL_ITEM_INFO_0_OFFSET_CLASS         = 0,
+    VIRTUAL_ITEM_INFO_0_OFFSET_SUBCLASS      = 1,
+    VIRTUAL_ITEM_INFO_0_OFFSET_MATERIAL      = 2,
+    VIRTUAL_ITEM_INFO_0_OFFSET_INVENTORYTYPE = 3,
+
+    VIRTUAL_ITEM_INFO_1_OFFSET_SHEATH        = 0,
+};
+
 struct CreatureCreatePos
 {
     public:

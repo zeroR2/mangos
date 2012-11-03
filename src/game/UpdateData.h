@@ -43,7 +43,9 @@ enum ObjectUpdateFlags
     UPDATEFLAG_LOWGUID              = 0x0008,
     UPDATEFLAG_HIGHGUID             = 0x0010,
     UPDATEFLAG_LIVING               = 0x0020,
-    UPDATEFLAG_HAS_POSITION         = 0x0040
+    UPDATEFLAG_HAS_POSITION         = 0x0040,
+    UPDATEFLAG_POSITION             = 0x0100,
+    UPDATEFLAG_ROTATION             = 0x0200
 };
 
 class UpdateData
