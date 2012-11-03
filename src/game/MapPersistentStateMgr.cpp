@@ -321,7 +321,7 @@ void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint
             if ( m_completedEncountersMask != oldMask)
             {
                 if (dungeon && player)
-                    dungeon->PermBindAllPlayers(player, dungeon->IsRaidOrHeroicDungeon());
+                    dungeon->PermBindAllPlayers(player, dungeon->IsRaid());
 
                 CharacterDatabase.PExecute("UPDATE instance SET encountersMask = '%u' WHERE id = '%u'", m_completedEncountersMask, GetInstanceId());
 

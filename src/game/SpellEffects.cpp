@@ -1040,7 +1040,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (!unitTarget)
                         return;
 
-                    unitTarget->CastSpell(unitTarget, unitTarget->GetMap()->IsRegularDifficulty() ? 32302 : 38382, true);
+                    unitTarget->CastSpell(unitTarget, 32302, true);
                     return;
                 }
                 case 33060:                                 // Make a Wish

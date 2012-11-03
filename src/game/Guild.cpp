@@ -674,9 +674,6 @@ void Guild::Disband()
     CharacterDatabase.PExecute("DELETE FROM guild WHERE guildid = '%u'", m_Id);
     CharacterDatabase.PExecute("DELETE FROM guild_rank WHERE guildid = '%u'", m_Id);
 
-    // Free bank tab used memory and delete items stored in them
-    DeleteGuildBankItems(true);
-
     CharacterDatabase.PExecute("DELETE FROM guild_eventlog WHERE guildid = '%u'", m_Id);
     CharacterDatabase.CommitTransaction();
     sGuildMgr.RemoveGuild(m_Id);

@@ -300,7 +300,6 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNoImmediateEffect,                         //246 SPELL_AURA_MOD_DURATION_OF_EFFECTS_BY_DISPEL implemented in Unit::CalculateAuraDuration
     &Aura::HandleAuraMirrorImage,                           //247 SPELL_AURA_MIRROR_IMAGE                      target to become a clone of the caster
     &Aura::HandleNoImmediateEffect,                         //248 SPELL_AURA_MOD_COMBAT_RESULT_CHANCE         implemented in Unit::RollMeleeOutcomeAgainst
-    &Aura::HandleAuraConvertRune,                           //249 SPELL_AURA_CONVERT_RUNE
     &Aura::HandleAuraModIncreaseHealth,                     //250 SPELL_AURA_MOD_INCREASE_HEALTH_2
     &Aura::HandleNULL,                                      //251 SPELL_AURA_MOD_ENEMY_DODGE
     &Aura::HandleModCombatSpeedPct,                         //252 SPELL_AURA_SLOW_ALL
@@ -388,35 +387,7 @@ m_isPersistent(false), m_spellAuraHolder(holder), m_classType(type)
     if (!caster)
         damage = m_currentBasePoints;
     else
-    {
         damage = caster->CalculateSpellDamage(target, spellproto, m_effIndex, &m_currentBasePoints);
-
-        if (!damage && castItem && castItem->GetItemSuffixFactor())
-        {
-            ItemRandomSuffixEntry const *item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(castItem->GetItemRandomPropertyId()));
-            if (item_rand_suffix)
-            {
-                for (int k = 0; k < 3; ++k)
-                {
-                    SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(item_rand_suffix->enchant_id[k]);
-                    if (pEnchant)
-                    {
-                        for (int t = 0; t < 3; ++t)
-                        {
-                            if (pEnchant->spellid[t] != spellproto->Id)
-                                continue;
-
-                            damage = uint32((item_rand_suffix->prefix[k]*castItem->GetItemSuffixFactor()) / 10000 );
-                            break;
-                        }
-                    }
-
-                    if (damage)
-                        break;
-                }
-            }
-        }
-    }
 
     damage *= holder->GetStackAmount();
 

@@ -73,7 +73,7 @@ void Map::LoadMapAndVMap(int gx,int gy)
 }
 
 Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
-  : i_mapEntry (sMapStore.LookupEntry(id)), i_spawnMode(SpawnMode),
+  : i_mapEntry (sMapStore.LookupEntry(id)),
   i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
   m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
   m_activeNonPlayersIter(m_activeNonPlayers.end()),

@@ -1023,8 +1023,6 @@ enum Opcodes
     MSG_GUILD_PERMISSIONS                           = 0x3FD,
     MSG_GUILD_EVENT_LOG_QUERY                       = 0x3FF,
     CMSG_MAELSTROM_RENAME_GUILD                     = 0x400,
-    CMSG_GET_MIRRORIMAGE_DATA                       = 0x401,
-    SMSG_MIRRORIMAGE_DATA                           = 0x402,
     SMSG_FORCE_DISPLAY_UPDATE                       = 0x403,
     SMSG_SPELL_CHANCE_RESIST_PUSHBACK               = 0x404,
     CMSG_IGNORE_DIMINISHING_RETURNS_CHEAT           = 0x405,

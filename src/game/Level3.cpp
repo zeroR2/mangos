@@ -4615,7 +4615,6 @@ bool ChatHandler::HandleResetLevelCommand(char* args)
     target->SetLevel(start_level);
     target->InitStatsForLevel(true);
     target->InitTaxiNodesForLevel();
-    target->InitGlyphsForLevel();
     target->InitTalentForLevel();
     target->SetUInt32Value(PLAYER_XP, 0);
 
@@ -4639,7 +4638,6 @@ bool ChatHandler::HandleResetStatsCommand(char* args)
 
     target->InitStatsForLevel(true);
     target->InitTaxiNodesForLevel();
-    target->InitGlyphsForLevel();
     target->InitTalentForLevel();
 
     return true;
@@ -4680,7 +4678,7 @@ bool ChatHandler::HandleResetSpecsCommand(char* args)
 
     if (target)
     {
-        target->resetTalents(true, true);
+        target->resetTalents(true);
         target->SendTalentsInfoData();
 
         ChatHandler(target).SendSysMessage(LANG_RESET_TALENTS);

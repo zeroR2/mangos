@@ -456,13 +456,6 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
         needSave = true;
     }
 
-    // recalculate suffix factor
-    if (GetItemRandomPropertyId() < 0)
-    {
-        if (UpdateItemSuffixFactor())
-            needSave = true;
-    }
-
     // Remove bind flag for items vs NO_BIND set
     if (IsSoulBound() && proto->Bonding == NO_BIND)
     {

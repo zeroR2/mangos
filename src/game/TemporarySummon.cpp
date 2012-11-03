@@ -279,7 +279,7 @@ void TemporarySummon::UnSummon(uint32 delay)
 
     CombatStop();
 
-    if (GetSummonerGuid().IsCreatureOrVehicle())
+    if (GetSummonerGuid().IsCreature())
         if(Creature* sum = GetMap()->GetCreature(GetSummonerGuid()))
             if (sum->AI())
                 sum->AI()->SummonedCreatureDespawn(this);
