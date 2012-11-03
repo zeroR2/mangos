@@ -203,6 +203,21 @@ enum GroupJoinBattlegroundResult
     ERR_IN_NON_RANDOM_BG                    = -15,          // Can't queue for Random Battleground while in another Battleground queue.
 };
 
+enum BattleGroundJoinError
+{
+    BG_JOIN_ERR_OK = 0,
+    BG_JOIN_ERR_OFFLINE_MEMBER = 1,
+    BG_JOIN_ERR_GROUP_TOO_MANY = 2,
+    BG_JOIN_ERR_MIXED_FACTION = 3,
+    BG_JOIN_ERR_MIXED_LEVELS = 4,
+    //BG_JOIN_ERR_MIXED_ARENATEAM = 5,
+    BG_JOIN_ERR_GROUP_MEMBER_ALREADY_IN_QUEUE = 6,
+    BG_JOIN_ERR_GROUP_DESERTER = 7,
+    BG_JOIN_ERR_ALL_QUEUES_USED = 8,
+    BG_JOIN_ERR_GROUP_NOT_ENOUGH = 9,
+    BG_JOIN_ERR_GROUP_NOT_ALLOWED = 10
+};
+
 class BattleGroundScore
 {
     public:

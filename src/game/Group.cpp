@@ -1636,15 +1636,12 @@ void Group::UpdateLooterGuid(WorldObject* pSource, bool ifneed)
 
 GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* bgOrTemplate, BattleGroundQueueTypeId bgQueueTypeId, uint32 MinPlayerCount, uint32 MaxPlayerCount)
 {
-    BattlemasterListEntry const* bgEntry = sBattlemasterListStore.LookupEntry(bgOrTemplate->GetTypeID());
-    if(!bgEntry)
-        return ERR_GROUP_JOIN_BATTLEGROUND_FAIL;            // shouldn't happen
-
     // check for min / max count
     uint32 memberscount = GetMembersCount();
-
-    if(memberscount > bgEntry->maxGroupSize)                // no MinPlayerCount for battlegrounds
-        return ERR_BATTLEGROUND_NONE;                       // ERR_GROUP_JOIN_BATTLEGROUND_TOO_MANY handled on client side
+    if(memberscount < MinPlayerCount)
+        return BG_JOIN_ERR_GROUP_NOT_ENOUGH;
+    if(memberscount > MaxPlayerCount)
+        return BG_JOIN_ERR_GROUP_TOO_MANY;
 
     // get a player as reference, to compare other players' stats to (queue id based on level, etc.)
     Player * reference = GetFirstMember()->getSource();
@@ -1729,7 +1726,7 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
         }
     }
 
-    for (BoundInstancesMap::iterator itr = m_boundInstances[diff].begin(); itr != m_boundInstances[diff].end();)
+    for (BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
     {
         DungeonPersistentState* state = itr->second.state;
         const MapEntry* entry = sMapStore.LookupEntry(itr->first);
@@ -1775,8 +1772,8 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
             else
                 CharacterDatabase.PExecute("DELETE FROM group_instance WHERE instance = '%u'", state->GetInstanceId());
             // i don't know for sure if hash_map iterators
-            m_boundInstances[diff].erase(itr);
-            itr = m_boundInstances[diff].begin();
+            m_boundInstances.erase(itr);
+            itr = m_boundInstances.begin();
             // this unloads the instance save unless online players are bound to it
             // (eg. permanent binds or GM solo binds)
             state->RemoveGroup(this);

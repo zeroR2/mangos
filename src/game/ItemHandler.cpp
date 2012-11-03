@@ -414,7 +414,6 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
             data << pProto->Socket[s].Content;
         }
         data << uint32(pProto->socketBonus);
-        data << uint32(pProto->GemProperties);
         data << int32(pProto->RequiredDisenchantSkill);
         data << float(pProto->ArmorDamageModifier);
         data << uint32(pProto->Duration);                   // added in 2.4.2.8209, duration (seconds)

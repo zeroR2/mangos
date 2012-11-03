@@ -1516,7 +1516,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
     Quest const* linkedQuest = NULL;
     SpellEntry const* linkedSpell = NULL;
     ItemRandomPropertiesEntry const* itemProperty = NULL;
-    ItemRandomSuffixEntry const* itemSuffix = NULL;
 
     while (!reader.eof())
     {
@@ -1526,7 +1525,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
             linkedQuest = NULL;
             linkedSpell = NULL;
             itemProperty = NULL;
-            itemSuffix = NULL;
 
             reader.ignore(255, '|');
         }
@@ -1663,12 +1661,6 @@ bool ChatHandler::isValidChatMessage(const char* message)
                     {
                         itemProperty = sItemRandomPropertiesStore.LookupEntry(propertyId);
                         if (!itemProperty)
-                            return false;
-                    }
-                    else if (propertyId < 0)
-                    {
-                        itemSuffix = sItemRandomSuffixStore.LookupEntry(-propertyId);
-                        if (!itemSuffix)
                             return false;
                     }
 
@@ -1891,7 +1883,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                     }
                     else if (linkedItem)
                     {
-                        char* const* suffix = itemSuffix ? itemSuffix->nameSuffix : (itemProperty ? itemProperty->nameSuffix : NULL);
+                        char* const* suffix = itemProperty ? itemProperty->nameSuffix : NULL;
 
                         std::string expectedName = std::string(linkedItem->Name1);
                         if (suffix)

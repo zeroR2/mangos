@@ -538,13 +538,14 @@ GridMapLiquidStatus GridMap::getLiquidStatus(float x, float y, float z, uint8 Re
             {
                 if (AreaTableEntry const* area = sAreaStore.LookupEntry(getArea(x, y)))
                 {
-                    uint32 overrideLiquid = area->LiquidTypeOverride[liquidEntry->Type];
-                    if (!overrideLiquid && area->zone)
-                    {
-                        area = GetAreaEntryByAreaID(area->zone);
-                        if (area)
-                            overrideLiquid = area->LiquidTypeOverride[liquidEntry->Type];
-                    }
+                    uint32 overrideLiquid = 0;
+//                     uint32 overrideLiquid = area->LiquidTypeOverride[liquidEntry->Type];
+//                     if (!overrideLiquid && area->zone)
+//                     {
+//                         area = GetAreaEntryByAreaID(area->zone);
+//                         if (area)
+//                             overrideLiquid = area->LiquidTypeOverride[liquidEntry->Type];
+//                     }
 
                     if (LiquidTypeEntry const* liq = sLiquidTypeStore.LookupEntry(overrideLiquid))
                     {
