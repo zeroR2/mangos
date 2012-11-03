@@ -13893,7 +13893,7 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     RemoveTimedQuest(quest_id);
 
     if (BattleGround* bg = GetBattleGround())
-        if (bg->GetTypeID(true) == BATTLEGROUND_AV)
+        if (bg->GetTypeID() == BATTLEGROUND_AV)
             ((BattleGroundAV*)bg)->HandleQuestComplete(pQuest->GetQuestId(), this);
 
     if (pQuest->GetRewChoiceItemsCount() > 0)
@@ -15603,7 +15603,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     // Honor system
     // Update Honor kills data
     m_lastHonorUpdateTime = logoutTime;
-    UpdateHonorFields();
+    //UpdateHonorFields();
 
     m_deathExpireTime = (time_t)fields[36].GetUInt64();
     if (m_deathExpireTime > now+MAX_DEATH_COUNT*DEATH_EXPIRE_STEP)
@@ -17212,52 +17212,49 @@ void Player::_SaveActions()
     static SqlStatementID updateAction ;
     static SqlStatementID deleteAction ;
 
-    for (int i = 0; i < MAX_TALENT_SPEC_COUNT; ++i)
+    for (ActionButtonList::iterator itr = m_actionButtons.begin(); itr != m_actionButtons.end();)
     {
-        for (ActionButtonList::iterator itr = m_actionButtons[i].begin(); itr != m_actionButtons[i].end();)
+        switch (itr->second.uState)
         {
-            switch (itr->second.uState)
-            {
-                case ACTIONBUTTON_NEW:
-                    {
-                        SqlStatement stmt = CharacterDatabase.CreateStatement(insertAction, "INSERT INTO character_action (guid,spec, button,action,type) VALUES (?, ?, ?, ?, ?)");
-                        stmt.addUInt32(GetGUIDLow());
-                        stmt.addUInt32(i);
-                        stmt.addUInt32(uint32(itr->first));
-                        stmt.addUInt32(itr->second.GetAction());
-                        stmt.addUInt32(uint32(itr->second.GetType()));
-                        stmt.Execute();
-                        itr->second.uState = ACTIONBUTTON_UNCHANGED;
-                        ++itr;
-                    }
-                    break;
-                case ACTIONBUTTON_CHANGED:
-                    {
-                        SqlStatement stmt = CharacterDatabase.CreateStatement(updateAction, "UPDATE character_action  SET action = ?, type = ? WHERE guid = ? AND button = ? AND spec = ?");
-                        stmt.addUInt32(itr->second.GetAction());
-                        stmt.addUInt32(uint32(itr->second.GetType()));
-                        stmt.addUInt32(GetGUIDLow());
-                        stmt.addUInt32(uint32(itr->first));
-                        stmt.addUInt32(i);
-                        stmt.Execute();
-                        itr->second.uState = ACTIONBUTTON_UNCHANGED;
-                        ++itr;
-                    }
-                    break;
-                case ACTIONBUTTON_DELETED:
-                    {
-                        SqlStatement stmt = CharacterDatabase.CreateStatement(deleteAction, "DELETE FROM character_action WHERE guid = ? AND button = ? AND spec = ?");
-                        stmt.addUInt32(GetGUIDLow());
-                        stmt.addUInt32(uint32(itr->first));
-                        stmt.addUInt32(i);
-                        stmt.Execute();
-                        m_actionButtons[i].erase(itr++);
-                    }
-                    break;
-                default:
+            case ACTIONBUTTON_NEW:
+                {
+                    SqlStatement stmt = CharacterDatabase.CreateStatement(insertAction, "INSERT INTO character_action (guid,spec, button,action,type) VALUES (?, ?, ?, ?, ?)");
+                    stmt.addUInt32(GetGUIDLow());
+                    stmt.addUInt32(i);
+                    stmt.addUInt32(uint32(itr->first));
+                    stmt.addUInt32(itr->second.GetAction());
+                    stmt.addUInt32(uint32(itr->second.GetType()));
+                    stmt.Execute();
+                    itr->second.uState = ACTIONBUTTON_UNCHANGED;
                     ++itr;
-                    break;
-            }
+                }
+                break;
+            case ACTIONBUTTON_CHANGED:
+                {
+                    SqlStatement stmt = CharacterDatabase.CreateStatement(updateAction, "UPDATE character_action  SET action = ?, type = ? WHERE guid = ? AND button = ? AND spec = ?");
+                    stmt.addUInt32(itr->second.GetAction());
+                    stmt.addUInt32(uint32(itr->second.GetType()));
+                    stmt.addUInt32(GetGUIDLow());
+                    stmt.addUInt32(uint32(itr->first));
+                    stmt.addUInt32(i);
+                    stmt.Execute();
+                    itr->second.uState = ACTIONBUTTON_UNCHANGED;
+                    ++itr;
+                }
+                break;
+            case ACTIONBUTTON_DELETED:
+                {
+                    SqlStatement stmt = CharacterDatabase.CreateStatement(deleteAction, "DELETE FROM character_action WHERE guid = ? AND button = ? AND spec = ?");
+                    stmt.addUInt32(GetGUIDLow());
+                    stmt.addUInt32(uint32(itr->first));
+                    stmt.addUInt32(i);
+                    stmt.Execute();
+                    m_actionButtons[i].erase(itr++);
+                }
+                break;
+            default:
+                ++itr;
+                break;
         }
     }
 }
