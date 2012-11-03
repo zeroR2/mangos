@@ -29,7 +29,59 @@ namespace MaNGOS
         {
             return (float)ceil(count * (-0.53177f + 0.59357f * exp((level + 23.54042f) / 26.07859f)));
         }
+
+        inline float DishonorableKillPoints(int level)
+        {
+            float result = 10;
+            if(level >= 30 && level <= 35)
+                result = result + 1.5 * (level - 29);
+            if(level >= 36 && level <= 41)
+                result = result + 9 + 2 * (level - 35);
+            if(level >= 42 && level <= 50)
+                result = result + 21 + 3.2 * (level - 41);
+            if(level >= 51)
+                result = result + 50 + 4 * (level - 50);
+            if(result > 100)
+                return 100.0;
+            else
+                return result;
+        }
+
+        inline float HonorableKillPoints( Player *killer, Player *victim, uint32 groupsize)
+        {
+            if (!killer || !victim || !groupsize)
+                return 0.0;
+
+            int total_kills  = killer->CalculateTotalKills(victim);
+            float f;
+            if(total_kills < 10) f = (10 - (float)total_kills)*0.1;
+            else f = 0.0;
+
+            uint32 k_level  = killer->getLevel();
+            uint32 v_level  = victim->getLevel();
+            uint32 k_grey   = MaNGOS::XP::GetGrayLevel(k_level);
+
+            float diff_level;
+            if((k_level - k_grey) != 0)
+                diff_level = ((float)(v_level - k_grey)) / ((float)(k_level - k_grey));
+            else return 999;	//Check, in character_honor we will see, if working incorrectly
+
+            if(diff_level > 2.0) diff_level = 2.0;
+            if(diff_level <= 0.0) return 888; //For Debug
+
+            int32 v_rank = (victim->GetHonorRank() - 4); //We cut all up to the first positive rank
+            if(v_rank < 0) v_rank = 0;
+            if(v_rank < 0) return 777;
+
+            float honor_points = f * diff_level * (190 + v_rank*10);
+            //float honor_points = f * diff_level * (190);
+            honor_points *= ((float)k_level) / 60.0; //factor of dependence on levels of the killer
+
+            if(honor_points > 660) return 666; //For Debug
+            else return honor_points / groupsize;
+        }
     }
+
     namespace XP
     {
         enum XPColorChar { RED, ORANGE, YELLOW, GREEN, GRAY };

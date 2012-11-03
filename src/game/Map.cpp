@@ -2269,10 +2269,10 @@ float Map::GetVisibilityDistance(WorldObject* obj) const
         return m_VisibleDistance; 
 }
 
-bool Map::IsInLineOfSight(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const
+bool Map::IsInLineOfSight(float srcX, float srcY, float srcZ, float destX, float destY, float destZ) const
 {
     return VMAP::VMapFactory::createOrGetVMapManager()->isInLineOfSight(GetId(), srcX, srcY, srcZ, destX, destY, destZ)
-        && m_dyn_tree.isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
+        && m_dyn_tree.isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ);
 }
 
 /**

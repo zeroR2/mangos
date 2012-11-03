@@ -553,10 +553,11 @@ class World
         uint32 GetUptime() const { return uint32(m_gameTime - m_startTime); }
         /// Update time
         uint32 GetUpdateTime() const { return m_updateTime; }
-        /// Next daily quests reset time
-        time_t GetNextDailyQuestsResetTime() const { return m_NextDailyQuestReset; }
-        time_t GetNextWeeklyQuestsResetTime() const { return m_NextWeeklyQuestReset; }
-        time_t GetNextRandomBGResetTime() const { return m_NextRandomBGReset; }
+
+        uint32 GetDateToday(tm *now) const { return ((uint32)(now->tm_year << 16)|(uint32)(now->tm_yday)); }
+        uint32 GetDateLastWeekBegin(tm *now) const { return GetDateToday(now) - now->tm_wday - 7; }
+
+        uint32 GetDateFromDatabase() const;
 
         /// Get the maximum skill level a player can reach
         uint16 GetConfigMaxSkillValue() const

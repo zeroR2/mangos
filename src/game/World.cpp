@@ -2713,3 +2713,14 @@ bool World::IsDungeonMapIdDisable(uint32 mapId)
     return disabledMapIdForDungeonFinder.find(mapId) != disabledMapIdForDungeonFinder.end();
 }
 
+uint32 World::GetDateFromDatabase() const
+{
+    QueryResult* result = WorldDatabase.PQuery("SELECT TO_DAYS(NOW())");
+
+    if (!result)
+        return 0;
+
+    uint32 day = result->Fetch()[0].GetUInt32();
+    delete result;
+    return day;
+}

@@ -186,7 +186,7 @@ enum ActionButtonIndex
     ACTION_BUTTON_SHAMAN_TOTEMS_BAR = 132,
 };
 
-#define  MAX_ACTION_BUTTONS 144                             //checked in 3.2.0
+#define  MAX_ACTION_BUTTONS 120   // TBC 132 checked in 2.3.0
 
 typedef std::map<uint8,ActionButton> ActionButtonList;
 
@@ -1558,7 +1558,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 GetFreeTalentPoints() const { return GetUInt32Value(PLAYER_CHARACTER_POINTS1); }
         void SetFreeTalentPoints(uint32 points) { SetUInt32Value(PLAYER_CHARACTER_POINTS1,points); }
         void UpdateFreeTalentPoints(bool resetIfNeed = true);
-        bool resetTalents(bool no_cost = false, bool all_specs = false);
+        bool resetTalents(bool no_cost = false);
         uint32 resetTalentsCost() const;
         void InitTalentForLevel();
         void BuildPlayerTalentsInfoData(WorldPacket *data);
@@ -1731,7 +1731,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void UpdateDefenseBonusesMod();
         float GetMeleeCritFromAgility();
-        void GetDodgeFromAgility(float &diminishing, float &nondiminishing);
+        float GetDodgeFromAgility();
         float GetSpellCritFromIntellect();
         float OCTRegenHPPerSpirit();
         float OCTRegenMPPerSpirit();
