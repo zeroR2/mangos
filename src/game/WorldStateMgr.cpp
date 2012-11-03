@@ -61,17 +61,17 @@ void WorldStateMgr::Update()
             {
                 case WORLD_STATE_TYPE_BGWEEKEND:
                 {
-                    for (uint32 i = 1; i < sBattlemasterListStore.GetNumRows(); ++i)
-                    {
-                        BattlemasterListEntry const * bl = sBattlemasterListStore.LookupEntry(i);
-                        if (bl && bl->HolidayWorldStateId == state->GetId())
-                        {
-                            if (BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)))
-                                state->SetValue(WORLD_STATE_ADD);
-                            else
-                                state->SetValue(WORLD_STATE_REMOVE);
-                        }
-                    }
+//                     for (uint32 i = 1; i < sBattlemasterListStore.GetNumRows(); ++i)
+//                     {
+//                         BattlemasterListEntry const * bl = sBattlemasterListStore.LookupEntry(i);
+//                         if (bl && bl->HolidayWorldStateId == state->GetId())
+//                         {
+//                             if (BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)))
+//                                 state->SetValue(WORLD_STATE_ADD);
+//                             else
+//                                 state->SetValue(WORLD_STATE_REMOVE);
+//                         }
+//                     }
                     break;
                 }
                 case WORLD_STATE_TYPE_CUSTOM:

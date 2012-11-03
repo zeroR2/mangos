@@ -4742,8 +4742,8 @@ void SpellMgr::CheckUsedSpells(char const* table)
                 {
                     if (spellEntry->GetSpellFamilyFlags())
                     {
-                        sLog.outError("Spell %u '%s' not fit to (" I64FMT "," I32FMT ") but used in %s.",
-                            spell, name.c_str(), familyMask.Flags, familyMask.Flags2, code.c_str());
+                        sLog.outError("Spell %u '%s' not fit to (" I64FMT ") but used in %s.",
+                            spell, name.c_str(), familyMask.Flags, code.c_str());
                         continue;
                     }
 
@@ -4752,8 +4752,8 @@ void SpellMgr::CheckUsedSpells(char const* table)
                 {
                     if (!spellEntry->IsFitToFamilyMask(familyMask))
                     {
-                        sLog.outError("Spell %u '%s' not fit to (" I64FMT "," I32FMT ") but used in %s.",
-                            spell, name.c_str(), familyMask.Flags, familyMask.Flags2, code.c_str());
+                        sLog.outError("Spell %u '%s' not fit to (" I64FMT ") but used in %s.",
+                            spell, name.c_str(), familyMask.Flags, code.c_str());
                         continue;
                     }
 
@@ -4869,11 +4869,11 @@ void SpellMgr::CheckUsedSpells(char const* table)
             if (!found)
             {
                 if (effectIdx >= 0)
-                    sLog.outError("Spells '%s' not found for family %i (" I64FMT "," I32FMT ") icon(%i) visual(%i) category(%i) effect%d(%i) aura%d(%i) but used in %s",
-                        name.c_str(),family,familyMask.Flags,familyMask.Flags2,spellIcon,spellVisual,category,effectIdx+1,effectType,effectIdx+1,auraType,code.c_str());
+                    sLog.outError("Spells '%s' not found for family %i (" I64FMT ") icon(%i) visual(%i) category(%i) effect%d(%i) aura%d(%i) but used in %s",
+                        name.c_str(),family,familyMask.Flags,spellIcon,spellVisual,category,effectIdx+1,effectType,effectIdx+1,auraType,code.c_str());
                 else
-                    sLog.outError("Spells '%s' not found for family %i (" I64FMT "," I32FMT ") icon(%i) visual(%i) category(%i) effect(%i) aura(%i) but used in %s",
-                        name.c_str(),family,familyMask.Flags,familyMask.Flags2,spellIcon,spellVisual,category,effectType,auraType,code.c_str());
+                    sLog.outError("Spells '%s' not found for family %i (" I64FMT ") icon(%i) visual(%i) category(%i) effect(%i) aura(%i) but used in %s",
+                        name.c_str(),family,familyMask.Flags,,spellIcon,spellVisual,category,effectType,auraType,code.c_str());
                 continue;
             }
         }

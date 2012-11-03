@@ -5332,11 +5332,6 @@ void Unit::RemoveAuraHolderFromStack(uint32 spellId, uint32 stackAmount, ObjectG
 
 void Unit::RemoveAurasDueToSpell(uint32 spellId, SpellAuraHolderPtr except, AuraRemoveMode mode)
 {
-    SpellEntry const* spellEntry = sSpellStore.LookupEntry(spellId);
-    if (spellEntry && spellEntry->SpellDifficultyId && IsInWorld() && GetMap()->IsDungeon())
-        if (SpellEntry const* spellDiffEntry = GetSpellEntryByDifficulty(spellEntry->SpellDifficultyId, GetMap()->GetDifficulty(), GetMap()->IsRaid()))
-            spellId = spellDiffEntry->Id;
-
     SpellAuraHolderBounds bounds = GetSpellAuraHolderBounds(spellId);
     for (SpellAuraHolderMap::iterator iter = bounds.first; iter != bounds.second; )
     {
@@ -5874,11 +5869,6 @@ bool Unit::HasAura(uint32 spellId, SpellEffectIndex effIndex) const
 
 bool Unit::HasAuraOfDifficulty(uint32 spellId) const
 {
-    SpellEntry const* spellEntry = sSpellStore.LookupEntry(spellId);
-    if (spellEntry && spellEntry->SpellDifficultyId && IsInWorld() && GetMap()->IsDungeon())
-        if (SpellEntry const* spellDiffEntry = GetSpellEntryByDifficulty(spellEntry->SpellDifficultyId, GetMap()->GetDifficulty(), GetMap()->IsRaid()))
-            spellId = spellDiffEntry->Id;
-
     MAPLOCK_READ(const_cast<Unit*>(this), MAP_LOCK_TYPE_AURAS);
     return m_spellAuraHolders.find(spellId) != m_spellAuraHolders.end();
 }
