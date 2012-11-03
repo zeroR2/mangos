@@ -45,7 +45,20 @@ enum EItemFields
     ITEM_FIELD_SPELL_CHARGES_03                = OBJECT_END + 0x0D,
     ITEM_FIELD_SPELL_CHARGES_04                = OBJECT_END + 0x0E,
     ITEM_FIELD_FLAGS                           = OBJECT_END + 0x0F, // Size:1
-    ITEM_FIELD_ENCHANTMENT                     = OBJECT_END + 0x10, // count=21
+    ITEM_FIELD_ENCHANTMENT_1_1                 = OBJECT_END + 0x10, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_1_3                 = OBJECT_END + 0x12, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_2_1                 = OBJECT_END + 0x13, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_2_3                 = OBJECT_END + 0x15, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_3_1                 = OBJECT_END + 0x16, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_3_3                 = OBJECT_END + 0x18, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_4_1                 = OBJECT_END + 0x19, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_4_3                 = OBJECT_END + 0x1B, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_5_1                 = OBJECT_END + 0x1C, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_5_3                 = OBJECT_END + 0x1E, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_6_1                 = OBJECT_END + 0x1F, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_6_3                 = OBJECT_END + 0x21, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_7_1                 = OBJECT_END + 0x22, // Size: 2, Type: INT, Flags: PUBLIC
+    ITEM_FIELD_ENCHANTMENT_7_3                 = OBJECT_END + 0x24, // Size: 1, Type: TWO_SHORT, Flags: PUBLIC
     ITEM_FIELD_PROPERTY_SEED                   = OBJECT_END + 0x25, // Size:1
     ITEM_FIELD_RANDOM_PROPERTIES_ID            = OBJECT_END + 0x26, // Size:1
     ITEM_FIELD_ITEM_TEXT_ID                    = OBJECT_END + 0x27, // Size:1
