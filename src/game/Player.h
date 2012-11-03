@@ -1567,14 +1567,6 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         uint32 CalculateTalentsPoints() const;
 
-        // Dual Spec
-        uint8 GetActiveSpec() { return m_activeSpec; }
-        void SetActiveSpec(uint8 spec) { m_activeSpec = spec; }
-        uint8 GetSpecsCount() { return m_specsCount; }
-        void SetSpecsCount(uint8 count) { m_specsCount = count; }
-        void ActivateSpec(uint8 specNum);
-        void UpdateSpecCount(uint8 count);
-
         uint32 GetFreePrimaryProfessionPoints() const { return GetUInt32Value(PLAYER_CHARACTER_POINTS2); }
         void SetFreePrimaryProfessions(uint16 profs) { SetUInt32Value(PLAYER_CHARACTER_POINTS2, profs); }
         void InitPrimaryProfessions();
@@ -1640,7 +1632,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void setCinematic(uint32 cine) { m_cinematic = cine; }
 
         static bool IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player, bool msg = true);
-        ActionButton* addActionButton(uint8 spec, uint8 button, uint32 action, uint8 type);
+        ActionButton* addActionButton(uint8 button, uint32 action, uint8 type);
         void removeActionButton(uint8 spec, uint8 button);
         void SendActionButtons(uint32 state) const;
         void SendInitialActionButtons() const { SendActionButtons(1); }
@@ -2446,9 +2438,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_lastPotionId;                              // last used health/mana potion in combat, that block next potion use
 
         GlobalCooldownMgr m_GlobalCooldownMgr;
-
-        uint8 m_activeSpec;
-        uint8 m_specsCount;
 
         ActionButtonList m_actionButtons;
 

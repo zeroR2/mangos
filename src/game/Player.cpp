@@ -506,9 +506,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
 
     m_lastPotionId = 0;
 
-    m_activeSpec = 0;
-    m_specsCount = 1;
-
     for (int i = 0; i < BASEMOD_END; ++i)
     {
         m_auraBaseMod[i][FLAT_MOD] = 0.0f;
@@ -763,7 +760,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
     // original action bar
     for (PlayerCreateInfoActions::const_iterator action_itr = info->action.begin(); action_itr != info->action.end(); ++action_itr)
-        addActionButton(0, action_itr->button,action_itr->action,action_itr->type);
+        addActionButton(action_itr->button,action_itr->action,action_itr->type);
 
     // original items
     uint32 raceClassGender = GetUInt32Value(UNIT_FIELD_BYTES_0) & 0x00FFFFFF;
@@ -2677,12 +2674,6 @@ void Player::UpdateFreeTalentPoints(bool resetIfNeed)
     }
     else
     {
-        if (m_specsCount == 0)
-        {
-            m_specsCount = 1;
-            m_activeSpec = 0;
-        }
-
         uint32 talentPointsForLevel = CalculateTalentsPoints();
 
         // if used more that have then reset
@@ -5910,7 +5901,7 @@ int16 Player::GetSkillTempBonusValue(uint32 skill) const
 
 void Player::SendActionButtons(uint32 state) const
 {
-    DETAIL_LOG("Initializing Action Buttons for '%u' spec '%u'", GetGUIDLow(), m_activeSpec);
+    DETAIL_LOG("Initializing Action Buttons for '%u'", GetGUIDLow());
 
     WorldPacket data(SMSG_ACTION_BUTTONS, 1+(MAX_ACTION_BUTTONS*4));
     data << uint8(state);
@@ -5922,7 +5913,7 @@ void Player::SendActionButtons(uint32 state) const
     */
     if (state != 2)
     {
-        ActionButtonList const& currentActionButtonList = m_actionButtons[m_activeSpec];
+        ActionButtonList const& currentActionButtonList = m_actionButtons;
         for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
         {
             ActionButtonList::const_iterator itr = currentActionButtonList.find(button);
@@ -5934,12 +5925,12 @@ void Player::SendActionButtons(uint32 state) const
     }
 
     GetSession()->SendPacket(&data);
-    DETAIL_LOG("Action Buttons for '%u' spec '%u' Initialized", GetGUIDLow(), m_activeSpec);
+    DETAIL_LOG("Action Buttons for '%u' Initialized", GetGUIDLow());
 }
 
 void Player::SendLockActionButtons() const
 {
-    DETAIL_LOG("Locking Action Buttons for '%u' spec '%u'", GetGUIDLow(), m_activeSpec);
+    DETAIL_LOG("Locking Action Buttons for '%u' spec '%u'", GetGUIDLow());
     WorldPacket data(SMSG_ACTION_BUTTONS, 1);
     // sending 2 locks actions bars, neither user can remove buttons, nor client removes buttons at spell unlearn
     // they remain locked until server sends new action buttons
@@ -6038,25 +6029,25 @@ bool Player::IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Pl
     return true;
 }
 
-ActionButton* Player::addActionButton(uint8 spec, uint8 button, uint32 action, uint8 type)
+ActionButton* Player::addActionButton(uint8 button, uint32 action, uint8 type)
 {
     // check action only for active spec (so not check at copy/load passive spec)
-    if (spec == GetActiveSpec() && !IsActionButtonDataValid(button,action,type,this))
+    if (!IsActionButtonDataValid(button,action,type,this))
         return NULL;
 
     // it create new button (NEW state) if need or return existing
-    ActionButton& ab = m_actionButtons[spec][button];
+    ActionButton& ab = m_actionButtons[button];
 
     // set data and update to CHANGED if not NEW
     ab.SetActionAndType(action,ActionButtonType(type));
 
-    DETAIL_LOG("Player '%u' Added Action '%u' (type %u) to Button '%u' for spec %u", GetGUIDLow(), action, uint32(type), button, spec);
+    DETAIL_LOG("Player '%u' Added Action '%u' (type %u) to Button '%u'", GetGUIDLow(), action, uint32(type), button);
     return &ab;
 }
 
 void Player::removeActionButton(uint8 spec, uint8 button)
 {
-    ActionButtonList& currentActionButtonList = m_actionButtons[spec];
+    ActionButtonList& currentActionButtonList = m_actionButtons;
     ActionButtonList::iterator buttonItr = currentActionButtonList.find(button);
     if (buttonItr == currentActionButtonList.end() || buttonItr->second.uState == ACTIONBUTTON_DELETED)
         return;
@@ -6071,7 +6062,7 @@ void Player::removeActionButton(uint8 spec, uint8 button)
 
 ActionButton const* Player::GetActionButton(uint8 button)
 {
-    ActionButtonList& currentActionButtonList = m_actionButtons[m_activeSpec];
+    ActionButtonList& currentActionButtonList = m_actionButtons;
     ActionButtonList::iterator buttonItr = currentActionButtonList.find(button);
     if (buttonItr==currentActionButtonList.end() || buttonItr->second.uState == ACTIONBUTTON_DELETED)
         return NULL;
@@ -15669,8 +15660,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     _LoadMailedItems(holder->GetResult(PLAYER_LOGIN_QUERY_LOADMAILEDITEMS));
     UpdateNextMailTimeAndUnreads();
 
-    m_specsCount = fields[58].GetUInt8();
-    m_activeSpec = fields[59].GetUInt8();
+    //m_specsCount = fields[58].GetUInt8();
+    //m_activeSpec = fields[59].GetUInt8();
 
     m_GrantableLevelsCount = fields[65].GetUInt32();
 
@@ -15913,14 +15904,14 @@ void Player::_LoadActions(QueryResult *result)
             uint32 action = fields[2].GetUInt32();
             uint8 type = fields[3].GetUInt8();
 
-            if (ActionButton* ab = addActionButton(spec, button, action, type))
+            if (ActionButton* ab = addActionButton(button, action, type))
                 ab->uState = ACTIONBUTTON_UNCHANGED;
             else
             {
                 sLog.outError("  ...at loading, and will deleted in DB also");
 
                 // Will deleted in DB at next save (it can create data until save but marked as deleted)
-                m_actionButtons[spec][button].uState = ACTIONBUTTON_DELETED;
+                m_actionButtons[button].uState = ACTIONBUTTON_DELETED;
             }
         }
         while(result->NextRow());
@@ -16623,32 +16614,8 @@ void Player::_LoadTalents(QueryResult *result)
                 continue;
             }
 
-            uint32 spec = fields[2].GetUInt32();
+            addSpell(talentInfo->RankID[currentRank], true,false,false,false);
 
-            /*if (spec > MAX_TALENT_SPEC_COUNT)
-            {
-                sLog.outError("Player::_LoadTalents:Player (GUID: %u) has invalid talent spec: %u, spec will be deleted from character_talent", GetGUIDLow(), spec);
-                CharacterDatabase.PExecute("DELETE FROM character_talent WHERE spec = '%u' ", spec);
-                continue;
-            }*/
-
-            if (spec >= m_specsCount)
-            {
-                sLog.outError("Player::_LoadTalents:Player (GUID: %u) has invalid talent spec: %u , this spec will be deleted from character_talent.", GetGUIDLow(), spec);
-                CharacterDatabase.PExecute("DELETE FROM character_talent WHERE guid = '%u' AND spec = '%u' ", GetGUIDLow(), spec);
-                continue;
-            }
-
-            if (m_activeSpec == spec)
-                addSpell(talentInfo->RankID[currentRank], true,false,false,false);
-            else
-            {
-                PlayerTalent talent;
-                talent.currentRank = currentRank;
-                talent.talentEntry = talentInfo;
-                talent.state       = PLAYERSPELL_UNCHANGED;
-                m_talents[spec][talentInfo->TalentID] = talent;
-            }
         }
         while (result->NextRow());
         delete result;
@@ -16836,7 +16803,7 @@ void Player::SendRaidInfo()
 
     time_t now = time(NULL);
 
-    for (BoundInstancesMap::const_iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
+    for (BoundInstancesMap::const_iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end(); ++itr)
     {
         if (itr->second.perm)
         {
@@ -17131,8 +17098,8 @@ void Player::SaveToDB()
     for (uint32 i = 0; i < MAX_POWERS; ++i)
         uberInsert.addUInt32(GetPower(Powers(i)));
 
-    uberInsert.addUInt32(uint32(m_specsCount));
-    uberInsert.addUInt32(uint32(m_activeSpec));
+    //uberInsert.addUInt32(uint32(m_specsCount));
+    //uberInsert.addUInt32(uint32(m_activeSpec));
 
     for (uint32 i = 0; i < PLAYER_EXPLORED_ZONES_SIZE; ++i)         //string
     {
@@ -17220,7 +17187,7 @@ void Player::_SaveActions()
                 {
                     SqlStatement stmt = CharacterDatabase.CreateStatement(insertAction, "INSERT INTO character_action (guid,spec, button,action,type) VALUES (?, ?, ?, ?, ?)");
                     stmt.addUInt32(GetGUIDLow());
-                    stmt.addUInt32(i);
+                    stmt.addUInt32(0);
                     stmt.addUInt32(uint32(itr->first));
                     stmt.addUInt32(itr->second.GetAction());
                     stmt.addUInt32(uint32(itr->second.GetType()));
@@ -17236,7 +17203,7 @@ void Player::_SaveActions()
                     stmt.addUInt32(uint32(itr->second.GetType()));
                     stmt.addUInt32(GetGUIDLow());
                     stmt.addUInt32(uint32(itr->first));
-                    stmt.addUInt32(i);
+                    stmt.addUInt32(0);
                     stmt.Execute();
                     itr->second.uState = ACTIONBUTTON_UNCHANGED;
                     ++itr;
@@ -17247,9 +17214,9 @@ void Player::_SaveActions()
                     SqlStatement stmt = CharacterDatabase.CreateStatement(deleteAction, "DELETE FROM character_action WHERE guid = ? AND button = ? AND spec = ?");
                     stmt.addUInt32(GetGUIDLow());
                     stmt.addUInt32(uint32(itr->first));
-                    stmt.addUInt32(i);
+                    stmt.addUInt32(0);
                     stmt.Execute();
-                    m_actionButtons[i].erase(itr++);
+                    m_actionButtons.erase(itr++);
                 }
                 break;
             default:
@@ -17665,26 +17632,24 @@ void Player::_SaveTalents()
     SqlStatement stmtDel = CharacterDatabase.CreateStatement(delTalents, "DELETE FROM character_talent WHERE guid = ? and talent_id = ? and spec = ?");
     SqlStatement stmtIns = CharacterDatabase.CreateStatement(insTalents, "INSERT INTO character_talent (guid, talent_id, current_rank , spec) VALUES (?, ?, ?, ?)");
 
-    for (uint32 i = 0; i < MAX_TALENT_SPEC_COUNT; ++i)
+    for (PlayerTalentMap::iterator itr = m_talents.begin(); itr != m_talents.end();)
     {
-        for (PlayerTalentMap::iterator itr = m_talents[i].begin(); itr != m_talents[i].end();)
+        if (itr->second.state == PLAYERSPELL_REMOVED || itr->second.state == PLAYERSPELL_CHANGED)
+            stmtDel.PExecute(GetGUIDLow(),itr->first, 0);
+
+        // add only changed/new talents
+        if (itr->second.state == PLAYERSPELL_NEW || itr->second.state == PLAYERSPELL_CHANGED)
+            stmtIns.PExecute(GetGUIDLow(), itr->first, itr->second.currentRank, 0);
+
+        if (itr->second.state == PLAYERSPELL_REMOVED)
+            m_talents.erase(itr++);
+        else
         {
-            if (itr->second.state == PLAYERSPELL_REMOVED || itr->second.state == PLAYERSPELL_CHANGED)
-                stmtDel.PExecute(GetGUIDLow(),itr->first, i);
-
-            // add only changed/new talents
-            if (itr->second.state == PLAYERSPELL_NEW || itr->second.state == PLAYERSPELL_CHANGED)
-                stmtIns.PExecute(GetGUIDLow(), itr->first, itr->second.currentRank, i);
-
-            if (itr->second.state == PLAYERSPELL_REMOVED)
-                m_talents[i].erase(itr++);
-            else
-            {
-                itr->second.state = PLAYERSPELL_UNCHANGED;
-                ++itr;
-            }
+            itr->second.state = PLAYERSPELL_UNCHANGED;
+            ++itr;
         }
     }
+
 }
 
 // save player stats -- only for external usage
@@ -17778,8 +17743,8 @@ void Player::_SaveStats()
     }
     stmt.addString(ss);     // equipment cache string
 
-    stmt.addUInt32(uint32(m_specsCount));
-    stmt.addUInt32(uint32(m_activeSpec));
+    //stmt.addUInt32(uint32(m_specsCount));
+    //stmt.addUInt32(uint32(m_activeSpec));
 
     std::ostringstream ps; // duh
     for (uint16 i = 0; i < m_valuesCount; ++i)  //data string
@@ -21227,8 +21192,8 @@ void Player::HandleFall(MovementInfo const& movementInfo)
 
 PlayerTalent const* Player::GetKnownTalentById(int32 talentId) const
 {
-    PlayerTalentMap::const_iterator itr = m_talents[m_activeSpec].find(talentId);
-    if (itr != m_talents[m_activeSpec].end() && itr->second.state != PLAYERSPELL_REMOVED)
+    PlayerTalentMap::const_iterator itr = m_talents.find(talentId);
+    if (itr != m_talents.end() && itr->second.state != PLAYERSPELL_REMOVED)
         return &itr->second;
     else
         return NULL;
@@ -21285,8 +21250,8 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         if (TalentEntry const *depTalentInfo = sTalentStore.LookupEntry(talentInfo->DependsOn))
         {
             bool hasEnoughRank = false;
-            PlayerTalentMap::iterator dependsOnTalent = m_talents[m_activeSpec].find(depTalentInfo->TalentID);
-            if (dependsOnTalent != m_talents[m_activeSpec].end() && dependsOnTalent->second.state != PLAYERSPELL_REMOVED)
+            PlayerTalentMap::iterator dependsOnTalent = m_talents.find(depTalentInfo->TalentID);
+            if (dependsOnTalent != m_talents.end() && dependsOnTalent->second.state != PLAYERSPELL_REMOVED)
             {
                 PlayerTalent depTalent = (*dependsOnTalent).second;
                 if (depTalent.currentRank >= talentInfo->DependsOnRank)
@@ -21304,7 +21269,7 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
     uint32 tTab = talentInfo->TalentTab;
     if (talentInfo->Row > 0)
     {
-        for (PlayerTalentMap::const_iterator iter = m_talents[m_activeSpec].begin(); iter != m_talents[m_activeSpec].end(); ++iter)
+        for (PlayerTalentMap::const_iterator iter = m_talents.begin(); iter != m_talents.end(); ++iter)
             if (iter->second.state != PLAYERSPELL_REMOVED && iter->second.talentEntry->TalentTab == tTab)
                 spentPoints += iter->second.currentRank + 1;
     }
@@ -21432,8 +21397,8 @@ bool Player::canSeeSpellClickOn(Creature const *c) const
 void Player::BuildPlayerTalentsInfoData(WorldPacket *data)
 {
     *data << uint32(GetFreeTalentPoints());                 // unspentTalentPoints
-    *data << uint8(m_specsCount);                           // talent group count (0, 1 or 2)
-    *data << uint8(m_activeSpec);                           // talent group index (0 or 1)
+    //*data << uint8(m_specsCount);                           // talent group count (0, 1 or 2)
+    //*data << uint8(m_activeSpec);                           // talent group index (0 or 1)
 
     if (m_specsCount)
     {
@@ -21713,212 +21678,6 @@ void Player::DeleteEquipmentSet(uint64 setGuid)
             break;
         }
     }
-}
-
-void Player::ActivateSpec(uint8 specNum)
-{
-    if (GetActiveSpec() == specNum || specNum >= GetSpecsCount())
-        return;
-
-
-    if (Pet* pet = GetPet())
-        pet->Unsummon(PET_SAVE_REAGENTS, this);
-
-    SendActionButtons(2);
-
-    // prevent deletion of action buttons by client at spell unlearn or by player while spec change in progress
-    SendLockActionButtons();
-
-    // copy of new talent spec (we will use it as model for converting current tlanet state to new)
-    PlayerTalentMap tempSpec = m_talents[specNum];
-
-    // copy old spec talents to new one, must be before spec switch to have previous spec num(as m_activeSpec)
-    m_talents[specNum] = m_talents[m_activeSpec];
-
-    SetActiveSpec(specNum);
-
-    // remove all talent spells that don't exist in next spec but exist in old
-    for (PlayerTalentMap::iterator specIter = m_talents[m_activeSpec].begin(); specIter != m_talents[m_activeSpec].end();)
-    {
-        PlayerTalent& talent = specIter->second;
-
-        if (talent.state == PLAYERSPELL_REMOVED)
-        {
-            ++specIter;
-            continue;
-        }
-
-        PlayerTalentMap::iterator iterTempSpec = tempSpec.find(specIter->first);
-
-        // remove any talent rank if talent not listed in temp spec
-        if (iterTempSpec == tempSpec.end() || iterTempSpec->second.state == PLAYERSPELL_REMOVED)
-        {
-            TalentEntry const *talentInfo = talent.talentEntry;
-
-            for (int r = 0; r < MAX_TALENT_RANK; ++r)
-                if (talentInfo->RankID[r])
-                {
-                    removeSpell(talentInfo->RankID[r],!IsPassiveSpell(talentInfo->RankID[r]),false);
-
-                    SpellEntry const* spellInfo = sSpellStore.LookupEntry(talentInfo->RankID[r]);
-                    for (int k = 0; k < MAX_EFFECT_INDEX; ++k)
-                        if (spellInfo->EffectTriggerSpell[k])
-                            removeSpell(spellInfo->EffectTriggerSpell[k]);
-
-                    // if spell is a buff, remove it from group members
-                    // TODO: this should affect all players, not only group members?
-                    if (SpellEntry const *spellInfo = sSpellStore.LookupEntry(talentInfo->RankID[r]))
-                    {
-                        bool bRemoveAura = false;
-                        for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
-                        {
-                            if ((spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AURA ||
-                                spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_RAID) &&
-                                IsPositiveEffect(spellInfo, SpellEffectIndex(i)))
-                            {
-                                bRemoveAura = true;
-                                break;
-                            }
-                        }
-
-                        Group *group = GetGroup();
-
-                        if (bRemoveAura && group)
-                        {
-                            for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-                            {
-                                if (Player *pGroupGuy = itr->getSource())
-                                {
-                                    if (pGroupGuy->GetObjectGuid() == GetObjectGuid())
-                                        continue;
-
-                                    if (SpellAuraHolderPtr holder = pGroupGuy->GetSpellAuraHolder(talentInfo->RankID[r], GetObjectGuid()))
-                                        pGroupGuy->RemoveSpellAuraHolder(holder);
-                                }
-                            }
-                        }
-                    }
-                }
-
-            specIter = m_talents[m_activeSpec].begin();
-        }
-        else
-            ++specIter;
-    }
-
-    // now new spec data have only talents (maybe different rank) as in temp spec data, sync ranks then.
-    for (PlayerTalentMap::const_iterator tempIter = tempSpec.begin(); tempIter != tempSpec.end(); ++tempIter)
-    {
-        PlayerTalent const& talent = tempIter->second;
-
-        // removed state talent already unlearned in prev. loop
-        // but we need restore it if it deleted for finish removed-marked data in DB
-        if (talent.state == PLAYERSPELL_REMOVED)
-        {
-            m_talents[m_activeSpec][tempIter->first] = talent;
-            continue;
-        }
-
-        uint32 talentSpellId = talent.talentEntry->RankID[talent.currentRank];
-
-        // learn talent spells if they not in new spec (old spec copy)
-        // and if they have different rank
-        if (PlayerTalent const* cur_talent = GetKnownTalentById(tempIter->first))
-        {
-            if (cur_talent->currentRank != talent.currentRank)
-                learnSpell(talentSpellId, false);
-        }
-        else
-            learnSpell(talentSpellId, false);
-
-        // sync states - original state is changed in addSpell that learnSpell calls
-        PlayerTalentMap::iterator specIter = m_talents[m_activeSpec].find(tempIter->first);
-        if (specIter != m_talents[m_activeSpec].end())
-            specIter->second.state = talent.state;
-        else
-        {
-            sLog.outError("ActivateSpec: Talent spell %u expected to learned at spec switch but not listed in talents at final check!", talentSpellId);
-
-            // attempt resync DB state (deleted lost spell from DB)
-            if (talent.state != PLAYERSPELL_NEW)
-            {
-                PlayerTalent& talentNew = m_talents[m_activeSpec][tempIter->first];
-                talentNew = talent;
-                talentNew.state = PLAYERSPELL_REMOVED;
-            }
-        }
-    }
-
-    InitTalentForLevel();
-
-    // recheck action buttons (not checked at loading/spec copy)
-    ActionButtonList const& currentActionButtonList = m_actionButtons[m_activeSpec];
-    for (ActionButtonList::const_iterator itr = currentActionButtonList.begin(); itr != currentActionButtonList.end();)
-    {
-        if (itr->second.uState != ACTIONBUTTON_DELETED)
-        {
-            // remove broken without any output (it can be not correct because talents not copied at spec creating)
-            if (!IsActionButtonDataValid(itr->first,itr->second.GetAction(),itr->second.GetType(), this, false))
-            {
-                removeActionButton(m_activeSpec,itr->first);
-                itr = currentActionButtonList.begin();
-                continue;
-            }
-        }
-        ++itr;
-    }
-
-    ResummonPetTemporaryUnSummonedIfAny();
-
-    SendInitialActionButtons();
-
-    Powers pw = getPowerType();
-    if (pw != POWER_MANA)
-        SetPower(POWER_MANA, 0);
-
-    SetPower(pw, 0);
-}
-
-void Player::UpdateSpecCount(uint8 count)
-{
-    uint8 curCount = GetSpecsCount();
-    if (curCount == count)
-        return;
-
-    // maybe current spec data must be copied to 0 spec?
-    if (m_activeSpec >= count)
-        ActivateSpec(0);
-
-    // copy spec data from new specs
-    if (count > curCount)
-    {
-        // copy action buttons from active spec (more easy in this case iterate first by button)
-        ActionButtonList const& currentActionButtonList = m_actionButtons[m_activeSpec];
-
-        for (ActionButtonList::const_iterator itr = currentActionButtonList.begin(); itr != currentActionButtonList.end(); ++itr)
-        {
-            if (itr->second.uState != ACTIONBUTTON_DELETED)
-            {
-                for (uint8 spec = curCount; spec < count; ++spec)
-                    addActionButton(spec,itr->first,itr->second.GetAction(),itr->second.GetType());
-            }
-        }
-    }
-    // delete spec data for removed specs
-    else if (count < curCount)
-    {
-        // delete action buttons for removed spec
-        for (uint8 spec = count; spec < curCount; ++spec)
-        {
-            // delete action buttons for removed spec
-            for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
-                removeActionButton(spec,button);
-        }
-    }
-
-    SetSpecsCount(count);
-
-    SendTalentsInfoData();
 }
 
 void Player::RemoveAtLoginFlag(AtLoginFlags f, bool in_db_also /*= false*/)
@@ -22715,7 +22474,7 @@ uint8 Player::GetTalentsCount(uint8 tab)
 
     uint32 talentTabId = talentTabIds[tab];
 
-    for (PlayerTalentMap::iterator iter = m_talents[m_activeSpec].begin(); iter != m_talents[m_activeSpec].end(); ++iter)
+    for (PlayerTalentMap::iterator iter = m_talents.begin(); iter != m_talents.end(); ++iter)
     {
         PlayerTalent talent = (*iter).second;
 
