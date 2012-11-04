@@ -110,7 +110,7 @@ enum ItemPrototypeFlags
     ITEM_FLAG_WRAPPER                         = 0x00000200, // used or not used wrapper
     ITEM_FLAG_IGNORE_BAG_SPACE                = 0x00000400, // ignore bag space at new item creation?
     ITEM_FLAG_PARTY_LOOT                      = 0x00000800, // determines if item is party loot or not
-    ITEM_FLAG_REFUNDABLE                      = 0x00001000, // item cost can be refunded within 2 hours after purchase
+    //ITEM_FLAG_REFUNDABLE                      = 0x00001000, // item cost can be refunded within 2 hours after purchase
     ITEM_FLAG_CHARTER                         = 0x00002000, // guild charter
     ITEM_FLAG_UNK14                           = 0x00004000,
     ITEM_FLAG_UNK15                           = 0x00008000, // a lot of items have this

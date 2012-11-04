@@ -11026,7 +11026,6 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
 
             pItem->SetOwnerGuid(GetObjectGuid());           // prevent error at next SetState in case trade/mail/buy from vendor
             pItem->SetNotSoulboundTradeable(this);
-            pItem->SetNotRefundable(this);
 
             pItem->SetState(ITEM_REMOVED, this);
         }
@@ -11141,7 +11140,6 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         pItem->SetOwnerGuid(GetObjectGuid());               // prevent error at next SetState in case trade/mail/buy from vendor
         pItem->SetNotSoulboundTradeable(this);
-        pItem->SetNotRefundable(this);
 
         pItem->SetState(ITEM_REMOVED, this);
         pItem2->SetState(ITEM_CHANGED, this);
@@ -11329,8 +11327,6 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
         ItemRemovedQuestCheck(it->GetEntry(), it->GetCount());
         RemoveItem(bag, slot, update);
 
-        it->SetNotRefundable(this, false);
-
         // item atStore spell not removed in RemoveItem (for avoid reappaly in slots changes), so do it directly
         if (IsEquipmentPos(bag, slot) || IsInventoryPos(bag, slot))
             ApplyItemOnStoreSpell(it, false);
@@ -11395,7 +11391,6 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
         RemoveItemDurations(pItem);
 
         pItem->SetNotSoulboundTradeable(this);
-        pItem->SetNotRefundable(this);
 
         if (IsEquipmentPos(bag, slot) || IsInventoryPos(bag, slot))
             ApplyItemOnStoreSpell(pItem, false);
@@ -11997,7 +11992,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 }
             }
 
-            SendRefundInfo(pDstItem);
             return;
         }
     }
@@ -16088,12 +16082,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
             DEBUG_LOG("Player::_LoadInventory: %s has conjured item (GUID: %u, Entry: %u) with expired lifetime (15 minutes), deleted.", GetGuidStr().c_str(), itemLowGuid, itemId);
             removeItem = true;
         }
-        else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
-        {
-            if (!item->LoadRefundDataFromDB(this))
-                DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with refundable flags, but without data in item_refund_instance, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
-
-        }
         else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
         {
             if (!item->LoadSoulboundTradeableDataFromDB(this))
@@ -17311,9 +17299,6 @@ void Player::_SaveInventory()
 
         m_items[i]->FSetState(ITEM_NEW);
     }
-
-    // Update refund or soulbound traded items
-    UpdateItemsWithTimeCheck();
 
     // update enchantment durations
     for (EnchantDurationList::const_iterator itr = m_enchantDuration.begin();itr != m_enchantDuration.end();++itr)
@@ -18890,9 +18875,6 @@ bool Player::_StoreOrEquipNewItem(uint32 vendorSlot, uint32 item, uint8 count, u
 
         if (!store)
             AutoUnequipOffhandIfNeed();
-
-        if (newItem->IsEligibleForRefund() && crItem->ExtendedCost)
-            newItem->SetRefundable(this, price, crItem->ExtendedCost);
     }
 
     return true;
@@ -22536,55 +22518,6 @@ void Player::InterruptTaxiFlying()
     // save only in non-flight case
     else
         SaveRecallPosition();
-}
-
-void Player::AddItemWithTimeCheck(uint32 lowGuid)
-{
-    m_itemsWithTimeCheck.insert(lowGuid);
-}
-
-void Player::RemoveItemWithTimeCheck(uint32 lowGuid)
-{
-    std::set<uint32>::iterator itr = m_itemsWithTimeCheck.find(lowGuid);
-    if (itr != m_itemsWithTimeCheck.end())
-        m_itemsWithTimeCheck.erase(lowGuid);
-}
-
-void Player::UpdateItemsWithTimeCheck()
-{
-    if (m_itemsWithTimeCheck.empty())
-        return;
-
-    std::set<uint32>::iterator i_next;
-    for (std::set<uint32>::iterator itr = m_itemsWithTimeCheck.begin(); itr != m_itemsWithTimeCheck.end(); itr = i_next)
-    {
-        i_next = itr;
-        ++i_next;
-
-        bool erase = false;
-
-        if (Item* item = GetItemByGuid(ObjectGuid(HIGHGUID_ITEM, *itr)))
-        {
-            erase = item->GetOwnerGuid() != GetObjectGuid();
-            if (!erase)
-            {
-                if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
-                    item->CheckRefundExpired(this);
-                else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
-                    item->CheckSoulboundTradeExpire(this);
-                else
-                    erase = true;
-            }
-        }
-        else
-        {
-            sLog.outError("Player::UpdateItemsWithTimeCheck: Can't find item (GUID: %u) but is in update storage for %s! Removing.", *itr, GetGuidStr().c_str());
-            erase = true;
-        }
-
-        if (erase)
-            m_itemsWithTimeCheck.erase(itr);
-    }
 }
 
 void Player::SetViewPoint(WorldObject* target, bool immediate, bool update_far_sight_field)

@@ -293,13 +293,12 @@ void Object::BuildOutOfRangeUpdateBlock(UpdateData * data) const
     data->AddOutOfRangeGUID(GetObjectGuid());
 }
 
-void Object::DestroyForPlayer( Player *target, bool anim ) const
+void Object::DestroyForPlayer(Player *target) const
 {
     MANGOS_ASSERT(target);
 
     WorldPacket data(SMSG_DESTROY_OBJECT, 9);
     data << GetObjectGuid();
-    data << uint8(anim ? 1 : 0);                            // WotLK (bool), may be despawn animation
     target->GetSession()->SendPacket(&data);
 }
 
@@ -329,10 +328,7 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
         *data << float(unit->GetSpeed(MOVE_RUN_BACK));
         *data << float(unit->GetSpeed(MOVE_SWIM));
         *data << float(unit->GetSpeed(MOVE_SWIM_BACK));
-        *data << float(unit->GetSpeed(MOVE_FLIGHT));
-        *data << float(unit->GetSpeed(MOVE_FLIGHT_BACK));
         *data << float(unit->GetSpeed(MOVE_TURN_RATE));
-        *data << float(unit->GetSpeed(MOVE_PITCH_RATE));
 
         // 0x08000000
         if (unit->m_movementInfo.GetMovementFlags() & MOVEFLAG_SPLINE_ENABLED)
@@ -518,7 +514,9 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
         {
             if (((GameObject*)this)->ActivateToQuest(target) || target->isGameMaster())
                 IsActivateToQuest = true;
-            updateMask->SetBit(GAMEOBJECT_BYTES_1);         // why do we need this here?
+            
+            updateMask->SetBit(GAMEOBJECT_DYN_FLAGS);
+            updateMask->SetBit(GAMEOBJECT_ANIMPROGRESS);
         }
         else if (isType(TYPEMASK_UNIT))
         {
@@ -1540,18 +1538,18 @@ void WorldObject::MonsterYell(const char* text, uint32 language, Unit* target)
 void WorldObject::MonsterTextEmote(const char* text, Unit* target, bool IsBossEmote)
 {
     WorldPacket data(SMSG_MESSAGECHAT, 200);
-    BuildMonsterChat(&data, GetObjectGuid(), IsBossEmote ? CHAT_MSG_RAID_BOSS_EMOTE : CHAT_MSG_MONSTER_EMOTE, text, LANG_UNIVERSAL,
+    BuildMonsterChat(&data, GetObjectGuid(), CHAT_MSG_MONSTER_EMOTE, text, LANG_UNIVERSAL,
         GetName(), target ? target->GetObjectGuid() : ObjectGuid(), target ? target->GetName() : "");
     SendMessageToSetInRange(&data, sWorld.getConfig(IsBossEmote ? CONFIG_FLOAT_LISTEN_RANGE_YELL : CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE), true);
 }
 
-void WorldObject::MonsterWhisper(const char* text, Unit* target, bool IsBossWhisper)
+void WorldObject::MonsterWhisper(const char* text, Unit* target)
 {
     if (!target || target->GetTypeId() != TYPEID_PLAYER)
         return;
 
     WorldPacket data(SMSG_MESSAGECHAT, 200);
-    BuildMonsterChat(&data, GetObjectGuid(), IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, text, LANG_UNIVERSAL,
+    BuildMonsterChat(&data, GetObjectGuid(), CHAT_MSG_MONSTER_WHISPER, text, LANG_UNIVERSAL,
         GetName(), target->GetObjectGuid(), target->GetName());
     ((Player*)target)->GetSession()->SendPacket(&data);
 }
@@ -1614,13 +1612,13 @@ void WorldObject::MonsterTextEmote(int32 textId, Unit* target, bool IsBossEmote)
 {
     float range = sWorld.getConfig(IsBossEmote ? CONFIG_FLOAT_LISTEN_RANGE_YELL : CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE);
 
-    MaNGOS::MonsterChatBuilder say_build(*this, IsBossEmote ? CHAT_MSG_RAID_BOSS_EMOTE : CHAT_MSG_MONSTER_EMOTE, textId, LANG_UNIVERSAL, target);
+    MaNGOS::MonsterChatBuilder say_build(*this, CHAT_MSG_MONSTER_EMOTE, textId, LANG_UNIVERSAL, target);
     MaNGOS::LocalizedPacketDo<MaNGOS::MonsterChatBuilder> say_do(say_build);
     MaNGOS::CameraDistWorker<MaNGOS::LocalizedPacketDo<MaNGOS::MonsterChatBuilder> > say_worker(this,range,say_do);
     Cell::VisitWorldObjects(this, say_worker, range);
 }
 
-void WorldObject::MonsterWhisper(int32 textId, Unit* target, bool IsBossWhisper)
+void WorldObject::MonsterWhisper(int32 textId, Unit* target)
 {
     if (!target || target->GetTypeId() != TYPEID_PLAYER)
         return;
@@ -1629,7 +1627,7 @@ void WorldObject::MonsterWhisper(int32 textId, Unit* target, bool IsBossWhisper)
     char const* text = sObjectMgr.GetMangosString(textId, loc_idx);
 
     WorldPacket data(SMSG_MESSAGECHAT, 200);
-    BuildMonsterChat(&data, GetObjectGuid(), IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, text, LANG_UNIVERSAL,
+    BuildMonsterChat(&data, GetObjectGuid(), CHAT_MSG_MONSTER_WHISPER, text, LANG_UNIVERSAL,
         GetNameForLocaleIdx(loc_idx), target->GetObjectGuid(), "");
 
     ((Player*)target)->GetSession()->SendPacket(&data);
@@ -1637,22 +1635,27 @@ void WorldObject::MonsterWhisper(int32 textId, Unit* target, bool IsBossWhisper)
 
 void WorldObject::BuildMonsterChat(WorldPacket *data, ObjectGuid senderGuid, uint8 msgtype, char const* text, uint32 language, char const* name, ObjectGuid targetGuid, char const* targetName)
 {
+    bool isEmote = false;
+    if (msgtype == CHAT_MSG_MONSTER_EMOTE || msgtype == CHAT_MSG_RAID_BOSS_EMOTE)
+        isEmote = true;
+
     *data << uint8(msgtype);
     *data << uint32(language);
-    *data << ObjectGuid(senderGuid);
-    *data << uint32(0);                                     // 2.1.0
-    *data << uint32(strlen(name)+1);
+    if (!isEmote)
+        *data << senderGuid;
+    *data << uint32(strlen(name) + 1);
     *data << name;
-    *data << ObjectGuid(targetGuid);                        // Unit Target
+    *data << targetGuid;                                    // Unit Target
     if (targetGuid && !targetGuid.IsPlayer())
     {
-        *data << uint32(strlen(targetName)+1);              // target name length
+        *data << uint32(strlen(targetName) + 1);            // target name length
         *data << targetName;                                // target name
     }
-    *data << uint32(strlen(text)+1);
+    *data << uint32(strlen(text) + 1);
     *data << text;
     *data << uint8(0);                                      // ChatTag
 }
+
 
 void WorldObject::SendMessageToSet(WorldPacket *data, bool /*bToSelf*/)
 {

@@ -1811,10 +1811,10 @@ void GameObject::SetWorldRotation(float qx, float qy, float qz, float qw)
 
 void GameObject::SetTransportPathRotation(QuaternionData rotation)
 {
-    SetFloatValue(GAMEOBJECT_PARENTROTATION + 0, rotation.x);
-    SetFloatValue(GAMEOBJECT_PARENTROTATION + 1, rotation.y);
-    SetFloatValue(GAMEOBJECT_PARENTROTATION + 2, rotation.z);
-    SetFloatValue(GAMEOBJECT_PARENTROTATION + 3, rotation.w);
+    SetFloatValue(GAMEOBJECT_ROTATION + 0, rotation.x);
+    SetFloatValue(GAMEOBJECT_ROTATION + 1, rotation.y);
+    SetFloatValue(GAMEOBJECT_ROTATION + 2, rotation.z);
+    SetFloatValue(GAMEOBJECT_ROTATION + 3, rotation.w);
 }
 
 void GameObject::SetWorldRotationAngles(float z_rot, float y_rot, float x_rot)
@@ -1934,7 +1934,7 @@ void GameObject::SetLootState(LootState state)
 
 void GameObject::SetGoState(GOState state)
 {
-    SetByteValue(GAMEOBJECT_BYTES_1, 0, state);
+    SetUInt32Value(GAMEOBJECT_STATE, state);
     if (m_model)
     {
         if (!IsInWorld())

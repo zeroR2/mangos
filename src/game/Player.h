@@ -1250,10 +1250,6 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void UpdateEnchantTime(uint32 time);
 
-        void AddItemWithTimeCheck(uint32 lowGuid);
-        void RemoveItemWithTimeCheck(uint32 lowGuid);
-        void UpdateItemsWithTimeCheck();
-
         void UpdateItemDuration(uint32 time, bool realtimeonly = false);
         void AddEnchantmentDurations(Item *item);
         void RemoveEnchantmentDurations(Item *item);
@@ -2572,11 +2568,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         }
 
         void _fillGearScoreData(Item* item, GearScoreVec* gearScore, uint32& twoHandScore);
-
-        std::set<uint32> m_itemsWithTimeCheck;
-
-        void SendRefundInfo(Item* item);
-        void RefundItem(Item* item);
 
         Unit* m_mover;
         Camera* m_camera;

@@ -181,7 +181,7 @@ class MANGOS_DLL_SPEC Object
         void BuildOutOfRangeUpdateBlock( UpdateData *data ) const;
         void BuildMovementUpdateBlock( UpdateData * data, uint16 flags = 0 ) const;
 
-        virtual void DestroyForPlayer( Player *target, bool anim = false ) const;
+        virtual void DestroyForPlayer(Player *target) const;
 
         const int32& GetInt32Value( uint16 index ) const
         {
@@ -570,11 +570,11 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void MonsterSay(const char* text, uint32 language, Unit* target = NULL);
         void MonsterYell(const char* text, uint32 language, Unit* target = NULL);
         void MonsterTextEmote(const char* text, Unit* target, bool IsBossEmote = false);
-        void MonsterWhisper(const char* text, Unit* target, bool IsBossWhisper = false);
+        void MonsterWhisper(const char* text, Unit* target);
         void MonsterSay(int32 textId, uint32 language, Unit* target = NULL);
         void MonsterYell(int32 textId, uint32 language, Unit* target = NULL);
         void MonsterTextEmote(int32 textId, Unit* target, bool IsBossEmote = false);
-        void MonsterWhisper(int32 textId, Unit* receiver, bool IsBossWhisper = false);
+        void MonsterWhisper(int32 textId, Unit* receiver);
         void MonsterYellToZone(int32 textId, uint32 language, Unit* target);
         static void BuildMonsterChat(WorldPacket *data, ObjectGuid senderGuid, uint8 msgtype, char const* text, uint32 language, char const* name, ObjectGuid targetGuid, char const* targetName);
 

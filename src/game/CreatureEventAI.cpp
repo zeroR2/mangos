@@ -1362,17 +1362,10 @@ void CreatureEventAI::DoScriptText(int32 textEntry, WorldObject* pSource, Unit* 
             pSource->MonsterTextEmote(textEntry, target, true);
             break;
         case CHAT_TYPE_WHISPER:
-        {
-            if (target && target->GetTypeId() == TYPEID_PLAYER)
-                pSource->MonsterWhisper(textEntry, target);
-            else
-                sLog.outErrorDb("CreatureEventAI: DoScriptText entry %i cannot whisper without target unit (TYPEID_PLAYER).", textEntry);
-            break;
-        }
         case CHAT_TYPE_BOSS_WHISPER:
         {
             if (target && target->GetTypeId() == TYPEID_PLAYER)
-                pSource->MonsterWhisper(textEntry, target, true);
+                pSource->MonsterWhisper(textEntry, target);
             else
                 sLog.outErrorDb("CreatureEventAI: DoScriptText entry %i cannot whisper without target unit (TYPEID_PLAYER).", textEntry);
             break;

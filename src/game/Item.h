@@ -226,7 +226,7 @@ enum ItemDynFlags
     ITEM_DYNFLAG_READABLE                     = 0x00000200, // can be open for read, it or item proto pagetText make show "Right click to read"
     ITEM_DYNFLAG_UNK10                        = 0x00000400,
     ITEM_DYNFLAG_UNK11                        = 0x00000800,
-    ITEM_DYNFLAG_REFUNDABLE                   = 0x00001000, // Item can be returned to vendor for its original cost (extended cost)
+    //ITEM_DYNFLAG_REFUNDABLE                   = 0x00001000, // Item can be returned to vendor for its original cost (extended cost)
     ITEM_DYNFLAG_UNK13                        = 0x00002000,
     ITEM_DYNFLAG_UNK14                        = 0x00004000,
     ITEM_DYNFLAG_UNK15                        = 0x00008000,
@@ -382,33 +382,12 @@ class MANGOS_DLL_SPEC Item : public Object
         void RemoveFromClientUpdateList();
         void BuildUpdateData(UpdateDataMapType& update_players);
 
-        // Item Refunding system
-        bool IsEligibleForRefund() const;
-        void SetRefundable(Player* owner, uint32 paidCost, uint16 paidExtendedCost, bool load = false);
-        void SetNotRefundable(Player* owner, bool changeState = true);
-
-        bool LoadRefundDataFromDB(Player* owner);
-        bool CheckRefundExpired(Player* owner);
-
         uint32 GetPaidMoney() const { return m_paidCost; }
         uint32 GetPaidExtendedCost() const { return m_paidExtCost; }
-        // Soulbound trade system
-        bool IsEligibleForSoulboundTrade(AllowedLooterSet* allowedLooters) const;
-        void SetSoulboundTradeable(Player* owner, AllowedLooterSet* allowedLooters, bool load = false);
-        void SetNotSoulboundTradeable(Player* owner, bool load = false);
 
-        bool LoadSoulboundTradeableDataFromDB(Player* owner);
-        bool CheckSoulboundTradeExpire(Player* owner);
     private:
-        bool IsRefundOrSoulboundTradeExpired(Player* owner) const;
 
         void DeleteLootFromDB();
-
-        void DeleteRefundDataFromDB();
-        void SaveRefundDataToDB();
-
-        void DeleteSoulboundTradeableFromDB();
-        void SaveSoulboundTradeableToDB();
 
         std::string m_text;
         Bag* m_container;

@@ -526,12 +526,6 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
             return;
         }
 
-        // prevent selling item for sellprice when the item is still refundable
-        // this probably happens when right clicking a refundable item, the client sends both
-        // CMSG_SELL_ITEM and CMSG_REFUND_ITEM
-        if (pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
-            return; // Therefore, no feedback to client
-
         // special case at auto sell (sell all)
         if (count == 0)
         {
@@ -1084,14 +1078,6 @@ void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
         SendPacket(&data);
         return;
     }
-    else
-    {
-        // listed in dbc or not expected to exist unknown item
-        if (sItemStore.LookupEntry(itemid))
-            sLog.outErrorDb("WORLD: CMSG_ITEM_NAME_QUERY for item %u failed (item listed in Item.dbc but not exist in DB)", itemid);
-        else
-            sLog.outError("WORLD: CMSG_ITEM_NAME_QUERY for item %u failed (unknown item, not listed in Item.dbc)", itemid);
-    }
 }
 
 void WorldSession::HandleWrapItemOpcode(WorldPacket& recv_data)
@@ -1222,40 +1208,6 @@ void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
 
     GetPlayer()->ApplyEnchantment(item, TEMP_ENCHANTMENT_SLOT, false);
     item->ClearEnchantment(TEMP_ENCHANTMENT_SLOT);
-}
-
-void WorldSession::HandleItemRefundInfoRequest(WorldPacket& recv_data)
-{
-    DEBUG_LOG("WORLD: CMSG_GET_ITEM_REFUND_INFO");
-
-    ObjectGuid itemGuid;
-    recv_data >> itemGuid;
-
-    Item* item = GetPlayer()->GetItemByGuid(itemGuid);
-    if (!item)
-    {
-        DEBUG_LOG("Item refund: item not found!");
-        return;
-    }
-
-    GetPlayer()->SendRefundInfo(item);
-}
-
-void WorldSession::HandleItemRefund(WorldPacket &recv_data)
-{
-    DEBUG_LOG("WORLD: CMSG_ITEM_REFUND");
-
-    ObjectGuid itemGuid;
-    recv_data >> itemGuid;
-
-    Item* item = GetPlayer()->GetItemByGuid(itemGuid);
-    if (!item)
-    {
-        DEBUG_LOG("Item refund: item not found!");
-        return;
-    }
-
-    GetPlayer()->RefundItem(item);
 }
 
 /**
