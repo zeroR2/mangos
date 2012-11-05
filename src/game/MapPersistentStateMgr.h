@@ -338,17 +338,13 @@ class DungeonResetScheduler
         void LoadResetTimes();
 
     public:                                                 // accessors
-        time_t GetResetTimeFor(uint32 mapid) const
-        {
-        }
+        time_t GetResetTimeFor(uint32 mapid) { return m_resetTimeByMapId[mapid]; }
 
-        static uint32 GetMaxResetTimeFor();
+        static uint32 GetMaxResetTimeFor(InstanceTemplate const* temp);
         static time_t CalculateNextResetTime();
 
     public:                                                 // modifiers
-        void SetResetTimeFor(uint32 mapid, time_t t)
-        {
-        }
+        void SetResetTimeFor(uint32 mapid, time_t t) { m_resetTimeByMapId[mapid] = t; }
 
         void ScheduleReset(bool add, time_t time, DungeonResetEvent event);
 
@@ -356,6 +352,9 @@ class DungeonResetScheduler
 
     private:                                                // fields
         MapPersistentStateManager& m_InstanceSaves;
+
+        typedef std::vector<time_t /*resetTime*/> ResetTimeVector;
+        ResetTimeVector m_resetTimeByMapId;
 
         typedef std::multimap<time_t /*resetTime*/, DungeonResetEvent> ResetTimeQueue;
         ResetTimeQueue m_resetTimeQueue;

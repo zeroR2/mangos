@@ -1007,13 +1007,14 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z, uint
                 {
                     if (AreaTableEntry const* area = GetAreaEntryByAreaFlagAndMap(GetAreaFlag(x, y, z), GetMapId()))
                     {
-                        uint32 overrideLiquid = area->LiquidTypeOverride[liquidFlagType];
-                        if (!overrideLiquid && area->zone)
-                        {
-                            area = GetAreaEntryByAreaID(area->zone);
-                            if (area)
-                                overrideLiquid = area->LiquidTypeOverride[liquidFlagType];
-                        }
+                        uint32 overrideLiquid = 0;
+//                         uint32 overrideLiquid = area->LiquidTypeOverride[liquidFlagType];
+//                         if (!overrideLiquid && area->zone)
+//                         {
+//                             area = GetAreaEntryByAreaID(area->zone);
+//                             if (area)
+//                                 overrideLiquid = area->LiquidTypeOverride[liquidFlagType];
+//                         }
 
                         if (LiquidTypeEntry const* liq = sLiquidTypeStore.LookupEntry(overrideLiquid))
                         {

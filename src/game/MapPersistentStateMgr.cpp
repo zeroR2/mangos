@@ -274,131 +274,6 @@ InstanceTemplate const* DungeonPersistentState::GetTemplate() const
     return ObjectMgr::GetInstanceTemplate(GetMapId());
 }
 
-bool DungeonPersistentState::IsCompleted()
-{
-    DungeonEncounterMap const* encounterList = sObjectMgr.GetDungeonEncounters();
-
-    if (!encounterList)
-        return false;
-
-    for (DungeonEncounterMap::const_iterator itr = encounterList->begin(); itr != encounterList->end(); ++itr)
-    {
-        DungeonEncounter const* encounter = itr->second;
-
-        if (!encounter)
-            continue;
-
-        if (GetMapId() != encounter->dbcEntry->mapId)
-            continue;
-
-        if (!(m_completedEncountersMask & ( 1 << encounter->dbcEntry->encounterIndex)))
-            return false;
-    }
-    return true;
-}
-
-void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint32 creditEntry)
-{
-    DungeonEncounterMapBounds bounds = sObjectMgr.GetDungeonEncounterBounds(creditEntry);
-
-    for (DungeonEncounterMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
-    {
-        DungeonEncounterEntry const* dbcEntry = itr->second->dbcEntry;
-
-        if (itr->second->creditType == type && dbcEntry->mapId == GetMapId())
-        {
-            uint32 oldMask = m_completedEncountersMask;
-            m_completedEncountersMask |= 1 << dbcEntry->encounterIndex;
-
-            DungeonMap* dungeon = (DungeonMap*)GetMap();
-
-            if (!dungeon || dungeon->GetPlayers().isEmpty())
-                return;
-
-            Player* player = dungeon->GetPlayers().begin()->getSource();
-
-            if ( m_completedEncountersMask != oldMask)
-            {
-                if (dungeon && player)
-                    dungeon->PermBindAllPlayers(player, dungeon->IsRaid());
-
-                CharacterDatabase.PExecute("UPDATE instance SET encountersMask = '%u' WHERE id = '%u'", m_completedEncountersMask, GetInstanceId());
-
-                uint32 dungeonId = itr->second->lastEncounterDungeon;
-
-                DEBUG_LOG("DungeonPersistentState: Dungeon %s (Id %u) completed encounter %s %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()], dungeonId ? "(last)" : "");
-            }
-            return;
-        }
-    }
-}
-
-void DungeonPersistentState::UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 param1 /*= 0*/, uint8 param2 /*= 0*/)
-{
-    if (linkedGuid.IsEmpty())
-        return;
-
-    SpecialEncountersMap::iterator itr = m_specialEncountersMap.find(linkedGuid);
-
-    if (itr == m_specialEncountersMap.end())
-        m_specialEncountersMap.insert(SpecialEncountersMap::value_type(linkedGuid,SpecialEncounterState(linkedGuid, command, param1, param2)));
-    else
-    {
-        itr->second.SetCommand(command);
-        itr->second.data1 = param1;
-        itr->second.data2 = param2;
-    }
-
-    SendSpecialEncounterState(linkedGuid);
-}
-
-void DungeonPersistentState::SendSpecialEncounterState(ObjectGuid guid)
-{
-    // Possible need move this method to DungeonMap class
-    DungeonMap* dungeon = (DungeonMap*)GetMap();
-    if (!dungeon || guid.IsEmpty())
-        return;
-
-    SpecialEncountersMap::iterator itr = m_specialEncountersMap.find(guid);
-
-    if (itr == m_specialEncountersMap.end())
-        return;
-
-    SpecialEncounterState* state = &itr->second;
-
-    if (!state || state->lastCommand >= ENCOUNTER_FRAME_MAX)
-        return;
-
-    // size of this packet is at most 15 (usually less)
-    WorldPacket data(SMSG_INSTANCE_ENCOUNTER, 15);
-
-    data << uint32(state->lastCommand);
-
-    switch (state->lastCommand)
-    {
-        case ENCOUNTER_FRAME_ENGAGE:
-        case ENCOUNTER_FRAME_DISENGAGE:
-        case ENCOUNTER_FRAME_UPDATE_PRIORITY:
-            data << state->guid.WriteAsPacked();
-            data << uint8(state->data1);
-            break;
-        case ENCOUNTER_FRAME_ADD_TIMER:
-        case ENCOUNTER_FRAME_ENABLE_OBJECTIVE:
-        case ENCOUNTER_FRAME_DISABLE_OBJECTIVE:
-            data << uint8(state->data1);
-            break;
-        case ENCOUNTER_FRAME_UPDATE_OBJECTIVE:
-            data << uint8(state->data1);
-            data << uint8(state->data2);
-            break;
-        case ENCOUNTER_FRAME_UNK7:
-        default:
-            break;
-    }
-
-    dungeon->SendToPlayers(&data);
-}
-
 time_t DungeonPersistentState::GetResetTimeForDB() const
 {
     // only state the reset time for normal instances
@@ -407,14 +282,6 @@ time_t DungeonPersistentState::GetResetTimeForDB() const
         return 0;
     else
         return GetResetTime();
-}
-
-time_t DungeonPersistentState::GetRealResetTime() const
-{
-    if (GetResetTime())
-        return GetResetTime();
-
-    return DungeonResetScheduler::CalculateNextResetTime(0);
 }
 
 //== BattleGroundPersistentState functions =================
@@ -428,17 +295,12 @@ bool BattleGroundPersistentState::CanBeUnload() const
 
 //== DungeonResetScheduler functions ======================
 
-uint32 DungeonResetScheduler::GetMaxResetTimeFor()
+uint32 DungeonResetScheduler::GetMaxResetTimeFor(InstanceTemplate const* temp)
 {
-    uint32 delay = uint32(mapDiff->resetTime / DAY * sWorld.getConfig(CONFIG_FLOAT_RATE_INSTANCE_RESET_TIME)) * DAY;
+    if (!temp)
+        return 0;
 
-    if (delay < DAY)                                        // the reset_delay must be at least one day
-        delay = DAY;
-
-    if (delay > INSTANCE_MAX_RESET_OFFSET)                  // the reset_delay must be no more than X days
-        delay = INSTANCE_MAX_RESET_OFFSET;
-
-    return delay;
+    return temp->reset_delay * DAY;
 }
 
 time_t DungeonResetScheduler::CalculateNextResetTime()

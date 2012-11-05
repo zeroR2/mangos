@@ -599,7 +599,7 @@ void Group::SendLootAllPassed(Roll const& r)
     data << uint32(r.itemSlot);                             // item slot in loot
     data << uint32(r.itemid);                               // The itemEntryId for the item that shall be rolled for
     data << uint32(r.itemRandomPropId);                     // Item random property ID
-    data << uint32(r.itemRandomSuffix);                     // Item random suffix ID
+    data << uint32(0);                                      // Item random suffix ID
 
     for( Roll::PlayerVote::const_iterator itr=r.playerVote.begin(); itr!=r.playerVote.end(); ++itr)
     {
@@ -1054,15 +1054,6 @@ void Group::SendUpdate()
         data << uint8(m_groupType);                         // group type (flags in 3.3)
         data << uint8(citr->group);                         // groupid
         data << uint8(citr->flags);                         // group flags
-        data << (isLFGGroup() ? uint8(citr->roles) : uint8(0)); // roles mask
-        if(isLFGGroup())
-        {
-            uint32 dungeonID = GetLFGGroupState()->GetDungeon() ? GetLFGGroupState()->GetDungeon()->ID : 0;
-            data << uint8(GetLFGGroupState()->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
-            data << uint32(dungeonID);
-        }
-        data << GetObjectGuid();                            // group guid
-        data << uint32(0);                                  // 3.3, this value increments every time SMSG_GROUP_LIST is sent
         data << uint32(GetMembersCount()-1);
         for(member_citerator citr2 = m_memberSlots.begin(); citr2 != m_memberSlots.end(); ++citr2)
         {
@@ -1074,10 +1065,8 @@ void Group::SendUpdate()
 
             data << citr2->name;
             data << citr2->guid;
-            data << uint8(onlineState);                     // online-state
             data << uint8(citr2->group);                    // groupid
             data << uint8(citr2->flags);                    // group flags
-            data << (isLFGGroup() ? uint8(citr2->roles) : uint8(0));  // 3.3, role?
         }
 
         data << m_leaderGuid;                               // leader guid
@@ -1152,10 +1141,6 @@ bool Group::_addMember(ObjectGuid guid, const char* name)
     // get first not-full group
     uint8 groupid = 0;
     GroupFlagMask flags   = GROUP_MEMBER;
-    LFGRoleMask roles = LFG_ROLE_MASK_NONE;
-
-    if (isLFGGroup() && sObjectMgr.GetPlayer(guid))
-        roles = sObjectMgr.GetPlayer(guid)->GetLFGPlayerState()->GetRoles();
 
     if (m_subGroupsCounts)
     {
@@ -1173,10 +1158,10 @@ bool Group::_addMember(ObjectGuid guid, const char* name)
             return false;
     }
 
-    return _addMember(guid, name, groupid, flags, roles);
+    return _addMember(guid, name, groupid, flags);
 }
 
-bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags, LFGRoleMask roles)
+bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags)
 {
     if (IsFull())
         return false;
@@ -1197,7 +1182,6 @@ bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlag
     member.name      = name;
     member.group     = group;
     member.flags     = flags;
-    member.roles     = roles;
     member.lastMap   = lastMap;
     m_memberSlots.push_back(member);
 
@@ -1234,8 +1218,8 @@ bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlag
     if (!isBGGroup())
     {
         // insert into group table
-        CharacterDatabase.PExecute("INSERT INTO group_member(groupId,memberGuid,memberFlags,subgroup,roles) VALUES('%u','%u','%u','%u','%u')",
-            m_Guid.GetCounter(), member.guid.GetCounter(), member.flags, member.group, member.roles);
+        CharacterDatabase.PExecute("INSERT INTO group_member(groupId,memberGuid,memberFlags,subgroup) VALUES('%u','%u','%u','%u')",
+            m_Guid.GetCounter(), member.guid.GetCounter(), member.flags, member.group);
     }
 
     return true;
@@ -1311,7 +1295,7 @@ void Group::_setLeader(ObjectGuid guid)
 
         if (player)
         {
-            for(BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end();)
+            for(BoundInstancesMap::iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
             {
                 if(itr->second.perm)
                 {
@@ -1975,68 +1959,4 @@ void Group::RewardGroupAtKill(Unit* pVictim, Player* player_tap)
                 RewardGroupAtKill_helper(player_tap, pVictim, count, PvP, group_rate, sum_level, is_dungeon, not_gray_member_with_max_level, member_with_max_level, xp);
         }
     }
-}
-
-bool Group::ConvertToLFG(LFGType type)
-{
-    if (isBGGroup())
-        return false;
-
-    switch(type)
-    {
-        case LFG_TYPE_DUNGEON:
-        case LFG_TYPE_QUEST:
-        case LFG_TYPE_ZONE:
-        case LFG_TYPE_HEROIC_DUNGEON:
-            if (isRaidGroup())
-                return false;
-            m_groupType = GroupType(m_groupType | GROUPTYPE_LFD);
-            break;
-        case LFG_TYPE_RANDOM_DUNGEON:
-            if (isRaidGroup())
-                return false;
-            m_groupType = GroupType(m_groupType | GROUPTYPE_LFD | GROUPTYPE_UNK1);
-            break;
-        case LFG_TYPE_RAID:
-            if (!isRaidGroup())
-                ConvertToRaid();
-            m_groupType = GroupType(m_groupType | GROUPTYPE_LFD);
-            break;
-        default:
-            return false;
-    }
-
-    m_lootMethod = NEED_BEFORE_GREED;
-    SendUpdate();
-
-    static SqlStatementID updGgoup;
-    SqlStatement stmt = CharacterDatabase.CreateStatement(updGgoup, "UPDATE groups SET groupType= ? WHERE groupId= ?");
-    stmt.PExecute(uint8(m_groupType), GetObjectGuid().GetCounter());
-    return true;
-}
-
-void Group::SetGroupRoles(ObjectGuid guid, LFGRoleMask roles)
-{
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-    {
-        if (itr->guid == guid )
-        {
-            itr->roles = roles;
-            static SqlStatementID updGgoupMember;
-            SqlStatement stmt = CharacterDatabase.CreateStatement(updGgoupMember, "UPDATE group_member SET roles = ? WHERE memberGuid = ?");
-            stmt.PExecute(uint8(itr->roles), itr->guid.GetCounter());
-            SendUpdate();
-            return;
-        }
-    }
-}
-
-LFGRoleMask Group::GetGroupRoles(ObjectGuid guid)
-{
-    for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
-    {
-        if (itr->guid == guid)
-            return itr->roles;
-    }
-    return LFG_ROLE_MASK_NONE;
 }

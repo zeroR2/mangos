@@ -2572,7 +2572,7 @@ bool ChatHandler::HandleListItemCommand(char* args)
         return false;
     }
 
-    PSendSysMessage(LANG_COMMAND_LISTITEMMESSAGE, item_id, inv_count + mail_count + auc_count + guild_count, inv_count, mail_count, auc_count, guild_count);
+    PSendSysMessage(LANG_COMMAND_LISTITEMMESSAGE, item_id, inv_count + mail_count + auc_count, inv_count, mail_count, auc_count);
 
     return true;
 }

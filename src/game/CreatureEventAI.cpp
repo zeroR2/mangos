@@ -75,15 +75,7 @@ CreatureEventAI::CreatureEventAI(Creature* c) : CreatureAI(c), m_EventUpdateTime
             if ((*i).event_flags & EFLAG_DEBUG_ONLY)
                 continue;
 #endif
-            if (m_creature->GetMap()->IsDungeon())
-            {
-                if ((1 << (m_creature->GetMap()->GetSpawnMode() + 1)) & (*i).event_flags)
-                {
-                    ++events_count;
-                }
-            }
-            else
-                ++events_count;
+            ++events_count;
         }
         // EventMap had events but they were not added because they must be for instance
         if (events_count == 0)
@@ -99,16 +91,7 @@ CreatureEventAI::CreatureEventAI(Creature* c) : CreatureAI(c), m_EventUpdateTime
                 if ((*i).event_flags & EFLAG_DEBUG_ONLY)
                     continue;
 #endif
-                if (m_creature->GetMap()->IsDungeon())
-                {
-                    if ((1 << (m_creature->GetMap()->GetSpawnMode() + 1)) & (*i).event_flags)
-                    {
-                        // event flagged for instance mode
-                        m_CreatureEventAIList.push_back(CreatureEventAIHolder(*i));
-                    }
-                }
-                else
-                    m_CreatureEventAIList.push_back(CreatureEventAIHolder(*i));
+                m_CreatureEventAIList.push_back(CreatureEventAIHolder(*i));
             }
         }
     }

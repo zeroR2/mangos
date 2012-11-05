@@ -176,19 +176,12 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         GetPlayer()->m_taxi.ClearTaxiDestinations();
     }
 
-    if (mInstance)
+    if (mEntry->IsRaid() && mInstance)
     {
-        Difficulty diff = GetPlayer()->GetDifficulty(mEntry->IsRaid());
-        if(MapDifficultyEntry const* mapDiff = GetMapDifficultyData(mEntry->MapID,diff))
+        if (time_t timeReset = sMapPersistentStateMgr.GetScheduler().GetResetTimeFor(mEntry->MapID))
         {
-            if (mapDiff->resetTime)
-            {
-                if (time_t timeReset = sMapPersistentStateMgr.GetScheduler().GetResetTimeFor(mEntry->MapID,diff))
-                {
-                    uint32 timeleft = uint32(timeReset - time(NULL));
-                    GetPlayer()->SendInstanceResetWarning(mEntry->MapID, timeleft);
-                }
-            }
+            uint32 timeleft = uint32(timeReset - time(NULL));
+            GetPlayer()->SendInstanceResetWarning(mEntry->MapID, timeleft);
         }
     }
 
@@ -345,9 +338,6 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
         case CMSG_FORCE_SWIM_SPEED_CHANGE_ACK:          move_type = MOVE_SWIM;          force_move_type = MOVE_SWIM;        break;
         case CMSG_FORCE_SWIM_BACK_SPEED_CHANGE_ACK:     move_type = MOVE_SWIM_BACK;     force_move_type = MOVE_SWIM_BACK;   break;
         case CMSG_FORCE_TURN_RATE_CHANGE_ACK:           move_type = MOVE_TURN_RATE;     force_move_type = MOVE_TURN_RATE;   break;
-        case CMSG_FORCE_FLIGHT_SPEED_CHANGE_ACK:        move_type = MOVE_FLIGHT;        force_move_type = MOVE_FLIGHT;      break;
-        case CMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE_ACK:   move_type = MOVE_FLIGHT_BACK;   force_move_type = MOVE_FLIGHT_BACK; break;
-        case CMSG_FORCE_PITCH_RATE_CHANGE_ACK:          move_type = MOVE_PITCH_RATE;    force_move_type = MOVE_PITCH_RATE;  break;
         default:
             sLog.outError("WorldSession::HandleForceSpeedChangeAck: Unknown move type opcode: %u", opcode);
             return;

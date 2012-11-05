@@ -998,9 +998,9 @@ class ObjectMgr
         void SetDBCLocaleIndex(uint32 lang) { DBCLocaleIndex = GetIndexForLocale(LocaleConstant(lang)); }
 
         // global grid objects state (static DB spawns, global spawn mods from gameevent system)
-        CellObjectGuids const& GetCellObjectGuids(uint16 mapid, uint8 spawnMode, uint32 cell_id)
+        CellObjectGuids const& GetCellObjectGuids(uint16 mapid, uint32 cell_id)
         {
-            return mMapObjectGuids[MAKE_PAIR32(mapid,spawnMode)][cell_id];
+            return mMapObjectGuids[mapid][cell_id];
         }
 
         // modifiers for global grid objects state (static DB spawns, global spawn mods from gameevent system)

@@ -176,9 +176,6 @@ ObjectMgr::~ObjectMgr()
 
     for (PetScalingDataMap::iterator itr = m_PetScalingData.begin(); itr != m_PetScalingData.end(); ++itr)
         delete itr->second;
-
-    for (DungeonEncounterMap::iterator itr = m_DungeonEncounters.begin(); itr != m_DungeonEncounters.end(); ++itr)
-        delete itr->second;
 }
 
 Group* ObjectMgr::GetGroupById(uint32 id) const
@@ -7707,31 +7704,6 @@ bool PlayerCondition::Meets(Player const * player) const
         {
             FactionEntry const* faction = sFactionStore.LookupEntry(m_value1);
             return faction && player->GetReputationMgr().GetRank(faction) <= ReputationRank(m_value2);
-        }
-        case CONDITION_COMPLETED_ENCOUNTER:
-        {
-            if (!player->GetMap()->IsDungeon())
-            {
-                sLog.outErrorDb("CONDITION_COMPLETED_ENCOUNTER (entry %u) is used outside of a dungeon (on Map %u) by %s", m_entry, player->GetMapId(), player->GetGuidStr().c_str());
-                return false;
-            }
-
-            uint32 completedEncounterMask = ((DungeonMap*)player->GetMap())->GetPersistanceState()->GetCompletedEncountersMask();
-            DungeonEncounterEntry const* dbcEntry1 = sDungeonEncounterStore.LookupEntry(m_value1);
-            DungeonEncounterEntry const* dbcEntry2 = sDungeonEncounterStore.LookupEntry(m_value2);
-            // Check that on proper map
-            if (dbcEntry1->mapId != player->GetMapId())
-            {
-                sLog.outErrorDb("CONDITION_COMPLETED_ENCOUNTER (entry %u, DungeonEncounterEntry %u) is used on wrong map (used on Map %u) by %s", m_entry, m_value1, player->GetMapId(), player->GetGuidStr().c_str());
-                return false;
-            }
-            // Select matching difficulties
-            if (player->GetDifficulty(player->GetMap()->IsRaid()) != Difficulty(dbcEntry1->Difficulty))
-                dbcEntry1 = NULL;
-            if (dbcEntry2 && player->GetDifficulty(player->GetMap()->IsRaid()) != Difficulty(dbcEntry2->Difficulty))
-                dbcEntry2 = NULL;
-
-            return completedEncounterMask & ((dbcEntry1 ? 1 << dbcEntry1->encounterIndex : 0) | (dbcEntry2 ? 1 << dbcEntry2->encounterIndex : 0));
         }
         default:
             return false;

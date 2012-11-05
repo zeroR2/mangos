@@ -72,6 +72,8 @@ struct InstanceTemplate
     uint32 map;                                             // instance map
     uint32 parent;                                          // non-continent parent instance (for instance with entrance in another instances)
                                                             // or 0 (not related to continent 0 map id)
+    uint32 maxPlayers;
+    uint32 reset_delay;
     uint32 levelMin;
     uint32 levelMax;
     uint32 script_id;
@@ -81,11 +83,6 @@ struct WorldTemplate
 {
     uint32 map;                                             // non-instance map
     uint32 script_id;
-};
-
-enum LevelRequirementVsMode
-{
-    LEVELREQUIREMENT_HEROIC = 70
 };
 
 #if defined( __GNUC__ )
@@ -207,8 +204,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         uint32 GetInstanceId() const { return i_InstanceId; }
         virtual bool CanEnter(Player* /*player*/) { return true; }
         const char* GetMapName() const;
-
-        uint8 GetSpawnMode() const { return (i_spawnMode); }
 
         uint32 GetMaxPlayers() const;
         uint32 GetMaxResetDelay() const;
@@ -383,7 +378,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 
     protected:
         MapEntry const* i_mapEntry;
-        uint8 i_spawnMode;
         uint32 i_id;
         uint32 i_InstanceId;
         uint32 m_unloadTimer;
@@ -459,7 +453,7 @@ class MANGOS_DLL_SPEC DungeonMap : public Map
     private:
         using Map::GetPersistentState;                      // hide in subclass for overwrite
     public:
-        DungeonMap(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode);
+        DungeonMap(uint32 id, time_t, uint32 InstanceId);
         ~DungeonMap();
         bool Add(Player *);
         void Remove(Player *, bool);
@@ -485,7 +479,7 @@ class MANGOS_DLL_SPEC BattleGroundMap : public Map
     private:
         using Map::GetPersistentState;                      // hide in subclass for overwrite
     public:
-        BattleGroundMap(uint32 id, time_t, uint32 InstanceId, uint8 spawnMode);
+        BattleGroundMap(uint32 id, time_t, uint32 InstanceId);
         ~BattleGroundMap();
 
         void Update(const uint32&);

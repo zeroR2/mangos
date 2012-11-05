@@ -1005,10 +1005,10 @@ void Creature::SaveToDB()
         return;
     }
 
-    SaveToDB(GetMapId(), data->spawnMask, GetPhaseMask());
+    SaveToDB(GetMapId(), GetPhaseMask());
 }
 
-void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
+void Creature::SaveToDB(uint32 mapid, uint32 phaseMask)
 {
     // update in loaded data
     CreatureData& data = sObjectMgr.NewOrExistCreatureData(GetGUIDLow());
@@ -1035,7 +1035,6 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     // data->guid = guid don't must be update at save
     data.id = GetEntry();
     data.mapid = mapid;
-    data.spawnMask = spawnMask;
     data.phaseMask = phaseMask;
     data.modelid_override = displayId;
     data.equipmentId = GetEquipmentId();
@@ -1064,7 +1063,6 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
        << GetGUIDLow() << ","
        << data.id << ","
        << data.mapid << ","
-       << uint32(data.spawnMask) << ","                    // cast to prevent save as symbol
        << uint16(data.phaseMask) << ","                    // prevent out of range error
        << data.modelid_override << ","
        << data.equipmentId << ","

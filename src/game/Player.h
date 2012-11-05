@@ -1752,7 +1752,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetSession(WorldSession *s) { m_session = s; }
 
         void BuildCreateUpdateBlockForPlayer(UpdateData *data, Player *target) const;
-        void DestroyForPlayer(Player *target, bool anim = false) const;
+        void DestroyForPlayer(Player *target) const;
         void SendLogXPGain(uint32 GivenXP,Unit* victim,uint32 BonusXP, bool ReferAFriend);
 
         uint8 LastSwingErrorMsg() const { return m_swingErrorMsg; }

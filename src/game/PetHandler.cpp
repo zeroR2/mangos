@@ -458,7 +458,7 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
     if (pet->GetCharmInfo() && pet->GetCharmInfo()->GetGlobalCooldownMgr().HasGlobalCooldown(spellInfo))
         return;
 
-    bool triggered = bool(pet->GetTriggeredByClientAura(spellid));
+    bool triggered = false;
 
     // do not cast not learned spells
     if ((!pet->HasSpell(spellid) && !triggered)

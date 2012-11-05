@@ -1123,7 +1123,7 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
         pGameObj->SetRespawnTime(spawntimeSecs);
 
     // fill the gameobject data and save to the db
-    pGameObj->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), plr->GetPhaseMaskForSpawn());
+    pGameObj->SaveToDB(map->GetId(), plr->GetPhaseMaskForSpawn());
 
     // this will generate a new guid if the object is in an instance
     if (!pGameObj->LoadFromDB(db_lowGUID, map))
@@ -1501,7 +1501,7 @@ bool ChatHandler::HandleNpcAddCommand(char* args)
         return false;
     }
 
-    pCreature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+    pCreature->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
 
     uint32 db_guid = pCreature->GetGUIDLow();
 
@@ -3179,7 +3179,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
             return false;
         }
 
-        wpCreature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+        wpCreature->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
         // To call _LoadGoods(); _LoadQuests(); CreateTrainerSpells();
         wpCreature->LoadFromDB(wpCreature->GetGUIDLow(), map);
         map->Add(wpCreature);
@@ -3291,7 +3291,7 @@ bool ChatHandler::HandleWpModifyCommand(char* args)
                     return false;
                 }
 
-                wpCreature2->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+                wpCreature2->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
                 // To call _LoadGoods(); _LoadQuests(); CreateTrainerSpells();
                 wpCreature2->LoadFromDB(wpCreature2->GetGUIDLow(), map);
                 map->Add(wpCreature2);
@@ -3594,7 +3594,7 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             // set "wpguid" column to the visual waypoint
             WorldDatabase.PExecuteLog("UPDATE creature_movement SET wpguid=%u WHERE id=%u and point=%u", wpCreature->GetGUIDLow(), lowguid, point);
 
-            wpCreature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+            wpCreature->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
             // To call _LoadGoods(); _LoadQuests(); CreateTrainerSpells();
             wpCreature->LoadFromDB(wpCreature->GetGUIDLow(), map);
             map->Add(wpCreature);
@@ -3635,7 +3635,7 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             return false;
         }
 
-        pCreature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+        pCreature->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
         pCreature->LoadFromDB(pCreature->GetGUIDLow(), map);
         map->Add(pCreature);
         // player->PlayerTalkClass->SendPointOfInterest(x, y, 6, 6, 0, "First Waypoint");
@@ -3683,7 +3683,7 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             return false;
         }
 
-        pCreature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+        pCreature->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
         pCreature->LoadFromDB(pCreature->GetGUIDLow(), map);
         map->Add(pCreature);
         // player->PlayerTalkClass->SendPointOfInterest(x, y, 6, 6, 0, "Last Waypoint");

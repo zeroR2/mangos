@@ -41,7 +41,7 @@
 
 struct AreaTableEntry
 {
-    uint32  ID;                                             // 0        m_ID
+    /*uint32  ID;                                             // 0        m_ID
     uint32  mapid;                                          // 1        m_ContinentID
     uint32  zone;                                           // 2        m_ParentAreaID
     uint32  exploreFlag;                                    // 3        m_AreaBit
@@ -53,7 +53,26 @@ struct AreaTableEntry
                                                             // 9        m_IntroSound
     uint32    area_level;                                   // 10
     char*     area_name[8];                                 // 11-18 
-    uint32    team;                                         // 20
+    uint32    team;                                         // 20*/
+
+    uint32  ID;                                             // 0        m_ID
+    uint32  mapid;                                          // 1        m_ContinentID
+    uint32  zone;                                           // 2        m_ParentAreaID
+    uint32  exploreFlag;                                    // 3        m_AreaBit
+    uint32  flags;                                          // 4        m_flags
+    // 5        m_SoundProviderPref
+    // 6        m_SoundProviderPrefUnderwater
+    // 7        m_AmbienceID
+    // 8        m_ZoneMusic
+    // 9        m_IntroSound
+    int32   area_level;                                     // 10       m_ExplorationLevel
+    char*   area_name[16];                                  // 11-26    m_AreaName_lang
+    // 27 string flags
+    uint32  team;                                           // 28       m_factionGroupMask
+    uint32  LiquidTypeOverride[4];                          // 29-32    m_liquidTypeID[4]
+    // 33       m_minElevation
+    // 34       m_ambient_multiplier
+    // 35       m_lightid
 };
 
 struct AreaTriggerEntry
@@ -437,7 +456,7 @@ struct MailTemplateEntry
 
 struct MapEntry
 {
-    uint32  MapID;                                          // 0        m_ID
+    /*uint32  MapID;                                          // 0        m_ID
     //char*       internalname;                             // 1        m_Directory
     uint32  map_type;                                       // 2        m_InstanceType
     //uint32 isPvP;                                         // 3        m_PVP 0 or 1 for battlegrounds
@@ -453,7 +472,29 @@ struct MapEntry
     uint32  multimap_id;                                    // 38       m_LoadingScreenID (LoadingScreens.dbc)
                                                             // 39-40 not used
     //float   BattlefieldMapIconScale;                      // 41       m_minimapIconScale
-    // Helpers
+    // Helpers*/
+
+    uint32  MapID;                                          // 0        m_ID
+    //char*       internalname;                             // 1        m_Directory
+    uint32  map_type;                                       // 2        m_InstanceType
+    uint32 mapFlags;                                        // 3        m_Flags (0x100 - CAN_CHANGE_PLAYER_DIFFICULTY)
+    //uint32 isPvP;                                         // 4        m_PVP 0 or 1 for battlegrounds (not arenas)
+    char*   name[16];                                       // 5-20     m_MapName_lang
+    // 21 string flags
+    uint32  linked_zone;                                    // 22       m_areaTableID
+    //char*     hordeIntro[16];                             // 23-38    m_MapDescription0_lang
+    // 39 string flags
+    //char*     allianceIntro[16];                          // 40-55    m_MapDescription1_lang
+    // 56 string flags
+    uint32  multimap_id;                                    // 57       m_LoadingScreenID (LoadingScreens.dbc)
+    //float   BattlefieldMapIconScale;                      // 58       m_minimapIconScale
+    int32   ghost_entrance_map;                             // 59       m_corpseMapID map_id of entrance map in ghost mode (continent always and in most cases = normal entrance)
+    float   ghost_entrance_x;                               // 60       m_corpseX entrance x coordinate in ghost mode  (in most cases = normal entrance)
+    float   ghost_entrance_y;                               // 61       m_corpseY entrance y coordinate in ghost mode  (in most cases = normal entrance)
+    //uint32  timeOfDayOverride;                            // 62       m_timeOfDayOverride
+    uint32  addon;                                          // 63       m_expansionID
+    uint32  instanceResetOffset;                            // 64       m_raidOffset
+    //uint32 maxPlayers;                                    // 65       m_maxPlayers
 
     bool IsDungeon() const { return map_type == MAP_INSTANCE || map_type == MAP_RAID; }
     bool IsNonRaidDungeon() const { return map_type == MAP_INSTANCE; }
@@ -472,10 +513,10 @@ struct MapEntry
         return MapID == 0 || MapID == 1;
     }
 
-    /*bool IsTransport() const
+    bool IsTransport() const
     {
         return map_type == MAP_COMMON && mapFlags == MAP_FLAG_INSTANCEABLE;
-    }*/
+    }
 };
 
 struct QuestSortEntry

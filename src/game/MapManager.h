@@ -52,7 +52,7 @@ struct MANGOS_DLL_DECL MapID
 
     bool IsContinent() const
     {
-        return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
+        return nMapId == 0 || nMapId == 1;
     };
 
     uint32 nMapId;
