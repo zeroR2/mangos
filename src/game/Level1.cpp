@@ -590,11 +590,6 @@ bool ChatHandler::HandleGonameCommand(char* args)
                         _player->BindToInstance(save, !save->CanReset());
                 }
             }
-
-            if (cMap->IsRaid())
-                _player->SetRaidDifficulty(target->GetRaidDifficulty());
-            else
-                _player->SetDungeonDifficulty(target->GetDungeonDifficulty());
         }
 
         PSendSysMessage(LANG_APPEARING_AT, chrNameLink.c_str());

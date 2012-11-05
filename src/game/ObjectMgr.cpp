@@ -3310,8 +3310,8 @@ void ObjectMgr::LoadGroups()
 
     // -- loading members --
     count = 0;
-    //                                       0           1            2         3        4
-    result = CharacterDatabase.Query("SELECT memberGuid, memberFlags, subgroup, groupId, roles FROM group_member ORDER BY groupId");
+    //                                       0           1            2         3
+    result = CharacterDatabase.Query("SELECT memberGuid, memberFlags, subgroup, groupId FROM group_member ORDER BY groupId");
     if (!result)
     {
         BarGoLink bar2(1);
@@ -3333,7 +3333,6 @@ void ObjectMgr::LoadGroups()
             uint8  flags         = fields[1].GetUInt8();
             uint8  subgroup      = fields[2].GetUInt8();
             uint32 groupId       = fields[3].GetUInt32();
-            uint8  roles         = fields[4].GetUInt8();
             if (!group || group->GetId() != groupId)
             {
                 group = GetGroupById(groupId);
@@ -3346,7 +3345,7 @@ void ObjectMgr::LoadGroups()
                 }
             }
 
-            if (!group->LoadMemberFromDB(memberGuidlow, subgroup, GroupFlagMask(flags), LFGRoleMask(roles)))
+            if (!group->LoadMemberFromDB(memberGuidlow, subgroup, GroupFlagMask(flags)))
             {
                 sLog.outErrorDb("Incorrect entry in group_member table : member %s cannot be added to group (Id: %u)!",
                     memberGuid.GetString().c_str(), groupId);
@@ -3373,11 +3372,11 @@ void ObjectMgr::LoadGroups()
     // -- loading instances --
     count = 0;
     result = CharacterDatabase.Query(
-        //      0                          1    2         3          4                    5
-        "SELECT group_instance.leaderGuid, map, instance, permanent, instance.difficulty, resettime, "
-        // 6
+        //      0                          1    2         3          4
+        "SELECT group_instance.leaderGuid, map, instance, permanent, resettime, "
+        // 5
         "(SELECT COUNT(*) FROM character_instance WHERE guid = group_instance.leaderGuid AND instance = group_instance.instance AND permanent = 1 LIMIT 1), "
-        // 7              8
+        // 6              7
         " groups.groupId, instance.encountersMask "
         "FROM group_instance LEFT JOIN instance ON instance = id LEFT JOIN groups ON groups.leaderGUID = group_instance.leaderGUID ORDER BY leaderGuid"
     );
@@ -3400,7 +3399,6 @@ void ObjectMgr::LoadGroups()
 
             uint32 leaderGuidLow = fields[0].GetUInt32();
             uint32 mapId = fields[1].GetUInt32();
-            Difficulty diff = (Difficulty)fields[4].GetUInt8();
             uint32 groupId = fields[7].GetUInt32();
             time_t resetTime = fields[5].GetUInt64();
             uint32 encountersMask = fields[8].GetUInt32();
@@ -3423,13 +3421,7 @@ void ObjectMgr::LoadGroups()
                 continue;
             }
 
-            if (diff >= (mapEntry->IsRaid() ? MAX_RAID_DIFFICULTY : MAX_DUNGEON_DIFFICULTY))
-            {
-                sLog.outErrorDb("Wrong dungeon difficulty use in group_instance table: %d", diff + 1);
-                diff = REGULAR_DIFFICULTY;                  // default for both difficaly types
-            }
-
-            DungeonPersistentState *state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, fields[2].GetUInt32(), Difficulty(diff), resetTime, (fields[6].GetUInt32() == 0), true, true, encountersMask);
+            DungeonPersistentState *state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, fields[2].GetUInt32(), resetTime, (fields[6].GetUInt32() == 0), true, true, encountersMask);
             group->BindToInstance(state, fields[3].GetBool(), true);
 
         }while( result->NextRow() );

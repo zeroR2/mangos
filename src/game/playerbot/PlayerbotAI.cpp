@@ -1030,24 +1030,6 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                                     break;
                                 }
                             }
-                            else if ((pSpellInfo->EffectApplyAuraName[1] == SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED)
-                                     && (pSpellInfo->EffectApplyAuraName[2] == SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED))
-                            {
-                                if ((pSpellInfo->EffectBasePoints[1] == master_speed1)
-                                    && (pSpellInfo->EffectBasePoints[2] == master_speed2))
-                                {
-                                    spellMount = spellId;
-                                    break;
-                                }
-                            }
-                            else if ((pSpellInfo->EffectApplyAuraName[2] == SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED)
-                                     && (pSpellInfo->EffectApplyAuraName[1] == SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED))
-                                if ((pSpellInfo->EffectBasePoints[2] == master_speed2)
-                                    && (pSpellInfo->EffectBasePoints[1] == master_speed1))
-                                {
-                                    spellMount = spellId;
-                                    break;
-                                }
                         }
                     }
                     if (spellMount > 0) m_bot->CastSpell(m_bot, spellMount, false);

@@ -446,7 +446,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
                 if (spellInfo->HasAttribute(SPELL_ATTR_EX2_FOOD_BUFF) || spellInfo->SpellIconID == 2560)
                     return SPELL_WELL_FED;
                 else if (spellInfo->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_MOD_STAT && spellInfo->SpellFamilyName == SPELLFAMILY_GENERIC &&
-                     (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NATURE) && spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
+                     (GetSpellSchoolMask(spellInfo) & SPELL_SCHOOL_MASK_NATURE) && spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
                      return SPELL_SCROLL;
             }
             break;
@@ -775,8 +775,6 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
         case SPELL_EFFECT_HEAL:
         case SPELL_EFFECT_LEARN_SPELL:
         case SPELL_EFFECT_SKILL_STEP:
-        case SPELL_EFFECT_HEAL_PCT:
-        case SPELL_EFFECT_ENERGIZE_PCT:
         case SPELL_EFFECT_QUEST_COMPLETE:
             return true;
 
@@ -799,25 +797,9 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
 
         // non-positive aura use
         case SPELL_EFFECT_APPLY_AURA:
-        case SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
         {
             switch(spellproto->EffectApplyAuraName[effIndex])
             {
-                case SPELL_AURA_PHASE:
-                {
-                    switch(spellproto->Id)
-                    {
-                        case 57508:                         // Insanity (Volazj ecounter)
-                        case 57509:
-                        case 57510:
-                        case 57511:
-                        case 57512:
-                            return false;
-                        default:
-                            break;
-                    }
-                    break;
-                }
                 case SPELL_AURA_DUMMY:
                 {
                     // dummy aura can be positive or negative dependent from casted spell
@@ -1668,7 +1650,7 @@ void SpellMgr::LoadSpellBonuses()
                     if(spell->EffectCoeffs[i] == 1.0f)
                     {
                         // is it the proper check?
-                        if((spell->SchoolMask & SPELL_SCHOOL_MASK_MAGIC) == 0)
+                        if((GetSpellSchoolMask(spell) & SPELL_SCHOOL_MASK_MAGIC) == 0)
                             continue;
 
                         if(spell->Effect[i] != SPELL_EFFECT_SCHOOL_DAMAGE &&
@@ -1981,7 +1963,7 @@ bool SpellMgr::IsSpellProcEventCanTriggeredBy(SpellProcEventEntry const * spellP
         else // For spells need check school/spell family/family mask
         {
             // Check (if set) for school
-            if (spellProcEvent->schoolMask && (spellProcEvent->schoolMask & procSpell->SchoolMask) == 0)
+            if (spellProcEvent->schoolMask && (spellProcEvent->schoolMask & GetSpellSchoolMask(procSpell)) == 0)
                 return false;
 
             // Check (if set) for spellFamilyName
@@ -2188,9 +2170,6 @@ bool SpellMgr::canStackSpellRanksInSpellBook(SpellEntry const *spellInfo) const
         switch(spellInfo->SpellFamilyName)
         {
             case SPELLFAMILY_PALADIN:
-                // Paladin aura Spell
-                if (spellInfo->Effect[i]==SPELL_EFFECT_APPLY_AREA_AURA_RAID)
-                    return false;
                 // Seal of Righteousness, 2 version of same rank
                 if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_SEAL_OF_JUST_RIGHT>() && spellInfo->SpellIconID == 25)
                     return false;
@@ -2454,8 +2433,7 @@ bool SpellMgr::IsGroupBuff(SpellEntry const *spellInfo)
             case TARGET_AREAEFFECT_PARTY_AND_CLASS:
                 if (IsPositiveEffect(spellInfo, SpellEffectIndex(i)) &&
                     (spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AURA ||
-                     spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_PARTY ||
-                     spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_RAID)
+                     spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_PARTY)
                     )
                 {
                     return true;
@@ -2685,14 +2663,6 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
             break;
     }
 
-    Unit::AuraList const& mod = caster->GetAurasByType(SPELL_AURA_MOD_MAX_AFFECTED_TARGETS);
-    for(Unit::AuraList::const_iterator m = mod.begin(); m != mod.end(); ++m)
-    {
-        if (!(*m)->isAffectedOnSpell(spellInfo))
-            continue;
-        unMaxTargets += (*m)->GetModifier()->m_amount;
-    }
-
     return unMaxTargets;
 }
 
@@ -2861,8 +2831,7 @@ SpellEntry const* SpellMgr::SelectAuraRankForLevel(SpellEntry const* spellInfo, 
         if (((spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AURA &&
             (IsExplicitPositiveTarget(spellInfo->EffectImplicitTargetA[i]) ||
             IsAreaEffectPossitiveTarget(Targets(spellInfo->EffectImplicitTargetA[i])))) ||
-            spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_PARTY ||
-            spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_RAID) &&
+            spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_PARTY) &&
             IsPositiveEffect(spellInfo, SpellEffectIndex(i)))
         {
             needRankSelection = true;
@@ -3896,26 +3865,8 @@ bool SpellMgr::IsSpellValid(SpellEntry const* spellInfo, Player* pl, bool msg)
 
             // craft spell for crafting nonexistent item (break client recipes list show)
             case SPELL_EFFECT_CREATE_ITEM:
-            case SPELL_EFFECT_CREATE_ITEM_2:
             {
-                if (spellInfo->EffectItemType[i] == 0)
-                {
-                    // skip auto-loot crafting spells, its not need explicit item info (but have special fake items sometime)
-                    if (!IsLootCraftingSpell(spellInfo))
-                    {
-                        if (msg)
-                        {
-                            if (pl)
-                                ChatHandler(pl).PSendSysMessage("Craft spell %u not have create item entry.",spellInfo->Id);
-                            else
-                                sLog.outErrorDb("Craft spell %u not have create item entry.",spellInfo->Id);
-                        }
-                        return false;
-                    }
-
-                }
-                // also possible IsLootCraftingSpell case but fake item must exist anyway
-                else if (!ObjectMgr::GetItemPrototype( spellInfo->EffectItemType[i] ))
+                if (!ObjectMgr::GetItemPrototype( spellInfo->EffectItemType[i] ))
                 {
                     if (msg)
                     {
@@ -4090,7 +4041,6 @@ void SpellMgr::LoadSpellAreas()
             switch (spellInfo->EffectApplyAuraName[EFFECT_INDEX_0])
             {
                 case SPELL_AURA_DUMMY:
-                case SPELL_AURA_PHASE:
                 case SPELL_AURA_GHOST:
                     break;
                 default:
@@ -4636,8 +4586,8 @@ void SpellMgr::CheckUsedSpells(char const* table)
     uint32 countSpells = 0;
     uint32 countMasks = 0;
 
-    //                                                 0       1               2                3                4         5           6             7          8          9         10   11
-    QueryResult *result = WorldDatabase.PQuery("SELECT spellid,SpellFamilyName,SpellFamilyMaskA,SpellFamilyMaskB,SpellIcon,SpellVisual,SpellCategory,EffectType,EffectAura,EffectIdx,Name,Code FROM %s",table);
+    //                                                 0       1               2                3         4           5             6          7          8         9   10
+    QueryResult *result = WorldDatabase.PQuery("SELECT spellid,SpellFamilyName,SpellFamilyMaskA,SpellIcon,SpellVisual,SpellCategory,EffectType,EffectAura,EffectIdx,Name,Code FROM %s",table);
 
     if (!result)
     {
@@ -4660,15 +4610,15 @@ void SpellMgr::CheckUsedSpells(char const* table)
 
         uint32 spell       = fields[0].GetUInt32();
         int32  family      = fields[1].GetInt32();
-        ClassFamilyMask familyMask = ClassFamilyMask(fields[2].GetUInt64(), fields[3].GetUInt32());
-        int32  spellIcon   = fields[4].GetInt32();
-        int32  spellVisual = fields[5].GetInt32();
-        int32  category    = fields[6].GetInt32();
-        int32  effectType  = fields[7].GetInt32();
-        int32  auraType    = fields[8].GetInt32();
-        int32  effectIdx   = fields[9].GetInt32();
-        std::string name   = fields[10].GetCppString();
-        std::string code   = fields[11].GetCppString();
+        ClassFamilyMask familyMask = ClassFamilyMask(fields[2].GetUInt64());
+        int32  spellIcon   = fields[3].GetInt32();
+        int32  spellVisual = fields[4].GetInt32();
+        int32  category    = fields[5].GetInt32();
+        int32  effectType  = fields[6].GetInt32();
+        int32  auraType    = fields[7].GetInt32();
+        int32  effectIdx   = fields[8].GetInt32();
+        std::string name   = fields[9].GetCppString();
+        std::string code   = fields[10].GetCppString();
 
         // checks of correctness requirements itself
 

@@ -33,8 +33,6 @@
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "Util.h"
-#include "LootMgr.h"
-#include "LFGMgr.h"
 #include "UpdateFieldFlags.h"
 
 // Playerbot
@@ -84,7 +82,6 @@ Group::Group() : m_Guid(ObjectGuid()), m_groupType(GROUPTYPE_NORMAL),
     m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL), m_lootThreshold(ITEM_QUALITY_UNCOMMON),
     m_subGroupsCounts(NULL)
 {
-    m_LFGState = new LFGGroupState(this);
 }
 
 Group::~Group()
@@ -117,9 +114,6 @@ Group::~Group()
     // Sub group counters clean up
     if (m_subGroupsCounts)
         delete[] m_subGroupsCounts;
-
-    if (m_LFGState)
-        delete m_LFGState;
 }
 
 bool Group::Create(ObjectGuid guid, const char* name)
@@ -197,7 +191,7 @@ bool Group::LoadGroupFromDB(Field* fields)
     return true;
 }
 
-bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags, LFGRoleMask roles)
+bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags)
 {
     MemberSlot member;
     member.guid      = ObjectGuid(HIGHGUID_PLAYER, guidLow);
@@ -208,18 +202,9 @@ bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags
 
     member.group     = subgroup;
     member.flags     = flags;
-    member.roles     = roles;
     m_memberSlots.push_back(member);
 
     SubGroupCounterIncrease(subgroup);
-
-    Player* player = sObjectMgr.GetPlayer(member.guid);
-    if (player)
-    {
-        if (player->IsInWorld())
-            player->GetLFGPlayerState()->SetRoles(roles);
-    }
-
     return true;
 }
 
@@ -312,9 +297,6 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
         return false;
 
     SendUpdate();
-
-    if (isLFDGroup())
-        sLFGMgr.AddMemberToLFDGroup(guid);
 
     Player* player = sObjectMgr.GetPlayer(guid);
     if (player)
@@ -427,9 +409,6 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
             }
 
             _homebindIfInstance(player);
-
-            if (isLFDGroup())
-                sLFGMgr.RemoveMemberFromLFDGroup(this,guid);
         }
 
         if (leaderChanged)
@@ -453,8 +432,6 @@ void Group::ChangeLeader(ObjectGuid guid)
     member_citerator slot = _getMemberCSlot(guid);
     if (slot == m_memberSlots.end())
         return;
-
-    sLFGMgr.Leave(this);
 
     _setLeader(guid);
 
@@ -493,9 +470,6 @@ void Group::Disband(bool hideDestroy)
 
         if(!player->GetSession())
             continue;
-
-        if (isLFDGroup())
-            sLFGMgr.RemoveMemberFromLFDGroup(this, player->GetObjectGuid());
 
         WorldPacket data;
         if(!hideDestroy)
@@ -549,7 +523,6 @@ void Group::SendLootStartRoll(uint32 CountDown, uint32 mapid, const Roll &r)
     data << uint32(mapid);                                  // 3.3.3 mapid
     data << uint32(r.itemSlot);                             // item slot in loot
     data << uint32(r.itemid);                               // the itemEntryId for the item that shall be rolled for
-    data << uint32(r.itemRandomSuffix);                     // randomSuffix
     data << uint32(r.itemRandomPropId);                     // item random property ID
     data << uint32(r.itemCount);                            // items in stack
     data << uint32(CountDown);                              // the countdown time to choose "need" or "greed"
@@ -581,7 +554,6 @@ void Group::SendLootRoll(ObjectGuid const& targetGuid, uint8 rollNumber, uint8 r
     data << uint32(r.itemSlot);                             // unknown, maybe amount of players, or item slot in loot
     data << targetGuid;
     data << uint32(r.itemid);                               // the itemEntryId for the item that shall be rolled for
-    data << uint32(r.itemRandomSuffix);                     // randomSuffix
     data << uint32(r.itemRandomPropId);                     // Item random property ID
     data << uint8(rollNumber);                              // 0: "Need for: [item name]" > 127: "you passed on: [item name]"      Roll number
     data << uint8(rollType);                                // 0: "Need for: [item name]" 0: "You have selected need for [item name] 1: need roll 2: greed roll
@@ -604,7 +576,6 @@ void Group::SendLootRollWon(ObjectGuid const& targetGuid, uint8 rollNumber, Roll
     data << r.lootedTargetGUID;                             // creature guid what we're looting
     data << uint32(r.itemSlot);                             // item slot in loot
     data << uint32(r.itemid);                               // the itemEntryId for the item that shall be rolled for
-    data << uint32(r.itemRandomSuffix);                     // randomSuffix
     data << uint32(r.itemRandomPropId);                     // Item random property
     data << targetGuid;                                     // guid of the player who won.
     data << uint8(rollNumber);                              // rollnumber related to SMSG_LOOT_ROLL

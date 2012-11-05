@@ -549,7 +549,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     m_anticheat = new AntiCheat(this);
 
     SetPendingBind(NULL, 0);
-    m_LFGState = new LFGPlayerState(this);
 
     m_camera = new Camera(*this);
 
@@ -596,7 +595,6 @@ Player::~Player ()
         itr->second.state->RemovePlayer(this);
 
     delete m_anticheat;
-    delete m_LFGState;
     delete m_camera;
 
     // Playerbot mod
@@ -2647,8 +2645,6 @@ void Player::GiveLevel(uint32 level)
 
     if (MailLevelReward const* mailReward = sObjectMgr.GetMailLevelReward(level,getRaceMask()))
         MailDraft(mailReward->mailTemplateId).SendMailTo(this,MailSender(MAIL_CREATURE,mailReward->senderEntry));
-
-    GetLFGPlayerState()->Update();
 
     // resend quests status directly
     if (GetSession())

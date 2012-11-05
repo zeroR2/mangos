@@ -35,7 +35,6 @@
 #include "Group.h"
 #include "InstanceData.h"
 #include "ProgressBar.h"
-#include "LFGMgr.h"
 #include "WorldStateMgr.h"
 
 INSTANTIATE_SINGLETON_1( MapPersistentStateManager );
@@ -328,15 +327,6 @@ void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint
                 uint32 dungeonId = itr->second->lastEncounterDungeon;
 
                 DEBUG_LOG("DungeonPersistentState: Dungeon %s (Id %u) completed encounter %s %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()], dungeonId ? "(last)" : "");
-
-                if (dungeon && player && player->GetGroup() && player->GetGroup()->isLFGGroup())
-                {
-                    sLFGMgr.DungeonEncounterReached(player->GetGroup());
-
-                    if ((sWorld.getConfig(CONFIG_BOOL_LFG_ONLYLASTENCOUNTER) && dungeonId)
-                        || IsCompleted())
-                        sLFGMgr.SendLFGRewards(player->GetGroup());
-                }
             }
             return;
         }

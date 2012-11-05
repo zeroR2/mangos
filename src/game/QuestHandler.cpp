@@ -659,7 +659,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
 
 bool WorldSession::CanInteractWithQuestGiver(ObjectGuid guid, char const* descr)
 {
-    if (guid.IsCreatureOrVehicle())
+    if (guid.IsCreature())
     {
         Creature* pCreature = _player->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_QUESTGIVER);
         if (!pCreature)

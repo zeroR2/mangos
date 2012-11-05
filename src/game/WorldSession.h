@@ -27,8 +27,6 @@
 #include "LockedQueue.h"
 #include "SharedDefines.h"
 #include "ObjectGuid.h"
-#include "LFG.h"
-#include "LFGMgr.h"
 #include "AuctionHouseMgr.h"
 #include "Item.h"
 #include "warden/WardenBase.h"
@@ -838,19 +836,6 @@ class MANGOS_DLL_SPEC WorldSession
         void HandleLfgPlayerLockInfoRequestOpcode(WorldPacket &recv_data);
         void HandleLfgTeleportOpcode(WorldPacket &recv_data);
         void HandleLfgPartyLockInfoRequestOpcode(WorldPacket &recv_data);
-        // send data
-        void SendLfgUpdatePlayer(LFGUpdateType updateType, LFGType type);
-        void SendLfgUpdateParty(LFGUpdateType updateType, LFGType type);
-        void SendLfgUpdateSearch(bool update);
-        void SendLfgJoinResult(LFGJoinResult checkResult, uint8 checkValue = 0, bool withLockMap = false);
-        void SendLfgPlayerReward(LFGDungeonEntry const* dungeon, const LFGReward* reward, const Quest* qRew, bool isSecond = false);
-        void SendLfgQueueStatus(LFGDungeonEntry const* dungeon, LFGQueueStatus* status);
-        void SendLfgRoleChosen(ObjectGuid guid, uint8 roles);
-        void SendLfgRoleCheckUpdate();
-        void SendLfgBootPlayer();
-        void SendLfgUpdateProposal(LFGProposal* proposal);
-        void SendLfgOfferContinue(LFGDungeonEntry const* dungeon);
-        void SendLfgTeleportError(LFGTeleportError msg);
         // LFR
         void HandleLfrSearchOpcode(WorldPacket& recv_data);
         void HandleLfrLeaveOpcode(WorldPacket& recv_data);

@@ -223,130 +223,7 @@ pAuraProcHandler AuraProcHandler[TOTAL_AURAS]=
     &Unit::HandleNULLProc,                                  //188 SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_CHANCE
     &Unit::HandleModRating,                                 //189 SPELL_AURA_MOD_RATING
     &Unit::HandleNULLProc,                                  //190 SPELL_AURA_MOD_FACTION_REPUTATION_GAIN
-    &Unit::HandleNULLProc,                                  //191 SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED
-    &Unit::HandleNULLProc,                                  //192 SPELL_AURA_HASTE_MELEE
-    &Unit::HandleNULLProc,                                  //193 SPELL_AURA_HASTE_ALL (in fact combat (any type attack) speed pct)
-    &Unit::HandleNULLProc,                                  //194 SPELL_AURA_MOD_IGNORE_ABSORB_SCHOOL
-    &Unit::HandleNULLProc,                                  //195 SPELL_AURA_MOD_IGNORE_ABSORB_FOR_SPELL
-    &Unit::HandleNULLProc,                                  //196 SPELL_AURA_MOD_COOLDOWN (single spell 24818 in 3.2.2a)
-    &Unit::HandleNULLProc,                                  //197 SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCEe
-    &Unit::HandleNULLProc,                                  //198 unused (3.0.8a-3.2.2a) old SPELL_AURA_MOD_ALL_WEAPON_SKILLS
-    &Unit::HandleNULLProc,                                  //199 SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT
-    &Unit::HandleNULLProc,                                  //200 SPELL_AURA_MOD_KILL_XP_PCT
-    &Unit::HandleNULLProc,                                  //201 SPELL_AURA_FLY                             this aura enable flight mode...
-    &Unit::HandleNULLProc,                                  //202 SPELL_AURA_CANNOT_BE_DODGED
-    &Unit::HandleNULLProc,                                  //203 SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_DAMAGE
-    &Unit::HandleNULLProc,                                  //204 SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_DAMAGE
-    &Unit::HandleNULLProc,                                  //205 SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_DAMAGE
-    &Unit::HandleNULLProc,                                  //206 SPELL_AURA_MOD_FLIGHT_SPEED
-    &Unit::HandleNULLProc,                                  //207 SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED
-    &Unit::HandleNULLProc,                                  //208 SPELL_AURA_MOD_FLIGHT_SPEED_STACKING
-    &Unit::HandleNULLProc,                                  //209 SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_STACKING
-    &Unit::HandleNULLProc,                                  //210 SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACKING
-    &Unit::HandleNULLProc,                                  //211 SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_NOT_STACKING
-    &Unit::HandleNULLProc,                                  //212 SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT
-    &Unit::HandleNULLProc,                                  //213 SPELL_AURA_MOD_RAGE_FROM_DAMAGE_DEALT implemented in Player::RewardRage
-    &Unit::HandleNULLProc,                                  //214 Tamed Pet Passive (single test like spell 20782, also single for 157 aura)
-    &Unit::HandleNULLProc,                                  //216 SPELL_AURA_HASTE_SPELLS
-    &Unit::HandleNULLProc,                                  //217 unused (3.0.8a-3.2.2a)
-    &Unit::HandleNULLProc,                                  //218 SPELL_AURA_HASTE_RANGED
-    &Unit::HandleNULLProc,                                  //219 SPELL_AURA_MOD_MANA_REGEN_FROM_STAT
-    &Unit::HandleNULLProc,                                  //220 SPELL_AURA_MOD_RATING_FROM_STAT
-    &Unit::HandleNULLProc,                                  //221 ignored
-    &Unit::HandleNULLProc,                                  //222 unused (3.0.8a-3.2.2a) only for spell 44586 that not used in real spell cast
-    &Unit::HandleNULLProc,                                  //223 dummy code (cast damage spell to attacker) and another dymmy (jump to another nearby raid member)
-    &Unit::HandleNULLProc,                                  //224 unused (3.0.8a-3.2.2a)
-    &Unit::HandleMendingAuraProc,                           //225 SPELL_AURA_PRAYER_OF_MENDING
-    &Unit::HandlePeriodicDummyAuraProc,                     //226 SPELL_AURA_PERIODIC_DUMMY
-    &Unit::HandleNULLProc,                                  //227 SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE
-    &Unit::HandleNULLProc,                                  //228 SPELL_AURA_DETECT_STEALTH
-    &Unit::HandleNULLProc,                                  //229 SPELL_AURA_MOD_AOE_DAMAGE_AVOIDANCE
-    &Unit::HandleNULLProc,                                  //230 Commanding Shout
-    &Unit::HandleProcTriggerSpellAuraProc,                  //231 SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE
-    &Unit::HandleNULLProc,                                  //232 SPELL_AURA_MECHANIC_DURATION_MOD
-    &Unit::HandleNULLProc,                                  //233 set model id to the one of the creature with id m_modifier.m_miscvalue
-    &Unit::HandleNULLProc,                                  //234 SPELL_AURA_MECHANIC_DURATION_MOD_NOT_STACK
-    &Unit::HandleNULLProc,                                  //235 SPELL_AURA_MOD_DISPEL_RESIST
-    &Unit::HandleNULLProc,                                  //237 SPELL_AURA_MOD_SPELL_DAMAGE_OF_ATTACK_POWER
-    &Unit::HandleNULLProc,                                  //238 SPELL_AURA_MOD_SPELL_HEALING_OF_ATTACK_POWER
-    &Unit::HandleNULLProc,                                  //239 SPELL_AURA_MOD_SCALE_2 only in Noggenfogger Elixir (16595) before 2.3.0 aura 61
-    &Unit::HandleNULLProc,                                  //240 SPELL_AURA_MOD_EXPERTISE
-    &Unit::HandleNULLProc,                                  //241 Forces the player to move forward
-    &Unit::HandleNULLProc,                                  //242 SPELL_AURA_MOD_SPELL_DAMAGE_FROM_HEALING (only 2 test spels in 3.2.2a)
-    &Unit::HandleNULLProc,                                  //243 faction reaction override spells
-    &Unit::HandleNULLProc,                                  //244 SPELL_AURA_COMPREHEND_LANGUAGE
-    &Unit::HandleNULLProc,                                  //245 SPELL_AURA_MOD_DURATION_OF_MAGIC_EFFECTS
-    &Unit::HandleNULLProc,                                  //246 SPELL_AURA_MOD_DURATION_OF_EFFECTS_BY_DISPEL
-    &Unit::HandleNULLProc,                                  //247 target to become a clone of the caster
-    &Unit::HandleNULLProc,                                  //248 SPELL_AURA_MOD_COMBAT_RESULT_CHANCE
-    &Unit::HandleNULLProc,                                  //249 SPELL_AURA_CONVERT_RUNE
-    &Unit::HandleNULLProc,                                  //250 SPELL_AURA_MOD_INCREASE_HEALTH_2
-    &Unit::HandleNULLProc,                                  //251 SPELL_AURA_MOD_ENEMY_DODGE
-    &Unit::HandleNULLProc,                                  //252 SPELL_AURA_SLOW_ALL
-    &Unit::HandleNULLProc,                                  //253 SPELL_AURA_MOD_BLOCK_CRIT_CHANCE
-    &Unit::HandleNULLProc,                                  //254 SPELL_AURA_MOD_DISARM_SHIELD disarm Shield
-    &Unit::HandleNULLProc,                                  //255 SPELL_AURA_MOD_MECHANIC_DAMAGE_TAKEN_PERCENT
-    &Unit::HandleNULLProc,                                  //256 SPELL_AURA_NO_REAGENT_USE Use SpellClassMask for spell select
-    &Unit::HandleNULLProc,                                  //257 SPELL_AURA_MOD_TARGET_RESIST_BY_SPELL_CLASS Use SpellClassMask for spell select
-    &Unit::HandleNULLProc,                                  //258 SPELL_AURA_MOD_SPELL_VISUAL
-    &Unit::HandleNULLProc,                                  //259 corrupt healing over time spell
-    &Unit::HandleNULLProc,                                  //260 SPELL_AURA_SCREEN_EFFECT (miscvalue = id in ScreenEffect.dbc) not required any code
-    &Unit::HandleNULLProc,                                  //261 SPELL_AURA_PHASE undetectable invisibility?
-    &Unit::HandleIgnoreUnitStateAuraProc,                   //262 SPELL_AURA_IGNORE_UNIT_STATE
-    &Unit::HandleNULLProc,                                  //263 SPELL_AURA_ALLOW_ONLY_ABILITY player can use only abilities set in SpellClassMask
-    &Unit::HandleNULLProc,                                  //264 unused (3.0.8a-3.2.2a)
-    &Unit::HandleNULLProc,                                  //265 unused (3.0.8a-3.2.2a)
-    &Unit::HandleNULLProc,                                  //266 unused (3.0.8a-3.2.2a)
-    &Unit::HandleNULLProc,                                  //267 SPELL_AURA_MOD_IMMUNE_AURA_APPLY_SCHOOL
-    &Unit::HandleNULLProc,                                  //268 SPELL_AURA_MOD_ATTACK_POWER_OF_STAT_PERCENT
-    &Unit::HandleNULLProc,                                  //269 SPELL_AURA_MOD_IGNORE_DAMAGE_REDUCTION_SCHOOL
-    &Unit::HandleNULLProc,                                  //270 SPELL_AURA_MOD_IGNORE_TARGET_RESIST (unused in 3.2.2a)
-    &Unit::HandleModDamageFromCasterAuraProc,               //271 SPELL_AURA_MOD_DAMAGE_FROM_CASTER
-    &Unit::HandleNULLProc,                                  //272 SPELL_AURA_MAELSTROM_WEAPON (unclear use for aura, it used in (3.2.2a...3.3.0) in single spell 53817 that spellmode stacked and charged spell expected to be drop as stack
-    &Unit::HandleNULLProc,                                  //273 SPELL_AURA_X_RAY (client side implementation)
-    &Unit::HandleNULLProc,                                  //274 proc free shot?
-    &Unit::HandleNULLProc,                                  //275 SPELL_AURA_MOD_IGNORE_SHAPESHIFT Use SpellClassMask for spell select
-    &Unit::HandleNULLProc,                                  //276 mod damage % mechanic?
-    &Unit::HandleNULLProc,                                  //277 SPELL_AURA_MOD_MAX_AFFECTED_TARGETS Use SpellClassMask for spell select
-    &Unit::HandleNULLProc,                                  //278 SPELL_AURA_MOD_DISARM_RANGED disarm ranged weapon
-    &Unit::HandleNULLProc,                                  //279 visual effects? 58836 and 57507
-    &Unit::HandleNULLProc,                                  //280 SPELL_AURA_MOD_TARGET_ARMOR_PCT
-    &Unit::HandleNULLProc,                                  //281 SPELL_AURA_MOD_HONOR_GAIN
-    &Unit::HandleNULLProc,                                  //282 SPELL_AURA_INCREASE_BASE_HEALTH_PERCENT
-    &Unit::HandleNULLProc,                                  //283 SPELL_AURA_MOD_HEALING_RECEIVED
-    &Unit::HandleNULLProc,                                  //284 51 spells
-    &Unit::HandleNULLProc,                                  //285 SPELL_AURA_MOD_ATTACK_POWER_OF_ARMOR
-    &Unit::HandleNULLProc,                                  //286 SPELL_AURA_ABILITY_PERIODIC_CRIT
-    &Unit::HandleNULLProc,                                  //287 SPELL_AURA_DEFLECT_SPELLS
-    &Unit::HandleNULLProc,                                  //288 increase parry/deflect, prevent attack (single spell used 67801)
-    &Unit::HandleNULLProc,                                  //289 unused (3.2.2a)
-    &Unit::HandleNULLProc,                                  //290 SPELL_AURA_MOD_ALL_CRIT_CHANCE
-    &Unit::HandleNULLProc,                                  //291 SPELL_AURA_MOD_QUEST_XP_PCT
-    &Unit::HandleNULLProc,                                  //292 call stabled pet
-    &Unit::HandleNULLProc,                                  //293 3 spells
-    &Unit::HandleNULLProc,                                  //294 2 spells, possible prevent mana regen
-    &Unit::HandleNULLProc,                                  //295 unused (3.2.2a)
-    &Unit::HandleNULLProc,                                  //296 2 spells
-    &Unit::HandleNULLProc,                                  //297 1 spell (counter spell school?)
-    &Unit::HandleNULLProc,                                  //298 unused (3.2.2a)
-    &Unit::HandleNULLProc,                                  //299 unused (3.2.2a)
-    &Unit::HandleNULLProc,                                  //300 3 spells (share damage?)
-    &Unit::HandleNULLProc,                                  //301 5 spells
-    &Unit::HandleNULLProc,                                  //302 unused (3.2.2a)
-    &Unit::HandleNULLProc,                                  //303 17 spells
-    &Unit::HandleNULLProc,                                  //304 2 spells (alcohol effect?)
-    &Unit::HandleNULLProc,                                  //305 SPELL_AURA_MOD_MINIMUM_SPEED
-    &Unit::HandleNULLProc,                                  //306 1 spell
-    &Unit::HandleNULLProc,                                  //307 absorb healing?
-    &Unit::HandleNULLProc,                                  //308 new aura for hunter traps
-    &Unit::HandleNULLProc,                                  //309 absorb healing?
-    &Unit::HandleNULLProc,                                  //310 pet avoidance passive?
-    &Unit::HandleNULLProc,                                  //311 0 spells in 3.3
-    &Unit::HandleNULLProc,                                  //312 0 spells in 3.3
-    &Unit::HandleNULLProc,                                  //313 0 spells in 3.3
-    &Unit::HandleNULLProc,                                  //314 1 test spell (reduce duration of silince/magic)
-    &Unit::HandleNULLProc,                                  //315 underwater walking
-    &Unit::HandleNULLProc                                   //316 makes haste affect HOT/DOT ticks
+    &Unit::HandleNULLProc                                   //191 SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED
 };
 
 bool Unit::IsTriggeredAtSpellProcEvent(Unit *pVictim, SpellAuraHolderPtr holder, SpellEntry const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, SpellProcEventEntry const*& spellProcEvent )
@@ -3058,9 +2935,6 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
     Unit*  target = NULL;
     int32  basepoints[MAX_EFFECT_INDEX] = {0, 0, 0};
 
-    if (triggeredByAura->GetModifier()->m_auraname == SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE)
-        basepoints[0] = triggerAmount;
-
     Item* castItem = triggeredByAura->GetCastItemGuid() && GetTypeId()==TYPEID_PLAYER
         ? ((Player*)this)->GetItemByGuid(triggeredByAura->GetCastItemGuid()) : NULL;
 
@@ -3975,7 +3849,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
             // Proc only from trap activation (from periodic proc another aura of this spell)
             // because some spells have both flags (ON_TRAP_ACTIVATION and ON_PERIODIC), but should only proc ON_PERIODIC!!
             if (!(procFlags & PROC_FLAG_ON_TRAP_ACTIVATION) || !procSpell ||
-                !(procSpell->SchoolMask & (SPELL_SCHOOL_MASK_FROST | SPELL_SCHOOL_MASK_NATURE)) || !roll_chance_i(triggerAmount))
+                !(GetSpellSchoolMask(procSpell) & (SPELL_SCHOOL_MASK_FROST | SPELL_SCHOOL_MASK_NATURE)) || !roll_chance_i(triggerAmount))
             {
                 return SPELL_AURA_PROC_FAILED;
             }
@@ -4233,63 +4107,6 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, Damag
     return SPELL_AURA_PROC_OK;
 }
 
-SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* /*procSpell*/, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/ )
-{
-    // aura can be deleted at casts
-    SpellEntry const* spellProto = triggeredByAura->GetSpellProto();
-    SpellEffectIndex effIdx = triggeredByAura->GetEffIndex();
-    int32 heal = triggeredByAura->GetModifier()->m_amount;
-    ObjectGuid caster_guid = triggeredByAura->GetCasterGuid();
-
-    // jumps
-    int32 jumps = triggeredByAura->GetHolder()->GetAuraCharges()-1;
-
-    // next target selection
-    if (jumps > 0 && GetTypeId()==TYPEID_PLAYER && caster_guid.IsPlayer())
-    {
-        float radius;
-        if (spellProto->EffectRadiusIndex[effIdx])
-            radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(spellProto->EffectRadiusIndex[effIdx]));
-        else
-            radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(spellProto->rangeIndex));
-
-        if (Player* caster = ((Player*)triggeredByAura->GetCaster()))
-        {
-            caster->ApplySpellMod(spellProto->Id, SPELLMOD_RADIUS, radius);
-
-            SpellAuraHolderPtr holder = GetSpellAuraHolder(spellProto->Id, caster->GetObjectGuid());
-
-            if (Player* target = ((Player*)this)->GetNextRandomRaidMember(radius))
-            {
-                SpellAuraHolderPtr new_holder = CreateSpellAuraHolder(spellProto, target, caster);
-
-                for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
-                {
-                    Aura *aur = holder->GetAuraByEffectIndex(SpellEffectIndex(i));
-                    if (!aur)
-                        continue;
-
-                    int32 basePoints = aur->GetBasePoints();
-                    new_holder->CreateAura(spellProto, aur->GetEffIndex(), &basePoints, new_holder, target, caster, NULL);
-                }
-                new_holder->SetAuraCharges(jumps, false);
-
-                // lock aura holder (currently SPELL_AURA_PRAYER_OF_MENDING is single target spell, so will attempt removing from old target
-                // when applied to new one)
-                //holder->SetInUse(true);
-                target->AddSpellAuraHolder(new_holder);
-                //holder->SetInUse(false);
-            }
-            else
-                holder->SetAuraCharges(1,false);
-        }
-    }
-
-    // heal
-    CastCustomSpell(this,33110,&heal,NULL,NULL,true,NULL,NULL,caster_guid, spellProto);
-    return SPELL_AURA_PROC_OK;
-}
-
 SpellAuraProcResult Unit::HandleModCastingSpeedNotStackAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* /*triggeredByAura*/, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
 {
     // Skip melee hits or instant cast spells
@@ -4299,7 +4116,7 @@ SpellAuraProcResult Unit::HandleModCastingSpeedNotStackAuraProc(Unit* /*pVictim*
 SpellAuraProcResult Unit::HandleReflectSpellsSchoolAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
 {
     // Skip Melee hits and spells ws wrong school
-    return !(procSpell == NULL || (triggeredByAura->GetModifier()->m_miscvalue & procSpell->SchoolMask) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;
+    return !(procSpell == NULL || (triggeredByAura->GetModifier()->m_miscvalue & GetSpellSchoolMask(procSpell) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;
 }
 
 SpellAuraProcResult Unit::HandleModPowerCostSchoolAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
@@ -4307,7 +4124,7 @@ SpellAuraProcResult Unit::HandleModPowerCostSchoolAuraProc(Unit* /*pVictim*/, Da
     // Skip melee hits and spells ws wrong school or zero cost
     return !(procSpell == NULL ||
             (procSpell->manaCost == 0 && procSpell->ManaCostPercentage == 0) ||           // Cost check
-            (triggeredByAura->GetModifier()->m_miscvalue & procSpell->SchoolMask) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;  // School check
+            (triggeredByAura->GetModifier()->m_miscvalue & GetSpellSchoolMask(procSpell) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;  // School check
 }
 
 SpellAuraProcResult Unit::HandleMechanicImmuneResistanceAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
@@ -4315,12 +4132,6 @@ SpellAuraProcResult Unit::HandleMechanicImmuneResistanceAuraProc(Unit* /*pVictim
     // Compare mechanic
     return !(procSpell==NULL || int32(procSpell->Mechanic) != triggeredByAura->GetModifier()->m_miscvalue)
         ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;
-}
-
-SpellAuraProcResult Unit::HandleModDamageFromCasterAuraProc(Unit* pVictim, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* /*procSpell*/, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
-{
-    // Compare casters
-    return triggeredByAura->GetCasterGuid() == pVictim->GetObjectGuid() ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;
 }
 
 SpellAuraProcResult Unit::HandleAddFlatModifierAuraProc(Unit* pVictim, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const * procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
@@ -4459,38 +4270,6 @@ SpellAuraProcResult Unit::HandleModDamagePercentDoneAuraProc(Unit* /*pVictim*/, 
         // Shaman clearcasting - must proc only first effect
         return SPELL_AURA_PROC_CANT_TRIGGER;
 
-    return SPELL_AURA_PROC_OK;
-}
-
-SpellAuraProcResult Unit::HandlePeriodicDummyAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const *procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
-{
-    if (!triggeredByAura)
-        return SPELL_AURA_PROC_FAILED;
-
-    SpellEntry const *spellProto = triggeredByAura->GetSpellProto();
-    if (!spellProto)
-        return SPELL_AURA_PROC_FAILED;
-
-    switch (spellProto->SpellFamilyName)
-    {
-        case SPELLFAMILY_GENERIC:
-        {
-            switch (spellProto->Id)
-            {
-                case 66334:                                 // Mistress' Kiss (Trial of the Crusader, ->
-                case 67905:                                 // -> Lord Jaraxxus encounter, all difficulties)
-                case 67906:                                 // ----- // -----
-                case 67907:                                 // ----- // -----
-                {
-                    CastSpell(this, 66359, true, NULL, triggeredByAura);
-                    break;
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
     return SPELL_AURA_PROC_OK;
 }
 
@@ -4794,15 +4573,4 @@ SpellAuraProcResult Unit::HandleRemoveByDamageChanceProc(Unit* pVictim, DamageIn
         return HandleRemoveByDamageProc(pVictim, damageInfo, triggeredByAura, procSpell, procFlag, procEx, cooldown);
 
     return SPELL_AURA_PROC_FAILED;
-}
-
-SpellAuraProcResult Unit::HandleIgnoreUnitStateAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const * procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
-{
-    SpellEntry const *spellInfo = triggeredByAura->GetSpellProto();
-    if (spellInfo->Id == 52437 && procSpell && procSpell->Id==20647)   // Sudden Death must proc only from dummy part of Execute
-    {
-        //Remove only single aura from stack
-        return SPELL_AURA_PROC_CANT_TRIGGER;
-    }
-    return SPELL_AURA_PROC_OK;
 }

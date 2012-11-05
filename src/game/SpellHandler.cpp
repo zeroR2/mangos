@@ -367,13 +367,6 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
     bool triggered = false;
     SpellEntry const* triggeredBy = NULL;
-    Aura const* triggeredByAura = mover->GetTriggeredByClientAura(spellId);
-    if (triggeredByAura)
-    {
-        triggered = true;
-        triggeredBy = triggeredByAura->GetSpellProto();
-        cast_count = 0;
-    }
 
     if (mover->GetTypeId()==TYPEID_PLAYER)
     {

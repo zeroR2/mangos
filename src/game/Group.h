@@ -27,7 +27,6 @@
 #include "LootMgr.h"
 #include "DBCEnums.h"
 #include "SharedDefines.h"
-#include "LFG.h"
 
 #include <map>
 #include <vector>
@@ -175,7 +174,7 @@ class Roll : public LootValidatorRef
 {
     public:
         Roll(ObjectGuid _lootedTragetGuid, LootMethod method, LootItem const& li)
-            : lootedTargetGUID(_lootedTragetGuid), itemid(li.itemid), itemRandomPropId(li.randomPropertyId), itemRandomSuffix(li.randomSuffix),
+            : lootedTargetGUID(_lootedTragetGuid), itemid(li.itemid), itemRandomPropId(li.randomPropertyId),
             itemCount(li.count), totalPlayersRolling(0), totalNeed(0), totalGreed(0), totalPass(0), itemSlot(0),
             m_method(method), m_commonVoteMask(ROLL_VOTE_MASK_ALL) {}
         ~Roll() { }
@@ -189,7 +188,6 @@ class Roll : public LootValidatorRef
         ObjectGuid lootedTargetGUID;
         uint32 itemid;
         int32  itemRandomPropId;
-        uint32 itemRandomSuffix;
         uint8 itemCount;
         typedef UNORDERED_MAP<ObjectGuid, RollVote> PlayerVote;
         PlayerVote playerVote;                              //vote position correspond with player position (in group)
@@ -224,7 +222,6 @@ class MANGOS_DLL_SPEC Group
             std::string name;
             uint8       group;
             GroupFlagMask  flags;
-            LFGRoleMask roles;
             uint32      lastMap;
         };
         typedef std::list<MemberSlot> MemberSlotList;
@@ -244,7 +241,7 @@ class MANGOS_DLL_SPEC Group
         // group manipulation methods
         bool   Create(ObjectGuid guid, const char * name);
         bool   LoadGroupFromDB(Field *fields);
-        bool   LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags, LFGRoleMask roles);
+        bool   LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags);
         bool   AddInvite(Player *player);
         uint32 RemoveInvite(Player *player);
         void   RemoveAllInvites();
@@ -366,22 +363,13 @@ class MANGOS_DLL_SPEC Group
         InstanceGroupBind* GetBoundInstance(Map* aMap);
         BoundInstancesMap& GetBoundInstances() { return m_boundInstances; }
 
-        // LFG
-        LFGGroupState* GetLFGGroupState() { return m_LFGState; };
-        bool ConvertToLFG(LFGType type);
-        bool isLFDGroup()  const { return m_groupType & GROUPTYPE_LFD; }
-        bool isLFGGroup()  const { return ((m_groupType & GROUPTYPE_LFD) && !(m_groupType & GROUPTYPE_RAID)) ; }
-        bool isLFRGroup()  const { return ((m_groupType & GROUPTYPE_LFD) && (m_groupType & GROUPTYPE_RAID)) ; }
-        void SetGroupRoles(ObjectGuid guid, LFGRoleMask roles);
-        LFGRoleMask GetGroupRoles(ObjectGuid guid);
-
         // Frozen Mod
         void BroadcastGroupUpdate(void);
         // Frozen Mod
 
     protected:
         bool _addMember(ObjectGuid guid, const char* name);
-        bool _addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags = GROUP_MEMBER, LFGRoleMask roles = LFG_ROLE_MASK_NONE);
+        bool _addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags = GROUP_MEMBER);
         bool _removeMember(ObjectGuid guid);                // returns true if leader has changed
         void _setLeader(ObjectGuid guid);
 
@@ -454,6 +442,5 @@ class MANGOS_DLL_SPEC Group
         Rolls               RollId;
         BoundInstancesMap   m_boundInstances;
         uint8*              m_subGroupsCounts;
-        LFGGroupState*      m_LFGState;
 };
 #endif

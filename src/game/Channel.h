@@ -151,8 +151,8 @@ class Channel
         std::string GetName() const { return m_name; }
         uint32 GetChannelId() const { return m_channelId; }
         bool IsConstant() const { return m_channelId != 0; }
-        bool IsAnnounce() const { return m_announce; }
         bool IsLFG() const { return GetFlags() & CHANNEL_FLAG_LFG; }
+        bool IsAnnounce() const { return m_announce; }
         std::string GetPassword() const { return m_password; }
         void SetPassword(const std::string& npassword) { m_password = npassword; }
         void SetAnnounce(bool nannounce) { m_announce = nannounce; }
@@ -222,7 +222,7 @@ class Channel
         void MakePlayerInviteBanned(WorldPacket* data, ObjectGuid guid);        //? 0x1E
         void MakeThrottled(WorldPacket* data);                                  //? 0x1F
         void MakeNotInArea(WorldPacket* data);                                  //? 0x20
-        void MakeNotInLfg(WorldPacket* data);                                   //? 0x21
+        void MakeNotInLfg(WorldPacket* data);                                  //? 0x21
         void MakeVoiceOn(WorldPacket* data, ObjectGuid guid);                   //+ 0x22
         void MakeVoiceOff(WorldPacket* data, ObjectGuid guid);                  //+ 0x23
 

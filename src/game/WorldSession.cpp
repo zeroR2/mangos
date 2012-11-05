@@ -36,7 +36,6 @@
 #include "BattleGround/BattleGroundMgr.h"
 #include "MapManager.h"
 #include "SocialMgr.h"
-#include "LFGMgr.h"
 #include "Auth/AuthCrypt.h"
 #include "Auth/HMACSHA1.h"
 #include "zlib/zlib.h"
@@ -530,9 +529,6 @@ void WorldSession::LogoutPlayer(bool Save)
 
         ///- Leave all channels before player delete...
         GetPlayer()->CleanupChannels();
-
-        // LFG cleanup
-        sLFGMgr.Leave(GetPlayer());
 
         ///- If the player is in a group (or invited), remove him. If the group if then only 1 person, disband the group.
         GetPlayer()->UninviteFromGroup();

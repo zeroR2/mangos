@@ -209,10 +209,6 @@ bool Transport::Create(uint32 guidlow, uint32 mapid, float x, float y, float z, 
     SetGoArtKit(0);
     SetGoAnimProgress(animprogress);
 
-    // low part always 0, dynamicHighValue is some kind of progression (not implemented)
-    SetUInt16Value(GAMEOBJECT_DYNAMIC, 0, 0);
-    SetUInt16Value(GAMEOBJECT_DYNAMIC, 1, dynamicHighValue);
-
     SetName(goinfo->name);
 
     return true;

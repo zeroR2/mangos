@@ -65,7 +65,6 @@
 #include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CharacterDatabaseCleaner.h"
 #include "CreatureLinkingMgr.h"
-#include "LFGMgr.h"
 #include "warden/WardenDataStorage.h"
 
 INSTANTIATE_SINGLETON_1( World );
@@ -1398,9 +1397,6 @@ void World::SetInitialWorldSettings()
     sLog.outString( ">>> Localization strings loaded" );
     sLog.outString();
 
-    sLog.outString("Loading LFG rewards...");               // After load all static data
-    sLFGMgr.LoadRewards();
-
     ///- Load dynamic data tables from the database
     sLog.outString( "Loading Auctions..." );
     sLog.outString();
@@ -1733,9 +1729,6 @@ void World::Update(uint32 diff)
         m_timers[WUPDATE_WORLDSTATE].Reset();
         sWorldStateMgr.Update();
     }
-
-    // Check if any group can be created by dungeon finder
-    sLFGMgr.Update(diff);
 
     // execute callbacks from sql queries that were queued recently
     UpdateResultQueue();

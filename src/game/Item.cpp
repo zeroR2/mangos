@@ -357,9 +357,6 @@ void Item::SaveToDB()
             if (HasSavedLoot())
                 DeleteLootFromDB();
 
-            if (HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
-                DeleteSoulboundTradeableFromDB();
-
             delete this;
             return;
         }
@@ -378,12 +375,12 @@ void Item::SaveToDB()
             if (loot.gold)
             {
                 static SqlStatementID saveGold;
-                SqlStatement stmt = CharacterDatabase.CreateStatement(saveGold, "INSERT INTO item_loot (guid, owner_guid, itemid, amount, suffix, property) VALUES (?, ?, 0, ?, 0, 0)");
+                SqlStatement stmt = CharacterDatabase.CreateStatement(saveGold, "INSERT INTO item_loot (guid, owner_guid, itemid, amount, property) VALUES (?, ?, 0, ?, 0)");
                 stmt.PExecute(GetGUIDLow(), owner->GetGUIDLow(), loot.gold);
             }
 
             static SqlStatementID saveLoot;
-            SqlStatement stmt = CharacterDatabase.CreateStatement(saveLoot, "INSERT INTO item_loot (guid, owner_guid, itemid, amount, suffix, property) VALUES (?, ?, ?, ?, ?, ?)");
+            SqlStatement stmt = CharacterDatabase.CreateStatement(saveLoot, "INSERT INTO item_loot (guid, owner_guid, itemid, amount, property) VALUES (?, ?, ?, ?, ?)");
 
             // save items and quest items (at load its all will added as normal, but this not important for item loot case)
             for (size_t i = 0; i < loot.GetMaxSlotInLootFor(owner); ++i)
@@ -402,7 +399,6 @@ void Item::SaveToDB()
                 stmt.addUInt32(owner->GetGUIDLow());
                 stmt.addUInt32(item->itemid);
                 stmt.addUInt8(item->count);
-                stmt.addUInt32(item->randomSuffix);
                 stmt.addInt32(item->randomPropertyId);
                 stmt.Execute();
             }
@@ -524,10 +520,9 @@ void Item::LoadLootFromDB(Field* fields)
         return;
     }
 
-    uint32 itemSuffix = fields[3].GetUInt32();
-    int32  itemPropId = fields[4].GetInt32();
+    int32  itemPropId = fields[3].GetInt32();
 
-    loot.items.push_back(LootItem(itemId, itemAmount, itemSuffix, itemPropId));
+    loot.items.push_back(LootItem(itemId, itemAmount, itemPropId));
     ++loot.unlootedCount;
 
     SetLootState(ITEM_LOOT_UNCHANGED);
@@ -699,6 +694,8 @@ int32 Item::GenerateItemRandomPropertyId(uint32 item_id)
 
         return random_id->ID;
     }
+
+    return 0;
 }
 
 void Item::SetItemRandomProperties(int32 randomPropId)

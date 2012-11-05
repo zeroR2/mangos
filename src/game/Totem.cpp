@@ -218,9 +218,7 @@ bool Totem::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex 
         case SPELL_EFFECT_HEAL:
         case SPELL_EFFECT_HEAL_MAX_HEALTH:
         case SPELL_EFFECT_HEAL_MECHANICAL:
-        case SPELL_EFFECT_HEAL_PCT:
         case SPELL_EFFECT_ENERGIZE:
-        case SPELL_EFFECT_ENERGIZE_PCT:
             return true;
         default:
             break;

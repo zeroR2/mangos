@@ -580,7 +580,7 @@ bool WorldSession::CheckStableMaster(ObjectGuid guid)
     if (guid == GetPlayer()->GetObjectGuid())
     {
         // command case will return only if player have real access to command
-        if (!GetPlayer()->HasAuraType(SPELL_AURA_OPEN_STABLE) && !ChatHandler(GetPlayer()).FindCommand("stable"))
+        if (!ChatHandler(GetPlayer()).FindCommand("stable"))
         {
             DEBUG_LOG("%s attempt open stable in cheating way.", guid.GetString().c_str());
             return false;

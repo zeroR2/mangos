@@ -1418,8 +1418,7 @@ void Pet::_SaveAuras()
         {
             SpellEntry const* spellInfo = itr->second->GetSpellProto();
             if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_STEALTH ||
-                        spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AREA_AURA_OWNER ||
-                        spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AREA_AURA_PET )
+                spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AREA_AURA_PET)
             {
                 save = false;
                 break;
@@ -2393,9 +2392,6 @@ void Pet::ApplyExpertizeScalingBonus(bool apply)
     m_baseBonusData->expertizeScale = m_expertize;
 
     int32 basePoints = int32(m_baseBonusData->expertizeScale * (CalculateScalingData()->expertizeScale / 100.0f));
-
-    if (Aura* aura = GetScalingAura(SPELL_AURA_MOD_EXPERTISE))
-        ReapplyScalingAura(aura, basePoints);
 }
 
 void Pet::ApplyPowerregenScalingBonus(bool apply)
@@ -2444,10 +2440,6 @@ void Pet::ApplyAttackSpeedScalingBonus(bool apply)
     m_baseBonusData->attackspeedScale = m_attackspeed;
 
     int32 basePoints = int32((float)m_baseBonusData->attackspeedScale * float(CalculateScalingData()->attackspeedScale) / 100.0f);
-
-    if (Aura* aura = GetScalingAura(SPELL_AURA_HASTE_ALL))
-        ReapplyScalingAura(aura, basePoints);
-
 }
 
 bool Pet::Summon()
