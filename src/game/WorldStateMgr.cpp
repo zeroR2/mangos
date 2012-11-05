@@ -61,17 +61,17 @@ void WorldStateMgr::Update()
             {
                 case WORLD_STATE_TYPE_BGWEEKEND:
                 {
-//                     for (uint32 i = 1; i < sBattlemasterListStore.GetNumRows(); ++i)
-//                     {
-//                         BattlemasterListEntry const * bl = sBattlemasterListStore.LookupEntry(i);
-//                         if (bl && bl->HolidayWorldStateId == state->GetId())
-//                         {
-//                             if (BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)))
-//                                 state->SetValue(WORLD_STATE_ADD);
-//                             else
-//                                 state->SetValue(WORLD_STATE_REMOVE);
-//                         }
-//                     }
+                    for (uint32 i = 1; i < sBattlemasterListStore.GetNumRows(); ++i)
+                    {
+                        BattlemasterListEntry const * bl = sBattlemasterListStore.LookupEntry(i);
+                        if (bl && bl->HolidayWorldStateId == state->GetId())
+                        {
+                            if (BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)))
+                                state->SetValue(WORLD_STATE_ADD);
+                            else
+                                state->SetValue(WORLD_STATE_REMOVE);
+                        }
+                    }
                     break;
                 }
                 case WORLD_STATE_TYPE_CUSTOM:
@@ -152,7 +152,7 @@ void WorldStateMgr::LoadTemplatesFromDBC()
 
         uint32 stateId   = 0;
         uint32 condition = 0;
-        uint32 phasemask = wsEntry->m_flags;
+        uint32 phasemask = 0;//wsEntry->m_flags;
 
         WorldStatesLinkedSet linkedList;
 
@@ -179,7 +179,7 @@ void WorldStateMgr::LoadTemplatesFromDBC()
         else if (!wsEntry->map_id && !wsEntry->m_zone)
         {
             stateId = id;
-            condition = wsEntry->m_flags;   // Phase currently
+            condition = 0;//wsEntry->m_flags;   // Phase currently
             type = WORLD_STATE_TYPE_EVENT;
         }
         else
@@ -295,10 +295,10 @@ void WorldStateMgr::LoadTemplatesFromDB()
         uint32   flags          = fields[3].GetUInt32();
         uint32   default_value  = fields[4].GetUInt32();
         uint32   linkedId       = fields[5].GetUInt32();
-        //uint32   phasemask       = fields[6].GetUInt32();
+        uint32   phasemask       = fields[6].GetUInt32();
 
         // Store the state data
-        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId, WorldStateTemplate(stateId, type, condition, flags, default_value, linkedId, 0 /*phasemask*/)));
+        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId, WorldStateTemplate(stateId, type, condition, flags, default_value, linkedId, phasemask)));
 
 
         ++count;

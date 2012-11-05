@@ -49,7 +49,6 @@ LootStore LootTemplates_Pickpocketing("pickpocketing_loot_template","creature pi
 LootStore LootTemplates_Prospecting(  "prospecting_loot_template",  "item entry (ore)",               true);
 LootStore LootTemplates_Reference(    "reference_loot_template",    "reference id",                   false);
 LootStore LootTemplates_Skinning(     "skinning_loot_template",     "creature skinning id",           true);
-LootStore LootTemplates_Spell(        "spell_loot_template",        "spell id (random item creating)",false);
 
 class LootTemplate::LootGroup                               // A set of loot definitions for items (refs are not allowed)
 {
@@ -335,7 +334,6 @@ LootItem::LootItem(LootStoreItem const& li)
     needs_quest = li.needs_quest;
 
     count       = urand(li.mincountOrRef, li.maxcount);     // constructor called for mincountOrRef > 0 only
-    randomSuffix = GenerateEnchSuffixFactor(itemid);
     randomPropertyId = Item::GenerateItemRandomPropertyId(itemid);
     is_looted = 0;
     is_blocked = 0;
@@ -343,7 +341,7 @@ LootItem::LootItem(LootStoreItem const& li)
     is_counted = 0;
 }
 
-LootItem::LootItem(uint32 itemid_, uint32 count_, uint32 randomSuffix_, int32 randomPropertyId_)
+LootItem::LootItem(uint32 itemid_, uint32 count_, int32 randomPropertyId_)
 {
     itemid      = itemid_;
     conditionId = 0;
@@ -354,7 +352,6 @@ LootItem::LootItem(uint32 itemid_, uint32 count_, uint32 randomSuffix_, int32 ra
     needs_quest = false;
 
     count       = count_;
-    randomSuffix = randomSuffix_;
     randomPropertyId = randomPropertyId_;
     is_looted = 0;
     is_blocked = 0;
@@ -742,7 +739,6 @@ ByteBuffer& operator<<(ByteBuffer& b, LootItem const& li)
     b << uint32(li.itemid);
     b << uint32(li.count);                                  // nr of items of this type
     b << uint32(ObjectMgr::GetItemPrototype(li.itemid)->DisplayInfoID);
-    b << uint32(li.randomSuffix);
     b << uint32(li.randomPropertyId);
     // b << uint8(0);                                       // slot type - will send after this function call
     return b;
@@ -1374,39 +1370,6 @@ void LoadLootTemplates_Skinning()
 
     // output error for any still listed (not referenced from appropriate table) ids
     LootTemplates_Skinning.ReportUnusedIds(ids_set);
-}
-
-void LoadLootTemplates_Spell()
-{
-    LootIdSet ids_set;
-    LootTemplates_Spell.LoadAndCollectLootIds(ids_set);
-
-    // remove real entries and check existence loot
-    for (uint32 spell_id = 1; spell_id < sSpellStore.GetNumRows(); ++spell_id)
-    {
-        SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
-        if (!spellInfo)
-            continue;
-
-        // possible cases
-        if (!IsLootCraftingSpell(spellInfo))
-            continue;
-
-        if (ids_set.find(spell_id) == ids_set.end())
-        {
-            // not report about not trainable spells (optionally supported by DB)
-            // ignore 61756 (Northrend Inscription Research (FAST QA VERSION) for example
-            if (!spellInfo->HasAttribute(SPELL_ATTR_NOT_SHAPESHIFT) || spellInfo->HasAttribute(SPELL_ATTR_TRADESPELL))
-            {
-                LootTemplates_Spell.ReportNotExistedId(spell_id);
-            }
-        }
-        else
-            ids_set.erase(spell_id);
-    }
-
-    // output error for any still listed (not referenced from appropriate table) ids
-    LootTemplates_Spell.ReportUnusedIds(ids_set);
 }
 
 void LoadLootTemplates_Reference()

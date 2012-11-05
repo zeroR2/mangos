@@ -457,7 +457,7 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
 
     // AoE spells, spells with non-magic DmgClass or SchoolMask or with SPELL_ATTR_EX2_CANT_REFLECTED cannot be reflected
     if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC &&
-        GetSpellSchoolMask(m_spellInfo->School) != SPELL_SCHOOL_MASK_NORMAL &&
+        GetSpellSchoolMask(m_spellInfo) != SPELL_SCHOOL_MASK_NORMAL &&
         !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) &&
         !IsAreaOfEffectSpell(m_spellInfo))
     {

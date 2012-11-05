@@ -3910,9 +3910,9 @@ void Player::BuildCreateUpdateBlockForPlayer(UpdateData *data, Player *target) c
     Unit::BuildCreateUpdateBlockForPlayer(data, target);
 }
 
-void Player::DestroyForPlayer(Player *target, bool anim) const
+void Player::DestroyForPlayer(Player *target) const
 {
-    Unit::DestroyForPlayer(target, anim);
+    Unit::DestroyForPlayer(target);
 
     for (int i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
@@ -6045,7 +6045,7 @@ ActionButton* Player::addActionButton(uint8 button, uint32 action, uint8 type)
     return &ab;
 }
 
-void Player::removeActionButton(uint8 spec, uint8 button)
+void Player::removeActionButton(uint8 button)
 {
     ActionButtonList& currentActionButtonList = m_actionButtons;
     ActionButtonList::iterator buttonItr = currentActionButtonList.find(button);
@@ -6057,7 +6057,7 @@ void Player::removeActionButton(uint8 spec, uint8 button)
     else
         buttonItr->second.uState = ACTIONBUTTON_DELETED;    // saved, will deleted at next save
 
-    DETAIL_LOG("Action Button '%u' Removed from Player '%u' for spec %u", button, GetGUIDLow(), spec);
+    DETAIL_LOG("Action Button '%u' Removed from Player '%u'", button, GetGUIDLow());
 }
 
 ActionButton const* Player::GetActionButton(uint8 button)

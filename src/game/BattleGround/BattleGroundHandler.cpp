@@ -317,7 +317,8 @@ void WorldSession::HandleBattlefieldListOpcode(WorldPacket& recv_data)
 
     BattleGroundTypeId bgTypeId = GetBattleGroundTypeIdByMapId(mapId);
 
-    if (bgTypeId == BATTLEGROUND_TYPE_NONE)
+    BattlemasterListEntry const* bl = sBattlemasterListStore.LookupEntry(bgTypeId);
+    if (!bl)
     {
         sLog.outError("Battleground: invalid bgtype received.");
         return;

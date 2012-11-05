@@ -88,6 +88,20 @@ struct BankBagSlotPricesEntry
 
 #define MAX_OUTFIT_ITEMS 12
 
+struct BattlemasterListEntry
+{
+    uint32  id;                                             // 0        m_ID
+    int32   mapid[8];                                       // 1-8      m_mapID[8]
+    uint32  type;                                           // 9        m_instanceType
+    //uint32 canJoinAsGroup;                                // 10       m_groupsAllowed
+    char*   name[16];                                       // 11-26    m_name_lang
+    //uint32 nameFlags                                      // 27 string flags
+    uint32 maxGroupSize;                                    // 28       m_maxGroupSize
+    uint32 HolidayWorldStateId;                             // 29       m_holidayWorldState
+    uint32 minLevel;                                        // 30       m_minlevel (sync with PvPDifficulty.dbc content)
+    uint32 maxLevel;                                        // 31       m_maxlevel (sync with PvPDifficulty.dbc content)
+};
+
 struct CharStartOutfitEntry
 {
     //uint32 Id;                                            // 0        m_ID

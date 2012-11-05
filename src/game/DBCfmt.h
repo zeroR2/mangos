@@ -23,6 +23,7 @@ const char AreaTableEntryfmt[]="niiiixxxxxissssssssxixxxx";
 const char AreaTriggerEntryfmt[]="niffffffff";
 const char AuctionHouseEntryfmt[]="niiixxxxxxxxx";
 const char BankBagSlotPricesEntryfmt[]="ni";
+const char BattlemasterListEntryfmt[] = "niiiiiiiiixssssssssssssssssxiiii";
 const char ChrClassesEntryfmt[]="nxxixssssssssxxix";
 const char ChrRacesEntryfmt[]="nxixiixxixxxxxixissssssssxxxx";
 const char CharStartOutfitEntryfmt[]="diiiiiiiiiiiiixxxxxxxxxxxxxxxxxxxxxxxxxxx";

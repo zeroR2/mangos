@@ -1088,8 +1088,8 @@ void BattleGroundMgr::CreateInitialBattleGrounds()
 {
     uint32 count = 0;
 
-    //                                                0   1                 2                 3      4      5                6              7             8
-    QueryResult* result = WorldDatabase.Query("SELECT id, MinPlayersPerTeam,MaxPlayersPerTeam,MinLvl,MaxLvl,AllianceStartLoc,AllianceStartO,HordeStartLoc,HordeStartO FROM battleground_template");
+    //                                                0   1                 2                 3                4              5             6
+    QueryResult* result = WorldDatabase.Query("SELECT id, MinPlayersPerTeam,MaxPlayersPerTeam,AllianceStartLoc,AllianceStartO,HordeStartLoc,HordeStartO FROM battleground_template");
 
     if (!result)
     {
@@ -1111,12 +1111,17 @@ void BattleGroundMgr::CreateInitialBattleGrounds()
 
         uint32 bgTypeID_ = fields[0].GetUInt32();
 
+        BattlemasterListEntry const* bl = sBattlemasterListStore.LookupEntry(bgTypeID_);
+        if (!bl)
+        {
+            sLog.outError("Battleground ID %u not found in BattlemasterList.dbc. Battleground not created.", bgTypeID_);
+            continue;
+        }
+
         BattleGroundTypeId bgTypeID = BattleGroundTypeId(bgTypeID_);
 
         uint32 MinPlayersPerTeam = fields[1].GetUInt32();
         uint32 MaxPlayersPerTeam = fields[2].GetUInt32();
-        uint32 MinLvl = fields[3].GetUInt32();
-        uint32 MaxLvl = fields[4].GetUInt32();
 
         // check values from DB
         if (MaxPlayersPerTeam == 0 || MinPlayersPerTeam == 0)
@@ -1175,7 +1180,7 @@ void BattleGroundMgr::CreateInitialBattleGrounds()
         }
 
         // sLog.outDetail("Creating battleground %s, %u-%u", bl->name[sWorld.GetDBClang()], MinLvl, MaxLvl);
-        if (!CreateBattleGround(bgTypeID, MinPlayersPerTeam, MaxPlayersPerTeam, MinLvl, MaxLvl, name, mapId, AStartLoc[0], AStartLoc[1], AStartLoc[2], AStartLoc[3], HStartLoc[0], HStartLoc[1], HStartLoc[2], HStartLoc[3]))
+        if (!CreateBattleGround(bgTypeID, MinPlayersPerTeam, MaxPlayersPerTeam, bl->minLevel, bl->maxLevel, name, mapId, AStartLoc[0], AStartLoc[1], AStartLoc[2], AStartLoc[3], HStartLoc[0], HStartLoc[1], HStartLoc[2], HStartLoc[3]))
             continue;
 
         ++count;

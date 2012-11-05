@@ -63,6 +63,7 @@ extern DBCStorage <AreaTableEntry>               sAreaStore;// recommend access 
 extern DBCStorage <AreaTriggerEntry>             sAreaTriggerStore;
 extern DBCStorage <AuctionHouseEntry>            sAuctionHouseStore;
 extern DBCStorage <BankBagSlotPricesEntry>       sBankBagSlotPricesStore;
+extern DBCStorage <BattlemasterListEntry>        sBattlemasterListStore;
 extern DBCStorage <CharStartOutfitEntry>         sCharStartOutfitStore;
 extern DBCStorage <ChrClassesEntry>              sChrClassesStore;
 extern DBCStorage <ChrRacesEntry>                sChrRacesStore;

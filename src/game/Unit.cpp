@@ -473,10 +473,7 @@ bool Unit::haveOffhandWeapon() const
         return ((Player*)this)->GetWeaponForAttack(OFF_ATTACK,true,true);
     else
     {
-        uint32 ItemId = GetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + 1);
-        ItemEntry const* itemInfo = sItemStore.LookupEntry(ItemId);
-
-        if (itemInfo && itemInfo->Class == ITEM_CLASS_WEAPON)
+        if (GetByteValue(UNIT_VIRTUAL_ITEM_INFO + 2, VIRTUAL_ITEM_INFO_0_OFFSET_CLASS) == ITEM_CLASS_WEAPON)
             return true;
 
         return false;
@@ -1328,7 +1325,7 @@ void Unit::JustKilledCreature(Creature* victim)
 
         if (m->IsDungeon() && creditedPlayer)
         {
-            if (m->IsRaidOrHeroicDungeon())
+            if (m->IsRaid())
             {
                 if (victim->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND)
                     ((DungeonMap*)m)->PermBindAllPlayers(creditedPlayer);
@@ -2299,9 +2296,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
         }
     }
 
-    // Incanter's Absorption, for converting to spell power
-    int32 incanterAbsorption = 0;
-
     SpellIdSet toRemoveSpellList;
     // absorb without mana cost
     AuraList const& vSchoolAbsorb = GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
@@ -2519,11 +2513,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
 
             RemainingDamage -= currentAbsorb;
 
-            // Fire Ward or Frost Ward or Ice Barrier (or Mana Shield)
-            // for Incanter's Absorption converting to spell power
-            if (spellProto->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_MISC>())
-                incanterAbsorption += currentAbsorb;
-
             // Reduce shield amount
             mod->m_amount -= currentAbsorb;
             if((*i)->GetHolder()->DropAuraCharge())
@@ -2571,11 +2560,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
                 ApplyPowerMod(POWER_MANA, manaReduction, false);
             }
 
-            // Mana Shield (or Fire Ward or Frost Ward or Ice Barrier)
-            // for Incanter's Absorption converting to spell power
-            if ((*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_MAGE, CF_MAGE_MISC>())
-                incanterAbsorption += currentAbsorb;
-
             (*i)->GetModifier()->m_amount -= currentAbsorb;
             if((*i)->GetModifier()->m_amount <= 0)
                 toRemoveSpellList.insert((*i)->GetId());
@@ -2589,32 +2573,6 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
         for (SpellIdSet::const_iterator _i = toRemoveSpellList.begin(); _i != toRemoveSpellList.end(); ++_i)
             RemoveAurasDueToSpell(*_i, SpellAuraHolderPtr(NULL), AURA_REMOVE_BY_SHIELD_BREAK);
         toRemoveSpellList.clear();
-    }
-
-    // effects dependent from full absorb amount
-    // Incanter's Absorption, if have affective absorbing
-    if (incanterAbsorption)
-    {
-        AuraList const& auras = GetAurasByType(SPELL_AURA_DUMMY);
-        for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
-        {
-            SpellEntry const* itr_spellProto = (*itr)->GetSpellProto();
-
-            // Incanter's Absorption
-            if (itr_spellProto->SpellFamilyName == SPELLFAMILY_GENERIC &&
-                itr_spellProto->SpellIconID == 2941)
-            {
-                int32 amount = int32(incanterAbsorption * (*itr)->GetModifier()->m_amount / 100);
-
-                // apply normalized part of already accumulated amount in aura
-                if (Aura* spdAura = GetAura(44413, EFFECT_INDEX_0))
-                    amount += spdAura->GetModifier()->m_amount * spdAura->GetAuraDuration() / spdAura->GetAuraMaxDuration();
-
-                // Incanter's Absorption (triggered absorb based spell power, will replace existing if any)
-                CastCustomSpell(this, 44413, &amount, NULL, NULL, true);
-                break;
-            }
-        }
     }
 
     // only split damage if not damaging yourself
@@ -7610,7 +7568,7 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
             if (damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_MAGE_FIREBALL, CF_MAGE_FROSTBOLT, CF_MAGE_ARCANE_MISSILES2, CF_MAGE_ARCANE_BLAST, CF_MAGE_FROSTFIRE_BOLT, CF_MAGE_ARCANE_BARRAGE>())
             {
                 //Search for Torment the weak dummy aura
-                if (Aura* ttwAura = GetAuraByEffectMask(SPELL_AURA_DUMMY,SPELLFAMILY_GENERIC,ClassFamilyMask(0x00240000,0,0),GetObjectGuid()))
+                if (Aura* ttwAura = GetAuraByEffectMask(SPELL_AURA_DUMMY,SPELLFAMILY_GENERIC,ClassFamilyMask(0x00240000,0),GetObjectGuid()))
                 {
                     Unit::SpellAuraHolderMap const& holderMap = pVictim->GetSpellAuraHolderMap();
                     for (Unit::SpellAuraHolderMap::const_iterator itr = holderMap.begin(); itr != holderMap.end(); ++itr)
@@ -7796,7 +7754,7 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask)
             if((*i)->GetModifier()->m_miscvalue & schoolMask)
             {
                 // stat used stored in miscValueB for this aura
-                Stats usedStat = Stats((*i)->GetMiscBValue());
+                Stats usedStat = STAT_SPIRIT;
                 DoneAdvertisedBenefit += int32(GetStat(usedStat) * (*i)->GetModifier()->m_amount / 100.0f);
             }
         }

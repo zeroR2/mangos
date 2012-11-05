@@ -943,13 +943,13 @@ void GameEventMgr::UpdateWorldStates(uint16 event_id, bool Activate)
         BattleGroundTypeId bgTypeId = BattleGroundMgr::WeekendHolidayIdToBGType(event.holiday_id);
         if (bgTypeId != BATTLEGROUND_TYPE_NONE)
         {
-//             BattlemasterListEntry const* bl = sBattlemasterListStore.LookupEntry(bgTypeId);
-//             if (bl && bl->HolidayWorldStateId)
-//             {
-//                 WorldPacket data;
-//                 sBattleGroundMgr.BuildUpdateWorldStatePacket(&data, bl->HolidayWorldStateId, Activate ? 1 : 0);
-//                 sWorld.SendGlobalMessage(&data);
-//             }
+            BattlemasterListEntry const* bl = sBattlemasterListStore.LookupEntry(bgTypeId);
+            if (bl && bl->HolidayWorldStateId)
+            {
+                WorldPacket data;
+                sBattleGroundMgr.BuildUpdateWorldStatePacket(&data, bl->HolidayWorldStateId, Activate ? 1 : 0);
+                sWorld.SendGlobalMessage(&data);
+            }
         }
     }
 }

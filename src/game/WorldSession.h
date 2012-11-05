@@ -877,7 +877,6 @@ class MANGOS_DLL_SPEC WorldSession
 
         AccountTypes _security;
         uint32 _accountId;
-        uint8 m_expansion;
 
         time_t _logoutTime;
         bool m_inQueue;                                     // session wait in auth.queue

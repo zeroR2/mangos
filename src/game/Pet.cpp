@@ -155,7 +155,7 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     if(getPetType() == HUNTER_PET)
     {
-        if (!creatureInfo->isTameable(owner->CanTameExoticPets()))
+        if (!creatureInfo->isTameable())
         {
             delete result;
             return false;
@@ -1001,8 +1001,8 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
         case SUMMON_PET:
         {
             SetByteValue(UNIT_FIELD_BYTES_0, 1, CLASS_MAGE);
-            if (cinfo->family == CREATURE_FAMILY_GHOUL)
-                setPowerType(POWER_ENERGY);
+            // this enables popup window (pet dismiss, cancel)
+            SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
             break;
         }
         case HUNTER_PET:
@@ -1038,9 +1038,6 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
         {
             SetUInt32Value(UNIT_FIELD_PETEXPERIENCE, 0);
             SetUInt32Value(UNIT_FIELD_PETNEXTLEVELEXP, 1000);
-            // DK ghouls have energy
-            if (cinfo->family == CREATURE_FAMILY_GHOUL)
-                setPowerType(POWER_ENERGY);
             break;
         }
         default:
@@ -1241,15 +1238,7 @@ void Pet::_SaveSpellCooldowns()
 
 void Pet::_LoadSpells()
 {
-    uint8 spec = 0;
-    if (getPetType() == HUNTER_PET)
-    {
-        Unit* owner = GetOwner();
-        if(owner && owner->GetTypeId() == TYPEID_PLAYER)
-            spec = ((Player*)owner)->GetActiveSpec();
-    }
-
-    QueryResult *result = CharacterDatabase.PQuery("SELECT spell,active FROM pet_spell WHERE guid = '%u' AND `spec` = '%u'",m_charmInfo->GetPetNumber(), spec);
+    QueryResult *result = CharacterDatabase.PQuery("SELECT spell,active FROM pet_spell WHERE guid = '%u'",m_charmInfo->GetPetNumber());
 
     if(result)
     {
@@ -1270,14 +1259,6 @@ void Pet::_SaveSpells()
     static SqlStatementID delSpell ;
     static SqlStatementID insSpell ;
 
-    uint8 spec = 0;
-    if (getPetType() == HUNTER_PET)
-    {
-        Unit* owner = GetOwner();
-        if(owner && owner->GetTypeId() == TYPEID_PLAYER)
-            spec = ((Player*)owner)->GetActiveSpec();
-    }
-
     for (PetSpellMap::iterator itr = m_spells.begin(), next = m_spells.begin(); itr != m_spells.end(); itr = next)
     {
         ++next;
@@ -1290,24 +1271,24 @@ void Pet::_SaveSpells()
         {
             case PETSPELL_REMOVED:
                 {
-                    SqlStatement stmt = CharacterDatabase.CreateStatement(delSpell, "DELETE FROM pet_spell WHERE guid = ? AND spell = ? AND spec = ?");
-                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, spec);
+                    SqlStatement stmt = CharacterDatabase.CreateStatement(delSpell, "DELETE FROM pet_spell WHERE guid = ? AND spell = ?");
+                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first);
                     m_spells.erase(itr);
                 }
                 continue;
             case PETSPELL_CHANGED:
                 {
-                    SqlStatement stmt = CharacterDatabase.CreateStatement(delSpell, "DELETE FROM pet_spell WHERE guid = ? AND spell = ? AND spec = ?");
-                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, spec);
+                    SqlStatement stmt = CharacterDatabase.CreateStatement(delSpell, "DELETE FROM pet_spell WHERE guid = ? AND spell = ?");
+                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first);
 
-                    stmt = CharacterDatabase.CreateStatement(insSpell, "INSERT INTO pet_spell (guid,spell,active,spec) VALUES (?, ?, ?, ?)");
-                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint32(itr->second.active), spec);
+                    stmt = CharacterDatabase.CreateStatement(insSpell, "INSERT INTO pet_spell (guid,spell,active) VALUES (?, ?, ?)");
+                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint32(itr->second.active));
                 }
                 break;
             case PETSPELL_NEW:
                 {
-                    SqlStatement stmt = CharacterDatabase.CreateStatement(insSpell, "INSERT INTO pet_spell (guid,spell,active,spec) VALUES (?, ?, ?, ?)");
-                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint32(itr->second.active), spec);
+                    SqlStatement stmt = CharacterDatabase.CreateStatement(insSpell, "INSERT INTO pet_spell (guid,spell,active) VALUES (?, ?, ?)");
+                    stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint32(itr->second.active));
                 }
                 break;
             case PETSPELL_UNCHANGED:

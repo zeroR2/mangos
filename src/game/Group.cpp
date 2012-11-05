@@ -1636,12 +1636,18 @@ void Group::UpdateLooterGuid(WorldObject* pSource, bool ifneed)
 
 GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* bgOrTemplate, BattleGroundQueueTypeId bgQueueTypeId, uint32 MinPlayerCount, uint32 MaxPlayerCount)
 {
+    BattlemasterListEntry const* bgEntry = sBattlemasterListStore.LookupEntry(bgOrTemplate->GetTypeID());
+    if(!bgEntry)
+        return ERR_GROUP_JOIN_BATTLEGROUND_FAIL;            // shouldn't happen
+
     // check for min / max count
     uint32 memberscount = GetMembersCount();
     if(memberscount < MinPlayerCount)
-        return BG_JOIN_ERR_GROUP_NOT_ENOUGH;
-    if(memberscount > MaxPlayerCount)
-        return BG_JOIN_ERR_GROUP_TOO_MANY;
+        //return BG_JOIN_ERR_GROUP_NOT_ENOUGH;
+        return ERR_GROUP_JOIN_BATTLEGROUND_FAIL;
+    if(memberscount > bgEntry->maxGroupSize)
+        //return BG_JOIN_ERR_GROUP_TOO_MANY;
+        return ERR_GROUP_JOIN_BATTLEGROUND_FAIL;
 
     // get a player as reference, to compare other players' stats to (queue id based on level, etc.)
     Player * reference = GetFirstMember()->getSource();

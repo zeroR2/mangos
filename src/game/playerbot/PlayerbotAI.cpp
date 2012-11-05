@@ -3873,7 +3873,6 @@ void PlayerbotAI::MakeItemLink(const ItemPrototype *item, std::ostringstream &ou
         case ITEM_QUALITY_EPIC:     out << "ffa335ee"; break;  //PURPLE
         case ITEM_QUALITY_LEGENDARY: out << "ffff8000"; break;  //ORANGE
         case ITEM_QUALITY_ARTIFACT: out << "ffe6cc80"; break;  //LIGHT YELLOW
-        case ITEM_QUALITY_HEIRLOOM: out << "ffe6cc80"; break;  //LIGHT YELLOW
         default:                    out << "ffff0000"; break;  //Don't know color, so red?
     }
     out << "|Hitem:";
@@ -3907,7 +3906,6 @@ void PlayerbotAI::MakeItemLink(const Item *item, std::ostringstream &out, bool I
         case ITEM_QUALITY_EPIC:     out << "ffa335ee"; break;  //PURPLE
         case ITEM_QUALITY_LEGENDARY: out << "ffff8000"; break;  //ORANGE
         case ITEM_QUALITY_ARTIFACT: out << "ffe6cc80"; break;  //LIGHT YELLOW
-        case ITEM_QUALITY_HEIRLOOM: out << "ffe6cc80"; break;  //LIGHT YELLOW
         default:                    out << "ffff0000"; break;  //Don't know color, so red?
     }
     out << "|Hitem:";
@@ -5647,7 +5645,6 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     m_bot->SendTalentsInfoData();
                     InspectUpdate();
                 }
-                m_bot->MakeTalentLink(out);
                 SendWhisper(out.str(), fromPlayer);
 
             }
@@ -5664,7 +5661,6 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
             if (gold > 0)
                 out << "Cost to reset all Talents is " << gold << " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
 
-            m_bot->MakeTalentLink(out);
             SendWhisper(out.str(), fromPlayer);
         }
     }

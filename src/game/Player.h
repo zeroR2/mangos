@@ -1408,7 +1408,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetInGameTime(uint32 time) { m_ingametime = time; }
         void AddTimedQuest(uint32 quest_id) { m_timedquests.insert(quest_id); }
         void RemoveTimedQuest(uint32 quest_id) { m_timedquests.erase(quest_id); }
-        void MakeTalentLink(std::ostringstream &out);
 
         void chompAndTrim(std::string& str);
         bool getNextQuestId(const std::string& pString, unsigned int& pStartPos, unsigned int& pId);
@@ -1629,7 +1628,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         static bool IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player, bool msg = true);
         ActionButton* addActionButton(uint8 button, uint32 action, uint8 type);
-        void removeActionButton(uint8 spec, uint8 button);
+        void removeActionButton(uint8 button);
         void SendActionButtons(uint32 state) const;
         void SendInitialActionButtons() const { SendActionButtons(1); }
         void SendLockActionButtons() const;

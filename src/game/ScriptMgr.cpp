@@ -1064,20 +1064,13 @@ void ScriptAction::HandleScriptStep()
                     pSource->MonsterTextEmote(textId, unitTarget, true);
                     break;
                 case CHAT_TYPE_WHISPER:
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
-                    {
-                        sLog.outError(" DB-SCRIPTS: Process table `%s` id %u, command %u attempt to whisper (%u) to %s, skipping.", m_table, m_script->id, m_script->command, m_script->talk.chatType, unitTarget ? unitTarget->GetGuidStr().c_str() : "<no target>");
-                        break;
-                    }
-                    pSource->MonsterWhisper(textId, unitTarget);
-                    break;
                 case CHAT_TYPE_BOSS_WHISPER:
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
                     {
                         sLog.outError(" DB-SCRIPTS: Process table `%s` id %u, command %u attempt to whisper (%u) to %s, skipping.", m_table, m_script->id, m_script->command, m_script->talk.chatType, unitTarget ? unitTarget->GetGuidStr().c_str() : "<no target>");
                         break;
                     }
-                    pSource->MonsterWhisper(textId, unitTarget, true);
+                    pSource->MonsterWhisper(textId, unitTarget);
                     break;
                 case CHAT_TYPE_ZONE_YELL:
                     pSource->MonsterYellToZone(textId, m_script->talk.language, unitTarget);
