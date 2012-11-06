@@ -12565,20 +12565,7 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
                 case ITEM_ENCHANTMENT_TYPE_STAT:
                 {
                     if (!enchant_amount)
-                    {
-                        ItemRandomSuffixEntry const *item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
-                        if (item_rand_suffix)
-                        {
-                            for (int k = 0; k < 3; ++k)
-                            {
-                                if (item_rand_suffix->enchant_id[k] == enchant_id)
-                                {
-                                    enchant_amount = uint32((item_rand_suffix->prefix[k] * item->GetItemSuffixFactor()) / 10000);
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                        break;
 
                     DEBUG_LOG("Adding %u to stat nb %u",enchant_amount,enchant_spell_id);
                     switch (enchant_spell_id)
@@ -15843,11 +15830,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     _LoadEquipmentSets(holder->GetResult(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS));
 
-    if (!GetGroup() || !GetGroup()->isLFDGroup())
-    {
-        sLFGMgr.RemoveMemberFromLFDGroup(GetGroup(),GetObjectGuid());
-    }
-
     return true;
 }
 
@@ -16618,9 +16600,6 @@ void Player::_LoadGroup(QueryResult *result)
         {
             uint8 subgroup = group->GetMemberGroup(GetObjectGuid());
             SetGroup(group, subgroup);
-
-            if (group->isLFDGroup())
-                sLFGMgr.LoadLFDGroupPropertiesForPlayer(this);
         }
     }
 }
@@ -16791,13 +16770,10 @@ void Player::SendRaidInfo()
     {
         if (itr->second.perm)
         {
-            DungeonPersistentState* state = itr->second.state;
+            DungeonPersistentState *state = itr->second.state;
             data << uint32(state->GetMapId());              // map id
-            data << ObjectGuid(state->GetInstanceGuid());   // instance guid
-            data << uint8((state->GetRealResetTime() > now) ? 1 : 0);   // expired = 0
-            data << uint8(itr->second.extend ? 1 : 0);      // extended = 1
-            data << uint32(state->GetRealResetTime() > now ? state->GetRealResetTime() - now
-                : DungeonResetScheduler::CalculateNextResetTime());    // reset time
+            data << uint32(state->GetResetTime() - time(NULL));
+            data << uint32(state->GetInstanceId());         // instance id
             ++counter;
         }
     }
@@ -21378,7 +21354,7 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket *data)
     //*data << uint8(m_specsCount);                           // talent group count (0, 1 or 2)
     //*data << uint8(m_activeSpec);                           // talent group index (0 or 1)
 
-    if (m_specsCount)
+    /*if (m_specsCount)
     {
         // loop through all specs (only 1 for now)
         for (uint32 specIdx = 0; specIdx < m_specsCount; ++specIdx)
@@ -21413,7 +21389,7 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket *data)
 
             data->put<uint8>(pos, talentIdCount);           // put real count
         }
-    }
+    }*/
 }
 
 void Player::SendTalentsInfoData()
