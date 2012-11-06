@@ -525,7 +525,6 @@ struct GameObjectData
     int32  spawntimesecs;
     uint32 animprogress;
     GOState go_state;
-    uint8 spawnMask;
 };
 
 // from `gameobject_addon`

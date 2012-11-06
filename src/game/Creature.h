@@ -195,7 +195,6 @@ struct CreatureData
     uint32 curmana;
     bool  is_dead;
     uint8 movementType;
-    uint8 spawnMask;
 
     // helper function
     ObjectGuid GetObjectGuid(uint32 lowguid) const;

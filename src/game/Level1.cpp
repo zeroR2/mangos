@@ -1577,10 +1577,6 @@ bool ChatHandler::HandleModifyHonorCommand(char* args)
 
     int32 amount = (int32)atoi(args);
 
-    target->ModifyHonorPoints(amount);
-
-    PSendSysMessage(LANG_COMMAND_MODIFY_HONOR, GetNameLink(target).c_str(), target->GetHonorPoints());
-
     return true;
 }
 

@@ -141,7 +141,7 @@ bool OutdoorPvPSI::HandleAreaTrigger(Player* player, uint32 triggerId)
 
     // reward the player
     player->CastSpell(player, SPELL_TRACES_OF_SILITHYST, true);
-    player->RewardHonor(NULL, 1, HONOR_REWARD_SILITHYST);
+    player->AddHonor(19.0, BONUS_HONOR_UNIT);
     player->GetReputationMgr().ModifyReputation(sFactionStore.LookupEntry(FACTION_CENARION_CIRCLE), REPUTATION_REWARD_SILITHYST);
 
     return true;

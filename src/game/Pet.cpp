@@ -2379,49 +2379,49 @@ void Pet::ApplySpellHitScalingBonus(bool apply)
 
 void Pet::ApplyExpertizeScalingBonus(bool apply)
 {
-    Unit* owner = GetOwner();
-
-    // Don't apply scaling bonuses if no owner or owner is not player
-    if (!owner || owner->GetTypeId() != TYPEID_PLAYER || m_removed)
-        return;
-    int32 m_expertize = owner->GetUInt32Value(PLAYER_EXPERTISE);
-
-    if (m_baseBonusData->expertizeScale == m_expertize && !apply)
-        return;
-
-    m_baseBonusData->expertizeScale = m_expertize;
-
-    int32 basePoints = int32(m_baseBonusData->expertizeScale * (CalculateScalingData()->expertizeScale / 100.0f));
+//     Unit* owner = GetOwner();
+// 
+//     // Don't apply scaling bonuses if no owner or owner is not player
+//     if (!owner || owner->GetTypeId() != TYPEID_PLAYER || m_removed)
+//         return;
+//     int32 m_expertize = owner->GetUInt32Value(PLAYER_EXPERTISE);
+// 
+//     if (m_baseBonusData->expertizeScale == m_expertize && !apply)
+//         return;
+// 
+//     m_baseBonusData->expertizeScale = m_expertize;
+// 
+//     int32 basePoints = int32(m_baseBonusData->expertizeScale * (CalculateScalingData()->expertizeScale / 100.0f));
 }
 
 void Pet::ApplyPowerregenScalingBonus(bool apply)
 {
-    Unit* owner = GetOwner();
-
-    // Don't apply scaling bonuses if no owner or owner is not player
-    if (!owner || owner->GetTypeId() != TYPEID_PLAYER || m_removed)
-        return;
-
-    int32 m_manaregen = int32(owner->GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER));
-
-    if (m_baseBonusData->powerregenScale == m_manaregen && !apply)
-        return;
-
-    m_baseBonusData->powerregenScale = m_manaregen;
-
-    int32 basePoints = int32(m_baseBonusData->powerregenScale * (CalculateScalingData()->powerregenScale / 100.0f));
-
-    bool needRecalculateStat = false;
-
-    if (basePoints == 0)
-        needRecalculateStat = true;
-
-    if (Aura* aura = GetScalingAura(SPELL_AURA_MOD_POWER_REGEN))
-        if (ReapplyScalingAura(aura, basePoints))
-            needRecalculateStat = true;
-
-    if (needRecalculateStat)
-        UpdateManaRegen();
+//     Unit* owner = GetOwner();
+// 
+//     // Don't apply scaling bonuses if no owner or owner is not player
+//     if (!owner || owner->GetTypeId() != TYPEID_PLAYER || m_removed)
+//         return;
+// 
+//     int32 m_manaregen = int32(owner->GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER));
+// 
+//     if (m_baseBonusData->powerregenScale == m_manaregen && !apply)
+//         return;
+// 
+//     m_baseBonusData->powerregenScale = m_manaregen;
+// 
+//     int32 basePoints = int32(m_baseBonusData->powerregenScale * (CalculateScalingData()->powerregenScale / 100.0f));
+// 
+//     bool needRecalculateStat = false;
+// 
+//     if (basePoints == 0)
+//         needRecalculateStat = true;
+// 
+//     if (Aura* aura = GetScalingAura(SPELL_AURA_MOD_POWER_REGEN))
+//         if (ReapplyScalingAura(aura, basePoints))
+//             needRecalculateStat = true;
+// 
+//     if (needRecalculateStat)
+//         UpdateManaRegen();
 }
 
 void Pet::ApplyAttackSpeedScalingBonus(bool apply)
@@ -3065,10 +3065,10 @@ Unit* Pet::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
 
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(spellInfo->rangeIndex);
 
-    float max_range_friendly = GetSpellMaxRange(srange,true);
+    float max_range_friendly = GetSpellMaxRange(srange);
     float max_range_unfriendly = (spellInfo->rangeIndex == SPELL_RANGE_IDX_COMBAT) ?
                                     GetObjectBoundingRadius() + 1.0f :
-                                    GetSpellMaxRange(srange,false);
+                                    GetSpellMaxRange(srange);
 
     if (Player* modOwner = GetSpellModOwner())
     {
@@ -3164,7 +3164,7 @@ Unit* Pet::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
 
         bool friendly = IsFriendlyTo(target);
         float dist = GetDistance(target);
-        if ((dist > (friendly ? max_range_friendly : max_range_unfriendly)) || dist < GetSpellMinRange(srange, friendly))
+        if ((dist > (friendly ? max_range_friendly : max_range_unfriendly)) || dist < GetSpellMinRange(srange))
             return NULL;
     }
 

@@ -48,26 +48,6 @@ struct MapCellObjectGuids
     CellGuidSet gameobjects;
 };
 
-struct SpecialEncounterState
-{
-    SpecialEncounterState(ObjectGuid _guid, EncounterFrameCommand _command,  uint8 _data1, uint8 _data2)
-        : guid(_guid), lastCommand(_command), data1(_data1), data2(_data2)
-    {
-        //lastCommand = ENCOUNTER_FRAME_ENGAGE;
-        active = true;
-    };
-
-    void SetCommand(EncounterFrameCommand _command) { lastCommand = _command;};
-
-    ObjectGuid guid;                       // Creature/GO(?), which linked with this state
-    EncounterFrameCommand lastCommand;     // Last command sended to this state
-    uint8 data1;
-    uint8 data2;
-    bool active;
-};
-
-typedef std::map<ObjectGuid, SpecialEncounterState> SpecialEncountersMap;
-
 typedef UNORDERED_MAP<uint32/*cell_id*/,MapCellObjectGuids> MapCellObjectGuidsMap;
 
 class MapPersistentStateManager;
@@ -195,7 +175,7 @@ class WorldPersistentState : public MapPersistentState
     Holds the information necessary for creating a new map for an existing instance
     Is referenced in three cases:
     - player-instance binds for solo players (not in group)
-    - player-instance binds for permanent heroic/raid saves
+    - player-instance binds for permanent raid saves
     - group-instance binds (both solo and permanent) cache the player binds for the group leader
 
     Used for InstanceMap only
@@ -207,7 +187,7 @@ class DungeonPersistentState : public MapPersistentState
            - any new instance is being generated
            - the first time a player bound to InstanceId logs in
            - when a group bound to the instance is loaded */
-        DungeonPersistentState(uint16 MapId, uint32 InstanceId, time_t resetTime, bool canReset, uint32 completedEncountersMask);
+        DungeonPersistentState(uint16 MapId, uint32 InstanceId, time_t resetTime, bool canReset);
 
         ~DungeonPersistentState();
 
@@ -227,33 +207,16 @@ class DungeonPersistentState : public MapPersistentState
         bool RemoveGroup(Group *group) { m_groupList.remove(group); return UnloadIfEmpty(); }
 
         /* for normal instances this corresponds to max(creature respawn time) + X hours
-           for raid/heroic instances this caches the global respawn time for the map */
+           for raid instances this caches the global respawn time for the map */
         time_t GetResetTime() const { return m_resetTime; }
         void SetResetTime(time_t resetTime) { m_resetTime = resetTime; }
         time_t GetResetTimeForDB() const;
-        time_t GetRealResetTime() const;
 
         /* instances cannot be reset (except at the global reset time)
            if there are players permanently bound to it
            this is cached for the case when those players are offline */
         bool CanReset() const { return m_canReset; }
         void SetCanReset(bool canReset) { m_canReset = canReset; }
-
-        // Work with extended instances
-        bool IsExtended() const { return m_isExtended; }
-        void SetExtended(bool isExtended) { m_isExtended = isExtended; }
-
-        // DBC encounter state update at kill/spell cast
-        void UpdateEncounterState(EncounterCreditType type, uint32 creditEntry);
-
-        // mask of completed encounters
-        uint32 GetCompletedEncountersMask() { return m_completedEncountersMask; }
-
-        bool IsCompleted();
-
-        // Special (linked) encounter frame state set/send
-        void UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 data1 = 0, uint8 data2 = 0);
-        void SendSpecialEncounterState(ObjectGuid linkedGuid);
 
         /* Saved when the instance is generated for the first time */
         void SaveToDB();
@@ -272,7 +235,6 @@ class DungeonPersistentState : public MapPersistentState
 
         time_t m_resetTime;
         bool m_canReset;
-        bool m_isExtended;
 
         /* the only reason the instSave-object links are kept is because
            the object-instSave links need to be broken at reset time
@@ -281,10 +243,6 @@ class DungeonPersistentState : public MapPersistentState
         GroupListType m_groupList;                          // lock MapPersistentState from unload
 
         SpawnedPoolData m_spawnedPoolData;                  // Pools spawns state for map copy
-
-        uint32 m_completedEncountersMask;                   // completed encounter mask, bit indexes are DungeonEncounter.dbc boss numbers, used for packets
-
-        SpecialEncountersMap m_specialEncountersMap;        // special (framed) encounters states
 };
 
 class BattleGroundPersistentState : public MapPersistentState
@@ -309,7 +267,7 @@ class BattleGroundPersistentState : public MapPersistentState
 enum ResetEventType
 {
     RESET_EVENT_NORMAL_DUNGEON = 0,                         // no fixed reset time
-    RESET_EVENT_INFORM_1       = 1,                         // raid/heroic warnings
+    RESET_EVENT_INFORM_1       = 1,                         // raid warnings
     RESET_EVENT_INFORM_2       = 2,
     RESET_EVENT_INFORM_3       = 3,
     RESET_EVENT_INFORM_LAST    = 4,
@@ -317,7 +275,7 @@ enum ResetEventType
 
 #define MAX_RESET_EVENT_TYPE   5
 
-/* resetTime is a global propery of each (raid/heroic) map
+/* resetTime is a global propery of each (raid) map
     all instances of that map reset at the same time */
 struct DungeonResetEvent
 {
@@ -341,7 +299,7 @@ class DungeonResetScheduler
         time_t GetResetTimeFor(uint32 mapid) { return m_resetTimeByMapId[mapid]; }
 
         static uint32 GetMaxResetTimeFor(InstanceTemplate const* temp);
-        static time_t CalculateNextResetTime();
+        static time_t CalculateNextResetTime(InstanceTemplate const* temp);
 
     public:                                                 // modifiers
         void SetResetTimeFor(uint32 mapid, time_t t) { m_resetTimeByMapId[mapid] = t; }
@@ -376,7 +334,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
 
         // auto select appropriate MapPersistentState (sub)class by MapEntry, and autoselect appropriate way store (by instance/map id)
         // always return != NULL
-        MapPersistentState* AddPersistentState(MapEntry const* mapEntry, uint32 instanceId, time_t resetTime, bool canReset, bool load = false, bool initPools = true, uint32 completedEncountersMask = 0);
+        MapPersistentState* AddPersistentState(MapEntry const* mapEntry, uint32 instanceId, time_t resetTime, bool canReset, bool load = false, bool initPools = true);
 
         // search stored state, can be NULL in result
         MapPersistentState *GetPersistentState(uint32 mapId, uint32 InstanceId);

@@ -929,7 +929,7 @@ uint32 Map::GetMaxPlayers() const
 
 uint32 Map::GetMaxResetDelay() const
 {
-    return DungeonResetScheduler::GetMaxResetTimeFor();
+    return DungeonResetScheduler::GetMaxResetTimeFor(ObjectMgr::GetInstanceTemplate(GetId()));
 }
 
 bool Map::CheckGridIntegrity(Creature* c, bool moved) const
@@ -1414,7 +1414,7 @@ bool DungeonMap::Add(Player *player)
                 {
                     DEBUG_LOG("DungeonMap::Add: %s is being put in instance %d,%d,%d but he is in group (Id: %d) which has non-permanent bind to instance %d,%d,%d!",
                         player->GetGuidStr().c_str(), GetPersistentState()->GetMapId(),
-                        GetPersistentState()->GetInstanceId()
+                        GetPersistentState()->GetInstanceId(),
                         pGroup->GetId(), groupBind->state->GetMapId(),
                         groupBind->state->GetInstanceId());
 
@@ -1437,7 +1437,6 @@ bool DungeonMap::Add(Player *player)
                 {
                     WorldPacket data(SMSG_PENDING_RAID_LOCK, 9);
                     data << uint32(60000);
-                    data << groupBind->state->GetCompletedEncountersMask();
                     data << uint8(0);
                     player->GetSession()->SendPacket(&data);
                     player->SetPendingBind(GetPersistanceState(), 60000);

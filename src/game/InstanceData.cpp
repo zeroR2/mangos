@@ -46,21 +46,3 @@ bool InstanceData::CheckConditionCriteriaMeet(Player const* /*source*/, uint32 m
                   instance->GetId(), instance_condition_id, map_id);
     return false;
 }
-
-void InstanceData::UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 data1, uint8 data2)
-{
-    DungeonPersistentState* state = ((DungeonMap*)instance)->GetPersistanceState();
-    if (!state)
-        return;
-
-    state->UpdateSpecialEncounterState(command, linkedGuid, data1, data2);
-}
-
-void InstanceData::SendSpecialEncounterState(ObjectGuid linkedGuid)
-{
-    DungeonPersistentState* state = ((DungeonMap*)instance)->GetPersistanceState();
-    if (!state)
-        return;
-
-    state->SendSpecialEncounterState(linkedGuid);
-}

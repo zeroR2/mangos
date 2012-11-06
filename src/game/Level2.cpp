@@ -4056,7 +4056,7 @@ bool ChatHandler::HandleHonorAddCommand(char* args)
         return false;
 
     float amount = (float)atof(args);
-    target->RewardHonor(NULL, 1, amount);
+    target->AddHonor(amount, BONUS_HONOR_UNIT);
     return true;
 }
 
@@ -4092,7 +4092,7 @@ bool ChatHandler::HandleHonorUpdateCommand(char* /*args*/)
     if (HasLowerSecurity(target))
         return false;
 
-    target->UpdateHonorFields();
+    //target->UpdateHonorFields();
     return true;
 }
 

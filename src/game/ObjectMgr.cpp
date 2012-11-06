@@ -433,106 +433,6 @@ void ObjectMgr::LoadCreatureTemplates()
         if (!cInfo)
             continue;
 
-        bool ok = true;                                     // bool to allow continue outside this loop
-        for (uint32 diff = 0; diff < MAX_DIFFICULTY - 1 && ok; ++diff)
-        {
-            if (!cInfo->DifficultyEntry[diff])
-                continue;
-            ok = false;                                     // will be set to true at the end of this loop again
-
-            CreatureInfo const* difficultyInfo = GetCreatureTemplate(cInfo->DifficultyEntry[diff]);
-            if (!difficultyInfo)
-            {
-                sLog.outErrorDb("Creature (Entry: %u) have `difficulty_entry_%u`=%u but creature entry %u not exist.",
-                    i, diff + 1, cInfo->DifficultyEntry[diff], cInfo->DifficultyEntry[diff]);
-                continue;
-            }
-
-            if (difficultyEntries[diff].find(i) != difficultyEntries[diff].end())
-            {
-                sLog.outErrorDb("Creature (Entry: %u) listed as difficulty %u but have value in `difficulty_entry_%u`.", i, diff + 1, diff + 1);
-                continue;
-            }
-
-            bool ok2 = true;
-            for (uint32 diff2 = 0; diff2 < MAX_DIFFICULTY - 1 && ok2; ++diff2)
-            {
-                ok2 = false;
-                if (difficultyEntries[diff2].find(cInfo->DifficultyEntry[diff]) != difficultyEntries[diff2].end())
-                {
-                    sLog.outErrorDb("Creature (Entry: %u) already listed as difficulty %u for another entry.", cInfo->DifficultyEntry[diff], diff2 + 1);
-                    continue;
-                }
-
-                if (hasDifficultyEntries[diff2].find(cInfo->DifficultyEntry[diff]) != hasDifficultyEntries[diff2].end())
-                {
-                    sLog.outErrorDb("Creature (Entry: %u) have `difficulty_entry_%u`=%u but creature entry %u have difficulty %u entry also.",
-                        i, diff + 1, cInfo->DifficultyEntry[diff], cInfo->DifficultyEntry[diff], diff2 + 1);
-                    continue;
-                }
-                ok2 = true;
-            }
-            if (!ok2)
-                continue;
-
-            if (cInfo->unit_class != difficultyInfo->unit_class)
-            {
-                sLog.outErrorDb("Creature (Entry: %u, class %u) has different `unit_class` in difficulty %u mode (Entry: %u, class %u).",
-                    i, cInfo->unit_class, diff + 1, cInfo->DifficultyEntry[diff], difficultyInfo->unit_class);
-                continue;
-            }
-
-            if (cInfo->npcflag != difficultyInfo->npcflag)
-            {
-                sLog.outErrorDb("Creature (Entry: %u) has different `npcflag` in difficulty %u mode (Entry: %u).", i, diff + 1, cInfo->DifficultyEntry[diff]);
-                continue;
-            }
-
-            if (cInfo->trainer_class != difficultyInfo->trainer_class)
-            {
-                sLog.outErrorDb("Creature (Entry: %u) has different `trainer_class` in difficulty %u mode (Entry: %u).", i, diff + 1, cInfo->DifficultyEntry[diff]);
-                continue;
-            }
-
-            if (cInfo->trainer_race != difficultyInfo->trainer_race)
-            {
-                sLog.outErrorDb("Creature (Entry: %u) has different `trainer_race` in difficulty %u mode (Entry: %u).", i, diff + 1, cInfo->DifficultyEntry[diff]);
-                continue;
-            }
-
-            if (cInfo->trainer_type != difficultyInfo->trainer_type)
-            {
-                sLog.outErrorDb("Creature (Entry: %u) has different `trainer_type` in difficulty %u mode (Entry: %u).", i, diff + 1, cInfo->DifficultyEntry[diff]);
-                continue;
-            }
-
-            if (cInfo->trainer_spell != difficultyInfo->trainer_spell)
-            {
-                sLog.outErrorDb("Creature (Entry: %u) has different `trainer_spell` in difficulty %u mode (Entry: %u).", i, diff + 1, cInfo->DifficultyEntry[diff]);
-                continue;
-            }
-
-            if (difficultyInfo->AIName && *difficultyInfo->AIName)
-            {
-                sLog.outErrorDb("Difficulty %u mode creature (Entry: %u) has `AIName`, but in any case will used difficulty 0 mode creature (Entry: %u) AIName.",
-                    diff + 1, cInfo->DifficultyEntry[diff], i);
-                continue;
-            }
-
-            if (difficultyInfo->ScriptID)
-            {
-                sLog.outErrorDb("Difficulty %u mode creature (Entry: %u) has `ScriptName`, but in any case will used difficulty 0 mode creature (Entry: %u) ScriptName.",
-                    diff + 1, cInfo->DifficultyEntry[diff], i);
-                continue;
-            }
-
-            hasDifficultyEntries[diff].insert(i);
-            difficultyEntries[diff].insert(cInfo->DifficultyEntry[diff]);
-            ok = true;
-        }
-        if (!ok)
-            continue;
-
         FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(cInfo->faction_A);
         if (!factionTemplate)
             sLog.outErrorDb("Creature (Entry: %u) has nonexistent faction_A template (%u)", cInfo->Entry, cInfo->faction_A);
@@ -1122,9 +1022,9 @@ void ObjectMgr::LoadCreatures()
     QueryResult *result = WorldDatabase.Query("SELECT creature.guid, creature.id, map, modelid,"
     //   4             5           6           7           8            9              10         11
         "equipment_id, position_x, position_y, position_z, orientation, spawntimesecs, spawndist, currentwaypoint,"
-    //   12         13       14          15            16         17         18
-        "curhealth, curmana, DeathState, MovementType, spawnMask, phaseMask, event,"
-    //   19                        20
+    //   12         13       14          15            16         17
+        "curhealth, curmana, DeathState, MovementType, phaseMask, event,"
+    //   18                        19
         "pool_creature.pool_entry, pool_creature_template.pool_entry "
         "FROM creature "
         "LEFT OUTER JOIN game_event_creature ON creature.guid = game_event_creature.guid "
@@ -1141,22 +1041,6 @@ void ObjectMgr::LoadCreatures()
         sLog.outErrorDb(">> Loaded 0 creature. DB table `creature` is empty.");
         return;
     }
-
-    // build single time for check creature data
-    std::set<uint32> difficultyCreatures[MAX_DIFFICULTY - 1];
-    for (uint32 i = 0; i < sCreatureStorage.GetMaxEntry(); ++i)
-        if (CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(i))
-            for (uint32 diff = 0; diff < MAX_DIFFICULTY - 1; ++diff)
-                if (cInfo->DifficultyEntry[diff])
-                    difficultyCreatures[diff].insert(cInfo->DifficultyEntry[diff]);
-
-    // build single time for check spawnmask
-    std::map<uint32,uint32> spawnMasks;
-    for(uint32 i = 0; i < sMapStore.GetNumRows(); ++i)
-        if(sMapStore.LookupEntry(i))
-            for(int k = 0; k < MAX_DIFFICULTY; ++k)
-                if (GetMapDifficultyData(i,Difficulty(k)))
-                    spawnMasks[i] |= (1 << k);
 
     BarGoLink bar(result->GetRowCount());
 
@@ -1192,11 +1076,10 @@ void ObjectMgr::LoadCreatures()
         data.curmana            = fields[13].GetUInt32();
         data.is_dead            = fields[14].GetBool();
         data.movementType       = fields[15].GetUInt8();
-        data.spawnMask          = fields[16].GetUInt8();
-        data.phaseMask          = fields[17].GetUInt16();
-        int16 gameEvent         = fields[18].GetInt16();
-        int16 GuidPoolId        = fields[19].GetInt16();
-        int16 EntryPoolId       = fields[20].GetInt16();
+        data.phaseMask          = fields[16].GetUInt16();
+        int16 gameEvent         = fields[17].GetInt16();
+        int16 GuidPoolId        = fields[18].GetInt16();
+        int16 EntryPoolId       = fields[19].GetInt16();
 
         MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapid);
         if(!mapEntry)
@@ -1204,22 +1087,6 @@ void ObjectMgr::LoadCreatures()
             sLog.outErrorDb("Table `creature` have creature (GUID: %u) that spawned at nonexistent map (Id: %u), skipped.",guid, data.mapid );
             continue;
         }
-
-        if (data.spawnMask & ~spawnMasks[data.mapid])
-            sLog.outErrorDb("Table `creature` have creature (GUID: %u) that have wrong spawn mask %u including not supported difficulty modes for map (Id: %u).",guid, data.spawnMask, data.mapid );
-
-        bool ok = true;
-        for (uint32 diff = 0; diff < MAX_DIFFICULTY - 1 && ok; ++diff)
-        {
-            if (difficultyCreatures[diff].find(data.id) != difficultyCreatures[diff].end())
-            {
-                sLog.outErrorDb("Table `creature` have creature (GUID: %u) that listed as difficulty %u template (entry: %u) in `creature_template`, skipped.",
-                    guid, diff + 1, data.id );
-                ok = false;
-            }
-        }
-        if (!ok)
-            continue;
 
         if (data.modelid_override > 0 && !sCreatureDisplayInfoStore.LookupEntry(data.modelid_override))
         {
@@ -1305,34 +1172,20 @@ void ObjectMgr::LoadCreatures()
 
 void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
 {
-    uint8 mask = data->spawnMask;
-    for(uint8 i = 0; mask != 0; i++, mask >>= 1)
-    {
-        if(mask & 1)
-        {
-            CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
-            uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
+    CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
+    uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
 
-            CellObjectGuids& cell_guids = mMapObjectGuids[MAKE_PAIR32(data->mapid,i)][cell_id];
-            cell_guids.creatures.insert(guid);
-        }
-    }
+    CellObjectGuids& cell_guids = mMapObjectGuids[data->mapid][cell_id];
+    cell_guids.creatures.insert(guid);
 }
 
 void ObjectMgr::RemoveCreatureFromGrid(uint32 guid, CreatureData const* data)
 {
-    uint8 mask = data->spawnMask;
-    for(uint8 i = 0; mask != 0; i++, mask >>= 1)
-    {
-        if(mask & 1)
-        {
-            CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
-            uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
+    CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
+    uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
 
-            CellObjectGuids& cell_guids = mMapObjectGuids[MAKE_PAIR32(data->mapid,i)][cell_id];
-            cell_guids.creatures.erase(guid);
-        }
-    }
+    CellObjectGuids& cell_guids = mMapObjectGuids[data->mapid][cell_id];
+    cell_guids.creatures.erase(guid);
 }
 
 void ObjectMgr::LoadGameObjects()
@@ -1341,9 +1194,9 @@ void ObjectMgr::LoadGameObjects()
 
     //                                                0                           1   2    3           4           5           6
     QueryResult *result = WorldDatabase.Query("SELECT gameobject.guid, gameobject.id, map, position_x, position_y, position_z, orientation,"
-    //   7          8          9          10         11             12            13     14         15         16
-        "rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state, spawnMask, phaseMask, event,"
-    //   17                          18
+        //   7          8          9          10         11             12        13     14         15
+        "rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state, phaseMask, event,"
+    //   16                          17
         "pool_gameobject.pool_entry, pool_gameobject_template.pool_entry "
         "FROM gameobject "
         "LEFT OUTER JOIN game_event_gameobject ON gameobject.guid = game_event_gameobject.guid "
@@ -1360,14 +1213,6 @@ void ObjectMgr::LoadGameObjects()
         sLog.outErrorDb(">> Loaded 0 gameobjects. DB table `gameobject` is empty.");
         return;
     }
-
-    // build single time for check spawnmask
-    std::map<uint32,uint32> spawnMasks;
-    for(uint32 i = 0; i < sMapStore.GetNumRows(); ++i)
-        if(sMapStore.LookupEntry(i))
-            for(int k = 0; k < MAX_DIFFICULTY; ++k)
-                if (GetMapDifficultyData(i,Difficulty(k)))
-                    spawnMasks[i] |= (1 << k);
 
     BarGoLink bar(result->GetRowCount());
 
@@ -1420,11 +1265,10 @@ void ObjectMgr::LoadGameObjects()
         data.spawntimesecs  = fields[11].GetInt32();
         data.animprogress   = fields[12].GetUInt32();
         uint32 go_state     = fields[13].GetUInt32();
-        data.spawnMask      = fields[14].GetUInt8();
-        data.phaseMask      = fields[15].GetUInt16();
-        int16 gameEvent     = fields[16].GetInt16();
-        int16 GuidPoolId    = fields[17].GetInt16();
-        int16 EntryPoolId   = fields[18].GetInt16();
+        data.phaseMask      = fields[14].GetUInt16();
+        int16 gameEvent     = fields[15].GetInt16();
+        int16 GuidPoolId    = fields[16].GetInt16();
+        int16 EntryPoolId   = fields[17].GetInt16();
 
         MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapid);
         if (!mapEntry)
@@ -1432,9 +1276,6 @@ void ObjectMgr::LoadGameObjects()
             sLog.outErrorDb("Table `gameobject` have gameobject (GUID: %u Entry: %u) that spawned at nonexistent map (Id: %u), skip", guid, data.id, data.mapid);
             continue;
         }
-
-        if (data.spawnMask & ~spawnMasks[data.mapid])
-            sLog.outErrorDb("Table `gameobject` have gameobject (GUID: %u Entry: %u) that have wrong spawn mask %u including not supported difficulty modes for map (Id: %u), skip", guid, data.id, data.spawnMask, data.mapid);
 
         if (data.spawntimesecs == 0 && gInfo->IsDespawnAtAction())
         {
@@ -1526,34 +1367,20 @@ void ObjectMgr::LoadGameObjectAddon()
 
 void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
 {
-    uint8 mask = data->spawnMask;
-    for(uint8 i = 0; mask != 0; i++, mask >>= 1)
-    {
-        if(mask & 1)
-        {
-            CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
-            uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
+    CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
+    uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
 
-            CellObjectGuids& cell_guids = mMapObjectGuids[MAKE_PAIR32(data->mapid,i)][cell_id];
-            cell_guids.gameobjects.insert(guid);
-        }
-    }
+    CellObjectGuids& cell_guids = mMapObjectGuids[data->mapid][cell_id];
+    cell_guids.gameobjects.insert(guid);
 }
 
 void ObjectMgr::RemoveGameobjectFromGrid(uint32 guid, GameObjectData const* data)
 {
-    uint8 mask = data->spawnMask;
-    for(uint8 i = 0; mask != 0; i++, mask >>= 1)
-    {
-        if(mask & 1)
-        {
-            CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
-            uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
+    CellPair cell_pair = MaNGOS::ComputeCellPair(data->posX, data->posY);
+    uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
 
-            CellObjectGuids& cell_guids = mMapObjectGuids[MAKE_PAIR32(data->mapid,i)][cell_id];
-            cell_guids.gameobjects.erase(guid);
-        }
-    }
+    CellObjectGuids& cell_guids = mMapObjectGuids[data->mapid][cell_id];
+    cell_guids.gameobjects.erase(guid);
 }
 
 void ObjectMgr::LoadItemLocales()
@@ -3373,8 +3200,8 @@ void ObjectMgr::LoadGroups()
         "SELECT group_instance.leaderGuid, map, instance, permanent, resettime, "
         // 5
         "(SELECT COUNT(*) FROM character_instance WHERE guid = group_instance.leaderGuid AND instance = group_instance.instance AND permanent = 1 LIMIT 1), "
-        // 6              7
-        " groups.groupId, instance.encountersMask "
+        // 6
+        " groups.groupId "
         "FROM group_instance LEFT JOIN instance ON instance = id LEFT JOIN groups ON groups.leaderGUID = group_instance.leaderGUID ORDER BY leaderGuid"
     );
 
@@ -3398,7 +3225,6 @@ void ObjectMgr::LoadGroups()
             uint32 mapId = fields[1].GetUInt32();
             uint32 groupId = fields[7].GetUInt32();
             time_t resetTime = fields[5].GetUInt64();
-            uint32 encountersMask = fields[8].GetUInt32();
 
             if (!group || group->GetId() != groupId)
             {
@@ -3418,7 +3244,7 @@ void ObjectMgr::LoadGroups()
                 continue;
             }
 
-            DungeonPersistentState *state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, fields[2].GetUInt32(), resetTime, (fields[6].GetUInt32() == 0), true, true, encountersMask);
+            DungeonPersistentState *state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, fields[2].GetUInt32(), resetTime, (fields[6].GetUInt32() == 0), true, true);
             group->BindToInstance(state, fields[3].GetBool(), true);
 
         }while( result->NextRow() );
@@ -4359,84 +4185,6 @@ void ObjectMgr::LoadPageTextLocales()
 
     sLog.outString();
     sLog.outString( ">> Loaded %lu PageText locale strings", (unsigned long)mPageTextLocaleMap.size() );
-}
-
-void ObjectMgr::LoadInstanceEncounters()
-{
-    if (!m_DungeonEncounters.empty())         // need for reload case
-    {
-        for (DungeonEncounterMap::iterator itr = m_DungeonEncounters.begin(); itr != m_DungeonEncounters.end(); ++itr)
-            delete itr->second;
-        m_DungeonEncounters.clear();
-    }
-
-    QueryResult* result = WorldDatabase.Query("SELECT entry, creditType, creditEntry, lastEncounterDungeon FROM instance_encounters");
-
-    if (!result)
-    {
-        BarGoLink bar(1);
-
-        bar.step();
-
-        sLog.outString();
-        sLog.outString(">> Loaded 0 Instance Encounters. DB table `instance_encounters` is empty.");
-        return;
-    }
-
-    BarGoLink bar(result->GetRowCount());
-
-    do
-    {
-        Field *fields = result->Fetch();
-        bar.step();
-
-        uint32 entry = fields[0].GetUInt32();
-        DungeonEncounterEntry const* dungeonEncounter = sDungeonEncounterStore.LookupEntry(entry);
-
-        if (!dungeonEncounter)
-        {
-            sLog.outErrorDb("Table `instance_encounters` has an invalid encounter id %u, skipped!", entry);
-            continue;
-        }
-
-        uint8 creditType = fields[1].GetUInt8();
-        uint32 creditEntry = fields[2].GetUInt32();
-        switch (creditType)
-        {
-            case ENCOUNTER_CREDIT_KILL_CREATURE:
-            {
-                CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(creditEntry);
-                if (!cInfo)
-                {
-                    sLog.outErrorDb("Table `instance_encounters` has an invalid creature (entry %u) linked to the encounter %u (%s), skipped!", creditEntry, entry, dungeonEncounter->encounterName[0]);
-                    continue;
-                }
-                break;
-            }
-            case ENCOUNTER_CREDIT_CAST_SPELL:
-            {
-                if (!sSpellStore.LookupEntry(creditEntry))
-                {
-                    // skip spells that aren't in dbc for now
-                    sLog.outErrorDb("Table `instance_encounters` has an invalid spell (entry %u) linked to the encounter %u (%s), skipped!", creditEntry, entry, dungeonEncounter->encounterName[0]);
-                    continue;
-                }
-                break;
-            }
-            default:
-                sLog.outErrorDb("Table `instance_encounters` has an invalid credit type (%u) for encounter %u (%s), skipped!", creditType, entry, dungeonEncounter->encounterName[0]);
-                continue;
-        }
-        uint32 lastEncounterDungeon = fields[3].GetUInt32();
-
-        m_DungeonEncounters.insert(DungeonEncounterMap::value_type(creditEntry, new DungeonEncounter(dungeonEncounter, EncounterCreditType(creditType), creditEntry, lastEncounterDungeon)));
-
-    } while (result->NextRow());
-
-    delete result;
-
-    sLog.outString();
-    sLog.outString( ">> Loaded %lu Instance Encounters", (unsigned long)m_DungeonEncounters.size() );
 }
 
 struct SQLInstanceLoader : public SQLStorageLoaderBase<SQLInstanceLoader, SQLStorage>
@@ -8011,27 +7759,6 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
 
             break;
         }
-        case CONDITION_COMPLETED_ENCOUNTER:
-        {
-            DungeonEncounterEntry const* dbcEntry1 = sDungeonEncounterStore.LookupEntry(value1);
-            DungeonEncounterEntry const* dbcEntry2 = sDungeonEncounterStore.LookupEntry(value2);
-            if (!dbcEntry1)
-            {
-                sLog.outErrorDb("Completed Encounter condition (entry %u, type %u) has an unknown DungeonEncounter entry %u defined (in value1), skipping.", entry, condition, value1);
-                return false;
-            }
-            if (value2 && !dbcEntry2)
-            {
-                sLog.outErrorDb("Completed Encounter condition (entry %u, type %u) has an unknown DungeonEncounter entry %u defined (in value2), skipping.", entry, condition, value2);
-                return false;
-            }
-            if (dbcEntry2 && dbcEntry1->mapId != dbcEntry2->mapId)
-            {
-                sLog.outErrorDb("Completed Encounter condition (entry %u, type %u) has different mapIds for both encounters, skipping.", entry, condition);
-                return false;
-            }
-            break;
-        }
         case CONDITION_NONE:
             break;
         default:
@@ -8844,7 +8571,7 @@ bool ObjectMgr::RemoveVendorItem( uint32 entry,uint32 item )
     return true;
 }
 
-bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32 vendor_entry, uint32 item_id, uint32 maxcount, uint32 incrtime, uint32 ExtendedCost, Player* pl, std::set<uint32>* skip_vendors ) const
+bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32 vendor_entry, uint32 item_id, uint32 maxcount, uint32 incrtime, Player* pl, std::set<uint32>* skip_vendors ) const
 {
     char const* idStr = isTemplate ? "vendor template" : "vendor";
     CreatureInfo const* cInfo = NULL;
@@ -8884,16 +8611,6 @@ bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32
         else
             sLog.outErrorDb("Table `%s` for %s %u contain nonexistent item (%u), ignoring",
                 tableName, idStr, vendor_entry, item_id);
-        return false;
-    }
-
-    if (ExtendedCost && !sItemExtendedCostStore.LookupEntry(ExtendedCost))
-    {
-        if (pl)
-            ChatHandler(pl).PSendSysMessage(LANG_EXTENDED_COST_NOT_EXIST,ExtendedCost);
-        else
-            sLog.outErrorDb("Table `%s` contain item (Entry: %u) with wrong ExtendedCost (%u) for %s %u, ignoring",
-                tableName, item_id, ExtendedCost, idStr, vendor_entry);
         return false;
     }
 
