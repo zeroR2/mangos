@@ -172,88 +172,40 @@ Quest::Quest(Field * questRecord)
 
 uint32 Quest::XPValue(Player *pPlayer) const
 {
-    if (pPlayer)
+    if( pPlayer )
     {
-        uint32 realXP = 0;
-        uint32 xpMultiplier = 0;
-        int32 baseLevel = 0;
-        int32 playerLevel = pPlayer->getLevel();
-
-        // formula can possibly be organized better, using less if's and simplify some.
-
-        if (QuestLevel != -1)
-            baseLevel = QuestLevel;
-
-        if (((baseLevel - playerLevel) + 10)*2 > 10)
+        if( RewMoneyMaxLevel > 0 )
         {
-            baseLevel = playerLevel;
+            uint32 pLevel = pPlayer->getLevel();
+            uint32 qLevel = QuestLevel;
+            float fullxp = 0;
+            if (qLevel >= 65)
+                fullxp = RewMoneyMaxLevel / 6.0f;
+            else if (qLevel == 64)
+                fullxp = RewMoneyMaxLevel / 4.8f;
+            else if (qLevel == 63)
+                fullxp = RewMoneyMaxLevel / 3.6f;
+            else if (qLevel == 62)
+                fullxp = RewMoneyMaxLevel / 2.4f;
+            else if (qLevel == 61)
+                fullxp = RewMoneyMaxLevel / 1.2f;
+            else if (qLevel > 0 && qLevel <= 60)
+                fullxp = RewMoneyMaxLevel / 0.6f;
 
-            if (QuestLevel != -1)
-                baseLevel = QuestLevel;
-
-            if (((baseLevel - playerLevel) + 10)*2 <= 10)
-            {
-                if (QuestLevel == -1)
-                    baseLevel = playerLevel;
-
-                xpMultiplier = 2 * (baseLevel - playerLevel) + 20;
-            }
+            if( pLevel <= qLevel +  5 )
+                return uint32(ceilf(fullxp));
+            else if( pLevel == qLevel +  6 )
+                return uint32(ceilf(fullxp * 0.8f));
+            else if( pLevel == qLevel +  7 )
+                return uint32(ceilf(fullxp * 0.6f));
+            else if( pLevel == qLevel +  8 )
+                return uint32(ceilf(fullxp * 0.4f));
+            else if( pLevel == qLevel +  9 )
+                return uint32(ceilf(fullxp * 0.2f));
             else
-            {
-                xpMultiplier = 10;
-            }
+                return uint32(ceilf(fullxp * 0.1f));
         }
-        else
-        {
-            baseLevel = playerLevel;
-
-            if (QuestLevel != -1)
-                baseLevel = QuestLevel;
-
-            if (((baseLevel - playerLevel) + 10)*2 >= 1)
-            {
-                baseLevel = playerLevel;
-
-                if (QuestLevel != -1)
-                    baseLevel = QuestLevel;
-
-                if (((baseLevel - playerLevel) + 10)*2 <= 10)
-                {
-                    if (QuestLevel == -1)
-                        baseLevel = playerLevel;
-
-                    xpMultiplier = 2 * (baseLevel - playerLevel) + 20;
-                }
-                else
-                {
-                    xpMultiplier = 10;
-                }
-            }
-            else
-            {
-                xpMultiplier = 1;
-            }
-        }
-
-        // not possible to reward XP when baseLevel does not exist in dbc
-        if (const QuestXPLevel* pXPData = sQuestXPLevelStore.LookupEntry(baseLevel))
-        {
-            uint32 rawXP = xpMultiplier * pXPData->xpIndex[RewXPId] / 10;
-
-            // round values
-            if (rawXP > 1000)
-                realXP = ((rawXP + 25) / 50 * 50);
-            else if (rawXP > 500)
-                realXP = ((rawXP + 12) / 25 * 25);
-            else if (rawXP > 100)
-                realXP = ((rawXP + 5) / 10 * 10);
-            else
-                realXP = ((rawXP + 2) / 5 * 5);
-        }
-
-        return realXP;
     }
-
     return 0;
 }
 
@@ -279,24 +231,4 @@ bool Quest::IsAllowedInRaid() const
         return true;
 
     return sWorld.getConfig(CONFIG_BOOL_QUEST_IGNORE_RAID);
-}
-
-uint32 Quest::CalculateRewardHonor(uint32 level) const
-{
-    if (level > GT_MAX_LEVEL)
-        level = GT_MAX_LEVEL;
-
-    uint32 honor = 0;
-
-    if(GetRewHonorAddition() > 0 || GetRewHonorMultiplier() > 0.0f)
-    {
-        // values stored from 0.. for 1...
-        TeamContributionPoints const* tc = sTeamContributionPoints.LookupEntry(level-1);
-        if(!tc)
-            return 0;
-        uint32 i_honor = uint32(tc->Value * GetRewHonorMultiplier() * 0.1f);
-        honor = i_honor + GetRewHonorAddition();
-    }
-
-    return honor;
 }

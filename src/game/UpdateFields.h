@@ -331,7 +331,7 @@ enum EGameObjectFields
     GAMEOBJECT_POS_Y                           = OBJECT_END + 0x0A,
     GAMEOBJECT_POS_Z                           = OBJECT_END + 0x0B,
     GAMEOBJECT_FACING                          = OBJECT_END + 0x0C,
-    GAMEOBJECT_DYN_FLAGS                       = OBJECT_END + 0x0D,
+    GAMEOBJECT_DYNAMIC                         = OBJECT_END + 0x0D,
     GAMEOBJECT_FACTION                         = OBJECT_END + 0x0E,
     GAMEOBJECT_TYPE_ID                         = OBJECT_END + 0x0F,
     GAMEOBJECT_LEVEL                           = OBJECT_END + 0x10,

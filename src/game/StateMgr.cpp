@@ -165,7 +165,6 @@ public:
 
         target->m_movementInfo.RemoveMovementFlag(movementFlagsMask);
         target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
-        target->SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
         target->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
 
         target->InterruptNonMeleeSpells(true);
@@ -183,7 +182,6 @@ public:
             return;
 
         target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
-        target->RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
         target->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
         target->clearUnitState(UNIT_STAT_DIED);
     }

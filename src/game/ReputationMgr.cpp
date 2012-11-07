@@ -120,13 +120,12 @@ void ReputationMgr::SendForceReactions()
     m_player->SendDirectMessage(&data);
 }
 
-void ReputationMgr::SendState(FactionState const* faction, bool anyRankIncreased)
+void ReputationMgr::SendState(FactionState const* faction)
 {
     uint32 count = 1;
 
     WorldPacket data(SMSG_SET_FACTION_STANDING, 17);
     data << float(0);                                       // refer-a-friend bonus reputation
-    data << uint8(anyRankIncreased ? 1 : 0);                // display visual effect
 
     size_t p_count = data.wpos();
     data << uint32(count);                                  // placeholder
@@ -233,9 +232,7 @@ void ReputationMgr::Initialize()
 
 void ReputationMgr::SetReputation(FactionEntry const* factionEntry, int32 standing, bool incremental)
 {
-    bool anyRankIncreased = false;
-
-    // if spillover definition exists in DB, override DBC
+    // if spillover definition exists in DB
     if (const RepSpilloverTemplate *repTemplate = sObjectMgr.GetRepSpilloverTemplate(factionEntry->ID))
     {
         for (uint32 i = 0; i < MAX_SPILLOVER_FACTIONS; ++i)
@@ -246,63 +243,19 @@ void ReputationMgr::SetReputation(FactionEntry const* factionEntry, int32 standi
                 {
                     // bonuses are already given, so just modify standing by rate
                     int32 spilloverRep = standing * repTemplate->faction_rate[i];
-                    if (SetOneFactionReputation(sFactionStore.LookupEntry(repTemplate->faction[i]), spilloverRep, incremental))
-                        anyRankIncreased = true;
+                    SetOneFactionReputation(sFactionStore.LookupEntry(repTemplate->faction[i]), spilloverRep, incremental);
                 }
             }
         }
     }
-    else
-    {
-        float spillOverRepOut = standing;
-        // check for sub-factions that receive spillover
-        SimpleFactionsList const* flist = GetFactionTeamList(factionEntry->ID);
-        // if has no sub-factions, check for factions with same parent
-        if (!flist && factionEntry->team && fabs(factionEntry->spilloverRateOut) > M_NULL_F)
-        {
-            spillOverRepOut *= factionEntry->spilloverRateOut;
-            if (FactionEntry const *parent = sFactionStore.LookupEntry(factionEntry->team))
-            {
-                FactionStateList::iterator parentState = m_factions.find(parent->reputationListID);
-                // some team factions have own reputation standing, in this case do not spill to other sub-factions
-                if (parentState != m_factions.end() && (parentState->second.Flags & FACTION_FLAG_TEAM_REPUTATION))
-                {
-                    if (SetOneFactionReputation(parent, int32(spillOverRepOut), incremental))
-                        anyRankIncreased = true;
-                }
-                else    // spill to "sister" factions
-                {
-                    flist = GetFactionTeamList(factionEntry->team);
-                }
-            }
-        }
-        if (flist)
-        {
-            // Spillover to affiliated factions
-            for (SimpleFactionsList::const_iterator itr = flist->begin(); itr != flist->end(); ++itr)
-            {
-                if (FactionEntry const *factionEntryCalc = sFactionStore.LookupEntry(*itr))
-                {
-                    if (factionEntryCalc == factionEntry || GetRank(factionEntryCalc) > ReputationRank(factionEntryCalc->spilloverMaxRankIn))
-                        continue;
 
-                    int32 spilloverRep = int32(spillOverRepOut * factionEntryCalc->spilloverRateIn);
-                    if (spilloverRep != 0 || !incremental)
-                        if (SetOneFactionReputation(factionEntryCalc, spilloverRep, incremental))
-                            anyRankIncreased = true;
-                }
-            }
-        }
-    }
     // spillover done, update faction itself
     FactionStateList::iterator faction = m_factions.find(factionEntry->reputationListID);
     if (faction != m_factions.end())
     {
-        if (SetOneFactionReputation(factionEntry, standing, incremental))
-            anyRankIncreased = true;
-
+        SetOneFactionReputation(factionEntry, standing, incremental);
         // only this faction gets reported to client, even if it has no own visible standing
-        SendState(&faction->second, anyRankIncreased);
+        SendState(&faction->second);
     }
 }
 

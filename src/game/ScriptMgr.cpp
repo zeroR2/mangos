@@ -755,12 +755,6 @@ void ScriptMgr::LoadEventScripts()
         for(size_t node_idx = 0; node_idx < sTaxiPathNodesByPath[path_idx].size(); ++node_idx)
         {
             TaxiPathNodeEntry const& node = sTaxiPathNodesByPath[path_idx][node_idx];
-
-            if (node.arrivalEventID)
-                evt_scripts.insert(node.arrivalEventID);
-
-            if (node.departureEventID)
-                evt_scripts.insert(node.departureEventID);
         }
     }
 
@@ -1767,12 +1761,6 @@ void ScriptMgr::LoadEventIdScripts()
         for(size_t node_idx = 0; node_idx < sTaxiPathNodesByPath[path_idx].size(); ++node_idx)
         {
             TaxiPathNodeEntry const& node = sTaxiPathNodesByPath[path_idx][node_idx];
-
-            if (node.arrivalEventID)
-                evt_scripts.insert(node.arrivalEventID);
-
-            if (node.departureEventID)
-                evt_scripts.insert(node.departureEventID);
         }
     }
 

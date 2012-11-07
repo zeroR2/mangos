@@ -359,6 +359,26 @@ struct FactionTemplateEntry
     bool IsContestedGuardFaction() const { return (factionFlags & FACTION_TEMPLATE_FLAG_CONTESTED_GUARD)!=0; }
 };
 
+struct GtOCTRegenHPEntry
+{
+    float    ratio;
+};
+
+struct GtOCTRegenMPEntry
+{
+   float    ratio;
+};
+
+struct GtRegenHPPerSptEntry
+{
+    float    ratio;
+};
+
+struct GtRegenMPPerSptEntry
+{
+    float    ratio;
+};
+
 // using bounds from 3.3.5a
 struct GameObjectDisplayInfoEntry
 {

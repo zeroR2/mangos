@@ -2794,16 +2794,7 @@ void Pet::Regenerate(Powers power, uint32 diff)
     {
         case POWER_MANA:
         {
-            float ManaIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA);
-            if (IsUnderLastManaUseEffect())
-            {
-                // Mangos Updates Mana in intervals of 2s, which is correct
-                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
-            }
-            else
-            {
-                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
-            }
+            addvalue += /* ? */ sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA) * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             break;
         }
         case POWER_RAGE:                                    // Regenerate rage ?

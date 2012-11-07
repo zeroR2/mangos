@@ -207,7 +207,7 @@ bool WorldPersistentState::CanBeUnload() const
 
 //== DungeonPersistentState functions =====================
 
-DungeonPersistentState::DungeonPersistentState( uint16 MapId, uint32 InstanceId, time_t resetTime, bool canReset, uint32 completedEncountersMask)
+DungeonPersistentState::DungeonPersistentState( uint16 MapId, uint32 InstanceId, time_t resetTime, bool canReset)
 : MapPersistentState(MapId, InstanceId), m_resetTime(resetTime), m_canReset(canReset)
 {
 }

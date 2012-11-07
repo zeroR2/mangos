@@ -151,13 +151,14 @@ void WorldSession::SendPetNameQuery(ObjectGuid petguid, uint32 petnumber)
         return;
     }
 
-    char const* name = pet->GetName();
+    std::string name = pet->GetName();
 
     // creature pets have localization like other creatures
     if (!pet->GetOwnerGuid().IsPlayer())
     {
         int loc_idx = GetSessionDbLocaleIndex();
-        sObjectMgr.GetCreatureLocaleStrings(pet->GetEntry(), loc_idx, &name);
+        const char* name2 = name.c_str();
+        sObjectMgr.GetCreatureLocaleStrings(pet->GetEntry(), loc_idx, &name2);
     }
 
     WorldPacket data(SMSG_PET_NAME_QUERY_RESPONSE, (4+4+name.size()+1));

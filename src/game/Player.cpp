@@ -6411,35 +6411,14 @@ void Player::RewardReputation(Quest const *pQuest)
         if (!pQuest->RewRepFaction[i])
             continue;
 
-        // No diplomacy mod are applied to the final value (flat). Note the formula (finalValue = DBvalue/100)
         if (pQuest->RewRepValue[i])
         {
-            int32 rep = CalculateReputationGain(REPUTATION_SOURCE_QUEST, pQuest->RewRepValue[i]/100, pQuest->RewRepFaction[i], GetQuestLevelForPlayer(pQuest), true);
+            int32 rep = CalculateReputationGain(REPUTATION_SOURCE_QUEST,  pQuest->RewRepValue[i], pQuest->RewRepFaction[i], GetQuestLevelForPlayer(pQuest));
 
             if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(pQuest->RewRepFaction[i]))
                 GetReputationMgr().ModifyReputation(factionEntry, rep);
         }
-        else
-        {
-            uint32 row = ((pQuest->RewRepValueId[i] < 0) ? 1 : 0) + 1;
-            uint32 field = abs(pQuest->RewRepValueId[i]);
-
-            if (const QuestFactionRewardEntry *pRow = sQuestFactionRewardStore.LookupEntry(row))
-            {
-                int32 repPoints = pRow->rewardValue[field];
-
-                if (!repPoints)
-                    continue;
-
-                repPoints = CalculateReputationGain(REPUTATION_SOURCE_QUEST, repPoints, pQuest->RewRepFaction[i], GetQuestLevelForPlayer(pQuest));
-
-                if (const FactionEntry* factionEntry = sFactionStore.LookupEntry(pQuest->RewRepFaction[i]))
-                    GetReputationMgr().ModifyReputation(factionEntry, repPoints);
-            }
-        }
     }
-
-    // TODO: implement reputation spillover
 }
 
 //Update honor fields , cleanKills is only used during char saving
@@ -9400,36 +9379,12 @@ InventoryResult Player::_CanTakeMoreSimilarItems(uint32 entry, uint32 count, Ite
         }
     }
 
-    // check unique-equipped limit
-    if (pProto->ItemLimitCategory)
-    {
-        ItemLimitCategoryEntry const* limitEntry = sItemLimitCategoryStore.LookupEntry(pProto->ItemLimitCategory);
-        if (!limitEntry)
-        {
-            if (no_space_count)
-                *no_space_count = count;
-            return EQUIP_ERR_ITEM_CANT_BE_EQUIPPED;
-        }
-
-        if (limitEntry->mode == ITEM_LIMIT_CATEGORY_MODE_HAVE)
-        {
-            uint32 curcount = GetItemCountWithLimitCategory(pProto->ItemLimitCategory, pItem);
-
-            if (curcount + count > uint32(limitEntry->maxCount))
-            {
-                if (no_space_count)
-                    *no_space_count = count + curcount - limitEntry->maxCount;
-                return EQUIP_ERR_ITEM_MAX_LIMIT_CATEGORY_COUNT_EXCEEDED_IS;
-            }
-        }
-    }
-
     return EQUIP_ERR_OK;
 }
 
 bool Player::HasItemTotemCategory(uint32 TotemCategory) const
 {
-    Item *pItem;
+    /*Item *pItem;
     for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
         pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
@@ -9453,7 +9408,7 @@ bool Player::HasItemTotemCategory(uint32 TotemCategory) const
                     return true;
             }
         }
-    }
+    }*/
     return false;
 }
 
@@ -13923,10 +13878,6 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     // req money case
     if (pQuest->GetRewOrReqMoney() < 0)
         ModifyMoney(pQuest->GetRewOrReqMoney());
-
-    // honor reward
-    if (uint32 honor = pQuest->CalculateRewardHonor(getLevel()))
-        AddHonor(honor, QUEST, NULL);
 
     if (pQuest->GetBonusTalents())
     {

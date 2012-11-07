@@ -341,8 +341,7 @@ bool Transport::GenerateWaypoints(uint32 pathid, std::set<uint32> &mapids)
     if (keyFrames[keyFrames.size() - 1].node->mapid != keyFrames[0].node->mapid)
         teleport = true;
 
-    WayPoint pos(keyFrames[0].node->mapid, keyFrames[0].node->x, keyFrames[0].node->y, keyFrames[0].node->z, teleport,
-        keyFrames[0].node->arrivalEventID, keyFrames[0].node->departureEventID);
+    WayPoint pos(keyFrames[0].node->mapid, keyFrames[0].node->x, keyFrames[0].node->y, keyFrames[0].node->z, teleport);
     m_WayPoints[0] = pos;
     t += keyFrames[0].node->delay * 1000;
 
@@ -422,8 +421,7 @@ bool Transport::GenerateWaypoints(uint32 pathid, std::set<uint32> &mapids)
             cM = keyFrames[i + 1].node->mapid;
         }
 
-        WayPoint pos(keyFrames[i + 1].node->mapid, keyFrames[i + 1].node->x, keyFrames[i + 1].node->y, keyFrames[i + 1].node->z, teleport,
-            keyFrames[i + 1].node->arrivalEventID, keyFrames[i + 1].node->departureEventID);
+        WayPoint pos(keyFrames[i + 1].node->mapid, keyFrames[i + 1].node->x, keyFrames[i + 1].node->y, keyFrames[i + 1].node->z, teleport);
 
         //        sLog.outString("T: %d, x: %f, y: %f, z: %f, t:%d", t, pos.x, pos.y, pos.z, teleport);
 

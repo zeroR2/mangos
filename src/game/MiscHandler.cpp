@@ -1054,11 +1054,11 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recv_data)
 
     WorldPacket data(MSG_INSPECT_HONOR_STATS, 8+1+4*4);
     data << player->GetObjectGuid();
-    data << uint8(player->GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY));
-    data << uint32(player->GetUInt32Value(PLAYER_FIELD_KILLS));
-    data << uint32(player->GetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION));
-    data << uint32(player->GetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION));
-    data << uint32(player->GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
+//     data << uint8(player->GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY));
+//     data << uint32(player->GetUInt32Value(PLAYER_FIELD_KILLS));
+//     data << uint32(player->GetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION));
+//     data << uint32(player->GetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION));
+//     data << uint32(player->GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
     SendPacket(&data);
 }
 
@@ -1353,17 +1353,6 @@ void WorldSession::HandleSetTaxiBenchmarkOpcode( WorldPacket & recv_data )
     DEBUG_LOG("Client used \"/timetest %d\" command", mode);
 }
 
-void WorldSession::HandleQueryInspectAchievementsOpcode( WorldPacket & recv_data )
-{
-    ObjectGuid guid;
-
-    recv_data >> guid.ReadAsPacked();
-
-    Player* player = sObjectMgr.GetPlayer(guid);
-    if(player)
-        player->GetAchievementMgr().SendRespondInspectAchievements(_player);
-}
-
 void WorldSession::HandleUITimeRequestOpcode(WorldPacket& /*recv_data*/)
 {
     // empty opcode
@@ -1481,16 +1470,14 @@ void WorldSession::HandleSetSavedInstanceExtend(WorldPacket& recv_data)
     DEBUG_LOG("WORLD: CMSG_SET_SAVED_INSTANCE_EXTEND");
 
     uint32 map_id;
-    uint32 difficulty;
     uint8  _extend;
 
     recv_data >> map_id;
-    recv_data >> difficulty;
     recv_data >> _extend;
 
-    DEBUG_LOG("SetSavedInstanceExtend: Player %s (guid %u) tried to extend (code %d) instance map %d difficulty %d ", GetPlayer()->GetName(), GetPlayer()->GetGUIDLow(), _extend, map_id, difficulty);
+    DEBUG_LOG("SetSavedInstanceExtend: Player %s (guid %u) tried to extend (code %d) instance map %d ", GetPlayer()->GetName(), GetPlayer()->GetGUIDLow(), _extend, map_id);
 
-    if (InstancePlayerBind* bind = GetPlayer()->GetBoundInstance(map_id, Difficulty(difficulty)))
+    if (InstancePlayerBind* bind = GetPlayer()->GetBoundInstance(map_id))
     {
         GetPlayer()->BindToInstance(bind->state, bind->perm, false, bool(_extend));
     }

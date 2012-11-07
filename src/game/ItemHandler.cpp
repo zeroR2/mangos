@@ -798,7 +798,7 @@ void WorldSession::SendListInventory(ObjectGuid vendorguid)
                 ++count;
 
                 // reputation discount
-                uint32 price = (crItem->ExtendedCost == 0 || (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD)) ? uint32(floor(pProto->BuyPrice * discountMod)) : 0;
+                uint32 price = (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD) ? uint32(floor(pProto->BuyPrice * discountMod)) : 0;
 
                 data << uint32(vendorslot + 1);             // client size expected counting from 1
                 data << uint32(pProto->ItemId);
@@ -807,7 +807,6 @@ void WorldSession::SendListInventory(ObjectGuid vendorguid)
                 data << uint32(price);
                 data << uint32(pProto->MaxDurability);
                 data << uint32(pProto->BuyCount);
-                data << uint32(crItem->ExtendedCost);
             }
         }
     }

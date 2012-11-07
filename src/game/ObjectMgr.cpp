@@ -7729,14 +7729,7 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
         }
         case CONDITION_ACTIVE_HOLIDAY:
         case CONDITION_NOT_ACTIVE_HOLIDAY:
-        {
-            if (!sHolidaysStore.LookupEntry(value1))
-            {
-                sLog.outErrorDb("(Not)Active holiday condition (entry %u, type %u) requires existing holiday id (%u), skipped", entry, condition, value1);
-                return false;
-            }
             break;
-        }
         case CONDITION_LEARNABLE_ABILITY:
         {
             SkillLineAbilityMapBounds bounds = sSpellMgr.GetSkillLineAbilityMapBounds(value1);
@@ -8198,7 +8191,7 @@ void ObjectMgr::LoadVendors(char const* tableName, bool isTemplates)
 
     std::set<uint32> skip_vendors;
 
-    QueryResult *result = WorldDatabase.PQuery("SELECT entry, item, maxcount, incrtime, ExtendedCost FROM %s", tableName);
+    QueryResult *result = WorldDatabase.PQuery("SELECT entry, item, maxcount, incrtime FROM %s", tableName);
     if (!result)
     {
         BarGoLink bar(1);
@@ -8222,14 +8215,13 @@ void ObjectMgr::LoadVendors(char const* tableName, bool isTemplates)
         uint32 item_id      = fields[1].GetUInt32();
         uint32 maxcount     = fields[2].GetUInt32();
         uint32 incrtime     = fields[3].GetUInt32();
-        uint32 ExtendedCost = fields[4].GetUInt32();
 
-        if (!IsVendorItemValid(isTemplates, tableName, entry, item_id, maxcount, incrtime, ExtendedCost, NULL, &skip_vendors))
+        if (!IsVendorItemValid(isTemplates, tableName, entry, item_id, maxcount, incrtime, NULL, &skip_vendors))
             continue;
 
         VendorItemData& vList = vendorList[entry];
 
-        vList.AddItem(item_id, maxcount, incrtime, ExtendedCost);
+        vList.AddItem(item_id, maxcount, incrtime);
         ++count;
 
     } while (result->NextRow());
@@ -8550,12 +8542,12 @@ void ObjectMgr::LoadGossipMenus()
         sLog.outErrorDb("Table `gossip_scripts` contains unused script, id %u.", *itr);
 }
 
-void ObjectMgr::AddVendorItem( uint32 entry,uint32 item, uint32 maxcount, uint32 incrtime, uint32 extendedcost )
+void ObjectMgr::AddVendorItem( uint32 entry,uint32 item, uint32 maxcount, uint32 incrtime)
 {
     VendorItemData& vList = m_mCacheVendorItemMap[entry];
-    vList.AddItem(item,maxcount,incrtime,extendedcost);
+    vList.AddItem(item,maxcount,incrtime);
 
-    WorldDatabase.PExecuteLog("INSERT INTO npc_vendor (entry,item,maxcount,incrtime,extendedcost) VALUES('%u','%u','%u','%u','%u')",entry, item, maxcount,incrtime,extendedcost);
+    WorldDatabase.PExecuteLog("INSERT INTO npc_vendor (entry,item,maxcount,incrtime) VALUES('%u','%u','%u','%u')",entry, item, maxcount,incrtime);
 }
 
 bool ObjectMgr::RemoveVendorItem( uint32 entry,uint32 item )
@@ -8639,30 +8631,30 @@ bool ObjectMgr::IsVendorItemValid(bool isTemplate, char const* tableName, uint32
     if (!vItems && !tItems)
         return true;                                        // later checks for non-empty lists
 
-    if (vItems && vItems->FindItemCostPair(item_id, ExtendedCost))
+    if (vItems && vItems->FindItemCostPair(item_id))
     {
         if (pl)
-            ChatHandler(pl).PSendSysMessage(LANG_ITEM_ALREADY_IN_LIST, item_id, ExtendedCost);
+            ChatHandler(pl).PSendSysMessage(LANG_ITEM_ALREADY_IN_LIST, item_id);
         else
-            sLog.outErrorDb( "Table `%s` has duplicate items %u (with extended cost %u) for %s %u, ignoring",
-                tableName, item_id, ExtendedCost, idStr, vendor_entry);
+            sLog.outErrorDb( "Table `%s` has duplicate items %u for %s %u, ignoring",
+                tableName, item_id, idStr, vendor_entry);
         return false;
     }
 
     if (!isTemplate)
     {
-        if (tItems && tItems->FindItemCostPair(item_id, ExtendedCost))
+        if (tItems && tItems->FindItemCostPair(item_id))
         {
             if (pl)
-                ChatHandler(pl).PSendSysMessage(LANG_ITEM_ALREADY_IN_LIST, item_id, ExtendedCost);
+                ChatHandler(pl).PSendSysMessage(LANG_ITEM_ALREADY_IN_LIST, item_id);
             else
             {
                 if (!cInfo->vendorId)
-                    sLog.outErrorDb( "Table `%s` has duplicate items %u (with extended cost %u) for %s %u, ignoring",
-                        tableName, item_id, ExtendedCost, idStr, vendor_entry);
+                    sLog.outErrorDb( "Table `%s` has duplicate items %u for %s %u, ignoring",
+                        tableName, item_id, idStr, vendor_entry);
                 else
-                    sLog.outErrorDb( "Table `%s` has duplicate items %u (with extended cost %u) for %s %u (or possible in vendor template %u), ignoring",
-                        tableName, item_id, ExtendedCost, idStr, vendor_entry, cInfo->vendorId);
+                    sLog.outErrorDb( "Table `%s` has duplicate items %u for %s %u (or possible in vendor template %u), ignoring",
+                        tableName, item_id, idStr, vendor_entry, cInfo->vendorId);
             }
             return false;
         }
