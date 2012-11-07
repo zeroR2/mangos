@@ -10848,10 +10848,6 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
         ItemAddedQuestCheck(item, count);
 
         pItem = StoreItem(dest, pItem, update);
-
-        if (pItem->IsEligibleForSoulboundTrade(allowedLooters))
-            pItem->SetSoulboundTradeable(this, allowedLooters);
-
     }
     return pItem;
 }
@@ -10976,7 +10972,6 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
             RemoveItemDurations(pItem);
 
             pItem->SetOwnerGuid(GetObjectGuid());           // prevent error at next SetState in case trade/mail/buy from vendor
-            pItem->SetNotSoulboundTradeable(this);
 
             pItem->SetState(ITEM_REMOVED, this);
         }
@@ -11090,7 +11085,6 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
         RemoveItemDurations(pItem);
 
         pItem->SetOwnerGuid(GetObjectGuid());               // prevent error at next SetState in case trade/mail/buy from vendor
-        pItem->SetNotSoulboundTradeable(this);
 
         pItem->SetState(ITEM_REMOVED, this);
         pItem2->SetState(ITEM_CHANGED, this);
@@ -11312,8 +11306,8 @@ void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool 
         pLastItem->SetState(in_characterInventoryDB ? ITEM_CHANGED : ITEM_NEW, this);
     }
 
-    if (pLastItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
-        AddItemWithTimeCheck(pLastItem->GetGUIDLow());
+    //if (pLastItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
+    //    AddItemWithTimeCheck(pLastItem->GetGUIDLow());
 }
 
 void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
@@ -11340,8 +11334,6 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
         RemoveEnchantmentDurations(pItem);
         RemoveItemDurations(pItem);
-
-        pItem->SetNotSoulboundTradeable(this);
 
         if (IsEquipmentPos(bag, slot) || IsInventoryPos(bag, slot))
             ApplyItemOnStoreSpell(pItem, false);
@@ -16011,11 +16003,11 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
             DEBUG_LOG("Player::_LoadInventory: %s has conjured item (GUID: %u, Entry: %u) with expired lifetime (15 minutes), deleted.", GetGuidStr().c_str(), itemLowGuid, itemId);
             removeItem = true;
         }
-        else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
+        /*else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
         {
             if (!item->LoadSoulboundTradeableDataFromDB(this))
                 DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with soulbound tradeable flag, but without data in item_soulbound_trade_data, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
-        }
+        }*/
         else if (proto->HolidayId)
         {
             if (!IsHolidayActive(HolidayIds(proto->HolidayId)))
@@ -16991,13 +16983,13 @@ void Player::SaveToDB()
 
     //uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION));
 
-    uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION));
+    //uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION));
 
     //uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
 
     //uberInsert.addUInt16(GetUInt16Value(PLAYER_FIELD_KILLS, 0));
 
-    uberInsert.addUInt16(GetUInt16Value(PLAYER_FIELD_KILLS, 1));
+    //uberInsert.addUInt16(GetUInt16Value(PLAYER_FIELD_KILLS, 1));
 
     // FIXME: at this moment send to DB as unsigned, including unit32(-1)
     uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX));
@@ -17026,10 +17018,6 @@ void Player::SaveToDB()
 
     uberInsert.addUInt32(GetUInt32Value(PLAYER_AMMO_ID));
 
-    for (uint32 i = 0; i < KNOWN_TITLES_SIZE*2; ++i)                //string
-    {
-        ss << GetUInt32Value(PLAYER__FIELD_KNOWN_TITLES + i) << " ";
-    }
     uberInsert.addString(ss);
 
     uberInsert.addUInt32(uint32(GetByteValue(PLAYER_FIELD_BYTES, 2)));
@@ -17598,7 +17586,7 @@ void Player::_SaveStats()
     stmt.addFloat(GetFloatValue(PLAYER_PARRY_PERCENTAGE));
     stmt.addFloat(GetFloatValue(PLAYER_CRIT_PERCENTAGE));
     stmt.addFloat(GetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE));
-    stmt.addFloat(GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1));
+    //stmt.addFloat(GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1));
     stmt.addUInt32(GetUInt32Value(UNIT_FIELD_ATTACK_POWER));
     stmt.addUInt32(GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER));
     stmt.addUInt32(GetBaseSpellPowerBonus());
@@ -17641,8 +17629,8 @@ void Player::_SaveStats()
     stmt.addUInt32(GetMoney());
     stmt.addUInt32(m_Played_time[PLAYED_TIME_TOTAL]);
     stmt.addUInt32(IsInWorld() ? 1 : 0);
-    stmt.addUInt32(GetHonorPoints());
-    stmt.addUInt32(GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
+    //stmt.addUInt32(GetHonorPoints());
+    //stmt.addUInt32(GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
 
     std::ostringstream ss; // duh
     for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             // EquipmentCache string
@@ -18778,9 +18766,6 @@ bool Player::_StoreOrEquipNewItem(uint32 vendorSlot, uint32 item, uint8 count, u
 
     ModifyMoney(-int32(price));
 
-    if (crItem->ExtendedCost)
-        TakeExtendedCost(crItem->ExtendedCost, count);
-
     Item* newItem = store ? StoreNewItem(dest, item, true) : EquipNewItem(pos, item, true);
 
     if (newItem)
@@ -18914,7 +18899,7 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
         }
     }*/
 
-    uint32 price = (crItem->ExtendedCost == 0 || (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD)) ? pProto->BuyPrice * count : 0;
+    uint32 price = (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD)) ? pProto->BuyPrice * count : 0;
 
     // reputation discount
     if (price)
@@ -19352,7 +19337,7 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
                 BeforeVisibilityDestroy<Creature>((Creature*)target,this);
 
                 // at remove from map (destroy) show kill animation (in different out of range/stealth case)
-                target->DestroyForPlayer(this, !target->IsInWorld() && ((Creature*)target)->isDead());
+                target->DestroyForPlayer(this);
             }
             else
                 target->DestroyForPlayer(this);
