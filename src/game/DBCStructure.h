@@ -359,21 +359,25 @@ struct FactionTemplateEntry
     bool IsContestedGuardFaction() const { return (factionFlags & FACTION_TEMPLATE_FLAG_CONTESTED_GUARD)!=0; }
 };
 
+// from 2.0.12
 struct GtOCTRegenHPEntry
 {
     float    ratio;
 };
 
+// from 2.0.12
 struct GtOCTRegenMPEntry
 {
    float    ratio;
 };
 
+// from 2.0.12
 struct GtRegenHPPerSptEntry
 {
     float    ratio;
 };
 
+// from 2.0.12
 struct GtRegenMPPerSptEntry
 {
     float    ratio;
@@ -1263,6 +1267,16 @@ struct TaxiPathNodeEntry
     float     z;                                            // 6        m_LocZ
     uint32    actionFlag;                                   // 7        m_flags
     uint32    delay;                                        // 8        m_delay
+};
+
+// from 2.0.12
+struct TotemCategoryEntry
+{
+    uint32    ID;                                           // 0        m_ID
+    //char*   name[8];                                      // 1-9     m_name_lang
+    // 10 string flags
+    uint32    categoryType;                                 // 11       m_totemCategoryType (one for specialization)
+    uint32    categoryMask;                                 // 12       m_totemCategoryMask (compatibility mask for same type: different for totems, compatible from high to low for rods)
 };
 
 struct WMOAreaTableEntry

@@ -47,6 +47,7 @@ MANGOS_DLL_SPEC AreaTableEntry const* GetAreaEntryByAreaID(uint32 area_id);
 MANGOS_DLL_SPEC AreaTableEntry const* GetAreaEntryByAreaFlagAndMap(uint32 area_flag, uint32 map_id);
 
 ChatChannelsEntry const* GetChannelEntryFor(uint32 channel_id);
+bool IsTotemCategoryCompatiableWith(uint32 itemTotemCategoryId, uint32 requiredTotemCategoryId);
 
 bool Zone2MapCoordinates(float& x, float& y, uint32 zone);
 bool Map2ZoneCoordinates(float& x, float& y, uint32 zone);
@@ -114,6 +115,7 @@ extern DBCStorage <TaxiPathEntry>                sTaxiPathStore;
 extern TaxiMask                                  sTaxiNodesMask;
 extern TaxiPathSetBySource                       sTaxiPathSetBySource;
 extern TaxiPathNodesByPath                       sTaxiPathNodesByPath;
+extern DBCStorage <TotemCategoryEntry>           sTotemCategoryStore;
 extern DBCStorage <WMOAreaTableEntry>            sWMOAreaTableStore;
 extern DBCStorage <WorldMapOverlayEntry>         sWorldMapOverlayStore;
 extern DBCStorage <WorldSafeLocsEntry>           sWorldSafeLocsStore;

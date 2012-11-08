@@ -913,18 +913,16 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
                     return false;
                 case SPELL_AURA_PERIODIC_DAMAGE:            // used in positive spells also.
                     // part of negative spell if casted at self (prevent cancel)
-                    if (spellproto->EffectImplicitTargetA[effIndex] == TARGET_SELF ||
-                        spellproto->EffectImplicitTargetA[effIndex] == TARGET_SELF2)
+                    if (spellproto->EffectImplicitTargetA[effIndex] == TARGET_SELF)
                         return false;
                     break;
                 case SPELL_AURA_MOD_DECREASE_SPEED:         // used in positive spells also
                     // part of positive spell if casted at self
-                    if ((spellproto->EffectImplicitTargetA[effIndex] == TARGET_SELF ||
-                        spellproto->EffectImplicitTargetA[effIndex] == TARGET_SELF2) &&
+                    if (spellproto->EffectImplicitTargetA[effIndex] == TARGET_SELF &&
                         spellproto->SpellFamilyName == SPELLFAMILY_GENERIC)
                         return false;
                     // but not this if this first effect (don't found better check)
-                    if (spellproto->HasAttribute(SPELL_ATTR_UNK26) && effIndex == EFFECT_INDEX_0)
+                    if (spellproto->HasAttribute(SPELL_ATTR_NEGATIVE_1) && effIndex == EFFECT_INDEX_0)
                         return false;
                     break;
                 case SPELL_AURA_TRANSFORM:
@@ -1046,8 +1044,9 @@ bool IsNonPositiveSpell(SpellEntry const* spellProto)
     if (!spellProto)
         return false;
 
-    if (spellProto->HasAttribute(SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR))
-        return true;
+    // <sid> need rework
+    //if (spellProto->HasAttribute(SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR))
+    //    return true;
 
     if (IsPositiveSpell(spellProto))
         return false;
@@ -1057,9 +1056,10 @@ bool IsNonPositiveSpell(SpellEntry const* spellProto)
 
 bool IsSingleTargetSpell(SpellEntry const *spellInfo)
 {
+    // <sid> need rework
     // all other single target spells have if it has AttributesEx5
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX5_SINGLE_TARGET_SPELL))
-        return true;
+    //if (spellInfo->HasAttribute(SPELL_ATTR_EX5_SINGLE_TARGET_SPELL))
+    //    return true;
 
     // TODO - need found Judgements rule
     switch(GetSpellSpecific(spellInfo->Id))
@@ -1069,12 +1069,6 @@ bool IsSingleTargetSpell(SpellEntry const *spellInfo)
         default:
             break;
     }
-
-    // single target triggered spell.
-    // Not real client side single target spell, but it' not triggered until prev. aura expired.
-    // This is allow store it in single target spells list for caster for spell proc checking
-    if (spellInfo->Id==38324)                                // Regeneration (triggered by 38299 (HoTs on Heals))
-        return true;
 
     return false;
 }
@@ -1213,8 +1207,7 @@ void SpellMgr::LoadSpellTargetPositions()
         bool found = false;
         for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
         {
-            if (spellInfo->EffectImplicitTargetA[i] == TARGET_TABLE_X_Y_Z_COORDINATES || spellInfo->EffectImplicitTargetB[i] == TARGET_TABLE_X_Y_Z_COORDINATES ||
-                spellInfo->EffectImplicitTargetB[i] == TARGET_SELF2)
+            if (spellInfo->EffectImplicitTargetA[i] == TARGET_TABLE_X_Y_Z_COORDINATES || spellInfo->EffectImplicitTargetB[i] == TARGET_TABLE_X_Y_Z_COORDINATES)
             {
                 // additional requirements
                 if (spellInfo->Effect[i]==SPELL_EFFECT_BIND && spellInfo->EffectMiscValue[i])
@@ -2803,14 +2796,6 @@ bool SpellMgr::IsStackableSpellAuraHolder(SpellEntry const* spellInfo)
         }
     }
 
-    // some direct ID checks (hacks!)
-    switch(spellInfo->Id)
-    {
-        case 70602: // Corruption (Valithria Dreamwalker)
-        case 70588: // Suppression (Valithria Dreamwalker)
-            return true;
-    }
-
     return false;
 }
 
@@ -2972,10 +2957,6 @@ void SpellMgr::LoadSpellChains()
         for(SkillLineAbilityMap::const_iterator ab_itr = mSkillLineAbilityMap.begin(); ab_itr != mSkillLineAbilityMap.end(); ++ab_itr)
         {
             uint32 spell_id = ab_itr->first;
-
-            // skip GM/test/internal spells.begin Its not have ranks anyway
-            if (ab_itr->second->skillId == SKILL_INTERNAL)
-                continue;
 
             // some forward spells not exist and can be ignored (some outdated data)
             SpellEntry const* spell_entry = sSpellStore.LookupEntry(spell_id);
@@ -4169,7 +4150,8 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
     }
 
     // raid instance limitation
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX6_NOT_IN_RAID_INSTANCE))
+    // Sayge's Dark Fortune spells only
+    if (spellInfo->SpellIconID == 1595 && spellInfo->SpellVisual = 7042)
     {
         MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
         if (!mapEntry || mapEntry->IsRaid())

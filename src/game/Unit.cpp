@@ -2114,7 +2114,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
     // Magic damage, check for resists
     if (!(damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL) &&
         !damageInfo->IsMeleeDamage() &&
-        !damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES))
+        !damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES)) // <sid> need set this attribute from LK
     {
         // Get base resistance for schoolmask
         float tmpvalue2 = (float)GetResistance(damageInfo->SchoolMask());
@@ -3176,7 +3176,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell)
             //if (from_behind) -- only 100% currently and not 100% sure way value apply
             //    deflect_chance = int32(deflect_chance * (pVictim->GetTotalAuraMultiplier(SPELL_AURA_MOD_PARRY_FROM_BEHIND_PERCENT) - 1);
 
-            tmp += deflect_chance;
+            //tmp += deflect_chance;
             if (roll < tmp)
                 return SPELL_MISS_DEFLECT;
         }
@@ -3311,7 +3311,7 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit *pVictim, SpellEntry const *spell)
         //if (from_behind) -- only 100% currently and not 100% sure way value apply
         //    deflect_chance = int32(deflect_chance * (pVictim->GetTotalAuraMultiplier(SPELL_AURA_MOD_PARRY_FROM_BEHIND_PERCENT)) - 1);
 
-        tmp += deflect_chance;
+        //tmp += deflect_chance;
         if (rand < tmp)
             return SPELL_MISS_DEFLECT;
     }
@@ -5042,23 +5042,8 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGuid, U
         new_aur->GetModifier()->periodictime = periodic < new_max_dur ? periodic : new_max_dur;
     }
 
-    if (holder->GetSpellProto()->HasAttribute(SPELL_ATTR_EX7_DISPEL_CHARGES))
-    {
-        if (holder->DropAuraCharge())
-            RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_DISPEL);
-
-        if (SpellAuraHolderPtr foundHolder = stealer->GetSpellAuraHolder(holder->GetSpellProto()->Id, GetObjectGuid()))
-        {
-            foundHolder->SetAuraDuration(new_max_dur);
-            foundHolder->SetAuraCharges(foundHolder->GetAuraCharges()+1, true);
-            if (!AddSpellAuraHolderToRemoveList(new_holder))
-                DEBUG_LOG("Unit::RemoveAurasDueToSpellBySteal cannot insert SpellAuraHolder (spell %u) to remove list!", new_holder ? new_holder->GetId() : 0);
-            return;
-        }
-        else
-            new_holder->SetAuraCharges(1,false);
-    }
-    else if (holder->ModStackAmount(-1))
+    
+    if (holder->ModStackAmount(-1))
         // Remove aura as dispel
         RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_DISPEL);
 
@@ -5593,32 +5578,6 @@ Aura* Unit::GetScalingAura(AuraType type, uint32 stat)
 
             if (i->GetHolder()->GetCasterGuid() != GetObjectGuid())
                 continue;
-
-            if (i->GetHolder()->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_PET_SCALING_AURA))
-            {
-                switch(type)
-                {
-                    case SPELL_AURA_MOD_ATTACK_POWER:
-                    case SPELL_AURA_MOD_POWER_REGEN:
-                    case SPELL_AURA_MOD_HIT_CHANCE:
-                    case SPELL_AURA_MOD_SPELL_HIT_CHANCE:
-                        return (*i)();
-                    case SPELL_AURA_MOD_DAMAGE_DONE:
-                        if ((*i)->GetModifier()->m_miscvalue == SpellSchoolMask(stat))
-                            return (*i)();
-                        break;
-                    case SPELL_AURA_MOD_RESISTANCE:
-                        if ((*i)->GetModifier()->m_miscvalue & (1 << SpellSchools(stat)))
-                            return (*i)();
-                        break;
-                    case SPELL_AURA_MOD_STAT:
-                        if ((*i)->GetModifier()->m_miscvalue == Stats(stat))
-                            return (*i)();
-                        break;
-                    default:
-                        break;
-                }
-            }
         }
     }
     return NULL;
@@ -7136,7 +7095,8 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
 
     Unit* pVictim = damageInfo->target;
 
-    if (damageInfo->damageType == DIRECT_DAMAGE || damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS))
+    // <sid> 2-3 classic spells have this flag
+    if (damageInfo->damageType == DIRECT_DAMAGE/* || damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS)*/)
         return;
 
     // conflagrate gets damage mods from previously calculated immolate aura damage tick
@@ -7486,7 +7446,8 @@ void Unit::SpellDamageBonusTaken(DamageInfo* damageInfo, uint32 stack)
 
     Unit* pCaster = damageInfo->attacker;
 
-    if (damageInfo->damageType == DIRECT_DAMAGE || damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS))
+    // <sid> 2-3 classic spells have this flag
+    if (damageInfo->damageType == DIRECT_DAMAGE/* || damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS)*/)
         return;
 
     // Taken total percent damage auras
@@ -8163,7 +8124,8 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
 
     Unit* pVictim = damageInfo->target;
 
-    if (damageInfo->damage == 0 || ( damageInfo->GetSpellProto() && damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS)))
+    // <sid> 2-3 classic spells have this flag
+    if (damageInfo->damage == 0/* || ( damageInfo->GetSpellProto() && damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS))*/)
         return;
 
     MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
@@ -8190,8 +8152,7 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
 
             SpellAuraHolderPtr holder = i->GetHolder();  // lock holder
 
-            if ((((*i)->GetModifier()->m_miscvalue & damageInfo->SchoolMask()) ||                          // schoolmask has to fit with the intrinsic spell school
-                (*i)->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_PET_SCALING_AURA)) &&   // completely schoolmask-independend: pet scaling auras
+            if ((*i)->GetModifier()->m_miscvalue & damageInfo->SchoolMask() &&             // schoolmask has to fit with the intrinsic spell school 
                                                                                            // Those auras have SPELL_SCHOOL_MASK_MAGIC, but anyway should also affect
                                                                                            // physical damage from non-weapon-damage-based spells (claw, swipe etc.)
                 ((*i)->GetModifier()->m_miscvalue & GetMeleeDamageSchoolMask()) &&           // AND schoolmask has to fit with weapon damage school (essential for non-physical spells)
@@ -8394,7 +8355,8 @@ void Unit::MeleeDamageBonusTaken(DamageInfo* damageInfo, uint32 stack)
 
     Unit* pCaster = damageInfo->attacker;
 
-    if (damageInfo->damage == 0 || (damageInfo->GetSpellProto() && damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS)))
+    // <sid> 2-3 classic spell have this flag
+    if (damageInfo->damage == 0/* || (damageInfo->GetSpellProto() && damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS))*/)
         return;
 
     // differentiate for weapon damage based spells
@@ -12176,25 +12138,6 @@ void Unit::StopAttackFaction(uint32 faction_id)
     CallForAllControlledUnits(StopAttackFactionHelper(faction_id), CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);
 }
 
-bool Unit::IsIgnoreUnitState(SpellEntry const *spell, IgnoreUnitState ignoreState)
-{
-    Unit::AuraList const& stateAuras = GetAurasByType(SPELL_AURA_IGNORE_UNIT_STATE);
-    for(Unit::AuraList::const_iterator itr = stateAuras.begin(); itr != stateAuras.end(); ++itr)
-    {
-        if ((*itr)->GetModifier()->m_miscvalue == ignoreState)
-        {
-            // frozen state absent ignored for all spells
-            if (ignoreState == IGNORE_UNIT_TARGET_NON_FROZEN)
-                return true;
-
-            if ((*itr)->isAffectedOnSpell(spell))
-                return true;
-        }
-    }
-
-    return false;
-}
-
 void Unit::CleanupDeletedHolders(bool force)
 {
     if (m_deletedHolders.empty())
@@ -12367,10 +12310,10 @@ uint32 Unit::CalculateAuraPeriodicTimeWithHaste(SpellEntry const* spellProto, ui
     if (!spellProto || oldPeriodicTime == 0)
         return 0;
 
-    bool applyHaste = spellProto->HasAttribute(SPELL_ATTR_EX5_AFFECTED_BY_HASTE);
-
-    if (!applyHaste)
-        return oldPeriodicTime;
+//     bool applyHaste = spellProto->HasAttribute(SPELL_ATTR_EX5_AFFECTED_BY_HASTE);
+// 
+//     if (!applyHaste)
+//         return oldPeriodicTime;
 
     uint32 _periodicTime = ceil(float(oldPeriodicTime) * GetFloatValue(UNIT_MOD_CAST_SPEED));
 
@@ -12382,10 +12325,10 @@ uint32 Unit::CalculateSpellDurationWithHaste(SpellEntry const* spellProto, uint3
     if (!spellProto || oldduration == 0)
         return 0;
 
-    bool applyHaste = spellProto->HasAttribute(SPELL_ATTR_EX5_AFFECTED_BY_HASTE);
-
-    if (!applyHaste)
-        return oldduration;
+//     bool applyHaste = spellProto->HasAttribute(SPELL_ATTR_EX5_AFFECTED_BY_HASTE);
+// 
+//     if (!applyHaste)
+//         return oldduration;
 
     // Apply haste to duration
 
@@ -12414,8 +12357,15 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
     if (!VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
         return true;
 
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_DETECTION))
-        return true;
+    // in LK have attr SPELL_ATTR_EX6_IGNORE_DETECTION
+    switch (spellInfo->Id)
+    {
+        case 4987:  // Cleanse
+        case 8146:  // Tremor Totem Effect
+            return true;
+        default:
+            break;
+    }
 
     // some totem spells must ignore LOS, only visibility/detect checks applied
     if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTotem())
@@ -12428,21 +12378,6 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
     return spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) ? true : IsWithinLOSInMap(caster);
 }
 
-uint32 Unit::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
-{
-    // i will asume that creatures will always take the defined model from the dbc
-    // since no field in creature_templates describes wether an alliance or
-    // horde modelid should be used at shapeshifting
-    return ssEntry->modelID_A;
-}
-
-uint32 Unit::GetModelForForm() const
-{
-    ShapeshiftForm form = GetShapeshiftForm();
-    SpellShapeshiftFormEntry const* ssEntry = sSpellShapeshiftFormStore.LookupEntry(form);
-    return ssEntry ? GetModelForForm(ssEntry) : 0;
-}
-
 bool Unit::IsCombatStationary()
 {
     return isInCombat() && !IsInUnitState(UNIT_ACTION_CHASE);
@@ -12452,7 +12387,8 @@ bool Unit::HasMorePoweredBuff(uint32 spellId)
 {
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellId);
 
-    if (!spellInfo || !spellInfo->HasAttribute(SPELL_ATTR_EX7_REPLACEABLE_AURA))
+    // <sid> most classic spells have this flag
+    if (!spellInfo/* || !spellInfo->HasAttribute(SPELL_ATTR_EX7_REPLACEABLE_AURA)*/)
         return false;
 
     for (uint8 i = 0; i < MAX_EFFECT_INDEX; ++i)
@@ -12484,8 +12420,9 @@ bool Unit::HasMorePoweredBuff(uint32 spellId)
             if (!foundSpellInfo)
                 continue;
 
-            if (!foundSpellInfo->HasAttribute(SPELL_ATTR_EX7_REPLACEABLE_AURA))
-                continue;
+            // <sid> most classic spells have this flag
+            //if (!foundSpellInfo->HasAttribute(SPELL_ATTR_EX7_REPLACEABLE_AURA))
+            //    continue;
 
             for (uint8 j = 0; j < MAX_EFFECT_INDEX; ++j)
             {
@@ -12632,10 +12569,10 @@ SpellSchoolMask  DamageInfo::SchoolMask() const
 
 void Unit::SetLastManaUse()
 {
-    if (GetTypeId() == TYPEID_PLAYER &&
+    /*if (GetTypeId() == TYPEID_PLAYER &&
         !IsUnderLastManaUseEffect() &&
         HasFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER))
-        RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
+        RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);*/
 
     uint32 lastRegenInterval = IsUnderLastManaUseEffect() ? REGEN_TIME_PRECISE : REGEN_TIME_FULL;
 

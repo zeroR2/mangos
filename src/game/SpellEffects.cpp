@@ -302,7 +302,8 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                         // Always * 1.75 modifier
                         damage *= 1.75;
 
-                        // Check first crit roll
+                        // <sid> rework later
+                        /*// Check first crit roll
                         if (m_caster->m_gdrIsCrit)
                             damage *= 1.5;
 
@@ -311,7 +312,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                             damage *= 1.5;
 
                         // Reset first roll index
-                        m_caster->m_gdrIsCrit = false;
+                        m_caster->m_gdrIsCrit = false;*/
 
                         break;
                     }
@@ -537,7 +538,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 8593:                                  // Symbol of life (restore creature to life)
                 {
-                    if (!unitTarget || !unitTarget->GetTypeId() == TYPEID_UNIT)
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
                         return;
 
                     ((Creature*)unitTarget)->SetDeathState(JUST_ALIVED);
@@ -1763,7 +1764,6 @@ void Spell::EffectTeleportUnits(SpellEffectIndex eff_idx)   // TODO - Use target
         }
         case TARGET_AREAEFFECT_INSTANT:                     // in all cases first TARGET_TABLE_X_Y_Z_COORDINATES
         case TARGET_TABLE_X_Y_Z_COORDINATES:
-        case TARGET_SELF2:
         {
             SpellTargetPosition const* st = sSpellMgr.GetSpellTargetPosition(m_spellInfo->Id);
             if (!st)

@@ -949,10 +949,15 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
 
     float speed_proto = m_spellInfo->speed;
     // spell speed calculation for charge-like spells
-    if (m_spellInfo->HasAttribute(SPELL_ATTR_EX7_HAS_CHARGE_EFFECT) && (fabs(m_spellInfo->speed) < M_NULL_F))
-    {
-        speed_proto = BASE_CHARGE_SPEED;
-    }
+//     if (m_spellInfo->HasAttribute(SPELL_ATTR_EX7_HAS_CHARGE_EFFECT) && (fabs(m_spellInfo->speed) < M_NULL_F))
+//     {
+//         speed_proto = BASE_CHARGE_SPEED;
+//     }
+
+    // <sid> rework this or remove...
+    for (uint8 i = 0; i < 3; ++i)
+        if (m_spellInfo->Effect[i] == SPELL_EFFECT_CHARGE && (fabs(m_spellInfo->speed) < M_NULL_F))
+            speed_proto = BASE_CHARGE_SPEED;
 
     // Spell have trajectory - need calculate incoming time
     if (affectiveObject && (m_targets.GetSpeed() > M_NULL_F))
@@ -1904,8 +1909,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 unMaxTargets = m_spellInfo->CalculateSimpleValue(effIndex);
             break;
         }
-        case TARGET_SELF:
-        case TARGET_SELF2:
+        case TARGET_SELF
             targetUnitMap.push_back(m_caster);
             break;
         case TARGET_RANDOM_ENEMY_CHAIN_IN_AREA:
@@ -1954,7 +1958,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 if(!prev->IsWithinDist(*next, CHAIN_SPELL_JUMP_RADIUS))
                     break;
 
-                if((!prev->IsWithinLOSInMap(*next) && !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS)) || (m_spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_CCED_TARGETS) && !(*next)->CanFreeMove()))
+                if(!prev->IsWithinLOSInMap(*next) && !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS))
                 {
                     ++next;
                     continue;
@@ -2099,7 +2103,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     if (prev == (Unit*)m_caster)
                         break;
 
-                    if ((!m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && !prev->IsWithinLOSInMap(*next)) || (m_spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_CCED_TARGETS) && !(*next)->CanFreeMove()))
+                    if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && !prev->IsWithinLOSInMap(*next))
                     {
                         ++next;
                         continue;

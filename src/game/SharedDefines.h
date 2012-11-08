@@ -254,7 +254,7 @@ enum SpellAttributes
     SPELL_ATTR_CASTABLE_WHILE_SITTING        = 0x08000000,           // 27 castable while sitting
     SPELL_ATTR_CANT_USED_IN_COMBAT           = 0x10000000,           // 28 Cannot be used in combat
     SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY = 0x20000000,           // 29 unaffected by invulnerability (hmm possible not...)
-    SPELL_ATTR_UNK30                         = 0x40000000,           // 30 breakable by damage?
+    SPELL_ATTR_BREAKABLE_BY_DAMAGE           = 0x40000000,           // 30 breakable by damage?
     SPELL_ATTR_CANT_CANCEL                   = 0x80000000,           // 31 positive aura can't be canceled
 
     SPECIAL_SPELL_ATTR_AREA_AURA             = SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_UNK18 | SPELL_ATTR_CASTABLE_WHILE_MOUNTED | SPELL_ATTR_CASTABLE_WHILE_SITTING
@@ -275,12 +275,12 @@ enum SpellAttributesEx
     SPELL_ATTR_EX_NO_THREAT                  = 0x00000400,           // 10 no generates threat on cast 100%
     SPELL_ATTR_EX_UNK11                      = 0x00000800,           // 11
     SPELL_ATTR_EX_UNK12                      = 0x00001000,           // 12
-    SPELL_ATTR_EX_UNK13                      = 0x00002000,           // 13
+    SPELL_ATTR_EX_FARSIGHT                   = 0x00002000,           // 13 related to farsight (this not fully correct, but used in mangos. /dev/rsa)
     SPELL_ATTR_EX_UNK14                      = 0x00004000,           // 14
     SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY   = 0x00008000,           // 15 remove auras on immunity
     SPELL_ATTR_EX_UNAFFECTED_BY_SCHOOL_IMMUNE= 0x00010000,           // 16 unaffected by school immunity
-    SPELL_ATTR_EX_REMAIN_OOC                 = 0x00020000,           // 17 Using remain OOC
-    SPELL_ATTR_EX_UNK18                      = 0x00040000,           // 18
+    SPELL_ATTR_EX_UNK17                      = 0x00020000,           // 17
+    SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE    = 0x00040000,           // 18 auras with this attribute breaked by any damage (not CrowdControl auras)
     SPELL_ATTR_EX_UNK19                      = 0x00080000,           // 19
     SPELL_ATTR_EX_REQ_TARGET_COMBO_POINTS    = 0x00100000,           // 20 Req combo points on target
     SPELL_ATTR_EX_SOOTHE                     = 0x00200000,           // 21 Used by Mind Soothe and Animal Soothe (some Scorpid Poison ??)
@@ -295,7 +295,7 @@ enum SpellAttributesEx
     SPELL_ATTR_EX_UNK30                      = 0x40000000,           // 30 overpower
     SPELL_ATTR_EX_UNK31                      = 0x80000000,           // 31
 
-    SPECIAL_SPELL_ATTR_EX_SOOTHE             = SPELL_ATTR_EX_REMAIN_OOC | SPELL_ATTR_EX_SOOTHE
+    SPECIAL_SPELL_ATTR_EX_SOOTHE             = SPELL_ATTR_EX_UNK17 | SPELL_ATTR_EX_SOOTHE
 };
 
 enum SpellAttributesEx2
@@ -317,7 +317,7 @@ enum SpellAttributesEx2
     SPELL_ATTR_EX2_UNK14                     = 0x00004000,           // 14
     SPELL_ATTR_EX2_UNK15                     = 0x00008000,           // 15 not set in 2.4.2
     SPELL_ATTR_EX2_UNK16                     = 0x00010000,           // 16
-    SPELL_ATTR_EX2_UNK17                     = 0x00020000,           // 17 suspend weapon timer instead of resetting it, (?Hunters Shot and Stings only have this flag?)
+    SPELL_ATTR_EX2_NOT_RESET_AUTOSHOT        = 0x00020000,           // 17 Hunters Shot and Stings only have this flag
     SPELL_ATTR_EX2_UNK18                     = 0x00040000,           // 18 Only Revive pet - possible req dead pet
     SPELL_ATTR_EX2_NOT_NEED_SHAPESHIFT       = 0x00080000,           // 19 does not necessary need shapeshift (pre-3.x not have passive spells with this attribute)
     SPELL_ATTR_EX2_UNK20                     = 0x00100000,           // 20
@@ -343,8 +343,8 @@ enum SpellAttributesEx3
     SPELL_ATTR_EX3_UNK4                      = 0x00000010,           // 4 Druid Rebirth only this spell have this flag
     SPELL_ATTR_EX3_UNK5                      = 0x00000020,           // 5
     SPELL_ATTR_EX3_UNK6                      = 0x00000040,           // 6
-    SPELL_ATTR_EX3_UNK7                      = 0x00000080,           // 7 create a separate (de)buff stack for each caster
-    SPELL_ATTR_EX3_UNK8                      = 0x00000100,           // 8
+    SPELL_ATTR_EX3_STACK_FOR_DIFF_CASTERS    = 0x00000080,           // 7 create a separate (de)buff stack for each caster
+    SPELL_ATTR_EX3_TARGET_ONLY_PLAYER        = 0x00000100,           // 8 Can target only player
     SPELL_ATTR_EX3_UNK9                      = 0x00000200,           // 9
     SPELL_ATTR_EX3_MAIN_HAND                 = 0x00000400,           // 10 Main hand weapon required
     SPELL_ATTR_EX3_BATTLEGROUND              = 0x00000800,           // 11 Can casted only on battleground
@@ -362,25 +362,25 @@ enum SpellAttributesEx3
     SPELL_ATTR_EX3_UNK23                     = 0x00800000,           // 23
     SPELL_ATTR_EX3_REQ_OFFHAND               = 0x01000000,           // 24 Req offhand weapon
     SPELL_ATTR_EX3_UNK25                     = 0x02000000,           // 25 no cause spell pushback ?
-    SPELL_ATTR_EX3_UNK26                     = 0x04000000,           // 26
+    SPELL_ATTR_EX3_CAN_PROC_WITH_TRIGGERED   = 0x04000000,           // 26 auras with this attribute can proc from triggered spell casts (?)
     SPELL_ATTR_EX3_UNK27                     = 0x08000000,           // 27
     SPELL_ATTR_EX3_UNK28                     = 0x10000000,           // 28
-    SPELL_ATTR_EX3_UNK29                     = 0x20000000,           // 29
+    SPELL_ATTR_EX3_DISABLE_MODS              = 0x20000000,         // 29 Client doesn't apply spellmods for those spells (mostly mounting and like this spells)
     SPELL_ATTR_EX3_UNK30                     = 0x40000000,           // 30
     SPELL_ATTR_EX3_UNK31                     = 0x80000000            // 31
 };
 
 enum SpellAttributesEx4
 {
-    SPELL_ATTR_EX4_UNK0                      = 0x00000001,           // 0
+    SPELL_ATTR_EX4_IGNORE_RESISTANCES        = 0x00000001,         // 0 not may be resisted (in magic case) and have binary resistance method (in melee case).
     SPELL_ATTR_EX4_UNK1                      = 0x00000002,           // 1 proc on finishing move?
     SPELL_ATTR_EX4_UNK2                      = 0x00000004,           // 2
     SPELL_ATTR_EX4_UNK3                      = 0x00000008,           // 3
     SPELL_ATTR_EX4_UNK4                      = 0x00000010,           // 4 This will no longer cause guards to attack on use??
     SPELL_ATTR_EX4_UNK5                      = 0x00000020,           // 5
     SPELL_ATTR_EX4_NOT_STEALABLE             = 0x00000040,           // 6 although such auras might be dispellable, they cannot be stolen
-    SPELL_ATTR_EX4_UNK7                      = 0x00000080,           // 7
-    SPELL_ATTR_EX4_UNK8                      = 0x00000100,           // 8
+    SPELL_ATTR_EX4_FORCE_TRIGGERED           = 0x00000080,           // 7 forced triggered?
+    SPELL_ATTR_EX4_STACK_DOT_MODIFIER        = 0x00000100,           // 8 no effect on non DoTs?
     SPELL_ATTR_EX4_UNK9                      = 0x00000200,           // 9
     SPELL_ATTR_EX4_SPELL_VS_EXTEND_COST      = 0x00000400,           // 10 Rogue Shiv have this flag
     SPELL_ATTR_EX4_UNK11                     = 0x00000800,           // 11
@@ -2196,6 +2196,42 @@ enum SkillCategory
     SKILL_CATEGORY_LANGUAGES     = 10,
     SKILL_CATEGORY_PROFESSION    = 11,                      // primary professions
     SKILL_CATEGORY_GENERIC       = 12
+};
+
+enum TotemCategory
+{
+    TC_SKINNING_SKIFE_OLD          = 1,
+    TC_EARTH_TOTEM                 = 2,
+    TC_AIR_TOTEM                   = 3,
+    TC_FIRE_TOTEM                  = 4,
+    TC_WATER_TOTEM                 = 5,
+    TC_COPPER_ROD                  = 6,
+    TC_SILVER_ROD                  = 7,
+    TC_GOLDEN_ROD                  = 8,
+    TC_TRUESILVER_ROD              = 9,
+    TC_ARCANITE_ROD                = 10,
+    TC_MINING_PICK_OLD             = 11,
+    TC_PHILOSOPHERS_STONE          = 12,
+    TC_BLACKSMITH_HAMMER_OLD       = 13,
+    TC_ARCLIGHT_SPANNER            = 14,
+    TC_GYROMATIC_MA                = 15,
+    TC_MASTER_TOTEM                = 21,
+    TC_FEL_IRON_ROD                = 41,
+    TC_ADAMANTITE_ROD              = 62,
+    TC_ETERNIUM_ROD                = 63,
+    TC_HOLLOW_QUILL                = 81,
+    TC_RUNED_AZURITE_ROD           = 101,
+    TC_VIRTUOSO_INKING_SET         = 121,
+    TC_DRUMS                       = 141,
+    TC_GNOMISH_ARMY_KNIFE          = 161,
+    TC_BLACKSMITH_HAMMER           = 162,
+    TC_MINING_PICK                 = 165,
+    TC_SKINNING_KNIFE              = 166,
+    TC_HAMMER_PICK                 = 167,
+    TC_BLADED_PICKAXE              = 168,
+    TC_FLINT_AND_TINDER            = 169,
+    TC_RUNED_COBALT_ROD            = 189,
+    TC_RUNED_TITANIUM_ROD          = 190
 };
 
 enum UnitDynFlags

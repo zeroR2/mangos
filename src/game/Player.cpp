@@ -9384,7 +9384,7 @@ InventoryResult Player::_CanTakeMoreSimilarItems(uint32 entry, uint32 count, Ite
 
 bool Player::HasItemTotemCategory(uint32 TotemCategory) const
 {
-    /*Item *pItem;
+    Item *pItem;
     for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
     {
         pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
@@ -9408,7 +9408,7 @@ bool Player::HasItemTotemCategory(uint32 TotemCategory) const
                     return true;
             }
         }
-    }*/
+    }
     return false;
 }
 
@@ -11305,9 +11305,6 @@ void Player::MoveItemToInventory(ItemPosCountVec const& dest, Item* pItem, bool 
         // in case trade we already have item in other player inventory
         pLastItem->SetState(in_characterInventoryDB ? ITEM_CHANGED : ITEM_NEW, this);
     }
-
-    //if (pLastItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
-    //    AddItemWithTimeCheck(pLastItem->GetGUIDLow());
 }
 
 void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
@@ -12460,53 +12457,13 @@ void Player::ApplyEnchantment(Item *item, EnchantmentSlot slot, bool apply, bool
                     if (enchant_spell_id)
                     {
                         if (apply)
-                        {
-                            int32 basepoints = 0;
-                            // Random Property Exist - try found basepoints for spell (basepoints depends from item suffix factor)
-                            if (item->GetItemRandomPropertyId())
-                            {
-                                ItemRandomSuffixEntry const *item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
-                                if (item_rand)
-                                {
-                                    // Search enchant_amount
-                                    for (int k = 0; k < 3; ++k)
-                                    {
-                                        if (item_rand->enchant_id[k] == enchant_id)
-                                        {
-                                            basepoints = int32((item_rand->prefix[k] * item->GetItemSuffixFactor()) / 10000);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            // Cast custom spell vs all equal basepoints got from enchant_amount
-                            if (basepoints)
-                                CastCustomSpell(this, enchant_spell_id, &basepoints, &basepoints, &basepoints, true, item);
-                            else
-                                CastSpell(this, enchant_spell_id, true, item);
-                        }
+                            CastSpell(this, enchant_spell_id, true, item);
                         else
                             RemoveAurasDueToItemSpell(item, enchant_spell_id);
                     }
                     break;
                 }
                 case ITEM_ENCHANTMENT_TYPE_RESISTANCE:
-                    if (!enchant_amount)
-                    {
-                        ItemRandomSuffixEntry const *item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
-                        if (item_rand)
-                        {
-                            for (int k = 0; k < 3; ++k)
-                            {
-                                if (item_rand->enchant_id[k] == enchant_id)
-                                {
-                                    enchant_amount = uint32((item_rand->prefix[k] * item->GetItemSuffixFactor()) / 10000);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
                     HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + enchant_spell_id), TOTAL_VALUE, float(enchant_amount), apply);
                     break;
                 case ITEM_ENCHANTMENT_TYPE_STAT:
@@ -16003,11 +15960,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
             DEBUG_LOG("Player::_LoadInventory: %s has conjured item (GUID: %u, Entry: %u) with expired lifetime (15 minutes), deleted.", GetGuidStr().c_str(), itemLowGuid, itemId);
             removeItem = true;
         }
-        /*else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
-        {
-            if (!item->LoadSoulboundTradeableDataFromDB(this))
-                DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with soulbound tradeable flag, but without data in item_soulbound_trade_data, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
-        }*/
         else if (proto->HolidayId)
         {
             if (!IsHolidayActive(HolidayIds(proto->HolidayId)))
@@ -18872,34 +18824,7 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
         return false;
     }
 
-    /*if (uint32 extendedCostId = crItem->ExtendedCost)
-    {
-        ItemExtendedCostEntry const* iece = sItemExtendedCostStore.LookupEntry(extendedCostId);
-        if (!iece)
-        {
-            sLog.outError("Item %u have wrong ExtendedCost field value %u", pProto->ItemId, extendedCostId);
-            return false;
-        }
-
-        // honor points price
-        if (GetHonorPoints() < (iece->reqhonorpoints * count))
-        {
-            SendEquipError(EQUIP_ERR_NOT_ENOUGH_HONOR_POINTS, NULL, NULL);
-            return false;
-        }
-
-        // item base price
-        for (uint8 i = 0; i < MAX_EXTENDED_COST_ITEMS; ++i)
-        {
-            if (iece->reqitem[i] && !HasItemCount(iece->reqitem[i], iece->reqitemcount[i] * count))
-            {
-                SendEquipError(EQUIP_ERR_VENDOR_MISSING_TURNINS, NULL, NULL);
-                return false;
-            }
-        }
-    }*/
-
-    uint32 price = (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD)) ? pProto->BuyPrice * count : 0;
+    uint32 price = (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD) ? pProto->BuyPrice * count : 0;
 
     // reputation discount
     if (price)

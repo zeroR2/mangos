@@ -120,6 +120,7 @@ DBCStorage <TalentTabEntry> sTalentTabStore(TalentTabEntryfmt);
 DBCStorage <TaxiNodesEntry> sTaxiNodesStore(TaxiNodesEntryfmt);
 DBCStorage <TaxiPathEntry> sTaxiPathStore(TaxiPathEntryfmt);
 DBCStorage <TaxiPathNodeEntry> sTaxiPathNodeStore(TaxiPathNodeEntryfmt);
+DBCStorage <TotemCategoryEntry> sTotemCategoryStore(TotemCategoryEntryfmt);
 DBCStorage <WMOAreaTableEntry> sWMOAreaTableStore(WMOAreaTableEntryfmt);
 DBCStorage <WorldMapAreaEntry> sWorldMapAreaStore(WorldMapAreaEntryfmt);
 DBCStorage <WorldSafeLocsEntry> sWorldSafeLocsStore(WorldSafeLocsEntryfmt);
@@ -613,6 +614,26 @@ ChatChannelsEntry const* GetChannelEntryFor(uint32 channel_id)
             return ch;
     }
     return NULL;
+}
+
+bool IsTotemCategoryCompatiableWith(uint32 itemTotemCategoryId, uint32 requiredTotemCategoryId)
+{
+    if (requiredTotemCategoryId == 0)
+        return true;
+    if (itemTotemCategoryId == 0)
+        return false;
+
+    TotemCategoryEntry const* itemEntry = sTotemCategoryStore.LookupEntry(itemTotemCategoryId);
+    if (!itemEntry)
+        return false;
+    TotemCategoryEntry const* reqEntry = sTotemCategoryStore.LookupEntry(requiredTotemCategoryId);
+    if (!reqEntry)
+        return false;
+
+    if (itemEntry->categoryType != reqEntry->categoryType)
+        return false;
+
+    return (itemEntry->categoryMask & reqEntry->categoryMask) == reqEntry->categoryMask;
 }
 
 bool Zone2MapCoordinates(float& x, float& y, uint32 zone)
