@@ -404,16 +404,7 @@ Aura* SpellAuraHolder::CreateAura(SpellEntry const* spellproto, SpellEffectIndex
     {
         return CreateAura(AURA_CLASS_AREA_AURA, eff, currentBasePoints, holder, target, caster, castItem);
     }
-    else if (SpellEntry const* triggeredSpellInfo = sSpellStore.LookupEntry(triggeredSpellId))
-    {
-        for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
-        {
-            if (triggeredSpellInfo->EffectImplicitTargetA[i] == TARGET_SINGLE_ENEMY)
-            {
-                return CreateAura(AURA_CLASS_SINGLE_ENEMY_AURA, eff, currentBasePoints, holder, target, caster, castItem);
-            }
-        }
-    }
+
     // else - normal aura
 
     return CreateAura(AURA_CLASS_AURA, eff, currentBasePoints, holder, target, caster, castItem);
@@ -3380,7 +3371,8 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
         do { // (to avoid lots of indentation changes)
 
         // update active transform spell only when transform or shapeshift not set or not overwriting negative by positive case
-        if (target->GetModelForForm() && IsPositiveSpell(GetId()))
+        // <sid> fix or remove
+        if (/*target->GetModelForForm() && */IsPositiveSpell(GetId()))
             break;
 
         // special case (spell specific functionality)
@@ -3657,26 +3649,9 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
         // re-apply shapeshift display if no transform auras remaining
         else if (target->GetShapeshiftForm())
         {
-            if (uint32 modelid = target->GetModelForForm())
-                target->SetDisplayId(modelid);
-        }
-
-        // Dragonmaw Illusion (restore mount model)
-        if (GetId() == 42016 && target->GetMountID() == 16314)
-        {
-            if (!target->GetAurasByType(SPELL_AURA_MOUNTED).empty())
-            {
-                uint32 cr_id = target->GetAurasByType(SPELL_AURA_MOUNTED).front()->GetModifier()->m_miscvalue;
-                if (CreatureInfo const* ci = ObjectMgr::GetCreatureTemplate(cr_id))
-                {
-                    uint32 display_id = Creature::ChooseDisplayId(ci);
-                    CreatureModelInfo const *minfo = sObjectMgr.GetCreatureModelRandomGender(display_id);
-                    if (minfo)
-                        display_id = minfo->modelid;
-
-                    target->SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, display_id);
-                }
-            }
+            // <sid> need fix
+            //if (uint32 modelid = target->GetModelForForm())
+            //    target->SetDisplayId(modelid);
         }
     }
 }
@@ -7337,11 +7312,6 @@ void Aura::PeriodicTick()
             damageInfo.procEx = PROC_EX_PERIODIC_POSITIVE | (isCrit ? PROC_EX_CRITICAL_HIT : PROC_EX_NORMAL_HIT);
 
             pCaster->ProcDamageAndSpell(&damageInfo);
-
-            // add HoTs to amount healed in bgs
-            if (pCaster->GetTypeId() == TYPEID_PLAYER )
-                if ( BattleGround *bg = ((Player*)pCaster)->GetBattleGround() )
-                    bg->UpdatePlayerScore(((Player*)pCaster), SCORE_HEALING_DONE, gain);
 
             target->getHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
 

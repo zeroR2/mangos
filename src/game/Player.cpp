@@ -21883,18 +21883,12 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at)
 
     if (GetTeam() == ALLIANCE)
     {
-        if ((!isRegularTargetMap &&
-            (at->requiredQuestHeroicA && !GetQuestRewardStatus(at->requiredQuestHeroicA))) ||
-            (isRegularTargetMap &&
-            (at->requiredQuestA && !GetQuestRewardStatus(at->requiredQuestA))))
+        if (at->requiredQuestA && !GetQuestRewardStatus(at->requiredQuestA))
             return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
     }
     else if (GetTeam() == HORDE)
     {
-        if ((!isRegularTargetMap &&
-            (at->requiredQuestHeroicH && !GetQuestRewardStatus(at->requiredQuestHeroicH))) ||
-            (isRegularTargetMap &&
-            (at->requiredQuestH && !GetQuestRewardStatus(at->requiredQuestH))))
+        if (at->requiredQuestH && !GetQuestRewardStatus(at->requiredQuestH))
             return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
     }
 

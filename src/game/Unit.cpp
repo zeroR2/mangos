@@ -881,17 +881,6 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
 
         /* process anticheat check */
         killer->GetAntiCheat()->DoAntiCheatCheck(CHECK_DAMAGE, 0, 0, damageInfo->damage);
-
-
-        // in bg, count dmg if victim is also a player
-        if (pVictim->GetTypeId()==TYPEID_PLAYER)
-        {
-            if (BattleGround *bg = killer->GetBattleGround())
-            {
-                // FIXME: kept by compatibility. don't know in BG if the restriction apply.
-                bg->UpdatePlayerScore(killer, SCORE_DAMAGE_DONE, damageInfo->damage);
-            }
-        }
     }
 
     if (pVictim->GetTypeId() == TYPEID_UNIT && !((Creature*)pVictim)->IsPet() && !((Creature*)pVictim)->HasLootRecipient())

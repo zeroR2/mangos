@@ -231,6 +231,29 @@ struct CreatureFamilyEntry
     char*     Name[8];
 };
 
+// from 3.3.5a
+struct CreatureModelDataEntry
+{
+    uint32 Id;                                              // 1
+    //uint32 Flags;                                         // 2
+    //char* ModelPath[16]                                   // 3
+    //uint32 Unk1;                                          // 4
+    float Scale;                                            // 5 Used in calculation of unit collision data
+    //int32 Unk2                                            // 6
+    //int32 Unk3                                            // 7
+    //uint32 Unk4                                           // 8
+    //uint32 Unk5                                           // 9
+    //float Unk6                                            // 10
+    //uint32 Unk7                                           // 11
+    //float Unk8                                            // 12
+    //uint32 Unk9                                           // 13
+    //uint32 Unk10                                          // 14
+    //float CollisionWidth;                                 // 15
+    float CollisionHeight;                                  // 16
+    float MountHeight;                                      // 17 Used in calculation of unit collision data when mounted
+    //float Unks[11]                                        // 18-28
+};
+
 #define MAX_CREATURE_SPELL_DATA_SLOT 4
 
 struct CreatureSpellDataEntry
@@ -923,6 +946,7 @@ struct SpellEffectEntry
 
 #define MAX_SPELL_REAGENTS 8
 #define MAX_SPELL_TOTEMS 2
+#define MAX_SPELL_TOTEM_CATEGORIES 2
 
 struct SpellEntry
 {
