@@ -1043,6 +1043,7 @@ struct SpellEntry
     //uint32    RequiredAuraVision;                         // 172 not used
 
     // helpers
+    uint32 GetTotemCategory(uint8 index) const { return 0; }
     int32 CalculateSimpleValue(SpellEffectIndex eff) const { return EffectBasePoints[eff] + int32(1); }
 
     bool IsFitToFamilyMask(uint64 familyFlags) const

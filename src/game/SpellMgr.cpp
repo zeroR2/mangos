@@ -479,8 +479,9 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
                 return SPELL_CURSE;
 
             // Warlock (Demon Armor | Demon Skin | Fel Armor)
-            if (spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_ARMOR, CF_WARLOCK_FEL_ARMOR, CF_WARLOCK_DEMON_SKIN>())
-                return SPELL_WARLOCK_ARMOR;
+            // <sid> change spellfamily flags
+            //if (spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_ARMOR, CF_WARLOCK_FEL_ARMOR, CF_WARLOCK_DEMON_SKIN>())
+            //    return SPELL_WARLOCK_ARMOR;
 
             // Unstable Affliction | Immolate
             if (spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_IMMOLATE, CF_WARLOCK_UNSTABLE_AFFLICTION>())
@@ -513,20 +514,18 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
             if (IsSealSpell(spellInfo))
                 return SPELL_SEAL;
 
-            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_MIGHT, CF_PALADIN_BLESSING_OF_WISDOM, CF_PALADIN_BLESSING_OF_KINGS, CF_PALADIN_MISC_BLESSINGS>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_FREEDOM, CF_PALADIN_BLESSING_OF_PROTECTION, CF_PALADIN_BLESSING_OF_MIGHT, CF_PALADIN_BLESSING_OF_WISDOM, CF_PALADIN_BLESSING_OF_KINGS, CF_PALADIN_MISC_BLESSINGS>())
                 return SPELL_BLESSING;
 
-            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_HAND_OF_FREEDOM, CF_PALADIN_HAND_OF_PROTECTION, CF_PALADIN_HAND_OF_SALVATION1, CF_PALADIN_HAND_OF_SACRIFICE>())
-                return SPELL_HAND;
-
             // skip Heart of the Crusader and Judgements of the Just that have also same spell family mask
-            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_RIGHT, CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT, CF_PALADIN_JUDGEMENT_OF_JUSTICE, CF_PALADIN_HEART_OF_THE_CRUSADER, CF_PALADIN_JUDGEMENT_OF_BLOOD_MARTYR>() &&
-                (spellInfo->HasAttribute(SPELL_ATTR_EX3_UNK9) && !spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_HEART_OF_THE_CRUSADER,CF_PALADIN_JUDGEMENT_OF_JUST>()))
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_RIGHT, CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT, CF_PALADIN_JUDGEMENT_OF_JUSTICE, CF_PALADIN_JUDGEMENT_OF_THE_CRUSADER>() &&
+                (spellInfo->HasAttribute(SPELL_ATTR_EX3_UNK9) && !spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_THE_CRUSADER>()))
                 return SPELL_JUDGEMENT;
 
             // only paladin auras have this (for palaldin class family)
-            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_AURAS>())
-                return SPELL_AURA;
+            // <sid add spellfamily flags
+            //if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_AURAS>())
+            //    return SPELL_AURA;
 
             break;
         }
@@ -2499,138 +2498,22 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                 case 30835:                                 // Infernal Relay
                 case 31347:                                 // Doom TODO: exclude top threat target from target selection
                 case 33711:                                 // Murmur's Touch
-                case 38794:                                 // Murmur's Touch (h)
-                case 44869:                                 // Spectral Blast
-                case 45892:                                 // Sinister Reflection (SWP, Kil'jaeden)
-                case 45976:                                 // Open Portal
-                case 47669:                                 // Wakeup Subboss (Utgarde Pinnacle)
-                case 48278:                                 // Paralyze (Utgarde Pinnacle)
-                case 50988:                                 // Glare of the Tribunal (Halls of Stone)
-                case 51146:                                 // Searching Gaze (Halls Of Stone)
-                case 52438:                                 // Summon Skittering Swarmer (Azjol Nerub,  Krik'thir the Gatewatcher)
-                case 52449:                                 // Summon Skittering Infector (Azjol Nerub,  Krik'thir the Gatewatcher)
-                case 53457:                                 // Impale (Azjol Nerub,  Anub'arak)
-                case 54148:                                 // Ritual of the Sword (Utgarde Pinnacle, Svala)
-                case 55479:                                 // Forced Obedience (Naxxramas, Razovius)
-                case 56140:                                 // Summon Power Spark (Eye of Eternity, Malygos)
-                case 59870:                                 // Glare of the Tribunal (h) (Halls of Stone)
-                case 62016:                                 // Charge Orb (Ulduar, Thorim)
-                case 62042:                                 // Stormhammer (Ulduar, Thorim)
-                case 62301:                                 // Cosmic Smash (Ulduar, Algalon)
-                case 62488:                                 // Activate Construct (Ulduar, Ignis)
-                case 63018:                                 // Searing Light
-                case 63024:                                 // Gravity Bomb (Ulduar, XT-002)
-                case 63387:                                 // Rapid Burst
-                case 63545:                                 // Icicle Hodir(trigger spell from 62227)
-                case 63795:                                 // Psychosis (Ulduar, Yogg-Saron)
-                case 64218:                                 // Overcharge
-                case 64234:                                 // Gravity Bomb (h) (Ulduar, XT-002)
-                case 64531:                                 // Rapid Burst (h)
-                case 65121:                                 // Searing Light (h)
-                case 65301:                                 // Psychosis (Ulduar, Yogg-Saron)
-                case 65872:                                 // Pursuing Spikes
-                case 65950:                                 // Touch of Light (ToCrusader, Val'kyr Twins)
-                case 66001:                                 // Touch of Darkness (ToCrusader, Val'kyr Twins)
-                case 66152:                                 // Bullet Controller Summon Periodic Trigger Light (ToCrusader)
-                case 66153:                                 // Bullet Controller Summon Periodic Trigger Dark (ToCrusader)
-                case 66332:                                 // Nerubian Burrower (Mode 0) (ToCrusader, Anub'arak)
-                case 66336:                                 // Mistress' Kiss (ToCrusader, Jaraxxus)
-                case 66339:                                 // Summon Scarab (ToCrusader, Anub'arak)
-                case 67077:                                 // Mistress' Kiss (Mode 2) (ToCrusader, Jaraxxus)
-                case 67281:                                 // Touch of Darkness (Mode 1)
-                case 67282:                                 // Touch of Darkness (Mode 2)
-                case 67283:                                 // Touch of Darkness (Mode 3)
-                case 67296:                                 // Touch of Light (Mode 1)
-                case 67297:                                 // Touch of Light (Mode 2)
-                case 67298:                                 // Touch of Light (Mode 3)
-                case 67470:                                 // Pursuing Spikes
-                case 68950:                                 // Fear (FoS)
-                case 68912:                                 // Wailing Souls (FoS)
-                case 68987:                                 // Pursuit (Pit of Saron, Ick)
-                case 69048:                                 // Mirrored Soul (FoS)
-                case 69140:                                 // Coldflame (ICC, Marrowgar)
-                case 69674:                                 // Mutated Infection (ICC, Rotface)
-                case 70450:                                 // Blood Mirror
-                case 70837:                                 // Blood Mirror
-                case 70882:                                 // Slime Spray Summon Trigger (ICC, Rotface)
-                case 70920:                                 // Unbound Plague Search Effect (ICC, Putricide)
-                case 71224:                                 // Mutated Infection (Mode 1)
-                case 71445:                                 // Twilight Bloodbolt
-                case 71471:                                 // Twilight Bloodbolt
-                case 71837:                                 // Vampiric Bite
-                case 71861:                                 // Swarming Shadows
-                case 72091:                                 // Frozen Orb (Vault of Archavon, Toravon)
-                case 73022:                                 // Mutated Infection (Mode 2)
-                case 73023:                                 // Mutated Infection (Mode 3)
                     unMaxTargets = 1;
                     break;
                 case 28542:                                 // Life Drain
-                case 62476:                                 // Icicle (Hodir 10man)
-                case 63476:                                 // Icicle (Hodir - 10)
-                case 66013:                                 // Penetrating Cold (10 man)
-                case 67755:                                 // Nerubian Burrower (Mode 1) (ToCrusader, Anub'arak)
-                case 67756:                                 // Nerubian Burrower (Mode 2) (ToCrusader, Anub'arak)
-                case 68509:                                 // Penetrating Cold (10 man heroic)
-                case 69055:                                 // Bone Slice (ICC, Lord Marrowgar)
-                case 69278:                                 // Gas spore (ICC, Festergut)
-                case 70341:                                 // Slime Puddle (ICC, Putricide)
                     unMaxTargets = 2;
                     break;
                 case 28796:                                 // Poison Bolt Volley
                 case 29213:                                 // Curse of the Plaguebringer
                 case 30004:                                 // Flame Wreath
                 case 31298:                                 // Sleep
-                case 39992:                                 // Needle Spine Targeting (BT, Warlord Najentus)
-                case 41303:                                 // Soul Drain (BT, Reliquary of Souls)
-                case 41376:                                 // Spite (BT, Reliquary of Souls)
-                case 51904:                                 // Limiting the count of Summoned Ghouls
-                case 54522:
-                case 60936:                                 // Surge of Power (h) (Malygos)
-                case 61693:                                 // Arcane Storm (Malygos)
-                case 62477:                                 // Icicle (Hodir 25man)
-                case 64598:                                 // Cosmic Smash (h) (Ulduar, Algalon)
-                case 70814:                                 // Bone Slice (ICC, Lord Marrowgar, heroic)
-                case 71221:                                 // Gas spore (Mode 1) (ICC, Festergut)
-                case 72095:                                 // Frozen Orb (h) (Vault of Archavon, Toravon)
                     unMaxTargets = 3;
                     break;
-                case 37676:                                 // Insidious Whisper
-                case 38028:                                 // Watery Grave
-                case 67757:                                 // Nerubian Burrower (Mode 3) (ToCrusader, Anub'arak)
-                    unMaxTargets = 4;
-                    break;
                 case 30843:                                 // Enfeeble
-                case 40243:                                 // Crushing Shadows (BT, Teron Gorefiend)
-                case 42005:                                 // Bloodboil
-                case 45641:                                 // Fire Bloom (SWP, Kil'jaeden)
-                case 55665:                                 // Life Drain (h)
-                case 58917:                                 // Consume Minions
-                case 64604:                                 // Nature Bomb (Ulduar, Freya)
-                case 67076:                                 // Mistress' Kiss (Mode 1) (ToCrusader, Jaraxxus)
-                case 67078:                                 // Mistress' Kiss (Mode 3) (ToCrusader, Jaraxxus)
-                case 67700:                                 // Penetrating Cold (25 man)
-                case 68510:                                 // Penetrating Cold (25 man, heroic)
                     unMaxTargets = 5;
-                    break;
-                case 61694:                                 // Arcane Storm (h) (Malygos)
-                    unMaxTargets = 7;
-                    break;
-                case 54098:                                 // Poison Bolt Volley (h)
-                case 54835:                                 // Curse of the Plaguebringer (h)
-                    unMaxTargets = 10;
                     break;
                 case 25991:                                 // Poison Bolt Volley (Pincess Huhuran)
                     unMaxTargets = 15;
-                    break;
-                // random count
-                case 61916:                                 // Lightning Whirl (Ulduar, Stormcaller Brundir)
-                    unMaxTargets = urand(2, 3);
-                    break;
-                case 46771:                                 // Flame Sear (SWP, Grand Warlock Alythess)
-                    unMaxTargets = urand(3, 5);
-                    break;
-                case 63482:                                 // Lightning Whirl (h) (Ulduar, Stormcaller Brundir)
-                    unMaxTargets = urand(3, 6);
                     break;
                 default:
                     break;
@@ -2638,15 +2521,11 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
             break;
         }
         case SPELLFAMILY_MAGE:
-        {
-            if (spellInfo->Id == 38194)                   // Blink
-                unMaxTargets = 1;
             break;
-        }
         case SPELLFAMILY_DRUID:
         {
             // Starfall
-            if (spellInfo->GetSpellFamilyFlags().test<CF_DRUID_STARFALL2>())
+            if (spellInfo->Id == 20687)
                 unMaxTargets = 2;
             break;
         }
@@ -4327,21 +4206,6 @@ void SpellMgr::LoadSkillDiscoveryTable()
                 continue;
             }
 
-            // mechanic discovery
-            if (reqSpellEntry->Mechanic != MECHANIC_DISCOVERY &&
-                // explicit discovery ability
-                !IsExplicitDiscoverySpell(reqSpellEntry))
-            {
-                if (reportedReqSpells.find(reqSkillOrSpell) == reportedReqSpells.end())
-                {
-                    sLog.outErrorDb("Spell (ID: %u) not have MECHANIC_DISCOVERY (28) value in Mechanic field in spell.dbc"
-                        " and not 100%% chance random discovery ability but listed for spellId %u (and maybe more) in `skill_discovery_template` table",
-                        reqSkillOrSpell,spellId);
-                    reportedReqSpells.insert(reqSkillOrSpell);
-                }
-                continue;
-            }
-
             mSkillDiscoveryStore[reqSkillOrSpell].push_back( SkillDiscoveryEntry(spellId, reqSkillValue, chance) );
         }
         else if (reqSkillOrSpell == 0)                      // skill case
@@ -4378,10 +4242,6 @@ void SpellMgr::LoadSkillDiscoveryTable()
     {
         SpellEntry const* spellEntry = sSpellStore.LookupEntry(spell_id);
         if (!spellEntry)
-            continue;
-
-        // skip not explicit discovery spells
-        if (!IsExplicitDiscoverySpell(spellEntry))
             continue;
 
         if (mSkillDiscoveryStore.find(spell_id) == mSkillDiscoveryStore.end())
@@ -4803,7 +4663,7 @@ void SpellMgr::CheckUsedSpells(char const* table)
                         name.c_str(),family,familyMask.Flags,spellIcon,spellVisual,category,effectIdx+1,effectType,effectIdx+1,auraType,code.c_str());
                 else
                     sLog.outError("Spells '%s' not found for family %i (" I64FMT ") icon(%i) visual(%i) category(%i) effect(%i) aura(%i) but used in %s",
-                        name.c_str(),family,familyMask.Flags,,spellIcon,spellVisual,category,effectType,auraType,code.c_str());
+                        name.c_str(),family,familyMask.Flags,spellIcon,spellVisual,category,effectType,auraType,code.c_str());
                 continue;
             }
         }
@@ -4821,242 +4681,148 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
     // Explicit Diminishing Groups
     switch(spellproto->SpellFamilyName)
     {
-        case SPELLFAMILY_GENERIC:
-            // some generic arena related spells have by some strange reason MECHANIC_TURN
-            if  (spellproto->Mechanic == MECHANIC_TURN)
-                return DIMINISHING_NONE;
-            break;
-        case SPELLFAMILY_MAGE:
-            // Dragon's Breath
-            if  (spellproto->SpellIconID == 1548)
-                return DIMINISHING_DISORIENT;
-            // Slow
-            else if (spellproto->Id == 31589)
-                return DIMINISHING_LIMITONLY;
-            // Charge
-            else if (spellproto->Id == 7922)
-                return DIMINISHING_CHARGE;
-            break;
         case SPELLFAMILY_ROGUE:
         {
+            // Kidney Shot
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x00000200000))
+                return DIMINISHING_KIDNEYSHOT;
             // Blind
-            if (spellproto->GetSpellFamilyFlags().test<CF_ROGUE_BLIND>())
-                return DIMINISHING_FEAR_CHARM_BLIND;
-            // Cheap Shot
-            else if (spellproto->GetSpellFamilyFlags().test<CF_ROGUE_CHEAP_SHOT>())
-                return DIMINISHING_CHEAPSHOT_POUNCE;
-            // Crippling poison - Limit to 10 seconds in PvP (No SpellFamilyFlags)
-            else if (spellproto->SpellIconID == 163)
-                return DIMINISHING_LIMITONLY;
-            // Wound poison - Limit to 10 seconds in PvP (No SpellFamilyFlags)
-            else if (spellproto->SpellIconID == 1496)
-                return DIMINISHING_LIMITONLY;
+            else if (spellproto->SpellFamilyFlags & UI64LIT(0x00001000000))
+                return DIMINISHING_BLIND;
             break;
         }
         case SPELLFAMILY_HUNTER:
         {
-            // Freezing Trap & Freezing Arrow & Wyvern Sting
-            if  (spellproto->SpellIconID == 180 || spellproto->SpellIconID == 1721)
-                return DIMINISHING_DISORIENT;
-            // Hunters Mark - limit to 2 minutes in PvP
-            else if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_HUNTERS_MARK>())
-                return DIMINISHING_LIMITONLY;
-            break;
-        }
-        case SPELLFAMILY_PALADIN:
-        {
-            // Judgement of Justice - limit to 10 seconds in PvP
-            if (spellproto->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_JUSTICE>())
-                return DIMINISHING_LIMITONLY;
-            // Turn Evil
-            else if (spellproto->GetSpellFamilyFlags().test<CF_PALADIN_TURN_EVIL>())
-                return DIMINISHING_FEAR_CHARM_BLIND;
-            break;
-        }
-        case SPELLFAMILY_SHAMAN:
-        {
-            // Earthgrab
-            if (spellproto->GetSpellFamilyFlags().test<CF_SHAMAN_EARTHGRAB>())
-                return DIMINISHING_LIMITONLY;
+            // Freezing trap
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x00000000008))
+                return DIMINISHING_FREEZE;
             break;
         }
         case SPELLFAMILY_WARLOCK:
         {
+            // Fear
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x0000000080000000) && spellproto->Mechanic==MECHANIC_FEAR)
+                return DIMINISHING_WARLOCK_FEAR;
+            // Seduction
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x0000000040000000))
+                return DIMINISHING_WARLOCK_FEAR;
             // Curses/etc
-            if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_DEBUFFS, CF_WARLOCK_CURSE_OF_THE_ELEMENTS>())
-                return DIMINISHING_LIMITONLY;
-            break;
-        }
-        case SPELLFAMILY_DRUID:
-        {
-            // Cyclone
-            if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_CYCLONE>())
-                return DIMINISHING_CYCLONE;
-            // Pounce
-            else if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_POUNCE>())
-                return DIMINISHING_CHEAPSHOT_POUNCE;
-            // Faerie Fire
-            else if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_FAERIE_FIRE>())
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x0000000080000000))
                 return DIMINISHING_LIMITONLY;
             break;
         }
         case SPELLFAMILY_WARRIOR:
         {
             // Hamstring - limit duration to 10s in PvP
-            if (spellproto->GetSpellFamilyFlags().test<CF_WARRIOR_HAMSTRING>())
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x00000000002))
                 return DIMINISHING_LIMITONLY;
-            // Charge - since 3.1.0
-            if (spellproto->Id == 7922)
-                return DIMINISHING_CHARGE;
             break;
         }
-        case SPELLFAMILY_PRIEST:
+        case SPELLFAMILY_DRUID:
         {
-            // Shackle Undead
-            if (spellproto->SpellIconID == 27)
-                return DIMINISHING_DISORIENT;
+            // Entangling Roots
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x0000000000000200))
+                return DIMINISHING_FREEZE;
+            break;
+        }
+        case SPELLFAMILY_SHAMAN:
+        {
+            // Frost Shock
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x0000000080000000))
+                return DIMINISHING_FREEZE;
+            break;
+        }
+        case SPELLFAMILY_MAGE:
+        {
+            // Frost Nova
+            if (spellproto->SpellFamilyFlags & UI64LIT(0x0000000000080040) && spellproto->SpellIconID == 193)
+                return DIMINISHING_FREEZE;
             break;
         }
         default:
             break;
     }
-
-    // Taunt dimishing returns
-    if (IsSpellHaveAura(spellproto, SPELL_AURA_MOD_TAUNT))
-        return DIMINISHING_TAUNT;
 
     // Get by mechanic
     uint32 mechanic = GetAllSpellMechanicMask(spellproto);
     if (!mechanic)
         return DIMINISHING_NONE;
 
-    if (mechanic & ((1<<(MECHANIC_STUN-1))|(1<<(MECHANIC_SHACKLE-1))))
+    if (mechanic & (1<<(MECHANIC_STUN-1)))
         return triggered ? DIMINISHING_TRIGGER_STUN : DIMINISHING_CONTROL_STUN;
-    if (mechanic & ((1<<(MECHANIC_SLEEP-1))|(1<<(MECHANIC_FREEZE-1))))
-        return DIMINISHING_FREEZE_SLEEP;
-    if (mechanic & ((1<<(MECHANIC_KNOCKOUT-1))|(1<<(MECHANIC_POLYMORPH-1))|(1<<(MECHANIC_SAPPED-1))))
-        return DIMINISHING_DISORIENT;
+    if (mechanic & (1<<(MECHANIC_SLEEP-1)))
+        return DIMINISHING_SLEEP;
+    if (mechanic & (1<<(MECHANIC_POLYMORPH-1)))
+        return DIMINISHING_POLYMORPH;
     if (mechanic & (1<<(MECHANIC_ROOT-1)))
         return triggered ? DIMINISHING_TRIGGER_ROOT : DIMINISHING_CONTROL_ROOT;
-    if (mechanic & ((1<<(MECHANIC_FEAR-1))|(1<<(MECHANIC_CHARM-1))|(1<<(MECHANIC_TURN-1))))
-        return DIMINISHING_FEAR_CHARM_BLIND;
-    if (mechanic & ((1<<(MECHANIC_SILENCE-1))|(1<<(MECHANIC_INTERRUPT-1))))
+    if (mechanic & (1<<(MECHANIC_FEAR-1)))
+        return DIMINISHING_FEAR;
+    if (mechanic & (1<<(MECHANIC_CHARM-1)))
+        return DIMINISHING_CHARM;
+    if (mechanic & (1<<(MECHANIC_SILENCE-1)))
         return DIMINISHING_SILENCE;
     if (mechanic & (1<<(MECHANIC_DISARM-1)))
         return DIMINISHING_DISARM;
+    if (mechanic & (1<<(MECHANIC_FREEZE-1)))
+        return DIMINISHING_FREEZE;
+    if (mechanic & ((1<<(MECHANIC_KNOCKOUT-1))|(1<<(MECHANIC_SAPPED-1))))
+        return DIMINISHING_KNOCKOUT;
     if (mechanic & (1<<(MECHANIC_BANISH-1)))
         return DIMINISHING_BANISH;
     if (mechanic & (1<<(MECHANIC_HORROR-1)))
-        return DIMINISHING_HORROR;
+        return DIMINISHING_DEATHCOIL;
 
     return DIMINISHING_NONE;
-}
-
-int32 GetDiminishingReturnsLimitDuration(DiminishingGroup group, SpellEntry const* spellproto)
-{
-    if(!IsDiminishingReturnsGroupDurationLimited(group))
-        return 0;
-
-    // Explicit diminishing duration
-    switch(spellproto->SpellFamilyName)
-    {
-        case SPELLFAMILY_WARLOCK:
-        {
-            // Curse of the Elements - limit to 2 minutes in PvP
-            if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_CURSE_OF_THE_ELEMENTS>())
-                return 120000;
-            // Banish - limit to 6 seconds in PvP (3.1)
-            else if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_BANISH>())
-                return 6000;
-            // Curse of agony - limit to 24 seconds in PvP (?)
-            else if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_CURSE_OF_AGONY>())
-                return 24000;
-            // Shadow embrace - limit to 12 seconds in PvP (?)
-            else if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_DEBUFFS>() && spellproto->SpellIconID == 2209)
-                return 12000;
-            break;
-        }
-        case SPELLFAMILY_HUNTER:
-        {
-            // Wyvern Sting
-            if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_WYVERN_STING2>())
-                return 6000;
-            // Hunters Mark - limit to 2 minutes in PvP
-            else if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_HUNTERS_MARK>())
-                return 120000;
-            break;
-        }
-        case SPELLFAMILY_PALADIN:
-        {
-            // Repentance - limit to 6 seconds in PvP
-            if (spellproto->GetSpellFamilyFlags().test<CF_PALADIN_REPENTANCE>())
-                return 6000;
-            break;
-        }
-        case SPELLFAMILY_DRUID:
-        {
-            // Faerie Fire - limit to 40 seconds in PvP (3.1)
-            if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_FAERIE_FIRE>())
-                return 40000;
-            break;
-        }
-        default:
-            break;
-    }
-
-    return 10000;
-}
-
-bool IsDiminishingReturnsGroupDurationLimited(DiminishingGroup group)
-{
-    switch(group)
-    {
-        case DIMINISHING_CONTROL_STUN:
-        case DIMINISHING_TRIGGER_STUN:
-        case DIMINISHING_CONTROL_ROOT:
-        case DIMINISHING_TRIGGER_ROOT:
-        case DIMINISHING_FEAR_CHARM_BLIND:
-        case DIMINISHING_DISORIENT:
-        case DIMINISHING_CHEAPSHOT_POUNCE:
-        case DIMINISHING_FREEZE_SLEEP:
-        case DIMINISHING_CYCLONE:
-        case DIMINISHING_BANISH:
-        case DIMINISHING_LIMITONLY:
-        case DIMINISHING_CHARGE:
-            return true;
-        default:
-            return false;
-    }
-    return false;
 }
 
 DiminishingReturnsType GetDiminishingReturnsGroupType(DiminishingGroup group)
 {
     switch(group)
     {
-        case DIMINISHING_CYCLONE:
-        case DIMINISHING_TRIGGER_STUN:
+        case DIMINISHING_BLIND:
         case DIMINISHING_CONTROL_STUN:
-        case DIMINISHING_CHARGE:
+        case DIMINISHING_TRIGGER_STUN:
+        case DIMINISHING_KIDNEYSHOT:
             return DRTYPE_ALL;
+        case DIMINISHING_SLEEP:
         case DIMINISHING_CONTROL_ROOT:
         case DIMINISHING_TRIGGER_ROOT:
-        case DIMINISHING_FEAR_CHARM_BLIND:
-        case DIMINISHING_DISORIENT:
+        case DIMINISHING_FEAR:
+        case DIMINISHING_CHARM:
+        case DIMINISHING_POLYMORPH:
         case DIMINISHING_SILENCE:
         case DIMINISHING_DISARM:
-        case DIMINISHING_HORROR:
-        case DIMINISHING_FREEZE_SLEEP:
+        case DIMINISHING_DEATHCOIL:
+        case DIMINISHING_FREEZE:
         case DIMINISHING_BANISH:
-        case DIMINISHING_CHEAPSHOT_POUNCE:
+        case DIMINISHING_WARLOCK_FEAR:
+        case DIMINISHING_KNOCKOUT:
             return DRTYPE_PLAYER;
-        case DIMINISHING_TAUNT:
-            return DRTYPE_TAUNT;
         default:
             break;
     }
 
     return DRTYPE_NONE;
+}
+
+int32 GetDiminishingReturnsLimitDuration(SpellEntry const* spellproto)
+{
+    /*
+        SPELL_ATTR_BREAKABLE_BY_DAMAGE have control spells:
+        Polymorph
+        Hibernate
+        Scare Beast
+        Sap
+        Fear
+        Entangling Roots
+        Freezing Trap
+    */
+    if (spellproto->HasAttribute(SPELL_ATTR_BREAKABLE_BY_DAMAGE))
+        if (GetSpellDuration(spellproto) > 15000)
+            return 15000;
+
+    return 0;
 }
 
 bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32 newArea) const

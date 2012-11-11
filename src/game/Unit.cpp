@@ -498,8 +498,9 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     if (relocate)
     {
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
-        if (m_movementInfo.HasMovementFlag(MOVEFLAG_HOVER))
-            z += 2.0;
+        // <sid>
+        //if (m_movementInfo.HasMovementFlag(MOVEFLAG_HOVER))
+        //    z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
         if (GetTypeId() == TYPEID_PLAYER)
             GetMap()->PlayerRelocation((Player*)this, x, y, z, orientation);
@@ -3534,13 +3535,13 @@ float Unit::GetUnitCriticalChance(WeaponAttackType attackType, const Unit *pVict
         switch(attackType)
         {
             case BASE_ATTACK:
-            case OFF_ATTACK:
                 crit = GetFloatValue( PLAYER_CRIT_PERCENTAGE );
                 break;
             case RANGED_ATTACK:
                 crit = GetFloatValue( PLAYER_RANGED_CRIT_PERCENTAGE );
                 break;
                 // Just for good manner
+            case OFF_ATTACK:
             default:
                 crit = 0.0f;
                 break;
@@ -6561,7 +6562,7 @@ bool Unit::HasAuraStateForCaster(AuraState flag, ObjectGuid casterGuid) const
         {
             if ((*i)->GetCasterGuid() == casterGuid &&
                 //  Immolate or Shadowflame
-                (*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE/*, CF_WARLOCK_SHADOWFLAME2 */>())
+                (*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE>())
             {
                 return true;
             }
@@ -6919,12 +6920,6 @@ int32 Unit::DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellPro
 
     // overheal = addhealth - gain
     unit->SendHealSpellLog(pVictim, spellProto->Id, addhealth, addhealth - gain, critical, absorb);
-
-    /*if (unit->GetTypeId() == TYPEID_PLAYER)
-    {
-        if (BattleGround* bg = ((Player*)unit)->GetBattleGround())
-            bg->UpdatePlayerScore((Player*)unit, SCORE_HEALING_DONE, gain);
-    }*/
 
     return gain;
 }
@@ -7544,7 +7539,7 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                 crit_chance = 0.0f;
             // For other schools
             else if (GetTypeId() == TYPEID_PLAYER)
-                crit_chance = ((Player*)this)->m_SpellCritPercentage[GetFirstSchoolInMask(schoolMask)];
+                crit_chance =  0.0f; // <sid>m_SpellCritPercentage[GetFirstSchoolInMask(schoolMask)];
             else
             {
                 crit_chance = float(m_baseSpellCritChance);
@@ -7647,9 +7642,23 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         }
                         break;
                     case SPELLFAMILY_PALADIN:
-                        if (spellProto->Category == 19)
+                        // Exorcism
+                        else if (spellProto->Category == 19)
                         {
                             if (pVictim->GetCreatureTypeMask() & CREATURE_TYPEMASK_DEMON_OR_UNDEAD)
+                            {
+                                // don't override auras that prevent critical strikes taken
+                                if (crit_chance > -100.0f)
+                                    return true;
+                            }
+                        }
+                        break;
+                    case SPELLFAMILY_SHAMAN:
+                        // Lava Burst
+                        if (spellProto->GetSpellFamilyFlags().test<CF_SHAMAN_LAVA_BURST>())
+                        {
+                            // Flame Shock
+                            if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid()))
                             {
                                 // don't override auras that prevent critical strikes taken
                                 if (crit_chance > -100.0f)
@@ -7722,9 +7731,7 @@ uint32 Unit::SpellCriticalDamageBonus(SpellEntry const *spellProto, uint32 damag
     if(!pVictim)
         return damage + crit_bonus;
 
-    // increased critical damage (auras, and some talents)
-    int32 critPctDamageMod = 0;
-    critPctDamageMod += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_DAMAGE_BONUS, GetSpellSchoolMask(spellProto));
+    int32 critPctDamageMod = GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_DAMAGE_BONUS, GetSpellSchoolMask(spellProto));
 
     uint32 creatureTypeMask = pVictim->GetCreatureTypeMask();
     critPctDamageMod += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_PERCENT_VERSUS, creatureTypeMask);
@@ -9717,20 +9724,6 @@ void Unit::ApplyDiminishingToDuration(DiminishingGroup group, int32 &duration,Un
             default: break;
         }
     }
-    /*else if (GetTypeId() == TYPEID_UNIT && (((Creature*)this)->GetCreatureInfo()->flags_extra &  CREATURE_FLAG_EXTRA_TAUNT_DIMINISHING) && GetDiminishingReturnsGroupType(group) == DRTYPE_TAUNT)
-    {
-        DiminishingLevels diminish = Level;
-        switch(diminish)
-        {
-            case DIMINISHING_LEVEL_1: break;
-            case DIMINISHING_LEVEL_2: mod = 0.65f;   break;
-            case DIMINISHING_LEVEL_3: mod = 0.4225f; break;
-            case DIMINISHING_LEVEL_4: mod = 0.2747f; break;
-            case DIMINISHING_LEVEL_5: mod = 0.1785f; break;
-            case DIMINISHING_LEVEL_IMMUNE: mod = 0.0f;break;
-            default: break;
-        }
-    }*/
 
     duration = int32(duration * mod);
 }
@@ -10814,7 +10807,8 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
             }
         }
 
-        spell->prepare(&tmpTargets);
+        const Aura* triggeredByAura = NULL;
+        spell->prepare(&tmpTargets, triggeredByAura);
     }
     else if (pet)
     {
@@ -12313,7 +12307,7 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
         case SPELLFAMILY_DRUID:
         {
             // Starfall (AoE dummy)
-            if (spellInfo->Id ==  20687 || spellInfo->Id ==  26540)
+            if (spellInfo->Id == 20687)
                 no_stealth = true;
             break;
         }

@@ -2130,7 +2130,11 @@ class MANGOS_DLL_SPEC Player : public Unit
         /*********************************************************/
         /***                 VARIOUS SYSTEMS                   ***/
         /*********************************************************/
+
         float m_SpellCritPercentage[MAX_SPELL_SCHOOL];
+        float m_modManaRegen;
+        float m_modManaRegenInterrupt;
+
         bool HasMovementFlag(MovementFlags f) const;        // for script access to m_movementInfo.HasMovementFlag
         void UpdateFallInformationIfNeed(MovementInfo const& minfo,uint16 opcode);
         void SetFallInformation(uint32 time, float z) override

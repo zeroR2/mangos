@@ -1469,6 +1469,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 m_caster->CastCustomSpell(unitTarget, 10444, &totalDamage, NULL, NULL, true, m_CastItem);
                 return;
             }
+
             // Fire Nova
             if (m_spellInfo->SpellIconID == 33)
             {
@@ -3252,13 +3253,30 @@ void Spell::EffectLearnSkill(SpellEffectIndex eff_idx)
 
 void Spell::EffectAddHonor(SpellEffectIndex /*eff_idx*/)
 {
-  if (!unitTarget->isPlayer())
+    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    // honor-spells don't scale with level and won't be casted by an item
-    // also we must use damage (spelldescription says +25 honor but damage is only 24)
-    ((Player*)unitTarget)->AddHonor(float(damage), QUEST);
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "SpellEffect::AddHonor (spell_id %u) rewards %u honor points (non scale) for player: %u", m_spellInfo->Id, damage, ((Player*)unitTarget)->GetGUIDLow());
+    // not scale value for item based reward (/10 value expected)
+    if (m_CastItem)
+    {
+        ((Player*)unitTarget)->AddHonor(float(damage / 10), BONUS_HONOR_UNIT);
+        DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "SpellEffect::AddHonor (spell_id %u) rewards %d honor points (item %u) for player: %u", m_spellInfo->Id, damage/10, m_CastItem->GetEntry(),((Player*)unitTarget)->GetGUIDLow());
+        return;
+    }
+
+    // do not allow to add too many honor for player (50 * 21) = 1040 at level 70, or (50 * 31) = 1550 at level 80
+    if (damage <= 50)
+    {
+        float honor_reward = MaNGOS::Honor::hk_honor_at_level(unitTarget->getLevel(), damage);
+        ((Player*)unitTarget)->AddHonor(honor_reward, BONUS_HONOR_UNIT);
+        DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "SpellEffect::AddHonor (spell_id %u) rewards %f honor points (scale) to player: %u", m_spellInfo->Id, honor_reward, ((Player*)unitTarget)->GetGUIDLow());
+    }
+    else
+    {
+        //maybe we have correct honor_gain in damage already
+        ((Player*)unitTarget)->AddHonor((float)damage, BONUS_HONOR_UNIT);
+        sLog.outError("SpellEffect::AddHonor (spell_id %u) rewards %u honor points (non scale) for player: %u", m_spellInfo->Id, damage, ((Player*)unitTarget)->GetGUIDLow());
+    }
 }
 
 void Spell::EffectTradeSkill(SpellEffectIndex /*eff_idx*/)
@@ -3584,10 +3602,6 @@ void Spell::EffectTaunt(SpellEffectIndex /*eff_idx*/)
             return;
         }
     }
-
-    // if target immune to taunt don't change threat
-    //if (unitTarget->GetDiminishing(DIMINISHING_TAUNT) == DIMINISHING_LEVEL_IMMUNE)
-    //    return;
 
     // Also use this effect to set the taunter's threat to the taunted creature's highest value
     if (unitTarget->CanHaveThreatList() && unitTarget->getThreatManager().getCurrentVictim())

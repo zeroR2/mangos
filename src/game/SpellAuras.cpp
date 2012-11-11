@@ -1029,10 +1029,6 @@ bool Aura::IsEffectStacking()
         case SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK:                                           // Wrath of Air Totem / Mind-Numbing Poison and many more
             return (spellProto->CalculateSimpleValue(m_effIndex) > 0);
         case SPELL_AURA_MOD_DAMAGE_PERCENT_DONE:                                               // Ferocious Inspiration / Sanctified Retribution
-            if (spellProto->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_RETRIBUTION_AURA>()) // Sanctified Retribution / HoC
-            {
-                return false;
-            }
             break;
         case SPELL_AURA_MOD_RESISTANCE_PCT:                                                    // Sunder Armor / Sting
         case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:                                              // Ebon Plague (spell not implemented) / Earth and Moon
@@ -1343,7 +1339,7 @@ void Aura::TriggerSpell()
                     case 27819:
                     {
                         // 33% Mana Burn on normal mode, 50% on heroic mode
-                        int32 bpDamage = (int32)triggerTarget->GetPower(POWER_MANA) / 3);
+                        int32 bpDamage = (int32)triggerTarget->GetPower(POWER_MANA) / 3;
                         triggerTarget->ModifyPower(POWER_MANA, -bpDamage);
                         triggerTarget->CastCustomSpell(triggerTarget, 27820, &bpDamage, NULL, NULL, true, NULL, this, triggerTarget->GetObjectGuid());
                         return;
@@ -3194,12 +3190,8 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                 uint32 aurMechMask = GetAllSpellMechanicMask(aurSpellInfo);
 
                 // If spell that caused this aura has Croud Control or Daze effect
-                if (((aurMechMask & MECHANIC_NOT_REMOVED_BY_SHAPESHIFT) &&
-                    // some non-Daze spells that have MECHANIC_DAZE
-                    aurSpellInfo->Id != 18118 &&    // Aftermath
-                    !aurSpellInfo->IsFitToFamily<SPELLFAMILY_PALADIN, CF_PALADIN_AVENGERS_SHIELD>()) ||
-                    // some Daze spells have these parameters instead of MECHANIC_DAZE (skip snare spells)
-                    (aurSpellInfo->SpellIconID == 15 && aurSpellInfo->Dispel == 0 &&
+                // some Daze spells have these parameters instead of MECHANIC_DAZE (skip snare spells)
+                if ((aurSpellInfo->SpellIconID == 15 && aurSpellInfo->Dispel == 0 &&
                     (aurMechMask & (1 << (MECHANIC_SNARE-1))) == 0))
                 {
                     continue;
@@ -5183,52 +5175,7 @@ void Aura::HandlePeriodicHeal(bool apply, bool /*Real*/)
         if (!caster)
             return;
 
-        // Gift of the Naaru (have multiple spellfamilies)
-        if (GetSpellProto()->GetSpellFamilyFlags().test<CF_ALL_GIFT_OF_THE_NAARU>())
-        {
-            float add = 0.0f;
-            switch (GetSpellProto()->SpellFamilyName)
-            {
-                case SPELLFAMILY_MAGE:
-                case SPELLFAMILY_WARLOCK:
-                case SPELLFAMILY_PRIEST:
-                    add = 1.885f * (float)caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(GetSpellProto()));
-                    break;
-
-                case SPELLFAMILY_PALADIN:
-                case SPELLFAMILY_SHAMAN:
-                    add = std::max(1.885f * (float)caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(GetSpellProto())), 1.1f * (float)caster->GetTotalAttackPowerValue(BASE_ATTACK));
-                    break;
-
-                case SPELLFAMILY_WARRIOR:
-                case SPELLFAMILY_HUNTER:
-                    add = 1.1f * (float)std::max(caster->GetTotalAttackPowerValue(BASE_ATTACK), caster->GetTotalAttackPowerValue(RANGED_ATTACK));
-                    break;
-
-                case SPELLFAMILY_GENERIC:
-                default:
-                    sLog.outError("Aura::HandlePeriodicHeal unknown type of aura %u",GetId());
-                    break;
-            }
-
-            int32 add_per_tick = floor(add / GetAuraMaxTicks());
-            m_modifier.m_amount += (add_per_tick > 0 ? add_per_tick : 0);
-        }
-        // Lifeblood
-        else if (GetSpellProto()->SpellIconID == 3088 && GetSpellProto()->SpellVisual == 8145)
-        {
-            int32 healthBonus = int32 (0.0032f * caster->GetMaxHealth());
-            m_modifier.m_amount += healthBonus;
-        }
-        else
-        {
-            m_modifier.m_amount = caster->SpellHealingBonusDone(target, GetSpellProto(), m_modifier.m_amount, DOT, GetStackAmount());
-        }
-
-        // Rejuvenation
-        if (GetSpellProto()->IsFitToFamily<SPELLFAMILY_DRUID, CF_DRUID_REJUVENATION>())
-            if (caster->HasAura(64760))                     // Item - Druid T8 Restoration 4P Bonus
-                caster->CastCustomSpell(target, 64801, &m_modifier.m_amount, NULL, NULL, true, NULL);
+        m_modifier.m_amount = caster->SpellHealingBonusDone(target, GetSpellProto(), m_modifier.m_amount, DOT, GetStackAmount());
     }
 }
 
@@ -6858,9 +6805,10 @@ void Aura::HandleSchoolAbsorb(bool apply, bool Real)
                     break;
                 case SPELLFAMILY_WARLOCK:
                     // Shadow Ward
-                    if (spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_BUFFS>())
+                    // <sid> change spellfamilyflags
+                    //if (spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_BUFFS>())
                         //+30% from +spell bonus
-                        DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.30f;
+                    //    DoneActualBenefit = caster->SpellBaseDamageBonusDone(GetSpellSchoolMask(spellProto)) * 0.30f;
                     break;
                 case SPELLFAMILY_PALADIN:
                     // Sacred Shield
@@ -8588,8 +8536,8 @@ void SpellAuraHolder::_AddSpellAuraHolder()
         if (IsSealSpell(m_spellProto))
             m_target->ModifyAuraState(AURA_STATE_JUDGEMENT, true);
 
-        // Conflagrate aura state on Immolate and Shadowflame
-        if (m_spellProto->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>())
+        // Conflagrate aura state on Immolate
+        if (m_spellProto->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE>())
             m_target->ModifyAuraState(AURA_STATE_CONFLAGRATE, true);
 
         // Faerie Fire (druid versions)
@@ -8736,10 +8684,10 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
                     removeState = AURA_STATE_JUDGEMENT;     // Update Seals information
                 break;
             case SPELLFAMILY_WARLOCK:
-                // Conflagrate aura state on Immolate and Shadowflame,
-                if (m_spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>())
+                // Conflagrate aura state on Immolate,
+                if (m_spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_IMMOLATE>())
                 {
-                    removeFamilyFlag = ClassFamilyMask::create<CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>();
+                    removeFamilyFlag = ClassFamilyMask::create<CF_WARLOCK_IMMOLATE>();
                     removeState = AURA_STATE_CONFLAGRATE;
                 }
                 break;
@@ -9446,27 +9394,7 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                         return;
                     break;
                 }
-                case 34455:          // Ferocious inspiration and ranks
-                    spellId1 = 75593;
-                    break;
-                case 34459:
-                    spellId1 = 75446;
-                    break;
-                case 34460:
-                    spellId1 = 75447;
-                    break;
                 default:
-                    // Aspect of the Dragonhawk dodge
-                    else if (GetSpellProto()->GetSpellFamilyFlags().test<CF_HUNTER_ASPECT_OF_THE_DRAGONHAWK>())
-                    {
-                        spellId1 = 61848;
-
-                        // triggered spell have same category as main spell and cooldown
-                        if (apply && m_target->GetTypeId()==TYPEID_PLAYER)
-                            ((Player*)m_target)->RemoveSpellCooldown(61848);
-                    }
-                    else
-                        return;
                     break;
             }
             break;

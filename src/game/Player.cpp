@@ -390,6 +390,11 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     m_usedTalentCount = 0;
     m_questRewardTalentCount = 0;
 
+    m_modManaRegen = 0;
+    m_modManaRegenInterrupt = 0;
+    for (uint8 s = 0; s < MAX_SPELL_SCHOOL; ++s)
+        m_SpellCritPercentage[s] = 0.0f;
+
     m_regenTimer = REGEN_TIME_FULL;
     m_weaponChangeTimer = 0;
 
@@ -2770,8 +2775,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE,0.0f);
 
     // Init spell schools (will be recalculated in UpdateAllStats() at loading and in _ApplyAllStatBonuses() at reset
-    //for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
-    //    SetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1+i, 0.0f);
+    for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
+        m_SpellCritPercentage[i] = 0.0f;
 
     SetFloatValue(PLAYER_PARRY_PERCENTAGE, 0.0f);
     SetFloatValue(PLAYER_BLOCK_PERCENTAGE, 0.0f);
@@ -16962,10 +16967,14 @@ void Player::SaveToDB()
     }
     uberInsert.addString(ss);
 
-    /*for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             //string
+    for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)             //string
     {
-        ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + i) << " ";
-    }*/
+        ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + i * MAX_VISIBLE_ITEM_OFFSET) << " ";
+
+        uint32 ench1 = GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + i * MAX_VISIBLE_ITEM_OFFSET + 1 + PERM_ENCHANTMENT_SLOT);
+        uint32 ench2 = GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + i * MAX_VISIBLE_ITEM_OFFSET + 1 + TEMP_ENCHANTMENT_SLOT);
+        ss << uint32(MAKE_PAIR32(ench1,ench2)) << " ";
+    }
     uberInsert.addString(ss);
 
     uberInsert.addUInt32(GetUInt32Value(PLAYER_AMMO_ID));
@@ -17538,7 +17547,9 @@ void Player::_SaveStats()
     stmt.addFloat(GetFloatValue(PLAYER_PARRY_PERCENTAGE));
     stmt.addFloat(GetFloatValue(PLAYER_CRIT_PERCENTAGE));
     stmt.addFloat(GetFloatValue(PLAYER_RANGED_CRIT_PERCENTAGE));
-    //stmt.addFloat(GetFloatValue(PLAYER_SPELL_CRIT_PERCENTAGE1));
+    // Only schools
+    for(int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
+        stmt.addFloat(m_SpellCritPercentage[SpellSchools(i)]);
     stmt.addUInt32(GetUInt32Value(UNIT_FIELD_ATTACK_POWER));
     stmt.addUInt32(GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER));
     stmt.addUInt32(GetBaseSpellPowerBonus());
@@ -17585,12 +17596,16 @@ void Player::_SaveStats()
     //stmt.addUInt32(GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
 
     std::ostringstream ss; // duh
-    /*for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             // EquipmentCache string
+    for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)             // EquipmentCache string
     {
-        ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + i) << " ";
+        ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + i * MAX_VISIBLE_ITEM_OFFSET) << " ";
+
+        uint32 ench1 = GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + i * MAX_VISIBLE_ITEM_OFFSET + 1 + PERM_ENCHANTMENT_SLOT);
+        uint32 ench2 = GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENCHANTMENT + i * MAX_VISIBLE_ITEM_OFFSET + 1 + TEMP_ENCHANTMENT_SLOT);
+        ss << uint32(MAKE_PAIR32(ench1,ench2)) << " ";
     }
     stmt.addString(ss);     // equipment cache string
-*/
+
     //stmt.addUInt32(uint32(m_specsCount));
     //stmt.addUInt32(uint32(m_activeSpec));
 
