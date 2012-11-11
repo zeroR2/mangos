@@ -16962,10 +16962,10 @@ void Player::SaveToDB()
     }
     uberInsert.addString(ss);
 
-    for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             //string
+    /*for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             //string
     {
         ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + i) << " ";
-    }
+    }*/
     uberInsert.addString(ss);
 
     uberInsert.addUInt32(GetUInt32Value(PLAYER_AMMO_ID));
@@ -17585,12 +17585,12 @@ void Player::_SaveStats()
     //stmt.addUInt32(GetUInt32Value(PLAYER_FIELD_LIFETIME_HONORBALE_KILLS));
 
     std::ostringstream ss; // duh
-    for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             // EquipmentCache string
+    /*for (uint32 i = 0; i < EQUIPMENT_SLOT_END * 2; ++i)             // EquipmentCache string
     {
         ss << GetUInt32Value(PLAYER_VISIBLE_ITEM_1_ENTRYID + i) << " ";
     }
     stmt.addString(ss);     // equipment cache string
-
+*/
     //stmt.addUInt32(uint32(m_specsCount));
     //stmt.addUInt32(uint32(m_activeSpec));
 

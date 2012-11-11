@@ -499,7 +499,7 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     {
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
         if (m_movementInfo.HasMovementFlag(MOVEFLAG_HOVER))
-            z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
+            z += 2.0;
 
         if (GetTypeId() == TYPEID_PLAYER)
             GetMap()->PlayerRelocation((Player*)this, x, y, z, orientation);
@@ -3534,10 +3534,8 @@ float Unit::GetUnitCriticalChance(WeaponAttackType attackType, const Unit *pVict
         switch(attackType)
         {
             case BASE_ATTACK:
-                crit = GetFloatValue( PLAYER_CRIT_PERCENTAGE );
-                break;
             case OFF_ATTACK:
-                crit = GetFloatValue( PLAYER_OFFHAND_CRIT_PERCENTAGE );
+                crit = GetFloatValue( PLAYER_CRIT_PERCENTAGE );
                 break;
             case RANGED_ATTACK:
                 crit = GetFloatValue( PLAYER_RANGED_CRIT_PERCENTAGE );
@@ -6563,7 +6561,7 @@ bool Unit::HasAuraStateForCaster(AuraState flag, ObjectGuid casterGuid) const
         {
             if ((*i)->GetCasterGuid() == casterGuid &&
                 //  Immolate or Shadowflame
-                (*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE, CF_WARLOCK_SHADOWFLAME2>())
+                (*i)->GetSpellProto()->IsFitToFamily<SPELLFAMILY_WARLOCK, CF_WARLOCK_IMMOLATE/*, CF_WARLOCK_SHADOWFLAME2 */>())
             {
                 return true;
             }
@@ -6922,11 +6920,11 @@ int32 Unit::DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellPro
     // overheal = addhealth - gain
     unit->SendHealSpellLog(pVictim, spellProto->Id, addhealth, addhealth - gain, critical, absorb);
 
-    if (unit->GetTypeId() == TYPEID_PLAYER)
+    /*if (unit->GetTypeId() == TYPEID_PLAYER)
     {
         if (BattleGround* bg = ((Player*)unit)->GetBattleGround())
             bg->UpdatePlayerScore((Player*)unit, SCORE_HEALING_DONE, gain);
-    }
+    }*/
 
     return gain;
 }
@@ -7322,7 +7320,7 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
             if (damageInfo->GetSpellProto()->GetSpellFamilyFlags().test<CF_MAGE_FIREBALL, CF_MAGE_FROSTBOLT, CF_MAGE_ARCANE_MISSILES2, CF_MAGE_ARCANE_BLAST, CF_MAGE_FROSTFIRE_BOLT, CF_MAGE_ARCANE_BARRAGE>())
             {
                 //Search for Torment the weak dummy aura
-                if (Aura* ttwAura = GetAuraByEffectMask(SPELL_AURA_DUMMY,SPELLFAMILY_GENERIC,ClassFamilyMask(0x00240000,0),GetObjectGuid()))
+                if (Aura* ttwAura = GetAuraByEffectMask(SPELL_AURA_DUMMY,SPELLFAMILY_GENERIC,ClassFamilyMask(0x00240000),GetObjectGuid()))
                 {
                     Unit::SpellAuraHolderMap const& holderMap = pVictim->GetSpellAuraHolderMap();
                     for (Unit::SpellAuraHolderMap::const_iterator itr = holderMap.begin(); itr != holderMap.end(); ++itr)
@@ -7546,7 +7544,7 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                 crit_chance = 0.0f;
             // For other schools
             else if (GetTypeId() == TYPEID_PLAYER)
-                crit_chance = GetFloatValue( PLAYER_SPELL_CRIT_PERCENTAGE1 + GetFirstSchoolInMask(schoolMask));
+                crit_chance = ((Player*)this)->m_SpellCritPercentage[GetFirstSchoolInMask(schoolMask)];
             else
             {
                 crit_chance = float(m_baseSpellCritChance);
@@ -7649,30 +7647,9 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         }
                         break;
                     case SPELLFAMILY_PALADIN:
-                        // Sacred Shield
-                        if (spellProto->GetSpellFamilyFlags().test<CF_PALADIN_FLASH_OF_LIGHT>())
-                        {
-                            Aura const* aura = pVictim->GetDummyAura(58597);
-                            if (aura && aura->GetCasterGuid() == GetObjectGuid())
-                                crit_chance+=aura->GetModifier()->m_amount;
-                        }
-                        // Exorcism
-                        else if (spellProto->Category == 19)
+                        if (spellProto->Category == 19)
                         {
                             if (pVictim->GetCreatureTypeMask() & CREATURE_TYPEMASK_DEMON_OR_UNDEAD)
-                            {
-                                // don't override auras that prevent critical strikes taken
-                                if (crit_chance > -100.0f)
-                                    return true;
-                            }
-                        }
-                        break;
-                    case SPELLFAMILY_SHAMAN:
-                        // Lava Burst
-                        if (spellProto->GetSpellFamilyFlags().test<CF_SHAMAN_LAVA_BURST>())
-                        {
-                            // Flame Shock
-                            if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid()))
                             {
                                 // don't override auras that prevent critical strikes taken
                                 if (crit_chance > -100.0f)
@@ -7745,6 +7722,8 @@ uint32 Unit::SpellCriticalDamageBonus(SpellEntry const *spellProto, uint32 damag
     if(!pVictim)
         return damage + crit_bonus;
 
+    // increased critical damage (auras, and some talents)
+    int32 critPctDamageMod = 0;
     critPctDamageMod += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_CRIT_DAMAGE_BONUS, GetSpellSchoolMask(spellProto));
 
     uint32 creatureTypeMask = pVictim->GetCreatureTypeMask();
@@ -9738,7 +9717,7 @@ void Unit::ApplyDiminishingToDuration(DiminishingGroup group, int32 &duration,Un
             default: break;
         }
     }
-    else if (GetTypeId() == TYPEID_UNIT && (((Creature*)this)->GetCreatureInfo()->flags_extra &  CREATURE_FLAG_EXTRA_TAUNT_DIMINISHING) && GetDiminishingReturnsGroupType(group) == DRTYPE_TAUNT)
+    /*else if (GetTypeId() == TYPEID_UNIT && (((Creature*)this)->GetCreatureInfo()->flags_extra &  CREATURE_FLAG_EXTRA_TAUNT_DIMINISHING) && GetDiminishingReturnsGroupType(group) == DRTYPE_TAUNT)
     {
         DiminishingLevels diminish = Level;
         switch(diminish)
@@ -9751,7 +9730,7 @@ void Unit::ApplyDiminishingToDuration(DiminishingGroup group, int32 &duration,Un
             case DIMINISHING_LEVEL_IMMUNE: mod = 0.0f;break;
             default: break;
         }
-    }
+    }*/
 
     duration = int32(duration * mod);
 }
@@ -10835,7 +10814,7 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
             }
         }
 
-        spell->prepare(&tmpTargets, triggeredByAura);
+        spell->prepare(&tmpTargets);
     }
     else if (pet)
     {
@@ -12334,7 +12313,7 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
         case SPELLFAMILY_DRUID:
         {
             // Starfall (AoE dummy)
-            if (spellInfo->GetSpellFamilyFlags().test<CF_DRUID_STARFALL2>())
+            if (spellInfo->Id ==  20687 || spellInfo->Id ==  26540)
                 no_stealth = true;
             break;
         }

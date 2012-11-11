@@ -19,7 +19,7 @@
 
 #include "UpdateFieldFlags.h"
 
-uint32 ItemUpdateFieldFlags[CONTAINER_END] =
+/*uint32 ItemUpdateFieldFlags[CONTAINER_END] =
 {
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID
     UF_FLAG_PUBLIC,                                         // OBJECT_FIELD_GUID+1
@@ -1450,7 +1450,7 @@ uint32 UnitUpdateFieldFlags[PLAYER_END] =
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1+1
     UF_FLAG_PRIVATE,                                        // PLAYER_NO_REAGENT_COST_1+2
     UF_FLAG_PRIVATE,                                        // PLAYER_PET_SPELL_POWER
-};
+};*/
 
 uint32 GameObjectUpdateFieldFlags[GAMEOBJECT_END] =
 {

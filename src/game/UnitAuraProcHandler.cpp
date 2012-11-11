@@ -1810,14 +1810,6 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     target = this;
                     break;
                 }
-                // Tiger Fury (cat) - all ranks - the aura for the cat form from the 2 existing kotj auras has a miscValue != 126
-                if (procSpell->GetSpellFamilyFlags().test<CF_DRUID_TIGERS_FURY>()  && triggeredByAura->GetMiscValue() != 126)
-                {
-                    basepoints[0] = triggerAmount;
-                    triggered_spell_id = 51178;
-                    target = this;
-                    break;
-                }
                 return SPELL_AURA_PROC_FAILED;
             }
             // King of the Jungle
@@ -2191,242 +2183,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         CastSpell(target,42463,true,NULL,triggeredByAura);
                     break;
                 }
-                // Judgements of the Wise
-                case 31876:
-                case 31877:
-                case 31878:
-                {
-                    // triggered only at casted Judgement spells, not at additional Judgement effects
-                    if(!procSpell || procSpell->Category != 1210)
-                        return SPELL_AURA_PROC_FAILED;
 
-                    target = this;
-                    triggered_spell_id = 31930;
-
-                    // Replenishment
-                    CastSpell(this, 57669, true, NULL, triggeredByAura);
-                    break;
-                }
-                // Paladin Tier 6 Trinket (Ashtongue Talisman of Zeal)
-                case 40470:
-                {
-                    if (!procSpell)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    float  chance;
-
-                    // Flash of light/Holy light
-                    if (procSpell->GetSpellFamilyFlags().test<CF_PALADIN_FLASH_OF_LIGHT, CF_PALADIN_HOLY_LIGHT>())
-                    {
-                        triggered_spell_id = 40471;
-                        chance = 15.0f;
-                    }
-                    // Judgement (any)
-                    else if (procSpell->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_ACTIVATE>())
-                    {
-                        triggered_spell_id = 40472;
-                        chance = 50.0f;
-                    }
-                    else
-                        return SPELL_AURA_PROC_FAILED;
-
-                    if (!roll_chance_f(chance))
-                        return SPELL_AURA_PROC_FAILED;
-                    break;
-                }
-                // Light's Beacon (heal target area aura)
-                case 53651:
-                {
-                    // not do bonus heal for explicit beacon focus healing
-                    if (GetObjectGuid() == triggeredByAura->GetCasterGuid())
-                        return SPELL_AURA_PROC_FAILED;
-
-                    // beacon
-                    Unit* beacon = triggeredByAura->GetCaster();
-                    if (!beacon)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    if (procSpell->Id == 20267)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    // find caster main aura at beacon
-                    Aura const* dummy = NULL;
-                    Unit::AuraList const& baa = beacon->GetAurasByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-                    for(Unit::AuraList::const_iterator i = baa.begin(); i != baa.end(); ++i)
-                    {
-                        if ((*i)->GetId() == 53563 && (*i)->GetCasterGuid() == pVictim->GetObjectGuid())
-                        {
-                            dummy = (*i)();
-                            break;
-                        }
-                    }
-
-                    // original heal must be form beacon caster
-                    if (!dummy)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    triggered_spell_id = 53652;             // Beacon of Light
-                    uint32 radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(sSpellStore.LookupEntry(triggered_spell_id)->rangeIndex));
-
-                    if (!beacon->IsWithinDistInMap(this, radius) || 
-                        !beacon->IsWithinLOSInMap(this) ||
-                        !beacon->IsWithinDistInMap(pVictim, radius) || 
-                        !beacon->IsWithinLOSInMap(pVictim))
-                        return SPELL_AURA_PROC_FAILED;
-
-                    basepoints[0] = triggeredByAura->GetModifier()->m_amount*damage/100;
-
-                    // cast with original caster set but beacon to beacon for apply caster mods and avoid LoS check
-                    beacon->CastCustomSpell(beacon,triggered_spell_id,&basepoints[0],NULL,NULL,true,castItem,triggeredByAura,pVictim->GetObjectGuid());
-                    return SPELL_AURA_PROC_OK;
-                }
-                // Seal of Corruption (damage calc on apply aura)
-                case 53736:
-                {
-                    if (effIndex != EFFECT_INDEX_0)         // effect 1,2 used by seal unleashing code
-                        return SPELL_AURA_PROC_FAILED;
-
-                    // At melee attack or Hammer of the Righteous spell damage considered as melee attack
-                    if ((procFlag & PROC_FLAG_SUCCESSFUL_MELEE_HIT) || (procSpell && procSpell->Id == 53595))
-                        triggered_spell_id = 53742;         // Blood Corruption
-
-                    // Add 5-stack effect from Blood Corruption
-                    uint32 stacks = 0;
-                    AuraList const& auras = target->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
-                    for(AuraList::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-                    {
-                        if (((*itr)->GetId() == 53742) && (*itr)->GetCasterGuid() == GetObjectGuid())
-                        {
-                            stacks = (*itr)->GetStackAmount();
-                            break;
-                        }
-                    }
-                    if (stacks >= 5)
-                        CastSpell(target, 53739, true, NULL, triggeredByAura);
-                    break;
-                }
-                // Sacred Shield (buff)
-                case 58597:
-                {
-                    basepoints[0] = int32(damage / GetSpellAuraMaxTicks(triggered_spell_id));
-
-                    target = this;
-                    break;
-                }
-                // Sacred Shield (talent rank)
-                case 53601:
-                {
-                    if (procSpell && IsFriendlyTo(pVictim))
-                    {
-                        if (procSpell->GetSpellFamilyFlags().test<CF_PALADIN_FLASH_OF_LIGHT>() && (pVictim->HasAura(53569, EFFECT_INDEX_0) || pVictim->HasAura(53576, EFFECT_INDEX_0)))
-                        {
-                            triggered_spell_id = 66922;
-                            basepoints[0] = int32(damage / GetSpellAuraMaxTicks(triggered_spell_id));
-                            if (pVictim->HasAura(53569, EFFECT_INDEX_0))
-                                basepoints[0] = basepoints[0] >> 1;
-                        }
-                        else
-                            return SPELL_AURA_PROC_FAILED;
-                    }
-
-                    // triggered_spell_id in spell data
-                    target = this;
-                    break;
-                }
-                // Item - Paladin T8 Holy 2P Bonus
-                case 64890:
-                {
-                    triggered_spell_id = 64891;             // Holy Mending
-                    basepoints[0] = int32(triggerAmount * damage / 100) / GetSpellAuraMaxTicks(triggered_spell_id);
-                    break;
-                }
-                // Item - Paladin T10 Holy 2P Bonus
-                case 70755:
-                {
-                    triggered_spell_id = 71166;
-                    break;
-                }
-                // Item - Paladin T10 Retribution 2P Bonus
-                case 70765:
-                {
-                    if (GetTypeId() != TYPEID_PLAYER)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    triggered_spell_id = 70769;
-                    break;
-                }
-                // Anger Capacitor
-                case 71406:                                 // normal
-                case 71545:                                 // heroic
-                {
-                    if (!pVictim)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    SpellEntry const* mote = sSpellStore.LookupEntry(71432);
-
-                    if (!mote)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    uint32 maxStack = mote->StackAmount - (dummySpell->Id == 71545 ? 1 : 0);
-
-                    SpellAuraHolderPtr aurHolder = GetSpellAuraHolder(71432);
-                    if (aurHolder && uint32(aurHolder->GetStackAmount() +1) >= maxStack)
-                    {
-                        RemoveAurasDueToSpell(71432);       // Mote of Anger
-
-                        // Manifest Anger (main hand/off hand)
-                        CastSpell(pVictim, !haveOffhandWeapon() || roll_chance_i(50) ? 71433 : 71434, true);
-                        return SPELL_AURA_PROC_OK;
-                    }
-                    else
-                        triggered_spell_id = 71432;
-
-                    break;
-                }
-                // Heartpierce, Item - Icecrown 25 Normal Dagger Proc
-                case 71880:
-                {
-                    if (GetTypeId() != TYPEID_PLAYER)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    switch (this->getPowerType())
-                    {
-                        case POWER_ENERGY:
-                            triggered_spell_id = 71882;
-                            break;
-                        case POWER_RAGE:
-                            triggered_spell_id = 71883;
-                            break;
-                        case POWER_MANA:
-                            triggered_spell_id = 71881;
-                            break;
-                        default:
-                            return SPELL_AURA_PROC_FAILED;
-                    }
-                    break;
-                }
-                // Heartpierce, Item - Icecrown 25 Heroic Dagger Proc
-                case 71892:
-                {
-                    if (GetTypeId() != TYPEID_PLAYER)
-                        return SPELL_AURA_PROC_FAILED;
-
-                    switch (this->getPowerType())
-                    {
-                        case POWER_ENERGY:
-                            triggered_spell_id = 71887;
-                            break;
-                        case POWER_RAGE:
-                            triggered_spell_id = 71886;
-                            break;
-                        case POWER_MANA:
-                            triggered_spell_id = 71888;
-                            break;
-                        default:
-                            return SPELL_AURA_PROC_FAILED;
-                    }
-                    break;
-                }
             }
             break;
         }
@@ -3448,9 +3205,10 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                     return SPELL_AURA_PROC_FAILED;
             }
             // Entrapment correction
-            else if ((auraSpellInfo->Id == 19184 || auraSpellInfo->Id == 19387 || auraSpellInfo->Id == 19388) &&
+            // SID!
+            /*else if ((auraSpellInfo->Id == 19184 || auraSpellInfo->Id == 19387 || auraSpellInfo->Id == 19388) &&
                 !procSpell->GetSpellFamilyFlags().test<CF_HUNTER_SNAKE_TRAP_EFFECT, CF_HUNTER_FROST_TRAP>())
-                    return SPELL_AURA_PROC_FAILED;
+                    return SPELL_AURA_PROC_FAILED;*/
             // Lock and Load
             else if (auraSpellInfo->SpellIconID == 3579)
             {
@@ -3728,167 +3486,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
         {
             basepoints[0] = int32(GetMaxHealth() * triggerAmount / 100);
             break;
-        }
-        // Shamanistic Rage triggered spell
-        case 30824:
-        {
-            basepoints[0] = int32(GetTotalAttackPowerValue(BASE_ATTACK) * triggerAmount / 100);
-            break;
-        }
-        // Enlightenment (trigger only from mana cost spells)
-        case 35095:
-        {
-            if (!procSpell || procSpell->powerType != POWER_MANA || (procSpell->manaCost == 0 && procSpell->ManaCostPercentage == 0 && procSpell->manaCostPerlevel == 0))
-                return SPELL_AURA_PROC_FAILED;
-            break;
-        }
-        // Demonic Pact
-        case 48090:
-        {
-            // As the spell is proced from pet's attack - find owner
-            Unit* owner = GetOwner();
-            if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
-                return SPELL_AURA_PROC_FAILED;
-
-            // This spell doesn't stack, but refreshes duration. So we receive current bonuses to minus them later.
-            int32 curBonus = 0;
-            if (Aura* aur = owner->GetAura(48090, EFFECT_INDEX_0))
-                curBonus = aur->GetModifier()->m_amount;
-            int32 spellDamage  = owner->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_MAGIC) - curBonus;
-            if (spellDamage <= 0)
-                return SPELL_AURA_PROC_FAILED;
-
-            // percent stored in owner talent dummy
-            AuraList const& dummyAuras = owner->GetAurasByType(SPELL_AURA_DUMMY);
-            for (AuraList::const_iterator i = dummyAuras.begin(); i != dummyAuras.end(); ++i)
-            {
-                if ((*i)->GetSpellProto()->SpellIconID == 3220)
-                {
-                    basepoints[0] = basepoints[1] = int32(spellDamage * (*i)->GetModifier()->m_amount / 100);
-                    break;
-                }
-            }
-            break;
-        }
-        // Sword and Board
-        case 50227:
-        {
-            // Remove cooldown on Shield Slam
-            if (GetTypeId() == TYPEID_PLAYER)
-                ((Player*)this)->RemoveSpellCategoryCooldown(1209, true);
-            break;
-        }
-        // Maelstrom Weapon
-        case 53817:
-        {
-            // Item - Shaman T10 Enhancement 4P Bonus
-            // Calculate before roll_chance of ranks
-            if (Aura const* dummy = GetDummyAura(70832))
-            {
-              if (SpellAuraHolderPtr aurHolder = GetSpellAuraHolder(53817))
-                if ((aurHolder->GetStackAmount() == aurHolder->GetSpellProto()->StackAmount) && roll_chance_i(dummy->GetBasePoints()))
-                    CastSpell(this,70831,true,castItem,triggeredByAura);
-            }
-
-            // have rank dependent proc chance, ignore too often cases
-            // PPM = 2.5 * (rank of talent),
-            uint32 rank = sSpellMgr.GetSpellRank(auraSpellInfo->Id);
-            // 5 rank -> 100% 4 rank -> 80% and etc from full rate
-            if(!roll_chance_i(20*rank))
-                return SPELL_AURA_PROC_FAILED;
-            break;
-        }
-        // Brain Freeze
-        case 57761:
-        {
-            if(!procSpell)
-                return SPELL_AURA_PROC_FAILED;
-            // For trigger from Blizzard need exist Improved Blizzard
-            if (procSpell->SpellFamilyName==SPELLFAMILY_MAGE && procSpell->GetSpellFamilyFlags().test<CF_MAGE_BLIZZARD>())
-            {
-                bool found = false;
-                AuraList const& mOverrideClassScript = GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-                for(AuraList::const_iterator i = mOverrideClassScript.begin(); i != mOverrideClassScript.end(); ++i)
-                {
-                    int32 script = (*i)->GetModifier()->m_miscvalue;
-                    if (script==836 || script==988 || script==989)
-                    {
-                        found=true;
-                        break;
-                    }
-                }
-                if(!found)
-                    return SPELL_AURA_PROC_FAILED;
-            }
-            break;
-        }
-        // Astral Shift
-        case 52179:
-        {
-            if (procSpell == 0 || !(procEx & (PROC_EX_NORMAL_HIT|PROC_EX_CRITICAL_HIT)) || this == pVictim)
-                return SPELL_AURA_PROC_FAILED;
-
-            // Need stun, fear or silence mechanic
-            if (!(GetAllSpellMechanicMask(procSpell) & IMMUNE_TO_SILENCE_AND_STUN_AND_FEAR_MASK))
-                return SPELL_AURA_PROC_FAILED;
-            break;
-        }
-        // Burning Determination
-        case 54748:
-        {
-            if(!procSpell)
-                return SPELL_AURA_PROC_FAILED;
-            // Need Interrupt or Silenced mechanic
-            if (!(GetAllSpellMechanicMask(procSpell) & IMMUNE_TO_INTERRUPT_AND_SILENCE_MASK))
-                return SPELL_AURA_PROC_FAILED;
-            break;
-        }
-        // Lock and Load
-        case 56453:
-        {
-            // Proc only from trap activation (from periodic proc another aura of this spell)
-            // because some spells have both flags (ON_TRAP_ACTIVATION and ON_PERIODIC), but should only proc ON_PERIODIC!!
-            if (!(procFlags & PROC_FLAG_ON_TRAP_ACTIVATION) || !procSpell ||
-                !(GetSpellSchoolMask(procSpell) & (SPELL_SCHOOL_MASK_FROST | SPELL_SCHOOL_MASK_NATURE)) || !roll_chance_i(triggerAmount))
-            {
-                return SPELL_AURA_PROC_FAILED;
-            }
-            // don't proc Explosive Trap on triggering (only on periodic, in other aura proc)
-            else if (procSpell->GetSpellFamilyFlags().test<CF_HUNTER_FIRE_TRAP_EFFECTS>())
-                return SPELL_AURA_PROC_FAILED;
-
-            break;
-        }
-        // Freezing Fog (Rime triggered)
-        case 59052:
-        {
-            // Howling Blast cooldown reset
-            if (GetTypeId() == TYPEID_PLAYER)
-                ((Player*)this)->RemoveSpellCategoryCooldown(1248, true);
-            break;
-        }
-        // Druid - Savage Defense
-        case 62606:
-        {
-            basepoints[0] = int32(GetTotalAttackPowerValue(BASE_ATTACK) * triggerAmount / 100);
-            break;
-        }
-        // Hack for Blood mark (ICC Saurfang)
-        case 72255:
-        case 72444:
-        case 72445:
-        case 72446:
-        {
-            float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(auraSpellInfo->EffectRadiusIndex[EFFECT_INDEX_0]));
-            Map::PlayerList const& pList = GetMap()->GetPlayers();
-            for (Map::PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr)
-                if (itr->getSource() && itr->getSource()->IsWithinDistInMap(this,radius) && itr->getSource()->HasAura(triggerEntry->targetAuraSpell))
-                {
-                    target = itr->getSource();
-                    break;
-                }
-            break;
-        }
+        }        
     }
 
     if (!trigger_spell_id)
@@ -4115,16 +3713,18 @@ SpellAuraProcResult Unit::HandleModCastingSpeedNotStackAuraProc(Unit* /*pVictim*
 
 SpellAuraProcResult Unit::HandleReflectSpellsSchoolAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
 {
+    // SID!
     // Skip Melee hits and spells ws wrong school
-    return !(procSpell == NULL || (triggeredByAura->GetModifier()->m_miscvalue & GetSpellSchoolMask(procSpell) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;
+    return SPELL_AURA_PROC_FAILED;//!(procSpell == NULL || (triggeredByAura->GetModifier()->m_miscvalue & GetSpellSchoolMask(procSpell) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;
 }
 
 SpellAuraProcResult Unit::HandleModPowerCostSchoolAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
 {
     // Skip melee hits and spells ws wrong school or zero cost
-    return !(procSpell == NULL ||
+    return SPELL_AURA_PROC_FAILED;/*!(procSpell == NULL ||
             (procSpell->manaCost == 0 && procSpell->ManaCostPercentage == 0) ||           // Cost check
             (triggeredByAura->GetModifier()->m_miscvalue & GetSpellSchoolMask(procSpell) == 0) ? SPELL_AURA_PROC_OK : SPELL_AURA_PROC_FAILED;  // School check
+                    */
 }
 
 SpellAuraProcResult Unit::HandleMechanicImmuneResistanceAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* procSpell, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/)
