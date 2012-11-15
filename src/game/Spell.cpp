@@ -4594,40 +4594,30 @@ SpellCastResult Spell::CheckCast(bool strict)
     // for now, ignore triggered spells
     if (strict && !m_IsTriggeredSpell)
     {
-        // Ignore form req aura
-        if (!m_caster->HasAffectedAura(SPELL_AURA_MOD_IGNORE_SHAPESHIFT, m_spellInfo))
-        {
-            // Cannot be used in this stance/form
-            SpellCastResult shapeError = GetErrorAtShapeshiftedCast(m_spellInfo, m_caster->GetShapeshiftForm());
-            if (shapeError != SPELL_CAST_OK)
-                return shapeError;
+        // Cannot be used in this stance/form
+        SpellCastResult shapeError = GetErrorAtShapeshiftedCast(m_spellInfo, m_caster->GetShapeshiftForm());
+        if (shapeError != SPELL_CAST_OK)
+            return shapeError;
 
-            if (m_spellInfo->HasAttribute(SPELL_ATTR_ONLY_STEALTHED) && !(m_caster->HasStealthAura()))
-                return SPELL_FAILED_ONLY_STEALTHED;
-        }
+        if (m_spellInfo->HasAttribute(SPELL_ATTR_ONLY_STEALTHED) && !(m_caster->HasStealthAura()))
+            return SPELL_FAILED_ONLY_STEALTHED;
     }
 
     // caster state requirements
     if (m_spellInfo->CasterAuraState && !m_caster->HasAuraState(AuraState(m_spellInfo->CasterAuraState)))
         return SPELL_FAILED_CASTER_AURASTATE;
-    if (m_spellInfo->CasterAuraStateNot && m_caster->HasAuraState(AuraState(m_spellInfo->CasterAuraStateNot)))
+    
+    // <sid>
+    /*if (m_spellInfo->CasterAuraStateNot && m_caster->HasAuraState(AuraState(m_spellInfo->CasterAuraStateNot)))
         return SPELL_FAILED_CASTER_AURASTATE;
 
     // Caster aura req check if need
     if (m_spellInfo->casterAuraSpell && !m_caster->HasAura(m_spellInfo->casterAuraSpell))
         return SPELL_FAILED_CASTER_AURASTATE;
+
     if (m_spellInfo->excludeCasterAuraSpell)
-    {
-        // Special cases of non existing auras handling
-        if (m_spellInfo->excludeCasterAuraSpell == 61988)
-        {
-            // Avenging Wrath Marker
-            if (m_caster->HasAura(61987))
-                return SPELL_FAILED_CASTER_AURASTATE;
-        }
-        else if (m_caster->HasAura(m_spellInfo->excludeCasterAuraSpell))
-            return SPELL_FAILED_CASTER_AURASTATE;
-    }
+        if (m_caster->HasAura(m_spellInfo->excludeCasterAuraSpell))
+            return SPELL_FAILED_CASTER_AURASTATE;*/
 
     if (m_caster->isCharmedOwnedByPlayerOrPlayer())
     {
@@ -4671,20 +4661,11 @@ SpellCastResult Spell::CheckCast(bool strict)
         // This check fully not need - checked in CheckTarget()
         // if (m_spellInfo->targetAuraSpell && !target->HasAura(m_spellInfo->targetAuraSpell))
         //    return SPELL_FAILED_CASTER_AURASTATE;
-
-        if (m_spellInfo->excludeTargetAuraSpell)
-        {
-            // Special cases of non existing auras handling
-            if (m_spellInfo->excludeTargetAuraSpell == 61988)
-            {
-                // Avenging Wrath Marker
-                if (target->HasAura(61987))
-                    return SPELL_FAILED_CASTER_AURASTATE;
-
-            }
-            else if (target->HasAura(m_spellInfo->excludeTargetAuraSpell))
-                return SPELL_FAILED_CASTER_AURASTATE;
-        }
+        
+        // <sid>
+        /*if (m_spellInfo->excludeTargetAuraSpell)
+            if (target->HasAura(m_spellInfo->excludeTargetAuraSpell))
+                return SPELL_FAILED_CASTER_AURASTATE;*/
 
         // totem immunity for channeled spells(needs to be before spell cast)
         // spell attribs for player channeled spells
@@ -4761,17 +4742,11 @@ SpellCastResult Spell::CheckCast(bool strict)
                 m_spellInfo->SpellIconID == 16)
                 return SPELL_FAILED_BAD_TARGETS;
 
-            // Focus Magic (main spell)
-            if (m_spellInfo->Id == 54646)
-                return SPELL_FAILED_BAD_TARGETS;
-
             // Lay on Hands (self cast)
             if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN &&
                 m_spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_LAY_ON_HANDS>())
             {
                 if (target->HasAura(25771))                 // Forbearance
-                    return SPELL_FAILED_CASTER_AURASTATE;
-                if (target->HasAura(61987))                 // Avenging Wrath Marker
                     return SPELL_FAILED_CASTER_AURASTATE;
             }
         }
@@ -5160,11 +5135,6 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (m_targets.getUnitTarget() && !m_caster->IsFriendlyTo(m_targets.getUnitTarget()) && !m_caster->HasInArc(M_PI_F, m_targets.getUnitTarget()))
                         return SPELL_FAILED_UNIT_NOT_INFRONT;
                 }
-                else if(m_spellInfo->Id == 49576)           // Death Grip
-                {
-                    if(m_caster->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
-                        return SPELL_FAILED_MOVING;
-                }
                 else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_SHAMAN && m_spellInfo->SpellIconID == 33) // Fire Nova
                 {
                     // fire totems slot
@@ -5173,7 +5143,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
                 // Voracious Appetite && Cannibalize && Carrion Feeder
                 else if (m_UniqueTargetInfo.empty() /*only in first check!*/
-                    && (m_spellInfo->Id == 20577 || m_spellInfo->Id == 52749 || m_spellInfo->Id == 54044))
+                    && m_spellInfo->Id == 20577)
                 {
                     m_targets.setUnitTarget(NULL);
                     WorldObject* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck>(m_spellInfo->TargetCreatureType);
@@ -5340,13 +5310,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             case SPELL_EFFECT_CHARGE:
             {
                 if (m_caster->hasUnitState(UNIT_STAT_ROOT))
-                {
-                    // Intervene with Warbringer talent
-                    if (m_spellInfo->Id == 3411 && m_caster->HasAura(57499))
-                        m_caster->RemoveAurasAtMechanicImmunity(IMMUNE_TO_ROOT_AND_SNARE_MASK, 0);
-                    else
-                        return SPELL_FAILED_ROOTED;
-                }
+                    return SPELL_FAILED_ROOTED;
 
                 break;
             }
@@ -5570,10 +5534,6 @@ SpellCastResult Spell::CheckCast(bool strict)
                         if (!m_caster->GetPet())
                             return SPELL_FAILED_NO_PET;
                         break;
-                    case 61336:                             // Survival Instincts
-                        if (m_caster->GetTypeId() != TYPEID_PLAYER || !((Player*)m_caster)->IsInFeralForm())
-                            return SPELL_FAILED_ONLY_SHAPESHIFT;
-                        break;
                     default:
                         break;
                 }
@@ -5661,7 +5621,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell && !m_spellInfo->AreaGroupId)
+                if (m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell/* <sid> && !m_spellInfo->AreaGroupId*/)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 if (m_caster->IsInDisallowedMountForm())
@@ -5702,19 +5662,6 @@ SpellCastResult Spell::CheckCast(bool strict)
             default:
                 break;
         }
-    }
-
-    // and some hacks, as always
-    switch(m_spellInfo->Id)
-    {
-        // spells that dont have direct effects listed above
-        // maybe should check triggered/linked spells?
-        // but not all are implemented in this way
-        case 36554: // Shadowstep
-        case 51690: // Killing Spree
-            if (m_caster->hasUnitState(UNIT_STAT_ROOT))
-                return SPELL_FAILED_ROOTED;
-            break;
     }
 
     // check trade slot case (last, for allow catch any another cast problems)
@@ -5958,12 +5905,14 @@ SpellCastResult Spell::CheckCasterAuras() const
                                 return SPELL_FAILED_STUNNED;
                             break;
                         case SPELL_AURA_MOD_CONFUSE:
-                            if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED))
-                                return SPELL_FAILED_CONFUSED;
+                            // <sid>
+                            /*if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED))
+                                return SPELL_FAILED_CONFUSED;*/
                             break;
                         case SPELL_AURA_MOD_FEAR:
-                            if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX5_USABLE_WHILE_FEARED))
-                                return SPELL_FAILED_FLEEING;
+                            // <sid>
+                            /*if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX5_USABLE_WHILE_FEARED))
+                                return SPELL_FAILED_FLEEING;*/
                             break;
                         case SPELL_AURA_MOD_SILENCE:
                         case SPELL_AURA_MOD_PACIFY:
@@ -6117,9 +6066,10 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
                 if (target == m_caster)
                     return SPELL_CAST_OK;
 
-                if (m_caster->GetTypeId() == TYPEID_PLAYER &&
+                // <sid>
+                /*if (m_caster->GetTypeId() == TYPEID_PLAYER &&
                     (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, target))
-                    return SPELL_FAILED_UNIT_NOT_INFRONT;
+                    return SPELL_FAILED_UNIT_NOT_INFRONT;*/
 
                 float combat_range = m_caster->GetMeleeAttackDistance(target);
 
@@ -6153,9 +6103,10 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
             return SPELL_FAILED_OUT_OF_RANGE;
         if(min_range && dist < min_range)
             return SPELL_FAILED_TOO_CLOSE;
-        if ( m_caster->GetTypeId() == TYPEID_PLAYER &&
+        // <sid>
+        /*if ( m_caster->GetTypeId() == TYPEID_PLAYER &&
             (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc( M_PI_F, target ) )
-            return SPELL_FAILED_UNIT_NOT_INFRONT;
+            return SPELL_FAILED_UNIT_NOT_INFRONT;*/
     }
 
     if (pGoTarget)
@@ -6167,9 +6118,10 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
             return SPELL_FAILED_OUT_OF_RANGE;
         if (min_range && dist < min_range)
             return SPELL_FAILED_TOO_CLOSE;
-        if ( m_caster->GetTypeId() == TYPEID_PLAYER &&
+        // <sid>
+        /*if ( m_caster->GetTypeId() == TYPEID_PLAYER &&
             (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc( M_PI_F, pGoTarget ) )
-            return SPELL_FAILED_NOT_INFRONT;
+            return SPELL_FAILED_NOT_INFRONT;*/
     }
 
     // TODO verify that such spells really use bounding radius
@@ -6835,12 +6787,13 @@ bool Spell::CheckTargetBeforeLimitation(Unit* target, SpellEffectIndex eff)
         return false;
     }
     // Check Aura spell req (need for AoE spells)
-    if (m_spellInfo->targetAuraSpell && !target->HasAura(m_spellInfo->targetAuraSpell))
+    // <sid>
+    /*if (m_spellInfo->targetAuraSpell && !target->HasAura(m_spellInfo->targetAuraSpell))
         return false;
     if (m_spellInfo->excludeTargetAuraSpell && target->HasAura(m_spellInfo->excludeTargetAuraSpell))
         return false;
     if (m_spellInfo->TargetAuraStateNot && target->HasAura(m_spellInfo->TargetAuraStateNot))
-        return false;
+        return false;*/
     return true;
 }
 
@@ -6862,13 +6815,14 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff )
     {
         return false;
     }
+    // <sid>
     // Check Aura spell req (need for AoE spells)
-    if (m_spellInfo->targetAuraSpell && !target->HasAura(m_spellInfo->targetAuraSpell))
+    /*if (m_spellInfo->targetAuraSpell && !target->HasAura(m_spellInfo->targetAuraSpell))
         return false;
     if (m_spellInfo->excludeTargetAuraSpell && target->HasAura(m_spellInfo->excludeTargetAuraSpell))
         return false;
     if (m_spellInfo->TargetAuraStateNot && target->HasAura(m_spellInfo->TargetAuraStateNot))
-        return false;
+        return false;*/
 
     // Check targets for not_selectable unit flag and remove
     // A player can cast spells on his pet (or other controlled unit) though in any state

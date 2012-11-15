@@ -7643,7 +7643,7 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         break;
                     case SPELLFAMILY_PALADIN:
                         // Exorcism
-                        else if (spellProto->Category == 19)
+                        if (spellProto->Category == 19)
                         {
                             if (pVictim->GetCreatureTypeMask() & CREATURE_TYPEMASK_DEMON_OR_UNDEAD)
                             {

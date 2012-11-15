@@ -64,27 +64,11 @@ uint32 ItemUpdateFieldFlags[CONTAINER_END] =
     UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_7_1
     UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_7_1+1
     UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_7_3
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_8_1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_8_1+1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_8_3
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_9_1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_9_1+1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_9_3
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_10_1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_10_1+1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_10_3
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_11_1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_11_1+1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_11_3
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_12_1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_12_1+1
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ENCHANTMENT_12_3
     UF_FLAG_PUBLIC,                                         // ITEM_FIELD_PROPERTY_SEED
     UF_FLAG_PUBLIC,                                         // ITEM_FIELD_RANDOM_PROPERTIES_ID
+    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_ITEM_TEXT_ID
     UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_DURABILITY
     UF_FLAG_OWNER | UF_FLAG_ITEM_OWNER,                     // ITEM_FIELD_MAXDURABILITY
-    UF_FLAG_PUBLIC,                                         // ITEM_FIELD_CREATE_PLAYED_TIME
-    UF_FLAG_NONE,                                           // ITEM_FIELD_PAD
     UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_NUM_SLOTS
     UF_FLAG_NONE,                                           // CONTAINER_ALIGN_PAD
     UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1
@@ -142,23 +126,7 @@ uint32 ItemUpdateFieldFlags[CONTAINER_END] =
     UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+52
     UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+53
     UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+54
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+55
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+56
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+57
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+58
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+59
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+60
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+61
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+62
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+63
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+64
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+65
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+66
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+67
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+68
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+69
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+70
-    UF_FLAG_PUBLIC,                                         // CONTAINER_FIELD_SLOT_1+71
+    UF_FLAG_PUBLIC                                          // CONTAINER_FIELD_SLOT_1+55
 };
 
 uint32 UnitUpdateFieldFlags[PLAYER_END] =

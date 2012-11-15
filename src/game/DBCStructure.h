@@ -75,6 +75,14 @@ struct AreaTableEntry
     // 35       m_lightid
 };
 
+// from 3.3.5a
+struct AreaGroupEntry
+{
+    uint32  AreaGroupId;                                    // 0        m_ID
+    uint32  AreaId[6];                                      // 1-6      m_areaID
+    uint32  nextGroup;                                      // 7        m_nextAreaID
+};
+
 struct AreaTriggerEntry
 {
     uint32  id;                                             // 0        m_ID

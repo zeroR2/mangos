@@ -21,6 +21,7 @@
 
 const char AreaTableEntryfmt[] = "iiinixxxxxissssssssssssssssxiiiiixxx";
 const char AreaTriggerEntryfmt[]="niffffffff";
+const char AreaGroupEntryfmt[] = "niiiiiii";
 const char AuctionHouseEntryfmt[]="niiixxxxxxxxx";
 const char BankBagSlotPricesEntryfmt[]="ni";
 const char BattlemasterListEntryfmt[] = "niiiiiiiiixssssssssssssssssxiiii";

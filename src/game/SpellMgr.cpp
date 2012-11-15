@@ -504,7 +504,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
                 return SPELL_STING;
 
             // only hunter aspects have this
-            if (spellInfo->GetSpellFamilyFlags().test<CF_HUNTER_ASPECT_OF_THE_MONKEY, CF_HUNTER_ASPECT_OF_THE_HAWK, CF_HUNTER_ASPECT_OF_THE_PACK, CF_HUNTER_ASPECT_OF_THE_VIPER, CF_HUNTER_ASPECT_OF_THE_WILD, CF_HUNTER_ASPECT_OF_THE_BEAST, CF_HUNTER_ASPECT_OF_THE_DRAGONHAWK>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_HUNTER_ASPECT_OF_THE_MONKEY, CF_HUNTER_ASPECT_OF_THE_HAWK, CF_HUNTER_ASPECT_OF_THE_PACK, CF_HUNTER_ASPECT_OF_THE_VIPER, CF_HUNTER_ASPECT_OF_THE_WILD/*<sid>, CF_HUNTER_ASPECT_OF_THE_BEAST*/>())
                 return SPELL_ASPECT;
 
             break;
@@ -1397,9 +1397,7 @@ struct DoSpellProcEvent
                 if (spe.spellFamilyMask[i])
                 {
                     empty = false;
-                    ClassFamilyMask const& mask = spell->GetEffectSpellClassMask(SpellEffectIndex(i));
-                    if (mask == spe.spellFamilyMask[i])
-                        sLog.outErrorDb("Spell %u listed in `spell_proc_event` has same class mask as in Spell.dbc (EffectIndex %u) and doesn't have any other data", spell->Id, i);
+                    break;
                 }
             }
             if (empty)
@@ -1425,20 +1423,20 @@ void SpellMgr::LoadSpellProcEvents()
 {
     mSpellProcEventMap.clear();                             // need for reload case
 
-    //                                                0      1           2                3                  4                  5                  6                  7                  8                  9                  10                 11                 12         13      14       15            16
-    QueryResult *result = WorldDatabase.Query("SELECT entry, SchoolMask, SpellFamilyName, SpellFamilyMaskA0, SpellFamilyMaskA1, SpellFamilyMaskA2, SpellFamilyMaskB0, SpellFamilyMaskB1, SpellFamilyMaskB2, SpellFamilyMaskC0, SpellFamilyMaskC1, SpellFamilyMaskC2, procFlags, procEx, ppmRate, CustomChance, Cooldown FROM spell_proc_event");
-    if (!result)
+    //                                                0      1           2                3                 4                 5                 6          7       8        9             10
+    QueryResult *result = WorldDatabase.Query("SELECT entry, SchoolMask, SpellFamilyName, SpellFamilyMask0, SpellFamilyMask1, SpellFamilyMask2, procFlags, procEx, ppmRate, CustomChance, Cooldown FROM spell_proc_event");
+    if( !result )
     {
-        BarGoLink bar(1);
+        BarGoLink bar( 1 );
         bar.step();
         sLog.outString();
-        sLog.outString(">> No spell proc event conditions loaded");
+        sLog.outString( ">> No spell proc event conditions loaded");
         return;
     }
 
     SpellRankHelper<SpellProcEventEntry, DoSpellProcEvent, SpellProcEventMap> rankHelper(*this, mSpellProcEventMap);
 
-    BarGoLink bar(result->GetRowCount());
+    BarGoLink bar( result->GetRowCount() );
     do
     {
         Field *fields = result->Fetch();
@@ -1453,20 +1451,15 @@ void SpellMgr::LoadSpellProcEvents()
         spe.spellFamilyName = fields[2].GetUInt32();
 
         for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
-        {
-            spe.spellFamilyMask[i] = ClassFamilyMask(
-                fields[i+3].GetUInt32(),
-                fields[i+6].GetUInt32(),
-                fields[i+9].GetUInt32());
-        }
-        spe.procFlags       = fields[12].GetUInt32();
-        spe.procEx          = fields[13].GetUInt32();
-        spe.ppmRate         = fields[14].GetFloat();
-        spe.customChance    = fields[15].GetFloat();
-        spe.cooldown        = fields[16].GetUInt32();
+            spe.spellFamilyMask[i] = ClassFamilyMask(fields[3+i].GetUInt64());
+
+        spe.procFlags       = fields[6].GetUInt32();
+        spe.procEx          = fields[7].GetUInt32();
+        spe.ppmRate         = fields[8].GetFloat();
+        spe.customChance    = fields[9].GetFloat();
+        spe.cooldown        = fields[10].GetUInt32();
 
         rankHelper.RecordRank(spe, entry);
-
     } while (result->NextRow());
 
     rankHelper.FillHigherRanks();
@@ -1598,84 +1591,6 @@ struct DoSpellBonuses
 void SpellMgr::LoadSpellBonuses()
 {
     mSpellBonusMap.clear();                             // need for reload case
-
-    // load DBC data EffectCoeffs[] fields
-    // NOTE : only direct_damage/dot_damage data, there's no ap_bonus
-    for(uint32 entry = 1; entry < sSpellStore.GetNumRows(); ++entry)
-    {
-        SpellEntry const* spell = sSpellStore.LookupEntry(entry);
-        if (spell)
-        {
-            // skip NPC spells?
-            if(spell->SpellFamilyName == SPELLFAMILY_GENERIC)
-                continue;
-
-            SpellBonusEntry sbe;
-            bool dataAdded = false;
-
-            for(uint8 i = 0; i < MAX_EFFECT_INDEX; ++i)
-            {
-                if(spell->Effect[i] && spell->EffectCoeffs[i])
-                {
-                    bool isDotEffect = false;
-                    switch(spell->EffectApplyAuraName[i])
-                    {
-                        case SPELL_AURA_PERIODIC_DAMAGE:
-                        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
-                        case SPELL_AURA_PERIODIC_LEECH:
-                        case SPELL_AURA_PERIODIC_HEAL:
-                        case SPELL_AURA_OBS_MOD_HEALTH:
-                        case SPELL_AURA_PERIODIC_MANA_LEECH:
-                        case SPELL_AURA_OBS_MOD_MANA:
-                        case SPELL_AURA_POWER_BURN_MANA:
-                            isDotEffect = true;
-                            break;
-                        default:
-                            break;
-                    }
-
-                    // both spells that should take 100% bonus and melee spells have EffectCoeffs set to 100%
-                    // we don't want to load the later
-                    // sometimes indexes with no effect set to 100% too
-                    if(spell->EffectCoeffs[i] == 1.0f)
-                    {
-                        // is it the proper check?
-                        if((GetSpellSchoolMask(spell) & SPELL_SCHOOL_MASK_MAGIC) == 0)
-                            continue;
-
-                        if(spell->Effect[i] != SPELL_EFFECT_SCHOOL_DAMAGE &&
-                            spell->Effect[i] != SPELL_EFFECT_HEALTH_LEECH &&
-                            (spell->Effect[i] != SPELL_EFFECT_APPLY_AURA || !isDotEffect) &&
-                            spell->Effect[i] != SPELL_EFFECT_PERSISTENT_AREA_AURA &&
-                            spell->Effect[i] != SPELL_EFFECT_HEAL)
-                            continue;
-                    }
-
-                    if(!isDotEffect)
-                    {
-                        sbe.direct_damage = spell->EffectCoeffs[i];
-                        sbe.dot_damage = 0.0f;
-                    }
-                    else
-                    {
-                        sbe.dot_damage = spell->EffectCoeffs[i];
-                        sbe.direct_damage = 0.0f;
-                    }
-
-                    // Disable ap_bonus/ap_dot_bonus by default
-                    sbe.ap_bonus = 0.0f;
-                    sbe.ap_dot_bonus = 0.0f;
-
-                    dataAdded = true;
-                }
-            }
-
-            if(dataAdded)
-                mSpellBonusMap[entry] = sbe;
-
-            // DO not add to other ranks! data vary per rank on some spells
-        }
-    }
 
     // Load data from database
 
@@ -3997,7 +3912,8 @@ void SpellMgr::LoadSpellAreas()
 SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spellInfo, uint32 map_id, uint32 zone_id, uint32 area_id, Player const* player)
 {
     // normal case
-    int32 areaGroupId = spellInfo->AreaGroupId;
+    // <sid>
+    /*int32 areaGroupId = spellInfo->AreaGroupId;
     if (areaGroupId > 0)
     {
         bool found = false;
@@ -4015,20 +3931,11 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
 
         if (!found)
             return SPELL_FAILED_INCORRECT_AREA;
-    }
-
-    // continent limitation (virtual continent), ignore for GM
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX4_CAST_ONLY_IN_OUTLAND) && !(player && player->isGameMaster()))
-    {
-        uint32 v_map = GetVirtualMapForMapAndZone(map_id, zone_id);
-        MapEntry const* mapEntry = sMapStore.LookupEntry(v_map);
-        if (!mapEntry || (mapEntry->addon < 1 && !sWorld.getConfig(CONFIG_BOOL_ALLOW_FLIGHT_ON_OLD_MAPS)) || !mapEntry->IsContinent())
-            return SPELL_FAILED_INCORRECT_AREA;
-    }
+    }*/
 
     // raid instance limitation
     // Sayge's Dark Fortune spells only
-    if (spellInfo->SpellIconID == 1595 && spellInfo->SpellVisual = 7042)
+    if (spellInfo->SpellIconID == 1595 && spellInfo->SpellVisual == 7042)
     {
         MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
         if (!mapEntry || mapEntry->IsRaid())
@@ -4072,34 +3979,18 @@ SpellCastResult SpellMgr::GetSpellAllowedInLocationError(SpellEntry const *spell
         case 34976:                                         // Netherstorm Flag
             return map_id == 566 && player && player->InBattleGround() ? SPELL_CAST_OK : SPELL_FAILED_REQUIRES_AREA;
         case 2584:                                          // Waiting to Resurrect
-        case 42792:                                         // Recently Dropped Flag
-        case 43681:                                         // Inactive
         {
             return player && player->InBattleGround() ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
         }
         case 22011:                                         // Spirit Heal Channel
         case 22012:                                         // Spirit Heal
         case 24171:                                         // Resurrection Impact Visual
-        case 44535:                                         // Spirit Heal (mana)
         {
             MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
             if (!mapEntry)
                 return SPELL_FAILED_INCORRECT_AREA;
             return mapEntry->IsBattleGround()? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
         }
-        case 44521:                                         // Preparation
-        {
-            if (!player)
-                return SPELL_FAILED_REQUIRES_AREA;
-
-            BattleGround* bg = player->GetBattleGround();
-            return bg && bg->GetStatus()==STATUS_WAIT_JOIN ? SPELL_CAST_OK : SPELL_FAILED_ONLY_BATTLEGROUNDS;
-        }
-        case 69065:                                         // Impaled
-        case 69126:                                         // Pungent blight - first aura
-        case 69152:                                         // Gazeous blight - first aura
-        case 72293:                                         // Mark of the Fallen Champion
-            return map_id == 631 ? SPELL_CAST_OK : SPELL_FAILED_INCORRECT_AREA;
     }
 
     return SPELL_CAST_OK;
